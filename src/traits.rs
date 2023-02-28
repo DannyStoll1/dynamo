@@ -6,7 +6,7 @@ use ndarray::Array2;
 
 pub trait FractalImage {
     fn point_grid(&self) -> PointGrid;
-    fn draw(&self, palette: ColorPalette, filename: &str);
+    fn draw(&self, palette: ColorPalette, filename: String);
 }
 
 pub trait ParameterPlane: Copy {
@@ -58,6 +58,8 @@ pub trait ParameterPlane: Copy {
     fn to_cover(self, covering_map: fn(ComplexNum) -> ComplexNum) -> CoveringMap<Self> {
         CoveringMap::new(self, covering_map, self.point_grid())
     }
+
+    fn name(&self) -> String;
 }
 
 pub struct IterPlane {
@@ -69,7 +71,7 @@ impl FractalImage for IterPlane {
     fn point_grid(&self) -> PointGrid {
         self.point_grid
     }
-    fn draw(&self, palette: ColorPalette, filename: &str) {
+    fn draw(&self, palette: ColorPalette, filename: String) {
         let mut image = image::ImageBuffer::new(
             self.point_grid().res_x as u32,
             self.point_grid().res_y as u32,
@@ -80,5 +82,29 @@ impl FractalImage for IterPlane {
             *pixel = palette.color_map(iter_count);
         }
         image.save(filename).unwrap();
+    }
+}
+
+pub trait HasDynamicalCovers : ParameterPlane {
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>{
+        let param_map = |c|c;
+        let bounds = self.point_grid();
+
+        println!("Marked cycle has not been implemented; falling back to base curve!");
+        CoveringMap::new(self, param_map, bounds)
+    }
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>{
+        let param_map = |c|c;
+        let bounds = self.point_grid();
+
+        println!("Dynatomic curve has not been implemented; falling back to base curve!");
+        CoveringMap::new(self, param_map, bounds)
+    }
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>{
+        let param_map = |c|c;
+        let bounds = self.point_grid();
+
+        println!("Misiurewicz curve has not been implemented; falling back to base curve!");
+        CoveringMap::new(self, param_map, bounds)
     }
 }

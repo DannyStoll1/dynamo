@@ -29,6 +29,31 @@ impl ColorPalette {
         }
     }
 
+    pub fn new_with_contrast(
+        period_r: f64,
+        period_g: f64,
+        period_b: f64,
+        contrast: f64,
+        brightness: f64,
+    ) -> Self {
+        let midline = brightness / 2.0;
+        let mut amplitude = contrast / 2.0;
+        if amplitude > brightness {amplitude = brightness;}
+        else if amplitude > 1. - brightness {amplitude = 1. - brightness;}
+
+        Self {
+            period_r,
+            period_g,
+            period_b,
+            amplitude_r: amplitude,
+            amplitude_g: amplitude,
+            amplitude_b: amplitude,
+            midline_r: brightness,
+            midline_g: brightness,
+            midline_b: brightness,
+        }
+    }
+
     pub fn color_map(&self, value: f64) -> Rgb<u16> {
         if value < 0.0 {
             return Rgb([0, 0, 0]);

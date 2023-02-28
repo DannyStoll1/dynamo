@@ -1,5 +1,5 @@
 use crate::point_grid::PointGrid;
-use crate::primitive_types::{ComplexNum, EscapeState, Period};
+use crate::primitive_types::{ComplexNum, EscapeState};
 use crate::traits::ParameterPlane;
 
 #[derive(Clone, Copy)]
@@ -58,5 +58,9 @@ where
     fn encode_escape_result(&self, iter: i32, state: EscapeState, base_param: ComplexNum) -> f64 {
         self.base_curve
             .encode_escape_result(iter, state, base_param)
+    }
+
+    fn name(&self) -> String {
+        format!("Cover over {}", self.base_curve.name())
     }
 }
