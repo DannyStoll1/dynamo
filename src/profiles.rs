@@ -143,9 +143,9 @@ impl ParameterPlane for Mandelbrot {
 
         let r = z.norm_sqr();
         if r > Self::ESCAPE_RADIUS {
-            return EscapeState::Escaped(z);
+            EscapeState::Escaped(z)
         } else {
-            return EscapeState::NotYetEscaped;
+            EscapeState::NotYetEscaped
         }
     }
 
@@ -317,9 +317,9 @@ impl ParameterPlane for QuadRatPer2 {
 
         let r = z.norm_sqr();
         if r > Self::ESCAPE_RADIUS {
-            return EscapeState::Escaped(z);
+            EscapeState::Escaped(z)
         } else {
-            return EscapeState::NotYetEscaped;
+            EscapeState::NotYetEscaped
         }
     }
 
@@ -452,9 +452,9 @@ impl ParameterPlane for QuadRatPer3 {
 
         let r = z.norm_sqr();
         if r > Self::ESCAPE_RADIUS {
-            return EscapeState::Escaped(z);
+            EscapeState::Escaped(z)
         } else {
-            return EscapeState::NotYetEscaped;
+            EscapeState::NotYetEscaped
         }
     }
 
@@ -579,9 +579,9 @@ impl ParameterPlane for QuadRatPer4 {
 
         let r = z.norm_sqr();
         if r > Self::ESCAPE_RADIUS {
-            return EscapeState::Escaped(z);
+            EscapeState::Escaped(z)
         } else {
-            return EscapeState::NotYetEscaped;
+            EscapeState::NotYetEscaped
         }
     }
 
@@ -684,9 +684,9 @@ impl ParameterPlane for BurningShip {
 
         let r = z.norm_sqr();
         if r > Self::ESCAPE_RADIUS {
-            return EscapeState::Escaped(z);
+            EscapeState::Escaped(z)
         } else {
-            return EscapeState::NotYetEscaped;
+            EscapeState::NotYetEscaped
         }
     }
 
@@ -775,9 +775,9 @@ impl ParameterPlane for Sailboat {
 
         let r = z.norm_sqr();
         if r > Self::ESCAPE_RADIUS {
-            return EscapeState::Escaped(z);
+            EscapeState::Escaped(z)
         } else {
-            return EscapeState::NotYetEscaped;
+            EscapeState::NotYetEscaped
         }
     }
 
