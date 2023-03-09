@@ -90,12 +90,12 @@ impl PointGridIterator {
         let step_y = (max_y - min_y) / (res_y as f64);
 
         Self {
-            step_x: step_x,
-            step_y: step_y,
-            res_x: res_x,
-            res_y: res_y,
-            min_x: min_x,
-            min_y: min_y,
+            step_x,
+            step_y,
+            res_x,
+            res_y,
+            min_x,
+            min_y,
             idx_x: 0,
             idx_y: 0,
         }

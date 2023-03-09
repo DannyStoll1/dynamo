@@ -36,7 +36,6 @@ where
     fn point_grid(&self) -> PointGrid {
         self.point_grid
     }
-    const NUM_TRACKED_POINTS: usize = 1;
 
     fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
         self.base_curve.stop_condition(iter, z)
@@ -44,7 +43,8 @@ where
 
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         let f = self.covering_map;
-        f(c)
+        let u = f(c);
+        self.base_curve.param_map(u)
     }
 
     fn start_point(&self, c: ComplexNum) -> ComplexNum {

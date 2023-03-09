@@ -1,10 +1,12 @@
-use image::ImageBuffer;
-
 use crate::covering_maps::CoveringMap;
 use crate::math_utils::weierstrass_p;
 use crate::point_grid::PointGrid;
 use crate::primitive_types::{ComplexNum, EscapeState, Period};
 use crate::traits::{HasDynamicalCovers, ParameterPlane};
+
+use crate::macros::{fractal_impl, parameter_plane_impl};
+
+use std::any::type_name;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Mandelbrot {
@@ -18,32 +20,28 @@ impl Mandelbrot {
     const DEFAULT_MAX_X: f64 = 0.65;
     const DEFAULT_MIN_Y: f64 = -1.4;
     const DEFAULT_MAX_Y: f64 = 1.4;
+}
 
-    pub fn new(
-        res_x: usize,
-        max_iter: i32,
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
-    ) -> Self {
-        let point_grid = PointGrid::new_infer(res_x, min_x, max_x, min_y, max_y);
+fractal_impl!(Mandelbrot);
 
-        Self {
-            point_grid,
-            max_iter,
+impl ParameterPlane for Mandelbrot {
+    parameter_plane_impl!();
+
+    fn encode_escape_result(&self, iter: i32, state: EscapeState, _base_param: ComplexNum) -> f64 {
+        match state {
+            EscapeState::NotYetEscaped => 0.,
+            EscapeState::Bounded => -1.,
+            EscapeState::Escaped(z) => {
+                let u = Self::ESCAPE_RADIUS.log2();
+                let v = z.norm_sqr().log2();
+                let residual = (v / u).log2();
+                (iter as f64) - residual
+            }
         }
     }
 
-    pub fn new_default(res_x: usize, max_iter: i32) -> Self {
-        Self::new(
-            res_x,
-            max_iter,
-            Self::DEFAULT_MIN_X,
-            Self::DEFAULT_MAX_X,
-            Self::DEFAULT_MIN_Y,
-            Self::DEFAULT_MAX_Y,
-        )
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        z * z + c
     }
 }
 
@@ -130,50 +128,6 @@ impl HasDynamicalCovers for Mandelbrot {
     }
 }
 
-impl ParameterPlane for Mandelbrot {
-    fn point_grid(&self) -> PointGrid {
-        self.point_grid
-    }
-    const NUM_TRACKED_POINTS: usize = 1;
-
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
-        if iter > self.max_iter {
-            return EscapeState::Bounded;
-        }
-
-        let r = z.norm_sqr();
-        if r > Self::ESCAPE_RADIUS {
-            EscapeState::Escaped(z)
-        } else {
-            EscapeState::NotYetEscaped
-        }
-    }
-
-    fn encode_escape_result(&self, iter: i32, state: EscapeState, _base_param: ComplexNum) -> f64 {
-        match state {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => -1.,
-            EscapeState::Escaped(z) => {
-                let u = Self::ESCAPE_RADIUS.log2();
-                let v = z.norm_sqr().log2();
-                let residual = (v / u).log2();
-                (iter as f64) - residual
-                // let u = Self::ESCAPE_RADIUS.log2();
-                // let v = r.log2();
-                // (iter as f64) + u + u - v / u
-            }
-        }
-    }
-
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
-        z * z + c
-    }
-
-    fn name(&self) -> String {
-        "QuadPoly".to_owned()
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub struct QuadRatPer2 {
     point_grid: PointGrid,
@@ -186,32 +140,29 @@ impl QuadRatPer2 {
     const DEFAULT_MAX_X: f64 = 3.2;
     const DEFAULT_MIN_Y: f64 = -2.8;
     const DEFAULT_MAX_Y: f64 = 2.8;
+}
 
-    pub fn new(
-        res_x: usize,
-        max_iter: i32,
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
-    ) -> Self {
-        let point_grid = PointGrid::new_infer(res_x, min_x, max_x, min_y, max_y);
+fractal_impl!(QuadRatPer2);
 
-        Self {
-            point_grid,
-            max_iter,
+impl ParameterPlane for QuadRatPer2 {
+    parameter_plane_impl!();
+
+    fn encode_escape_result(&self, iter: i32, state: EscapeState, _base_param: ComplexNum) -> f64 {
+        match state {
+            EscapeState::NotYetEscaped => 0.,
+            EscapeState::Bounded => -1.,
+            EscapeState::Escaped(z) => {
+                let u = Self::ESCAPE_RADIUS.log2();
+                let v = z.norm_sqr().log2();
+                let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
+                // (F - M) / (2L - M)
+                (iter as f64) - residual * 2.
+            }
         }
     }
 
-    pub fn new_default(res_x: usize, max_iter: i32) -> Self {
-        Self::new(
-            res_x,
-            max_iter,
-            Self::DEFAULT_MIN_X,
-            Self::DEFAULT_MAX_X,
-            Self::DEFAULT_MIN_Y,
-            Self::DEFAULT_MAX_Y,
-        )
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        (z * z + c) / (z * z - 1.)
     }
 }
 
@@ -304,48 +255,6 @@ impl HasDynamicalCovers for QuadRatPer2 {
     }
 }
 
-impl ParameterPlane for QuadRatPer2 {
-    const NUM_TRACKED_POINTS: usize = 1;
-
-    fn point_grid(&self) -> PointGrid {
-        self.point_grid
-    }
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
-        if iter > self.max_iter {
-            return EscapeState::Bounded;
-        }
-
-        let r = z.norm_sqr();
-        if r > Self::ESCAPE_RADIUS {
-            EscapeState::Escaped(z)
-        } else {
-            EscapeState::NotYetEscaped
-        }
-    }
-
-    fn encode_escape_result(&self, iter: i32, state: EscapeState, _base_param: ComplexNum) -> f64 {
-        match state {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => -1.,
-            EscapeState::Escaped(z) => {
-                let u = Self::ESCAPE_RADIUS.log2();
-                let v = z.norm_sqr().log2();
-                let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
-                // (F - M) / (2L - M)
-                (iter as f64) - residual * 2.
-            }
-        }
-    }
-
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
-        (z * z + c) / (z * z - 1.)
-    }
-
-    fn name(&self) -> String {
-        "QuadRat_Per_2".to_owned()
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub struct QuadRatPer3 {
     point_grid: PointGrid,
@@ -358,35 +267,34 @@ impl QuadRatPer3 {
     const DEFAULT_MAX_X: f64 = 3.2;
     const DEFAULT_MIN_Y: f64 = -2.5;
     const DEFAULT_MAX_Y: f64 = 2.5;
+}
+fractal_impl!(QuadRatPer3);
 
-    pub fn new(
-        res_x: usize,
-        max_iter: i32,
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
-    ) -> Self {
-        let point_grid = PointGrid::new_infer(res_x, min_x, max_x, min_y, max_y);
+impl ParameterPlane for QuadRatPer3 {
+    parameter_plane_impl!();
 
-        Self {
-            point_grid,
-            max_iter,
+    fn start_point(&self, _c: ComplexNum) -> ComplexNum {
+        0.0.into()
+    }
+
+    fn encode_escape_result(&self, iter: i32, state: EscapeState, base_param: ComplexNum) -> f64 {
+        match state {
+            EscapeState::NotYetEscaped => 0.,
+            EscapeState::Bounded => -1.,
+            EscapeState::Escaped(z) => {
+                let u = Self::ESCAPE_RADIUS.log2();
+                let v = z.norm_sqr().log2();
+                let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
+                let residual = ((u + q) / (v + q)).log2();
+                (iter as f64) + residual * 3.
+            }
         }
     }
 
-    pub fn new_default(res_x: usize, max_iter: i32) -> Self {
-        Self::new(
-            res_x,
-            max_iter,
-            Self::DEFAULT_MIN_X,
-            Self::DEFAULT_MAX_X,
-            Self::DEFAULT_MIN_Y,
-            Self::DEFAULT_MAX_Y,
-        )
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        (z * z + c * c * c - c - 1.) / (z * z - c * c)
     }
 }
-
 impl HasDynamicalCovers for QuadRatPer3 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
@@ -439,51 +347,6 @@ impl HasDynamicalCovers for QuadRatPer3 {
     }
 }
 
-impl ParameterPlane for QuadRatPer3 {
-    const NUM_TRACKED_POINTS: usize = 1;
-
-    fn point_grid(&self) -> PointGrid {
-        self.point_grid
-    }
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
-        if iter > self.max_iter {
-            return EscapeState::Bounded;
-        }
-
-        let r = z.norm_sqr();
-        if r > Self::ESCAPE_RADIUS {
-            EscapeState::Escaped(z)
-        } else {
-            EscapeState::NotYetEscaped
-        }
-    }
-
-    fn start_point(&self, _c: ComplexNum) -> ComplexNum {
-        0.0.into()
-    }
-
-    fn encode_escape_result(&self, iter: i32, state: EscapeState, base_param: ComplexNum) -> f64 {
-        match state {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => -1.,
-            EscapeState::Escaped(z) => {
-                let u = Self::ESCAPE_RADIUS.log2();
-                let v = z.norm_sqr().log2();
-                let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
-                let residual = ((u + q) / (v + q)).log2();
-                (iter as f64) + residual * 3.
-            }
-        }
-    }
-
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
-        (z * z + c * c * c - c - 1.) / (z * z - c * c)
-    }
-
-    fn name(&self) -> String {
-        "QuadRat_Per_3".to_owned()
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 pub struct QuadRatPer4 {
@@ -497,93 +360,11 @@ impl QuadRatPer4 {
     const DEFAULT_MAX_X: f64 = 0.2;
     const DEFAULT_MIN_Y: f64 = -0.5;
     const DEFAULT_MAX_Y: f64 = 0.5;
-
-    pub fn new(
-        res_x: usize,
-        max_iter: i32,
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
-    ) -> Self {
-        let point_grid = PointGrid::new_infer(res_x, min_x, max_x, min_y, max_y);
-
-        Self {
-            point_grid,
-            max_iter,
-        }
-    }
-
-    pub fn new_default(res_x: usize, max_iter: i32) -> Self {
-        Self::new(
-            res_x,
-            max_iter,
-            Self::DEFAULT_MIN_X,
-            Self::DEFAULT_MAX_X,
-            Self::DEFAULT_MIN_Y,
-            Self::DEFAULT_MAX_Y,
-        )
-    }
 }
-
-impl HasDynamicalCovers for QuadRatPer4 {
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
-        let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
-
-        match period {
-            // 1 => {
-            //     param_map = |c| (4. - c * (c + 2.)) * c / 8.;
-            //     bounds = self.point_grid.with_new_bounds(-5.0, 3.0, -3.0, 3.0);
-            // }
-            3 => {
-                param_map = |c| {
-                    // (18)^(2/3) / 3
-                    let alpha = ComplexNum::new(2.28942848510666, 0.);
-                    let g2 = alpha;
-                    let g3 = ComplexNum::new(-19. / 12., 0.);
-
-                    let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
-                    let x = (alpha * p + 1.) / 3.;
-                    let y = (dp - 1.5) / x;
-
-                    let xx = x + 1.;
-                    let yy = y - 3. * x - 3.;
-
-                    let x0 = yy/x;
-                    let s1 = x0 * xx / x;
-
-                    x / xx
-                };
-                bounds = self.point_grid.with_new_bounds(-3.6, 3.6, -2.4, 2.4);
-            }
-            _ => {
-                param_map = |c| c;
-                bounds = self.point_grid;
-            }
-        };
-        CoveringMap::new(self, param_map, bounds)
-    }
-}
+fractal_impl!(QuadRatPer4);
 
 impl ParameterPlane for QuadRatPer4 {
-    const NUM_TRACKED_POINTS: usize = 1;
-
-    fn point_grid(&self) -> PointGrid {
-        self.point_grid
-    }
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
-        if iter > self.max_iter {
-            return EscapeState::Bounded;
-        }
-
-        let r = z.norm_sqr();
-        if r > Self::ESCAPE_RADIUS {
-            EscapeState::Escaped(z)
-        } else {
-            EscapeState::NotYetEscaped
-        }
-    }
+    parameter_plane_impl!();
 
     fn encode_escape_result(&self, iter: i32, state: EscapeState, c: ComplexNum) -> f64 {
         match state {
@@ -623,9 +404,45 @@ impl ParameterPlane for QuadRatPer4 {
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (c * z - c - c - z + 1.) * (z - c) / (z * z * (c - 1.))
     }
+}
 
-    fn name(&self) -> String {
-        "QuadRat_Per_4".to_owned()
+impl HasDynamicalCovers for QuadRatPer4 {
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
+        let param_map: fn(ComplexNum) -> ComplexNum;
+        let bounds: PointGrid;
+
+        match period {
+            // 1 => {
+            //     param_map = |c| (4. - c * (c + 2.)) * c / 8.;
+            //     bounds = self.point_grid.with_new_bounds(-5.0, 3.0, -3.0, 3.0);
+            // }
+            3 => {
+                param_map = |c| {
+                    // (18)^(2/3) / 3
+                    let alpha = ComplexNum::new(2.28942848510666, 0.);
+                    let g2 = alpha;
+                    let g3 = ComplexNum::new(-19. / 12., 0.);
+
+                    let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
+                    let x = (alpha * p + 1.) / 3.;
+                    let y = (dp - 1.5) / x;
+
+                    let xx = x + 1.;
+                    let yy = y - 3. * x - 3.;
+
+                    let x0 = yy / x;
+                    let _s1 = x0 * xx / x;
+
+                    x / xx
+                };
+                bounds = self.point_grid.with_new_bounds(-3.6, 3.6, -2.4, 2.4);
+            }
+            _ => {
+                param_map = |c| c;
+                bounds = self.point_grid;
+            }
+        };
+        CoveringMap::new(self, param_map, bounds)
     }
 }
 
@@ -642,53 +459,11 @@ impl BurningShip {
     // TODO: why are these flipped?
     const DEFAULT_MIN_Y: f64 = -1.9;
     const DEFAULT_MAX_Y: f64 = 0.6;
-
-    pub fn new(
-        res_x: usize,
-        max_iter: i32,
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
-    ) -> Self {
-        let point_grid = PointGrid::new_infer(res_x, min_x, max_x, min_y, max_y);
-
-        Self {
-            point_grid,
-            max_iter,
-        }
-    }
-
-    pub fn new_default(res_x: usize, max_iter: i32) -> Self {
-        Self::new(
-            res_x,
-            max_iter,
-            Self::DEFAULT_MIN_X,
-            Self::DEFAULT_MAX_X,
-            Self::DEFAULT_MIN_Y,
-            Self::DEFAULT_MAX_Y,
-        )
-    }
 }
+fractal_impl!(BurningShip);
 
 impl ParameterPlane for BurningShip {
-    fn point_grid(&self) -> PointGrid {
-        self.point_grid
-    }
-    const NUM_TRACKED_POINTS: usize = 1;
-
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
-        if iter > self.max_iter {
-            return EscapeState::Bounded;
-        }
-
-        let r = z.norm_sqr();
-        if r > Self::ESCAPE_RADIUS {
-            EscapeState::Escaped(z)
-        } else {
-            EscapeState::NotYetEscaped
-        }
-    }
+    parameter_plane_impl!();
 
     fn encode_escape_result(&self, iter: i32, state: EscapeState, _base_param: ComplexNum) -> f64 {
         match state {
@@ -710,10 +485,6 @@ impl ParameterPlane for BurningShip {
 
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
-    }
-
-    fn name(&self) -> String {
-        "BurningShip".to_owned()
     }
 }
 
@@ -766,7 +537,6 @@ impl ParameterPlane for Sailboat {
     fn point_grid(&self) -> PointGrid {
         self.point_grid
     }
-    const NUM_TRACKED_POINTS: usize = 1;
 
     fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
         if iter > self.max_iter {
@@ -804,6 +574,7 @@ impl ParameterPlane for Sailboat {
     }
 
     fn name(&self) -> String {
-        "Sailboat".to_owned()
+        let shift = self.shift;
+        format!("Sailboat({shift})")
     }
 }
