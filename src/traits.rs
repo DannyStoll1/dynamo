@@ -1,20 +1,18 @@
 use crate::covering_maps::CoveringMap;
-use crate::julia::JuliaSet;
 use crate::palette::ColorPalette;
 use crate::point_grid::PointGrid;
 use crate::primitive_types::{ComplexNum, EscapeState, Period};
-use eframe::egui::{Color32, ColorImage, Ui};
-use image::ImageBuffer;
+use eframe::egui::{Color32, ColorImage};
 use ndarray::Array2;
-use show_image::create_window;
+use rayon::iter::{ParallelBridge, ParallelIterator};
 
 pub trait FractalImage {
     fn point_grid(&self) -> PointGrid;
     fn render(&self, palette: ColorPalette) -> ColorImage;
-    fn draw(&self, palette: ColorPalette, filename: String) {
-        let image = self.render(palette);
-        // image.save(filename).unwrap();
-    }
+    // fn save(&self, palette: ColorPalette, filename: String) {
+    //     let image = self.render(palette);
+    //     image.save(filename).unwrap();
+    // }
     // fn show(&self, ui: &mut Ui, palette: ColorPalette) -> Result<(), Box<dyn std::error::Error>> {
     //     let image = self.render(palette);
     //     image.show(ui);
@@ -26,14 +24,41 @@ pub trait FractalImage {
     // }
 }
 
-pub trait ParameterPlane {
+pub trait ParameterPlane: Sync {
     fn point_grid(&self) -> PointGrid;
 
-    fn point_grid_julia(&self) -> PointGrid {
-        self.point_grid().with_new_bounds(-2.5, 2.5, -2.5, 2.5)
-    }
+    fn point_grid_mut(&mut self) -> &mut PointGrid;
 
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState;
+    fn point_grid_child(&self) -> PointGrid;
+
+    fn point_grid_child_mut(&mut self) -> &mut PointGrid;
+
+    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState;
+
+    fn check_periodicity(
+        &self,
+        iter: Period,
+        z0: ComplexNum,
+        z1: ComplexNum,
+        base_param: ComplexNum,
+    ) -> EscapeState;
+
+    fn compute_period(
+        &self,
+        z0: ComplexNum,
+        c: ComplexNum,
+        tolerance: f64,
+        patience: usize,
+    ) -> Option<Period> {
+        let mut z = z0.clone();
+        for i in 1..=patience {
+            z = self.map(z, c);
+            if (z - z0).norm_sqr() <= tolerance {
+                return Some(i as Period);
+            }
+        }
+        None
+    }
 
     fn start_point(&self, c: ComplexNum) -> ComplexNum {
         c
@@ -45,44 +70,81 @@ pub trait ParameterPlane {
 
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum;
 
-    fn encode_escape_result(&self, iter: i32, state: EscapeState, base_param: ComplexNum) -> f64;
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> f64;
 
     fn compute_escape_times(&self) -> Array2<f64> {
         let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
-        for ((x, y), point) in self.point_grid().iter() {
-            let c = self.param_map(point);
-            let mut z = self.start_point(c);
-            let mut iter = 0;
-            while let EscapeState::NotYetEscaped = self.stop_condition(iter, z) {
-                z = self.map(z, c);
-                iter += 1;
-            }
+        iter_counts
+            .indexed_iter_mut()
+            .par_bridge()
+            .for_each(|((x, y), count)| {
+                let point = self.point_grid().map_pixel(x, y);
+                let c = self.param_map(point);
+                let mut z0 = self.start_point(c);
+                let mut z1 = z0.clone();
 
-            let result = self.stop_condition(iter, z);
+                let mut iter = 0;
+                while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1, c) {
+                    z0 = self.map(z0, c);
+                    z1 = self.map(z1, c);
 
-            let iter_count = self.encode_escape_result(iter, result, c);
-            iter_counts[(x, y)] = iter_count;
-        }
+                    // Check if we have escaped halfway through
+                    let mid_result = self.stop_condition(iter, z1);
+                    if let EscapeState::Escaped { iters, final_value } = mid_result {
+                        let result = EscapeState::Escaped {
+                            iters: 2 * iters + 1,
+                            final_value,
+                        };
+                        *count = self.encode_escape_result(result, c);
+                        return;
+                    }
+
+                    z1 = self.map(z1, c);
+                    iter += 1;
+                }
+
+                let result = self.check_periodicity(iter, z0, z1, c);
+
+                *count = self.encode_escape_result(result, c);
+            });
         iter_counts
     }
 
-    fn compute_escape_times_julia(&self, param: ComplexNum) -> Array2<f64> {
+    fn compute_escape_times_child(&self, param: ComplexNum) -> Array2<f64> {
         let mut iter_counts =
-            Array2::zeros((self.point_grid_julia().res_x, self.point_grid_julia().res_y));
+            Array2::zeros((self.point_grid_child().res_x, self.point_grid_child().res_y));
         let c = self.param_map(param);
-        for ((x, y), point) in self.point_grid_julia().iter() {
-            let mut z = point;
-            let mut iter = 0;
-            while let EscapeState::NotYetEscaped = self.stop_condition(iter, z) {
-                z = self.map(z, c);
-                iter += 1;
-            }
+        iter_counts
+            .indexed_iter_mut()
+            .par_bridge()
+            .for_each(|((x, y), count)| {
+                let mut z0 = self.point_grid().map_pixel(x, y);
+                let mut z1 = z0.clone();
 
-            let result = self.stop_condition(iter, z);
+                let mut iter = 0;
+                while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1, c) {
+                    z0 = self.map(z0, c);
+                    z1 = self.map(z1, c);
 
-            let iter_count = self.encode_escape_result(iter, result, c);
-            iter_counts[(x, y)] = iter_count;
-        }
+                    // Check if we have escaped halfway through
+                    let mid_result = self.stop_condition(iter, z1);
+                    if let EscapeState::Escaped { iters, final_value } = mid_result {
+                        let result = EscapeState::Escaped {
+                            iters: 2 * iters + 1,
+                            final_value,
+                        };
+                        *count = self.encode_escape_result(result, c);
+                        return;
+                    }
+
+                    z1 = self.map(z1, c);
+                    iter += 1;
+                }
+
+                let result = self.check_periodicity(iter, z0, z1, c);
+
+                *count = self.encode_escape_result(result, c);
+            });
         iter_counts
     }
 
@@ -94,11 +156,11 @@ pub trait ParameterPlane {
         }
     }
 
-    fn compute_julia(&self, param: ComplexNum) -> IterPlane {
-        let iter_counts = self.compute_escape_times_julia(param);
+    fn compute_child(&self, param: ComplexNum) -> IterPlane {
+        let iter_counts = self.compute_escape_times_child(param);
         IterPlane {
             iter_counts,
-            point_grid: self.point_grid_julia(),
+            point_grid: self.point_grid_child(),
         }
     }
 
@@ -133,7 +195,9 @@ pub trait ParameterPlane {
 pub trait DynamicalPlane {
     fn point_grid(&self) -> PointGrid;
 
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState;
+    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState;
+
+    fn check_periodicity(&self, iter: Period, z0: ComplexNum, z1: ComplexNum) -> EscapeState;
 
     fn param_map(&self, z: ComplexNum) -> ComplexNum {
         z
@@ -141,23 +205,37 @@ pub trait DynamicalPlane {
 
     fn map(&self, z: ComplexNum) -> ComplexNum;
 
-    fn encode_escape_result(&self, iter: i32, state: EscapeState) -> f64;
+    fn encode_escape_result(&self, state: EscapeState) -> f64;
 
     fn compute_escape_times(&self) -> Array2<f64> {
         let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
-        for ((x, y), point) in self.point_grid().iter() {
-            let mut z = self.param_map(point);
+        iter_counts.indexed_iter_mut().for_each(|((x, y), count)| {
+            let mut z0 = self.point_grid().map_pixel(x, y);
+            let mut z1 = z0.clone();
             let mut iter = 0;
-            while let EscapeState::NotYetEscaped = self.stop_condition(iter, z) {
-                z = self.map(z);
+            while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1) {
+                z0 = self.map(z0);
+                z1 = self.map(z1);
+
+                // Check if we have escaped halfway through
+                let mid_result = self.stop_condition(iter, z1);
+                if let EscapeState::Escaped { iters, final_value } = mid_result {
+                    let result = EscapeState::Escaped {
+                        iters: 2 * iters + 1,
+                        final_value,
+                    };
+                    *count = self.encode_escape_result(result);
+                    return;
+                }
+
+                z1 = self.map(z1);
                 iter += 1;
             }
 
-            let result = self.stop_condition(iter, z);
+            let result = self.check_periodicity(iter, z0, z1);
 
-            let iter_count = self.encode_escape_result(iter, result);
-            iter_counts[(x, y)] = iter_count;
-        }
+            *count = self.encode_escape_result(result);
+        });
         iter_counts
     }
 
@@ -182,25 +260,13 @@ impl FractalImage for IterPlane {
     fn point_grid(&self) -> PointGrid {
         self.point_grid
     }
-    // fn render(&self, palette: ColorPalette) -> ImageBuffer<image::Rgb<u8>, Vec<u8>> {
-    //     let mut img = ImageBuffer::new(
-    //         self.point_grid().res_x as u32,
-    //         self.point_grid().res_y as u32,
-    //     );
-    //
-    //     for (x, y, pixel) in img.enumerate_pixels_mut() {
-    //         let iter_count = self.iter_counts[(x as usize, y as usize)];
-    //         *pixel = palette.color_map(iter_count);
-    //     }
-    //     img
-    // }
     fn render(&self, palette: ColorPalette) -> ColorImage {
         let width = self.point_grid().res_x;
         let mut img = ColorImage::new([width, self.point_grid().res_y], Color32::default());
 
-        for ((x, y), value) in self.iter_counts.indexed_iter() {
+        self.iter_counts.indexed_iter().for_each(|((x, y), value)| {
             img.pixels[x + y * width] = palette.map_color32(*value);
-        }
+        });
         img
     }
 }

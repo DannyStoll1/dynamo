@@ -9,11 +9,11 @@ pub mod gui;
 pub mod macros;
 pub mod julia;
 
-use palette::ColorPalette;
-
-use primitive_types::*;
-use profiles::*;
-use traits::*;
+// use palette::ColorPalette;
+//
+// use primitive_types::*;
+// use profiles::*;
+// use traits::*;
 
 // #[show_image::main]
 fn main() -> Result<(), Box<dyn std::error::Error>> {

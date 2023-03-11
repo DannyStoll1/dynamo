@@ -35,3 +35,10 @@ pub fn weierstrass_p(
     }
     (p, dp)
 }
+
+pub fn slog(x: f64) -> f64 {
+    if x.is_infinite() {1000.}
+    else if x <= 0. {slog(x.exp()) - 1.}
+    else if x > 1. {1. + slog(x.ln())}
+    else {x - 1.}
+}

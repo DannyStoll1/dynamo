@@ -1,5 +1,5 @@
 use crate::point_grid::PointGrid;
-use crate::primitive_types::{ComplexNum, EscapeState};
+use crate::primitive_types::*;
 use crate::traits::ParameterPlane;
 
 #[derive(Clone, Copy)]
@@ -37,8 +37,24 @@ where
         self.point_grid
     }
 
-    fn stop_condition(&self, iter: i32, z: ComplexNum) -> EscapeState {
+    fn point_grid_mut(&mut self) -> &mut PointGrid {
+        &mut self.point_grid
+    }
+
+    fn point_grid_child(&self) -> PointGrid {
+        self.base_curve.point_grid_child()
+    }
+
+    fn point_grid_child_mut(&mut self) -> &mut PointGrid {
+        self.base_curve.point_grid_child_mut()
+    }
+
+    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState {
         self.base_curve.stop_condition(iter, z)
+    }
+
+    fn check_periodicity(&self, iter: Period, z0: ComplexNum, z1: ComplexNum, base_param: ComplexNum) -> EscapeState {
+        self.base_curve.check_periodicity(iter, z0, z1, base_param)
     }
 
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
@@ -55,9 +71,9 @@ where
         self.base_curve.map(z, c)
     }
 
-    fn encode_escape_result(&self, iter: i32, state: EscapeState, base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> f64 {
         self.base_curve
-            .encode_escape_result(iter, state, base_param)
+            .encode_escape_result(state, base_param)
     }
 
     fn name(&self) -> String {
