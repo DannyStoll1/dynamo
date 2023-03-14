@@ -1,4 +1,5 @@
 use crate::macros::*;
+use crate::primitive_types::*;
 use eframe::egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
@@ -20,12 +21,12 @@ impl Hsv {
         }
     }
 }
-impl Into<Color32> for Hsv {
-    fn into(self) -> Color32 {
-        let c = self.luminosity * self.saturation;
-        let mode = self.hue * 6.;
+impl From<Hsv> for Color32 {
+    fn from(val: Hsv) -> Self {
+        let c = val.luminosity * val.saturation;
+        let mode = val.hue * 6.;
         let x = c * (1. - (mode % 2. - 1.).abs());
-        let m = self.luminosity - c;
+        let m = val.luminosity - c;
 
         let (r_, g_, b_) = match (mode as i32) % 6 {
             0 => (c, x, 0.),
@@ -155,11 +156,11 @@ impl ColorPalette {
         }
     }
 
-    pub fn map_rgb(&self, value: f64) -> Rgb<u8> {
+    pub fn map_rgb(&self, value: IterCount) -> Rgb<u8> {
         if value <= 0.0 {
             Rgb([0, 0, 0])
         } else {
-            let potential = (value + 1.0_f64).log2();
+            let potential = (value + 1.0 as IterCount).log2();
             let r = Self::to_value(potential, self.period_r, self.amplitude_r, self.midline_r);
             let g = Self::to_value(potential, self.period_g, self.amplitude_g, self.midline_g);
             let b = Self::to_value(potential, self.period_b, self.amplitude_b, self.midline_b);
@@ -167,13 +168,13 @@ impl ColorPalette {
         }
     }
 
-    pub fn map_color32(&self, value: f64) -> Color32 {
+    pub fn map_color32(&self, value: IterCount) -> Color32 {
         if value < 0.0 {
             self.period_coloring.map_color32(-value as f32)
         } else if value == 0.0 {
             Color32::from_rgb(0, 0, 0)
         } else {
-            let potential = (value + 1.0_f64).log2();
+            let potential = (value + 1.0 as IterCount).log2();
             let r = Self::to_value(potential, self.period_r, self.amplitude_r, self.midline_r);
             let g = Self::to_value(potential, self.period_g, self.amplitude_g, self.midline_g);
             let b = Self::to_value(potential, self.period_b, self.amplitude_b, self.midline_b);
@@ -181,8 +182,8 @@ impl ColorPalette {
         }
     }
 
-    pub fn to_value(potential: f64, period: f64, amplitude: f64, midline: f64) -> u8 {
-        let theta = 2.0 * PI * (potential / period);
+    pub fn to_value(potential: IterCount, period: f64, amplitude: f64, midline: f64) -> u8 {
+        let theta = 2.0 * PI * (potential as f64 / period);
         let value = amplitude * theta.cos() + midline;
         (256.0 * value) as u8
     }
@@ -197,6 +198,11 @@ pub struct DiscretePalette {
 }
 
 impl DiscretePalette {
+    const DEFAULT_BASE_HUE: f32 = 0.87;
+    const DEFAULT_SATURATION: f32 = 0.7;
+    const DEFAULT_LUMINOSITY: f32 = 0.5;
+    const DEFAULT_NUM_COLORS: f32 = 8.;
+
     pub fn map_hsv(&self, value: f32) -> Hsv {
         let hue = (value / self.num_colors + self.base_hue) % 1.;
 
@@ -214,10 +220,10 @@ impl DiscretePalette {
 impl Default for DiscretePalette {
     fn default() -> Self {
         Self {
-            num_colors: 8.,
-            base_hue: 0.,
-            saturation: 0.6,
-            luminosity: 0.6,
+            num_colors: Self::DEFAULT_NUM_COLORS,
+            base_hue: Self::DEFAULT_BASE_HUE,
+            saturation: Self::DEFAULT_SATURATION,
+            luminosity: Self::DEFAULT_LUMINOSITY,
         }
     }
 }

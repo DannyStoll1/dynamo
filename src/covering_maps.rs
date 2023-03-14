@@ -53,6 +53,14 @@ where
         self.base_curve.stop_condition(iter, z)
     }
 
+    fn max_iter(&self) -> Period {
+        self.base_curve.max_iter()
+    }
+
+    fn max_iter_mut(&mut self) -> &mut Period {
+        self.base_curve.max_iter_mut()
+    }
+
     fn check_periodicity(&self, iter: Period, z0: ComplexNum, z1: ComplexNum, base_param: ComplexNum) -> EscapeState {
         self.base_curve.check_periodicity(iter, z0, z1, base_param)
     }
@@ -71,7 +79,7 @@ where
         self.base_curve.map(z, c)
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount {
         self.base_curve
             .encode_escape_result(state, base_param)
     }

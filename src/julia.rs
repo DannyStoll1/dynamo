@@ -7,7 +7,7 @@ pub struct JuliaSet {
     map: Box<dyn Fn(ComplexNum) -> ComplexNum>,
     stop_condition: Box<dyn Fn(Period, ComplexNum) -> EscapeState>,
     check_periodicity: Box<dyn Fn(Period, ComplexNum, ComplexNum) -> EscapeState>,
-    escape_encoding: Box<dyn Fn(EscapeState) -> f64>,
+    escape_encoding: Box<dyn Fn(EscapeState) -> IterCount>,
 }
 
 impl JuliaSet {
@@ -16,7 +16,7 @@ impl JuliaSet {
         map: Box<dyn Fn(ComplexNum) -> ComplexNum>,
         stop_condition: Box<dyn Fn(Period, ComplexNum) -> EscapeState>,
         check_periodicity: Box<dyn Fn(Period, ComplexNum, ComplexNum) -> EscapeState>,
-        escape_encoding: Box<dyn Fn(EscapeState) -> f64>,
+        escape_encoding: Box<dyn Fn(EscapeState) -> IterCount>,
     ) -> Self {
         Self {
             point_grid,
@@ -37,7 +37,7 @@ impl DynamicalPlane for JuliaSet {
         self.point_grid
     }
 
-    fn encode_escape_result(&self, state: EscapeState) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState) -> IterCount {
         (self.escape_encoding)(state)
     }
 

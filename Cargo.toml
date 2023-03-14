@@ -13,3 +13,6 @@ eframe = ">=0.21.3"
 egui_extras = { version = ">=0.21.0", features = ["image"] }
 show-image = { version = ">=0.13.1", features = ["macros", "image", "save"] }
 num = "0.4.0"
+rand = "0.8.5"
+rand_distr = "0.4.3"
+rayon = "1.7.0"

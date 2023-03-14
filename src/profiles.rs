@@ -1,7 +1,7 @@
 use crate::covering_maps::CoveringMap;
 use crate::math_utils::*;
-use crate::point_grid::PointGrid;
-use crate::primitive_types::{ComplexNum, EscapeState, Period};
+use crate::point_grid::*;
+use crate::primitive_types::*;
 use crate::traits::{HasDynamicalCovers, ParameterPlane};
 
 use crate::macros::*;
@@ -16,11 +16,10 @@ pub struct Mandelbrot {
 }
 
 impl Mandelbrot {
-    const ESCAPE_RADIUS: f64 = 1e12_f64;
-    const DEFAULT_MIN_X: f64 = -2.2;
-    const DEFAULT_MAX_X: f64 = 0.65;
-    const DEFAULT_MIN_Y: f64 = -1.4;
-    const DEFAULT_MAX_Y: f64 = 1.4;
+    const DEFAULT_MIN_X: Float = -2.2;
+    const DEFAULT_MAX_X: Float = 0.65;
+    const DEFAULT_MIN_Y: Float = -1.4;
+    const DEFAULT_MAX_Y: Float = 1.4;
     fractal_impl!();
 }
 
@@ -28,19 +27,19 @@ impl ParameterPlane for Mandelbrot {
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as f64),
+            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
                 iters: iter,
                 final_value: z,
             } => {
-                let u = Self::ESCAPE_RADIUS.log2();
+                let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
-                (iter as f64) - residual
+                (iter as IterCount) - (residual as IterCount)
             }
         }
     }
@@ -53,41 +52,61 @@ impl ParameterPlane for Mandelbrot {
 impl HasDynamicalCovers for Mandelbrot {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let bounds: Bounds;
 
         match period {
             1 => {
                 param_map = |c| 0.25 - c * c;
-                bounds = self.point_grid.with_new_bounds(-1.8, 1.8, -1.0, 1.0);
+                bounds = Bounds {
+                    min_x: -1.8,
+                    max_x: 1.8,
+                    min_y: -1.0,
+                    max_y: 1.0,
+                };
             }
             3 => {
                 param_map = |c| -1.75 * (1. + 7. * c * c);
-                bounds = self.point_grid.with_new_bounds(-0.3, 0.3, -0.5, 0.5);
+                bounds = Bounds {
+                    min_x: -0.3,
+                    max_x: 0.3,
+                    min_y: -0.5,
+                    max_y: 0.5,
+                };
             }
             4 => {
                 param_map = |c| {
                     let u = c * c;
-                    // -c - (0.75 * u + 0.25) / u
                     -0.25 * u - 0.75 - 1. / c
                 };
-                bounds = self.point_grid.with_new_bounds(-2.9, 2.1, -3.75, 3.75);
+                bounds = Bounds {
+                    min_x: -2.9,
+                    max_x: 2.1,
+                    min_y: -3.1,
+                    max_y: 3.1,
+                };
             }
             _ => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                bounds = self.point_grid.bounds;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        let grid = self.point_grid.with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let bounds: Bounds;
 
         match period {
             1 => {
                 param_map = |c| 0.25 - c * c;
-                bounds = self.point_grid.with_new_bounds(-1.8, 1.8, -1.0, 1.0);
+                bounds = Bounds {
+                    min_x: -1.8,
+                    max_x: 1.8,
+                    min_y: -1.0,
+                    max_y: 1.0,
+                };
             }
             3 => {
                 param_map = |c| {
@@ -96,18 +115,24 @@ impl HasDynamicalCovers for Mandelbrot {
                     let u = v + 1. / (c2 - c);
                     -0.25 * u / (c2 - c)
                 };
-                bounds = self.point_grid.with_new_bounds(-2.5, 3.5, -3., 3.);
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 3.5,
+                    min_y: -3.,
+                    max_y: 3.,
+                };
             }
             _ => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                bounds = self.point_grid.bounds;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        let grid = self.point_grid.with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let bounds: Bounds;
 
         match (preperiod, period) {
             (2, 1) => {
@@ -115,21 +140,32 @@ impl HasDynamicalCovers for Mandelbrot {
                     let c2 = c * c;
                     -2. * (c2 + 1.) / ((c2 - 1.) * (c2 - 1.))
                 };
-                bounds = self.point_grid.with_new_bounds(-3.5, 3.5, -3.0, 3.0);
+                bounds = Bounds {
+                    min_x: -3.5,
+                    max_x: 3.5,
+                    min_y: -3.0,
+                    max_y: 3.0,
+                };
             }
             (2, 2) => {
                 param_map = |c| {
                     let c2 = c * c;
                     -(c2 * (c2 + c + c + 2.) - c - c + 1.) / (4. * c2)
                 };
-                bounds = self.point_grid.with_new_bounds(-4., 2.4, -2.5, 2.5);
+                bounds = Bounds {
+                    min_x: -4.,
+                    max_x: 2.4,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
             }
             (_, _) => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                bounds = self.point_grid.bounds;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        let grid = self.point_grid.with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 }
 
@@ -141,11 +177,10 @@ pub struct QuadRatPer2 {
 }
 
 impl QuadRatPer2 {
-    const ESCAPE_RADIUS: f64 = 1.0e+13_f64;
-    const DEFAULT_MIN_X: f64 = -2.8;
-    const DEFAULT_MAX_X: f64 = 3.2;
-    const DEFAULT_MIN_Y: f64 = -2.8;
-    const DEFAULT_MAX_Y: f64 = 2.8;
+    const DEFAULT_MIN_X: Float = -2.8;
+    const DEFAULT_MAX_X: Float = 3.2;
+    const DEFAULT_MIN_Y: Float = -2.8;
+    const DEFAULT_MAX_Y: Float = 2.8;
     fractal_impl!();
 }
 
@@ -153,20 +188,20 @@ impl ParameterPlane for QuadRatPer2 {
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as f64),
+            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
                 iters: iter,
                 final_value: z,
             } => {
-                let u = Self::ESCAPE_RADIUS.log2();
+                let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
                 // (F - M) / (2L - M)
-                (iter as f64) - residual * 2.
+                (iter as IterCount) - (residual as IterCount) * 2.
             }
         }
     }
@@ -179,19 +214,29 @@ impl ParameterPlane for QuadRatPer2 {
 impl HasDynamicalCovers for QuadRatPer2 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let bounds: Bounds;
 
         match period {
             1 => {
                 param_map = |c| (4. - c * (c + 2.)) * c / 8.;
-                bounds = self.point_grid.with_new_bounds(-5.0, 3.0, -3.0, 3.0);
+                bounds = Bounds {
+                    min_x: -5.0,
+                    max_x: 3.0,
+                    min_y: -3.0,
+                    max_y: 3.0,
+                };
             }
             4 => {
                 param_map = |c| {
                     let u = c * c;
                     u * c - 2. * u + 4. * c - 1.
                 };
-                bounds = self.point_grid.with_new_bounds(-1., 1.4, -2.2, 2.2);
+                bounds = Bounds {
+                    min_x: -1.,
+                    max_x: 1.4,
+                    min_y: -2.2,
+                    max_y: 2.2,
+                };
             }
             5 => {
                 param_map = |c| {
@@ -223,19 +268,25 @@ impl HasDynamicalCovers for QuadRatPer2 {
 
                     -numer / denom
                 };
-                bounds = self.point_grid.with_new_bounds(-8., 5.5, -1.5, 8.);
+                bounds = Bounds {
+                    min_x: -8.,
+                    max_x: 5.5,
+                    min_y: -8.,
+                    max_y: 1.5,
+                };
             }
             _ => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                bounds = self.point_grid.bounds;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        let grid = self.point_grid.with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let bounds: Bounds;
 
         match (preperiod, period) {
             (2, 1) => {
@@ -246,7 +297,12 @@ impl HasDynamicalCovers for QuadRatPer2 {
                     let numer = c2 * (131. * c2 - 102. * c - 106.) - 8. * c - 4.;
                     25. * c2 * numer / (denom * denom * denom)
                 };
-                bounds = self.point_grid.with_new_bounds(-3.4, 3.4, -5.1, 5.1);
+                bounds = Bounds {
+                    min_x: -3.4,
+                    max_x: 3.4,
+                    min_y: -5.1,
+                    max_y: 5.1,
+                };
             }
             (2, 2) => {
                 param_map = |c| {
@@ -254,14 +310,20 @@ impl HasDynamicalCovers for QuadRatPer2 {
                     let c2 = c * c;
                     0.5 - (c2 + 0.5) / (c2 * c2)
                 };
-                bounds = self.point_grid.with_new_bounds(-4., 4., -4., 4.);
+                bounds = Bounds {
+                    min_x: -4.,
+                    max_x: 4.,
+                    min_y: -4.,
+                    max_y: 4.,
+                };
             }
             (_, _) => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                bounds = self.point_grid.bounds;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        let grid = self.point_grid.with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 }
 
@@ -273,11 +335,10 @@ pub struct QuadRatPer3 {
 }
 
 impl QuadRatPer3 {
-    const ESCAPE_RADIUS: f64 = 1.0e+13_f64;
-    const DEFAULT_MIN_X: f64 = -2.5;
-    const DEFAULT_MAX_X: f64 = 3.2;
-    const DEFAULT_MIN_Y: f64 = -2.5;
-    const DEFAULT_MAX_Y: f64 = 2.5;
+    const DEFAULT_MIN_X: Float = -2.5;
+    const DEFAULT_MAX_X: Float = 3.2;
+    const DEFAULT_MIN_Y: Float = -2.5;
+    const DEFAULT_MAX_Y: Float = 2.5;
     fractal_impl!();
 }
 
@@ -289,20 +350,20 @@ impl ParameterPlane for QuadRatPer3 {
         0.0.into()
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period, .. } => -(period as f64),
+            EscapeState::Periodic { period, .. } => -(period as IterCount),
             EscapeState::Escaped {
                 iters,
                 final_value: z,
             } => {
-                let u = Self::ESCAPE_RADIUS.log2();
+                let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
                 let residual = ((u + q) / (v + q)).log2();
-                (iters as f64) + residual * 3.
+                (iters as IterCount) + (residual as IterCount) * 3.
             }
         }
     }
@@ -314,7 +375,7 @@ impl ParameterPlane for QuadRatPer3 {
 impl HasDynamicalCovers for QuadRatPer3 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let bounds: Bounds;
 
         match period {
             1 => {
@@ -325,11 +386,16 @@ impl HasDynamicalCovers for QuadRatPer3 {
                     let c3 = c2 * c;
                     (c3 - c + 1.) / (c3 - c2 - c2 + c + c + c - 1.)
                 };
-                bounds = self.point_grid.with_new_bounds(-5.75, 5.08, -5.32, 5.32);
+                bounds = Bounds {
+                    min_x: -5.75,
+                    max_x: 5.08,
+                    min_y: -5.32,
+                    max_y: 5.32,
+                };
             }
             4 => {
                 param_map = |c| {
-                    let t = 13.0_f64.sqrt();
+                    let t = (13.0 as Float).sqrt();
                     let g2 = ComplexNum::new(-8.0 / 3.0, 0.);
                     let g3 = ComplexNum::new(1.0 / 27.0, 0.);
 
@@ -352,14 +418,20 @@ impl HasDynamicalCovers for QuadRatPer3 {
                     s0 * s1 + s1 + (t + 4.)
                     // let l = s0^2*s1 + s0*s1 + (2*t)*s0 + (t - 1);
                 };
-                bounds = self.point_grid.with_new_bounds(-3.9, 3.9, -2.6, 2.6);
+                bounds = Bounds {
+                    min_x: -3.9,
+                    max_x: 3.9,
+                    min_y: -2.6,
+                    max_y: 2.6,
+                };
             }
             _ => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                bounds = self.point_grid.bounds;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        let grid = self.point_grid.with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 }
 
@@ -371,11 +443,10 @@ pub struct QuadRatPer4 {
 }
 
 impl QuadRatPer4 {
-    const ESCAPE_RADIUS: f64 = 1.0e+22_f64;
-    const DEFAULT_MIN_X: f64 = -1.;
-    const DEFAULT_MAX_X: f64 = 0.2;
-    const DEFAULT_MIN_Y: f64 = -0.5;
-    const DEFAULT_MAX_Y: f64 = 0.5;
+    const DEFAULT_MIN_X: Float = -1.;
+    const DEFAULT_MAX_X: Float = 0.2;
+    const DEFAULT_MIN_Y: Float = -0.5;
+    const DEFAULT_MAX_Y: Float = 0.5;
     fractal_impl!();
 }
 
@@ -383,16 +454,16 @@ impl ParameterPlane for QuadRatPer4 {
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, c: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, c: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as f64),
+            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
                 iters,
                 final_value: z,
             } => {
-                let u = Self::ESCAPE_RADIUS.log2();
+                let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let c2 = c * c;
                 let _2c = c + c;
@@ -407,7 +478,7 @@ impl ParameterPlane for QuadRatPer4 {
                 let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
                 let q = (q_numer / q_denom).norm().log2();
                 let residual = ((u + q) / (v + q)).log2();
-                (iters as f64) + residual * 4.
+                (iters as IterCount) + (residual as IterCount) * 4.
             }
         }
     }
@@ -430,13 +501,10 @@ impl ParameterPlane for QuadRatPer4 {
 impl HasDynamicalCovers for QuadRatPer4 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
         let param_map: fn(ComplexNum) -> ComplexNum;
-        let bounds: PointGrid;
+        let grid: PointGrid;
+        let bounds: Bounds;
 
         match period {
-            // 1 => {
-            //     param_map = |c| (4. - c * (c + 2.)) * c / 8.;
-            //     bounds = self.point_grid.with_new_bounds(-5.0, 3.0, -3.0, 3.0);
-            // }
             3 => {
                 param_map = |c| {
                     // (18)^(2/3) / 3
@@ -456,14 +524,20 @@ impl HasDynamicalCovers for QuadRatPer4 {
 
                     x / xx
                 };
-                bounds = self.point_grid.with_new_bounds(-3.6, 3.6, -2.4, 2.4);
+                bounds = Bounds {
+                    min_x: -3.6,
+                    max_x: 3.6,
+                    min_y: -2.4,
+                    max_y: 2.4,
+                };
+                grid = self.point_grid.with_same_height(bounds);
             }
             _ => {
                 param_map = |c| c;
-                bounds = self.point_grid;
+                grid = self.point_grid;
             }
         };
-        CoveringMap::new(self, param_map, bounds)
+        CoveringMap::new(self, param_map, grid)
     }
 }
 
@@ -475,12 +549,11 @@ pub struct BurningShip {
 }
 
 impl BurningShip {
-    const ESCAPE_RADIUS: f64 = 1e12_f64;
-    const DEFAULT_MIN_X: f64 = -2.2;
-    const DEFAULT_MAX_X: f64 = 1.25;
+    const DEFAULT_MIN_X: Float = -2.2;
+    const DEFAULT_MAX_X: Float = 1.25;
     // TODO: why are these flipped?
-    const DEFAULT_MIN_Y: f64 = -1.9;
-    const DEFAULT_MAX_Y: f64 = 0.6;
+    const DEFAULT_MIN_Y: Float = -1.9;
+    const DEFAULT_MAX_Y: Float = 0.6;
     fractal_impl!();
 }
 
@@ -488,19 +561,19 @@ impl ParameterPlane for BurningShip {
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period, .. } => -(period as f64),
+            EscapeState::Periodic { period, .. } => -(period as IterCount),
             EscapeState::Escaped {
                 iters,
                 final_value: z,
             } => {
-                let u = Self::ESCAPE_RADIUS.log2();
+                let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
-                (iters as f64) - residual
+                (iters as IterCount) - (residual as IterCount)
             }
         }
     }
@@ -524,24 +597,26 @@ pub struct Sailboat {
 }
 
 impl Sailboat {
-    const ESCAPE_RADIUS: f64 = 1e12_f64;
-    const EPSILON: f64 = 1e-12;
-    const DEFAULT_MIN_X: f64 = -6.;
-    const DEFAULT_MAX_X: f64 = 6.;
-    const DEFAULT_MIN_Y: f64 = -6.;
-    const DEFAULT_MAX_Y: f64 = 6.;
+    const DEFAULT_MIN_X: Float = -6.;
+    const DEFAULT_MAX_X: Float = 6.;
+    const DEFAULT_MIN_Y: Float = -6.;
+    const DEFAULT_MAX_Y: Float = 6.;
+    const JULIA_BOUNDS: Bounds = Bounds {
+        min_x: -5.,
+        max_x: 5.,
+        min_y: -5.,
+        max_y: 5.,
+    };
 
     pub fn new(
         res_x: usize,
+        res_y: usize,
         max_iter: Period,
         shift: ComplexNum,
-        min_x: f64,
-        max_x: f64,
-        min_y: f64,
-        max_y: f64,
+        bounds: Bounds,
     ) -> Self {
-        let point_grid = PointGrid::new_infer(res_x, min_x, max_x, min_y, max_y);
-        let point_grid_child = PointGrid::new_infer(res_x, -5., 5., -5., 5.);
+        let point_grid = PointGrid::new(res_x, res_y, bounds);
+        let point_grid_child = PointGrid::new(res_x, res_y, Self::JULIA_BOUNDS);
 
         Self {
             point_grid,
@@ -551,35 +626,56 @@ impl Sailboat {
         }
     }
 
-    pub fn new_default(res_x: usize, max_iter: Period, shift: ComplexNum) -> Self {
-        Self::new(
-            res_x,
+    pub fn with_res_y(res_y: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
+        let point_grid = PointGrid::with_res_y(res_y, bounds);
+        let point_grid_child = PointGrid::with_res_y(res_y, Self::JULIA_BOUNDS);
+
+        Self {
+            point_grid,
+            point_grid_child,
             max_iter,
             shift,
-            Self::DEFAULT_MIN_X,
-            Self::DEFAULT_MAX_X,
-            Self::DEFAULT_MIN_Y,
-            Self::DEFAULT_MAX_Y,
-        )
+        }
+    }
+
+    pub fn with_res_x(res_x: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
+        let point_grid = PointGrid::with_res_x(res_x, bounds);
+        let point_grid_child = PointGrid::with_res_x(res_x, Self::JULIA_BOUNDS);
+        Self {
+            point_grid,
+            point_grid_child,
+            max_iter,
+            shift,
+        }
+    }
+
+    pub fn new_default(res_y: usize, max_iter: Period, shift: ComplexNum) -> Self {
+        let bounds = Bounds {
+            min_x: Self::DEFAULT_MIN_X,
+            max_x: Self::DEFAULT_MAX_X,
+            min_y: Self::DEFAULT_MIN_Y,
+            max_y: Self::DEFAULT_MAX_Y,
+        };
+        Self::with_res_y(res_y, max_iter, shift, bounds)
     }
 }
 
 impl ParameterPlane for Sailboat {
     parameter_plane_impl!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as f64),
+            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
                 iters,
                 final_value: z,
             } => {
-                let u = Self::ESCAPE_RADIUS.log2();
+                let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
-                (iters as f64) - residual
+                (iters as IterCount) - (residual as IterCount)
             }
         }
     }
@@ -607,11 +703,10 @@ pub struct Exponential {
 }
 
 impl Exponential {
-    const ESCAPE_RADIUS: f64 = 1e16_f64;
-    const DEFAULT_MIN_X: f64 = -7.;
-    const DEFAULT_MAX_X: f64 = 7.;
-    const DEFAULT_MIN_Y: f64 = -7.;
-    const DEFAULT_MAX_Y: f64 = 7.;
+    const DEFAULT_MIN_X: Float = -7.;
+    const DEFAULT_MAX_X: Float = 7.;
+    const DEFAULT_MIN_Y: Float = -7.;
+    const DEFAULT_MAX_Y: Float = 7.;
     fractal_impl!();
 }
 
@@ -619,11 +714,11 @@ impl ParameterPlane for Exponential {
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> f64 {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
         match state {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as f64),
+            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
                 iters: iter,
                 final_value: z,
@@ -632,12 +727,12 @@ impl ParameterPlane for Exponential {
                     return -1.;
                 }
                 if z.is_infinite() {
-                    return (iter + 1) as f64;
+                    return (iter + 1) as IterCount;
                 }
-                let u = slog(Self::ESCAPE_RADIUS);
+                let u = slog(self.escape_radius());
                 let v = slog(z.norm_sqr());
                 let residual = v - u;
-                (iter as f64) - residual
+                (iter as IterCount) - (residual as IterCount)
             }
         }
     }

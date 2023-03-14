@@ -1,7 +1,7 @@
 use crate::covering_maps::CoveringMap;
 use crate::palette::ColorPalette;
 use crate::point_grid::PointGrid;
-use crate::primitive_types::{ComplexNum, EscapeState, Period};
+use crate::primitive_types::*;
 use eframe::egui::{Color32, ColorImage};
 use ndarray::Array2;
 use rayon::iter::{ParallelBridge, ParallelIterator};
@@ -33,7 +33,21 @@ pub trait ParameterPlane: Sync {
 
     fn point_grid_child_mut(&mut self) -> &mut PointGrid;
 
-    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState;
+    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState {
+        if iter > self.max_iter() {
+            return EscapeState::Bounded;
+        }
+
+        let r = z.norm_sqr();
+        if r > self.escape_radius() {
+            EscapeState::Escaped {
+                iters: iter,
+                final_value: z,
+            }
+        } else {
+            EscapeState::NotYetEscaped
+        }
+    }
 
     fn check_periodicity(
         &self,
@@ -41,16 +55,54 @@ pub trait ParameterPlane: Sync {
         z0: ComplexNum,
         z1: ComplexNum,
         base_param: ComplexNum,
-    ) -> EscapeState;
+    ) -> EscapeState {
+        if iter > self.max_iter() {
+            return EscapeState::Bounded;
+        }
+
+        let r = z1.norm_sqr();
+        if r > self.escape_radius() {
+            EscapeState::Escaped {
+                iters: 2 * iter,
+                final_value: z1,
+            }
+        } else if (z1 - z0).norm_sqr() < self.periodicity_tolerance() {
+            if let Some(period) = self.compute_period(z1, base_param, self.periodicity_tolerance(), iter as usize)
+            {
+                EscapeState::Periodic {
+                    preperiod: iter,
+                    period,
+                }
+            } else {
+                EscapeState::NotYetEscaped
+            }
+        } else {
+            EscapeState::NotYetEscaped
+        }
+    }
+
+    fn max_iter(&self) -> Period;
+
+    fn max_iter_mut(&mut self) -> &mut Period;
+
+    #[inline(always)]
+    fn escape_radius(&self) -> Float {
+        1e16
+    }
+
+    #[inline(always)]
+    fn periodicity_tolerance(&self) -> Float {
+        self.point_grid().bounds.area() * 1e-12
+    }
 
     fn compute_period(
         &self,
         z0: ComplexNum,
         c: ComplexNum,
-        tolerance: f64,
+        tolerance: Float,
         patience: usize,
     ) -> Option<Period> {
-        let mut z = z0.clone();
+        let mut z = z0;
         for i in 1..=patience {
             z = self.map(z, c);
             if (z - z0).norm_sqr() <= tolerance {
@@ -70,9 +122,9 @@ pub trait ParameterPlane: Sync {
 
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum;
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> f64;
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount;
 
-    fn compute_escape_times(&self) -> Array2<f64> {
+    fn compute_escape_times(&self) -> Array2<IterCount> {
         let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
         iter_counts
             .indexed_iter_mut()
@@ -81,7 +133,7 @@ pub trait ParameterPlane: Sync {
                 let point = self.point_grid().map_pixel(x, y);
                 let c = self.param_map(point);
                 let mut z0 = self.start_point(c);
-                let mut z1 = z0.clone();
+                let mut z1 = z0;
 
                 let mut iter = 0;
                 while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1, c) {
@@ -110,7 +162,7 @@ pub trait ParameterPlane: Sync {
         iter_counts
     }
 
-    fn compute_escape_times_child(&self, param: ComplexNum) -> Array2<f64> {
+    fn compute_escape_times_child(&self, param: ComplexNum) -> Array2<IterCount> {
         let mut iter_counts =
             Array2::zeros((self.point_grid_child().res_x, self.point_grid_child().res_y));
         let c = self.param_map(param);
@@ -118,8 +170,8 @@ pub trait ParameterPlane: Sync {
             .indexed_iter_mut()
             .par_bridge()
             .for_each(|((x, y), count)| {
-                let mut z0 = self.point_grid().map_pixel(x, y);
-                let mut z1 = z0.clone();
+                let mut z0 = self.point_grid_child().map_pixel(x, y);
+                let mut z1 = z0;
 
                 let mut iter = 0;
                 while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1, c) {
@@ -205,20 +257,20 @@ pub trait DynamicalPlane {
 
     fn map(&self, z: ComplexNum) -> ComplexNum;
 
-    fn encode_escape_result(&self, state: EscapeState) -> f64;
+    fn encode_escape_result(&self, state: EscapeState) -> IterCount;
 
-    fn compute_escape_times(&self) -> Array2<f64> {
+    fn compute_escape_times(&self) -> Array2<IterCount> {
         let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
         iter_counts.indexed_iter_mut().for_each(|((x, y), count)| {
-            let mut z0 = self.point_grid().map_pixel(x, y);
-            let mut z1 = z0.clone();
+            let mut tortoise = self.point_grid().map_pixel(x, y);
+            let mut hare = tortoise;
             let mut iter = 0;
-            while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1) {
-                z0 = self.map(z0);
-                z1 = self.map(z1);
+            while let EscapeState::NotYetEscaped = self.check_periodicity(iter, tortoise, hare) {
+                tortoise = self.map(tortoise);
+                hare = self.map(hare);
 
                 // Check if we have escaped halfway through
-                let mid_result = self.stop_condition(iter, z1);
+                let mid_result = self.stop_condition(iter, hare);
                 if let EscapeState::Escaped { iters, final_value } = mid_result {
                     let result = EscapeState::Escaped {
                         iters: 2 * iters + 1,
@@ -228,11 +280,11 @@ pub trait DynamicalPlane {
                     return;
                 }
 
-                z1 = self.map(z1);
+                hare = self.map(hare);
                 iter += 1;
             }
 
-            let result = self.check_periodicity(iter, z0, z1);
+            let result = self.check_periodicity(iter, tortoise, hare);
 
             *count = self.encode_escape_result(result);
         });
@@ -252,7 +304,7 @@ pub trait DynamicalPlane {
 
 #[derive(Clone)]
 pub struct IterPlane {
-    iter_counts: Array2<f64>,
+    iter_counts: Array2<IterCount>,
     point_grid: PointGrid,
 }
 
@@ -262,10 +314,11 @@ impl FractalImage for IterPlane {
     }
     fn render(&self, palette: ColorPalette) -> ColorImage {
         let width = self.point_grid().res_x;
+        let height = self.point_grid().res_y;
         let mut img = ColorImage::new([width, self.point_grid().res_y], Color32::default());
 
         self.iter_counts.indexed_iter().for_each(|((x, y), value)| {
-            img.pixels[x + y * width] = palette.map_color32(*value);
+            img.pixels[x + (height - y - 1) * width] = palette.map_color32(*value);
         });
         img
     }
