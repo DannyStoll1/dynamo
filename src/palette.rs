@@ -189,6 +189,12 @@ impl ColorPalette {
     }
 }
 
+impl Default for ColorPalette {
+    fn default() -> Self {
+        Self::new_with_contrast(3.0, 8.0, 5.0, 0.45, 0.38)
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct DiscretePalette {
     num_colors: f32,
@@ -201,7 +207,7 @@ impl DiscretePalette {
     const DEFAULT_BASE_HUE: f32 = 0.87;
     const DEFAULT_SATURATION: f32 = 0.7;
     const DEFAULT_LUMINOSITY: f32 = 0.5;
-    const DEFAULT_NUM_COLORS: f32 = 8.;
+    const DEFAULT_NUM_COLORS: f32 = 7.;
 
     pub fn map_hsv(&self, value: f32) -> Hsv {
         let hue = (value / self.num_colors + self.base_hue) % 1.;

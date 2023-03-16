@@ -1,7 +1,5 @@
 macro_rules! fractal_impl {
     () => {
-        const JULIA_BOUNDS: Bounds = Bounds{min_x: -5., max_x: 5., min_y: -5., max_y: 5.};
-
         pub fn new(
             res_x: usize,
             res_y: usize,
@@ -49,12 +47,7 @@ macro_rules! fractal_impl {
         }
 
         pub fn new_default(res_y: usize, max_iter: Period) -> Self {
-            let bounds = Bounds {
-                min_x: Self::DEFAULT_MIN_X,
-                max_x: Self::DEFAULT_MAX_X,
-                min_y: Self::DEFAULT_MIN_Y,
-                max_y: Self::DEFAULT_MAX_Y,
-            };
+            let bounds = Self::DEFAULT_BOUNDS;
             Self::with_res_y(
                 res_y,
                 max_iter,

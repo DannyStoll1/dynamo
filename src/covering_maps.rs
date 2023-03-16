@@ -5,7 +5,7 @@ use crate::traits::ParameterPlane;
 #[derive(Clone, Copy)]
 pub struct CoveringMap<C>
 where
-    C: ParameterPlane,
+    C: ParameterPlane + Clone,
 {
     base_curve: C,
     covering_map: fn(ComplexNum) -> ComplexNum,
@@ -14,7 +14,7 @@ where
 
 impl<C> CoveringMap<C>
 where
-    C: ParameterPlane,
+    C: ParameterPlane + Clone,
 {
     pub fn new(
         base_curve: C,
@@ -31,7 +31,7 @@ where
 
 impl<C> ParameterPlane for CoveringMap<C>
 where
-    C: ParameterPlane,
+    C: ParameterPlane + Clone,
 {
     fn point_grid(&self) -> PointGrid {
         self.point_grid

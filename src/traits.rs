@@ -2,6 +2,7 @@ use crate::covering_maps::CoveringMap;
 use crate::palette::ColorPalette;
 use crate::point_grid::PointGrid;
 use crate::primitive_types::*;
+use dyn_clone::DynClone;
 use eframe::egui::{Color32, ColorImage};
 use ndarray::Array2;
 use rayon::iter::{ParallelBridge, ParallelIterator};
@@ -24,7 +25,7 @@ pub trait FractalImage {
     // }
 }
 
-pub trait ParameterPlane: Sync {
+pub trait ParameterPlane: Sync + DynClone {
     fn point_grid(&self) -> PointGrid;
 
     fn point_grid_mut(&mut self) -> &mut PointGrid;
@@ -67,7 +68,8 @@ pub trait ParameterPlane: Sync {
                 final_value: z1,
             }
         } else if (z1 - z0).norm_sqr() < self.periodicity_tolerance() {
-            if let Some(period) = self.compute_period(z1, base_param, self.periodicity_tolerance(), iter as usize)
+            if let Some(period) =
+                self.compute_period(z1, base_param, self.periodicity_tolerance(), iter as usize)
             {
                 EscapeState::Periodic {
                     preperiod: iter,
@@ -86,12 +88,12 @@ pub trait ParameterPlane: Sync {
     fn max_iter_mut(&mut self) -> &mut Period;
 
     #[inline(always)]
-    fn escape_radius(&self) -> Float {
+    fn escape_radius(&self) -> RealNum {
         1e16
     }
 
     #[inline(always)]
-    fn periodicity_tolerance(&self) -> Float {
+    fn periodicity_tolerance(&self) -> RealNum {
         self.point_grid().bounds.area() * 1e-12
     }
 
@@ -99,7 +101,7 @@ pub trait ParameterPlane: Sync {
         &self,
         z0: ComplexNum,
         c: ComplexNum,
-        tolerance: Float,
+        tolerance: RealNum,
         patience: usize,
     ) -> Option<Period> {
         let mut z = z0;
@@ -124,6 +126,31 @@ pub trait ParameterPlane: Sync {
 
     fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount;
 
+    fn run_point(&self, start: ComplexNum, param: ComplexNum) -> EscapeState {
+        let mut tortoise = start;
+        let mut hare = start;
+
+        let mut iter = 0;
+        while let EscapeState::NotYetEscaped = self.check_periodicity(iter, tortoise, hare, param) {
+            tortoise = self.map(tortoise, param);
+            hare = self.map(hare, param);
+
+            // Check if we have escaped halfway through
+            let mid_result = self.stop_condition(iter, hare);
+            if let EscapeState::Escaped { iters, final_value } = mid_result {
+                return EscapeState::Escaped {
+                    iters: 2 * iters + 1,
+                    final_value,
+                };
+            }
+
+            hare = self.map(hare, param);
+            iter += 1;
+        }
+
+        self.check_periodicity(iter, tortoise, hare, param)
+    }
+
     fn compute_escape_times(&self) -> Array2<IterCount> {
         let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
         iter_counts
@@ -131,33 +158,12 @@ pub trait ParameterPlane: Sync {
             .par_bridge()
             .for_each(|((x, y), count)| {
                 let point = self.point_grid().map_pixel(x, y);
-                let c = self.param_map(point);
-                let mut z0 = self.start_point(c);
-                let mut z1 = z0;
+                let param = self.param_map(point);
+                let start = self.start_point(param);
 
-                let mut iter = 0;
-                while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1, c) {
-                    z0 = self.map(z0, c);
-                    z1 = self.map(z1, c);
+                let result = self.run_point(start, param);
 
-                    // Check if we have escaped halfway through
-                    let mid_result = self.stop_condition(iter, z1);
-                    if let EscapeState::Escaped { iters, final_value } = mid_result {
-                        let result = EscapeState::Escaped {
-                            iters: 2 * iters + 1,
-                            final_value,
-                        };
-                        *count = self.encode_escape_result(result, c);
-                        return;
-                    }
-
-                    z1 = self.map(z1, c);
-                    iter += 1;
-                }
-
-                let result = self.check_periodicity(iter, z0, z1, c);
-
-                *count = self.encode_escape_result(result, c);
+                *count = self.encode_escape_result(result, point);
             });
         iter_counts
     }
@@ -170,30 +176,8 @@ pub trait ParameterPlane: Sync {
             .indexed_iter_mut()
             .par_bridge()
             .for_each(|((x, y), count)| {
-                let mut z0 = self.point_grid_child().map_pixel(x, y);
-                let mut z1 = z0;
-
-                let mut iter = 0;
-                while let EscapeState::NotYetEscaped = self.check_periodicity(iter, z0, z1, c) {
-                    z0 = self.map(z0, c);
-                    z1 = self.map(z1, c);
-
-                    // Check if we have escaped halfway through
-                    let mid_result = self.stop_condition(iter, z1);
-                    if let EscapeState::Escaped { iters, final_value } = mid_result {
-                        let result = EscapeState::Escaped {
-                            iters: 2 * iters + 1,
-                            final_value,
-                        };
-                        *count = self.encode_escape_result(result, c);
-                        return;
-                    }
-
-                    z1 = self.map(z1, c);
-                    iter += 1;
-                }
-
-                let result = self.check_periodicity(iter, z0, z1, c);
+                let start = self.point_grid_child().map_pixel(x, y);
+                let result = self.run_point(start, param);
 
                 *count = self.encode_escape_result(result, c);
             });
@@ -259,33 +243,36 @@ pub trait DynamicalPlane {
 
     fn encode_escape_result(&self, state: EscapeState) -> IterCount;
 
+    fn compute_point(&self, start: ComplexNum) -> EscapeState {
+        let mut tortoise = start;
+        let mut hare = start;
+        let mut iter = 0;
+        while let EscapeState::NotYetEscaped = self.check_periodicity(iter, tortoise, hare) {
+            tortoise = self.map(tortoise);
+            hare = self.map(hare);
+
+            // Check if we have escaped halfway through
+            let mid_result = self.stop_condition(iter, hare);
+            if let EscapeState::Escaped { iters, final_value } = mid_result {
+                return EscapeState::Escaped {
+                    iters: 2 * iters + 1,
+                    final_value,
+                };
+            }
+
+            hare = self.map(hare);
+            iter += 1;
+        }
+
+        let result = self.check_periodicity(iter, tortoise, hare);
+        result
+    }
+
     fn compute_escape_times(&self) -> Array2<IterCount> {
         let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
         iter_counts.indexed_iter_mut().for_each(|((x, y), count)| {
-            let mut tortoise = self.point_grid().map_pixel(x, y);
-            let mut hare = tortoise;
-            let mut iter = 0;
-            while let EscapeState::NotYetEscaped = self.check_periodicity(iter, tortoise, hare) {
-                tortoise = self.map(tortoise);
-                hare = self.map(hare);
-
-                // Check if we have escaped halfway through
-                let mid_result = self.stop_condition(iter, hare);
-                if let EscapeState::Escaped { iters, final_value } = mid_result {
-                    let result = EscapeState::Escaped {
-                        iters: 2 * iters + 1,
-                        final_value,
-                    };
-                    *count = self.encode_escape_result(result);
-                    return;
-                }
-
-                hare = self.map(hare);
-                iter += 1;
-            }
-
-            let result = self.check_periodicity(iter, tortoise, hare);
-
+            let start = self.point_grid().map_pixel(x, y);
+            let result = self.compute_point(start);
             *count = self.encode_escape_result(result);
         });
         iter_counts

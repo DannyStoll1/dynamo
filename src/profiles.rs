@@ -16,10 +16,13 @@ pub struct Mandelbrot {
 }
 
 impl Mandelbrot {
-    const DEFAULT_MIN_X: Float = -2.2;
-    const DEFAULT_MAX_X: Float = 0.65;
-    const DEFAULT_MIN_Y: Float = -1.4;
-    const DEFAULT_MAX_Y: Float = 1.4;
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.2,
+        max_x: 0.65,
+        min_y: -1.4,
+        max_y: 1.4,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(2.2);
     fractal_impl!();
 }
 
@@ -177,10 +180,13 @@ pub struct QuadRatPer2 {
 }
 
 impl QuadRatPer2 {
-    const DEFAULT_MIN_X: Float = -2.8;
-    const DEFAULT_MAX_X: Float = 3.2;
-    const DEFAULT_MIN_Y: Float = -2.8;
-    const DEFAULT_MAX_Y: Float = 2.8;
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.8,
+        max_x: 3.2,
+        min_y: -2.8,
+        max_y: 2.8,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -335,10 +341,13 @@ pub struct QuadRatPer3 {
 }
 
 impl QuadRatPer3 {
-    const DEFAULT_MIN_X: Float = -2.5;
-    const DEFAULT_MAX_X: Float = 3.2;
-    const DEFAULT_MIN_Y: Float = -2.5;
-    const DEFAULT_MAX_Y: Float = 2.5;
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 3.2,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -395,7 +404,7 @@ impl HasDynamicalCovers for QuadRatPer3 {
             }
             4 => {
                 param_map = |c| {
-                    let t = (13.0 as Float).sqrt();
+                    let t = (13.0 as RealNum).sqrt();
                     let g2 = ComplexNum::new(-8.0 / 3.0, 0.);
                     let g3 = ComplexNum::new(1.0 / 27.0, 0.);
 
@@ -443,10 +452,13 @@ pub struct QuadRatPer4 {
 }
 
 impl QuadRatPer4 {
-    const DEFAULT_MIN_X: Float = -1.;
-    const DEFAULT_MAX_X: Float = 0.2;
-    const DEFAULT_MIN_Y: Float = -0.5;
-    const DEFAULT_MAX_Y: Float = 0.5;
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -1.,
+        max_x: 0.2,
+        min_y: -0.5,
+        max_y: 0.5,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -549,11 +561,13 @@ pub struct BurningShip {
 }
 
 impl BurningShip {
-    const DEFAULT_MIN_X: Float = -2.2;
-    const DEFAULT_MAX_X: Float = 1.25;
-    // TODO: why are these flipped?
-    const DEFAULT_MIN_Y: Float = -1.9;
-    const DEFAULT_MAX_Y: Float = 0.6;
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.2,
+        max_x: 1.25,
+        min_y: -1.9,
+        max_y: 0.6,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -597,16 +611,13 @@ pub struct Sailboat {
 }
 
 impl Sailboat {
-    const DEFAULT_MIN_X: Float = -6.;
-    const DEFAULT_MAX_X: Float = 6.;
-    const DEFAULT_MIN_Y: Float = -6.;
-    const DEFAULT_MAX_Y: Float = 6.;
-    const JULIA_BOUNDS: Bounds = Bounds {
-        min_x: -5.,
-        max_x: 5.,
-        min_y: -5.,
-        max_y: 5.,
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -6.,
+        max_x: 6.,
+        min_y: -6.,
+        max_y: 6.,
     };
+    const JULIA_BOUNDS: Bounds = Bounds::square(5.);
 
     pub fn new(
         res_x: usize,
@@ -650,12 +661,7 @@ impl Sailboat {
     }
 
     pub fn new_default(res_y: usize, max_iter: Period, shift: ComplexNum) -> Self {
-        let bounds = Bounds {
-            min_x: Self::DEFAULT_MIN_X,
-            max_x: Self::DEFAULT_MAX_X,
-            min_y: Self::DEFAULT_MIN_Y,
-            max_y: Self::DEFAULT_MAX_Y,
-        };
+        let bounds = Self::DEFAULT_BOUNDS;
         Self::with_res_y(res_y, max_iter, shift, bounds)
     }
 }
@@ -703,10 +709,19 @@ pub struct Exponential {
 }
 
 impl Exponential {
-    const DEFAULT_MIN_X: Float = -7.;
-    const DEFAULT_MAX_X: Float = 7.;
-    const DEFAULT_MIN_Y: Float = -7.;
-    const DEFAULT_MAX_Y: Float = 7.;
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -7.,
+        max_x: 7.,
+        min_y: -7.,
+        max_y: 7.,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds {
+        min_x: -5.,
+        max_x: 5.,
+        min_y: -5.,
+        max_y: 5.,
+    };
+
     fractal_impl!();
 }
 

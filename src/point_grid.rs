@@ -5,35 +5,54 @@ use rayon::iter::{IterBridge, ParallelBridge};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Bounds {
-    pub min_x: Float,
-    pub max_x: Float,
-    pub min_y: Float,
-    pub max_y: Float,
+    pub min_x: RealNum,
+    pub max_x: RealNum,
+    pub min_y: RealNum,
+    pub max_y: RealNum,
 }
 impl Bounds {
     #[inline(always)]
-    pub fn range_x(&self) -> Float {
+    pub fn range_x(&self) -> RealNum {
         self.max_x - self.min_x
     }
 
     #[inline(always)]
-    pub fn range_y(&self) -> Float {
+    pub fn range_y(&self) -> RealNum {
         self.max_y - self.min_y
     }
 
     #[inline(always)]
-    pub fn area(&self) -> Float {
+    pub fn area(&self) -> RealNum {
         self.range_x() * self.range_y()
     }
 
     #[inline(always)]
-    pub fn mid_x(&self) -> Float {
+    pub fn mid_x(&self) -> RealNum {
         (self.max_x + self.min_x) / 2.
     }
 
     #[inline(always)]
-    pub fn mid_y(&self) -> Float {
+    pub fn mid_y(&self) -> RealNum {
         (self.max_y + self.min_y) / 2.
+    }
+    pub const fn square(radius: RealNum) -> Self {
+        Self {
+            min_x: -radius,
+            max_x: radius,
+            min_y: -radius,
+            max_y: radius,
+        }
+    }
+}
+
+impl Default for Bounds {
+    fn default() -> Self {
+        Bounds {
+            min_x: -1.,
+            max_x: 1.,
+            min_y: -1.,
+            max_y: 1.,
+        }
     }
 }
 
@@ -58,7 +77,7 @@ impl PointGrid {
         debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_x > 0);
 
-        let res_x_float = res_x as Float;
+        let res_x_float = res_x as RealNum;
         let res_y_float =
             res_x_float * (bounds.max_y - bounds.min_y) / (bounds.max_x - bounds.min_x);
         res_y_float as usize
@@ -69,7 +88,7 @@ impl PointGrid {
         debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_y > 0);
 
-        let res_y_float = res_y as Float;
+        let res_y_float = res_y as RealNum;
         let res_x_float =
             res_y_float * (bounds.max_x - bounds.min_x) / (bounds.max_y - bounds.min_y);
         res_x_float as usize
@@ -104,16 +123,18 @@ impl PointGrid {
     }
 
     pub fn map_pixel(&self, pixel_x: usize, pixel_y: usize) -> ComplexNum {
-        let re =
-            self.bounds.min_x + (pixel_x as Float) * (self.bounds.range_x()) / (self.res_x as Float);
-        let im =
-            self.bounds.min_y + (pixel_y as Float) * (self.bounds.range_y()) / (self.res_y as Float);
+        let re = self.bounds.min_x
+            + (pixel_x as RealNum) * (self.bounds.range_x()) / (self.res_x as RealNum);
+        let im = self.bounds.min_y
+            + (pixel_y as RealNum) * (self.bounds.range_y()) / (self.res_y as RealNum);
         ComplexNum::new(re, -im)
     }
 
     pub fn map_vec2(&self, pos: Vec2) -> ComplexNum {
-        let re = self.bounds.min_x + (pos.x as Float) * (self.bounds.range_x()) / (self.res_x as Float);
-        let im = self.bounds.max_y - (pos.y as Float) * (self.bounds.range_y()) / (self.res_y as Float);
+        let re = self.bounds.min_x
+            + (pos.x as RealNum) * (self.bounds.range_x()) / (self.res_x as RealNum);
+        let im = self.bounds.max_y
+            - (pos.y as RealNum) * (self.bounds.range_y()) / (self.res_y as RealNum);
         ComplexNum::new(re, im)
     }
 
@@ -145,7 +166,7 @@ impl PointGrid {
         self.bounds.max_y += translation.im;
     }
 
-    pub fn zoom(&mut self, scale: Float, base_point: ComplexNum) {
+    pub fn zoom(&mut self, scale: RealNum, base_point: ComplexNum) {
         self.shift(-base_point);
         self.bounds.min_x *= scale;
         self.bounds.max_x *= scale;
@@ -177,8 +198,8 @@ impl PointGrid {
         let size_x = self.bounds.range_x();
         let size_y = self.bounds.range_y();
         points.indexed_iter_mut().for_each(|((i, j), value)| {
-            let re = self.bounds.min_x + (i as Float) / size_x;
-            let im = self.bounds.min_y + (j as Float) / size_y;
+            let re = self.bounds.min_x + (i as RealNum) / size_x;
+            let im = self.bounds.min_y + (j as RealNum) / size_y;
             *value = ComplexNum::new(re, im);
         });
         points
@@ -193,6 +214,16 @@ impl PointGrid {
     }
 }
 
+impl Default for PointGrid {
+    fn default() -> Self {
+        Self {
+            res_x: 1,
+            res_y: 1,
+            bounds: Bounds::default(),
+        }
+    }
+}
+
 impl IntoIterator for PointGrid {
     type Item = ((usize, usize), ComplexNum);
     type IntoIter = PointGridIterator;
@@ -203,20 +234,20 @@ impl IntoIterator for PointGrid {
 }
 
 pub struct PointGridIterator {
-    step_x: Float,
-    step_y: Float,
+    step_x: RealNum,
+    step_y: RealNum,
     res_x: usize,
     res_y: usize,
-    min_x: Float,
-    min_y: Float,
+    min_x: RealNum,
+    min_y: RealNum,
     idx_x: usize,
     idx_y: usize,
 }
 
 impl PointGridIterator {
     pub fn new(res_x: usize, res_y: usize, bounds: Bounds) -> Self {
-        let step_x = bounds.range_x() / (res_x as Float);
-        let step_y = bounds.range_y() / (res_y as Float);
+        let step_x = bounds.range_x() / (res_x as RealNum);
+        let step_y = bounds.range_y() / (res_y as RealNum);
 
         Self {
             step_x,
@@ -245,8 +276,8 @@ impl Iterator for PointGridIterator {
         self.idx_x %= self.res_x;
 
         let z = ComplexNum::new(
-            self.idx_x as Float * self.step_x + self.min_x,
-            self.idx_y as Float * self.step_y + self.min_y,
+            self.idx_x as RealNum * self.step_x + self.min_x,
+            self.idx_y as RealNum * self.step_y + self.min_y,
         );
 
         Some(((self.idx_x, self.idx_y), z))
