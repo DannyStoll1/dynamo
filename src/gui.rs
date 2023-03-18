@@ -251,11 +251,13 @@ impl GuiPlane for Parent {
 
 impl Default for Parent {
     fn default() -> Self {
+        // let plane = Box::new(QuadRatPer2::new_default(1024, 1024).misiurewicz_curve(2,1));
         let plane = Box::new(Mandelbrot::new_default(1024, 1024));
+        let palette = ColorPalette::black(32.);
+
         let iter_plane = plane.compute();
         let task = RedrawMessage::Redraw;
         let selection = ComplexNum::new(-1., 0.);
-        let palette = ColorPalette::default();
 
         let image = RetainedImage::from_color_image("parameter plane", iter_plane.render(palette));
         let frame = ImageFrame {
@@ -401,8 +403,8 @@ impl FractalApp {
                 }
 
                 if clicked {
-                    let result = self.parent.plane.run_point((0.).into(), pointer_value);
-                    dbg!(result);
+                    let orbit = self.parent.plane.get_orbit_info(pointer_value);
+                    dbg!(orbit);
                 }
             } else if self.child.frame_contains_pixel(pointer_pos) {
                 let pointer_value = self.child.map_pixel(pointer_pos);

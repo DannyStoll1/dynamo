@@ -1,4 +1,5 @@
 use crate::covering_maps::CoveringMap;
+use crate::orbit_info::*;
 use crate::palette::ColorPalette;
 use crate::point_grid::PointGrid;
 use crate::primitive_types::*;
@@ -40,7 +41,7 @@ pub trait ParameterPlane: Sync + DynClone {
         }
 
         let r = z.norm_sqr();
-        if r > self.escape_radius() {
+        if r > self.escape_radius() || z.is_nan() {
             EscapeState::Escaped {
                 iters: iter,
                 final_value: z,
@@ -62,14 +63,14 @@ pub trait ParameterPlane: Sync + DynClone {
         }
 
         let r = z1.norm_sqr();
-        if r > self.escape_radius() {
+        if r > self.escape_radius() || z1.is_nan() {
             EscapeState::Escaped {
                 iters: 2 * iter,
                 final_value: z1,
             }
         } else if (z1 - z0).norm_sqr() < self.periodicity_tolerance() {
             if let Some(period) =
-                self.compute_period(z1, base_param, self.periodicity_tolerance(), iter as usize)
+                self.compute_period(z1, base_param, self.periodicity_tolerance()*10., iter as usize)
             {
                 EscapeState::Periodic {
                     preperiod: iter,
@@ -192,7 +193,8 @@ pub trait ParameterPlane: Sync + DynClone {
         }
     }
 
-    fn compute_child(&self, param: ComplexNum) -> IterPlane {
+    fn compute_child(&self, point: ComplexNum) -> IterPlane {
+        let param = self.param_map(point);
         let iter_counts = self.compute_escape_times_child(param);
         IterPlane {
             iter_counts,
@@ -207,23 +209,16 @@ pub trait ParameterPlane: Sync + DynClone {
         CoveringMap::new(self, covering_map, self.point_grid())
     }
 
-    // fn spawn_julia(&self, point: ComplexNum) -> JuliaSet {
-    //     let c = self.param_map(point);
-    //     let map = |z|self.map(z, c);
-    //     let stop_condition = |iter, z|{
-    //         self.stop_condition(iter, z)
-    //     };
-    //     let escape_encoding = |iter, state|{
-    //         self.encode_escape_result(iter, state, c)
-    //     };
-    //
-    //     JuliaSet::new(
-    //         self.point_grid(),
-    //         Box::from(map),
-    //         Box::from(stop_condition),
-    //         Box::from(escape_encoding),
-    //     )
-    // }
+    fn get_orbit_info(&self, point: ComplexNum) -> OrbitInfo {
+        let param = self.param_map(point);
+        let start = self.start_point(param);
+        let result = self.run_point(start, param);
+        OrbitInfo {
+            point,
+            param,
+            result,
+        }
+    }
 
     fn name(&self) -> String;
 }

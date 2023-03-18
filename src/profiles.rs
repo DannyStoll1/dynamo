@@ -36,17 +36,23 @@ impl ParameterPlane for Mandelbrot {
             EscapeState::Bounded => 0.,
             EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
-                iters: iter,
+                iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 1.
+                }
+
+
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
-                (iter as IterCount) - (residual as IterCount)
+                (iters as IterCount) - (residual as IterCount)
             }
         }
     }
 
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         z * z + c
     }
@@ -200,18 +206,26 @@ impl ParameterPlane for QuadRatPer2 {
             EscapeState::Bounded => 0.,
             EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
-                iters: iter,
+                iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 2.
+                }
+
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
-                let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
+                // let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
+                let q = -1.;
+                let residual = ((u + q) / (v + q)).log2();
+                // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
                 // (F - M) / (2L - M)
-                (iter as IterCount) - (residual as IterCount) * 2.
+                (iters as IterCount) + (residual as IterCount) * 2.
             }
         }
     }
 
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (z * z + c) / (z * z - 1.)
     }
@@ -368,6 +382,11 @@ impl ParameterPlane for QuadRatPer3 {
                 iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 3.
+                }
+
+
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
@@ -377,6 +396,7 @@ impl ParameterPlane for QuadRatPer3 {
         }
     }
 
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (z * z + c * c * c - c - 1.) / (z * z - c * c)
     }
@@ -475,6 +495,11 @@ impl ParameterPlane for QuadRatPer4 {
                 iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 4.
+                }
+
+
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let c2 = c * c;
@@ -495,16 +520,18 @@ impl ParameterPlane for QuadRatPer4 {
         }
     }
 
+    #[inline(always)]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         let pole = 2.61803398874989;
         1. / c + pole
     }
 
+    #[inline(always)]
     fn start_point(&self, c: ComplexNum) -> ComplexNum {
         (c + c) * (c + c - 1.) / (c * (c + 1.) - 1.)
     }
 
-    #[inline]
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (c * z - c - c - z + 1.) * (z - c) / (z * z * (c - 1.))
     }
@@ -584,6 +611,11 @@ impl ParameterPlane for BurningShip {
                 iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 1.
+                }
+
+
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
@@ -592,11 +624,13 @@ impl ParameterPlane for BurningShip {
         }
     }
 
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         let z = ComplexNum::new(z.re.abs(), z.im.abs());
         z * z + c
     }
 
+    #[inline(always)]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
     }
@@ -678,6 +712,11 @@ impl ParameterPlane for Sailboat {
                 iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 1.
+                }
+
+
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
@@ -686,11 +725,13 @@ impl ParameterPlane for Sailboat {
         }
     }
 
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         let z = ComplexNum::new(z.re.abs(), z.im.abs()) + self.shift;
         z * z + c
     }
 
+    #[inline(always)]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
     }
@@ -735,27 +776,34 @@ impl ParameterPlane for Exponential {
             EscapeState::Bounded => 0.,
             EscapeState::Periodic { period: n, .. } => -(n as IterCount),
             EscapeState::Escaped {
-                iters: iter,
+                iters,
                 final_value: z,
             } => {
+                if z.is_nan() {
+                    return (iters as IterCount) - 1.
+                }
+
+
                 if z.re < 0. {
                     return -1.;
                 }
                 if z.is_infinite() {
-                    return (iter + 1) as IterCount;
+                    return (iters + 1) as IterCount;
                 }
                 let u = slog(self.escape_radius());
                 let v = slog(z.norm_sqr());
                 let residual = v - u;
-                (iter as IterCount) - (residual as IterCount)
+                (iters as IterCount) - (residual as IterCount)
             }
         }
     }
 
+    #[inline(always)]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         z.exp() + c
     }
 
+    #[inline(always)]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
     }

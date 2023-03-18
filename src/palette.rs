@@ -86,33 +86,98 @@ impl From<Color32> for Hsv {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct Sinusoid {
+    period: f64,
+    amplitude: f64,
+    midline: f64,
+    phase: f64,
+}
+impl Sinusoid {
+    fn new(period: f64) -> Self {
+        Self {
+            period,
+            amplitude: 0.5,
+            midline: 0.5,
+            phase: 0.,
+        }
+    }
+    fn get_value_f64(&self, potential: IterCount) -> f64 {
+        let theta = 2.0 * PI * (potential as f64 / self.period - self.phase);
+        self.amplitude * theta.cos() + self.midline
+    }
+    fn get_value_u8(&self, potential: IterCount) -> u8 {
+        let gamma = self.get_value_f64(potential);
+        (256. * gamma) as u8
+    }
+    fn set_period(&mut self, period: f64) {
+        self.period = period
+    }
+    fn set_amplitude(&mut self, amplitude: f64) {
+        self.amplitude = amplitude
+    }
+    fn set_midline(&mut self, midline: f64) {
+        self.midline = midline
+    }
+    fn set_phase(&mut self, phase: f64) {
+        self.phase = phase
+    }
+}
+impl Default for Sinusoid {
+    fn default() -> Self {
+        Self {
+            period: 8.,
+            amplitude: 0.5,
+            midline: 0.5,
+            phase: 0.,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct ColorPalette {
-    period_r: f64,
-    period_g: f64,
-    period_b: f64,
-    amplitude_r: f64,
-    amplitude_g: f64,
-    amplitude_b: f64,
-    midline_r: f64,
-    midline_g: f64,
-    midline_b: f64,
-    period_coloring: DiscretePalette,
+    pub color_map_r: Sinusoid,
+    pub color_map_g: Sinusoid,
+    pub color_map_b: Sinusoid,
+    pub period_coloring: DiscretePalette,
+    pub in_color: (u8, u8, u8),
 }
 
 impl ColorPalette {
     pub fn new(period_r: f64, period_g: f64, period_b: f64) -> Self {
         Self {
-            period_r,
-            period_g,
-            period_b,
-            amplitude_r: 0.5,
-            amplitude_g: 0.5,
-            amplitude_b: 0.5,
-            midline_r: 0.5,
-            midline_g: 0.5,
-            midline_b: 0.5,
+            color_map_r: Sinusoid::new(period_r),
+            color_map_g: Sinusoid::new(period_g),
+            color_map_b: Sinusoid::new(period_b),
             period_coloring: DiscretePalette::default(),
+            in_color: (0, 0, 0),
+        }
+    }
+
+    pub fn white(period: f64) -> Self {
+        let color_map = Sinusoid::new(period);
+        Self {
+            color_map_r: color_map,
+            color_map_g: color_map,
+            color_map_b: color_map,
+            period_coloring: DiscretePalette::black(),
+            in_color: (0, 0, 0),
+        }
+    }
+
+    pub fn black(period: f64) -> Self {
+        let color_map = Sinusoid {
+            period,
+            amplitude: 0.5,
+            midline: 0.5,
+            phase: 0.5,
+        };
+        Self {
+            color_map_r: color_map,
+            color_map_g: color_map,
+            color_map_b: color_map,
+            period_coloring: DiscretePalette::white(),
+            in_color: (255, 255, 255),
         }
     }
 
@@ -134,7 +199,6 @@ impl ColorPalette {
         contrast: f64,
         brightness: f64,
     ) -> Self {
-        let _midline = brightness / 2.0;
         let mut amplitude = contrast / 2.0;
         if amplitude > brightness {
             amplitude = brightness;
@@ -142,28 +206,43 @@ impl ColorPalette {
             amplitude = 1. - brightness;
         }
 
+        let palette_r = Sinusoid {
+            period: period_r,
+            amplitude,
+            midline: brightness,
+            phase: 0.,
+        };
+        let palette_g = Sinusoid {
+            period: period_g,
+            amplitude,
+            midline: brightness,
+            phase: 0.,
+        };
+        let palette_b = Sinusoid {
+            period: period_b,
+            amplitude,
+            midline: brightness,
+            phase: 0.,
+        };
+
         Self {
-            period_r,
-            period_g,
-            period_b,
-            amplitude_r: amplitude,
-            amplitude_g: amplitude,
-            amplitude_b: amplitude,
-            midline_r: brightness,
-            midline_g: brightness,
-            midline_b: brightness,
+            color_map_r: palette_r,
+            color_map_g: palette_g,
+            color_map_b: palette_b,
             period_coloring: DiscretePalette::default(),
+            in_color: (0, 0, 0),
         }
     }
 
     pub fn map_rgb(&self, value: IterCount) -> Rgb<u8> {
         if value <= 0.0 {
-            Rgb([0, 0, 0])
+            let (r, g, b) = self.in_color;
+            Rgb([r, g, b])
         } else {
             let potential = (value + 1.0 as IterCount).log2();
-            let r = Self::to_value(potential, self.period_r, self.amplitude_r, self.midline_r);
-            let g = Self::to_value(potential, self.period_g, self.amplitude_g, self.midline_g);
-            let b = Self::to_value(potential, self.period_b, self.amplitude_b, self.midline_b);
+            let r = self.color_map_r.get_value_u8(potential);
+            let g = self.color_map_g.get_value_u8(potential);
+            let b = self.color_map_b.get_value_u8(potential);
             Rgb([r, g, b])
         }
     }
@@ -172,20 +251,15 @@ impl ColorPalette {
         if value < 0.0 {
             self.period_coloring.map_color32(-value as f32)
         } else if value == 0.0 {
-            Color32::from_rgb(0, 0, 0)
+            let (r, g, b) = self.in_color;
+            Color32::from_rgb(r, g, b)
         } else {
             let potential = (value + 1.0 as IterCount).log2();
-            let r = Self::to_value(potential, self.period_r, self.amplitude_r, self.midline_r);
-            let g = Self::to_value(potential, self.period_g, self.amplitude_g, self.midline_g);
-            let b = Self::to_value(potential, self.period_b, self.amplitude_b, self.midline_b);
+            let r = self.color_map_r.get_value_u8(potential);
+            let g = self.color_map_g.get_value_u8(potential);
+            let b = self.color_map_b.get_value_u8(potential);
             Color32::from_rgb(r, g, b)
         }
-    }
-
-    pub fn to_value(potential: IterCount, period: f64, amplitude: f64, midline: f64) -> u8 {
-        let theta = 2.0 * PI * (potential as f64 / period);
-        let value = amplitude * theta.cos() + midline;
-        (256.0 * value) as u8
     }
 }
 
@@ -220,6 +294,22 @@ impl DiscretePalette {
     }
     pub fn map_color32(&self, value: f32) -> Color32 {
         self.map_hsv(value).into()
+    }
+    pub fn black() -> Self {
+        Self {
+            num_colors: 1.,
+            base_hue: Self::DEFAULT_BASE_HUE,
+            saturation: 1.,
+            luminosity: 0.,
+        }
+    }
+    pub fn white() -> Self {
+        Self {
+            num_colors: 1.,
+            base_hue: Self::DEFAULT_BASE_HUE,
+            saturation: 0.,
+            luminosity: 1.,
+        }
     }
 }
 
