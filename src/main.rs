@@ -7,14 +7,13 @@ pub mod palette;
 pub mod point_grid;
 pub mod primitive_types;
 pub mod profiles;
-pub mod traits;
+pub mod dynamics;
 pub mod gui;
 pub mod macros;
-pub mod julia;
 pub mod orbit_info;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    gui::run_gui()?;
+    gui::run_app()?;
 
     Ok(())
 }

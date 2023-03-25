@@ -1,8 +1,8 @@
 use crate::covering_maps::CoveringMap;
+use crate::dynamics::{HasDynamicalCovers, ParameterPlane};
 use crate::math_utils::*;
 use crate::point_grid::*;
 use crate::primitive_types::*;
-use crate::traits::{HasDynamicalCovers, ParameterPlane};
 
 use crate::macros::*;
 
@@ -11,7 +11,6 @@ use std::any::type_name;
 #[derive(Clone, Copy, Debug)]
 pub struct Mandelbrot {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
 }
 
@@ -40,9 +39,8 @@ impl ParameterPlane for Mandelbrot {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 1.
+                    return (iters as IterCount) - 1.;
                 }
-
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
@@ -52,9 +50,24 @@ impl ParameterPlane for Mandelbrot {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         z * z + c
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        z+z
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        (z + z, ONE_COMPLEX)
     }
 }
 
@@ -181,7 +194,6 @@ impl HasDynamicalCovers for Mandelbrot {
 #[derive(Clone, Copy, Debug)]
 pub struct QuadRatPer2 {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
 }
 
@@ -210,7 +222,7 @@ impl ParameterPlane for QuadRatPer2 {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 2.
+                    return (iters as IterCount) - 2.;
                 }
 
                 let u = self.escape_radius().log2();
@@ -225,9 +237,31 @@ impl ParameterPlane for QuadRatPer2 {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (z * z + c) / (z * z - 1.)
+        // c / z + 1. / (z * z)
+    }
+
+    // fn start_point(&self, c: ComplexNum) -> ComplexNum {
+    //     -2. / c
+    // }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        let u = 1. / (z * z - 1.);
+        -TWO * (c + 1.) * z * u * u
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        1. / (z * z - 1.)
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        let u = 1. / (z * z - 1.);
+        (-TWO * (c + 1.) * z * u * u, u)
     }
 }
 
@@ -350,7 +384,6 @@ impl HasDynamicalCovers for QuadRatPer2 {
 #[derive(Clone, Copy, Debug)]
 pub struct QuadRatPer3 {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
 }
 
@@ -383,9 +416,8 @@ impl ParameterPlane for QuadRatPer3 {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 3.
+                    return (iters as IterCount) - 3.;
                 }
-
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
@@ -396,9 +428,34 @@ impl ParameterPlane for QuadRatPer3 {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (z * z + c * c * c - c - 1.) / (z * z - c * c)
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        let u = 1. / (c * c - z * z);
+        let v = c + 1.;
+        TWO * (1. - c) * v * v * z * u * u
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        let r = c * c - z * z;
+        let u2 = 1. / (r * r);
+        (c + 1.) * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)))
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        let r = c * c - z * z;
+        let u = 1. / r;
+        let u2 = u * u;
+        let v = c + 1.;
+        let df_dz = TWO * (1. - c) * v * v * z * u2;
+        let df_dc = v * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)));
+        (df_dz, df_dc)
     }
 }
 impl HasDynamicalCovers for QuadRatPer3 {
@@ -467,7 +524,6 @@ impl HasDynamicalCovers for QuadRatPer3 {
 #[derive(Clone, Copy, Debug)]
 pub struct QuadRatPer4 {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
 }
 
@@ -496,9 +552,8 @@ impl ParameterPlane for QuadRatPer4 {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 4.
+                    return (iters as IterCount) - 4.;
                 }
-
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
@@ -520,20 +575,35 @@ impl ParameterPlane for QuadRatPer4 {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         let pole = 2.61803398874989;
         1. / c + pole
     }
 
-    #[inline(always)]
+    #[inline]
     fn start_point(&self, c: ComplexNum) -> ComplexNum {
         (c + c) * (c + c - 1.) / (c * (c + 1.) - 1.)
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         (c * z - c - c - z + 1.) * (z - c) / (z * z * (c - 1.))
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX //TODO
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX //TODO
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        (ONE_COMPLEX, ONE_COMPLEX) //TODO
     }
 }
 
@@ -583,7 +653,6 @@ impl HasDynamicalCovers for QuadRatPer4 {
 #[derive(Clone, Copy, Debug)]
 pub struct BurningShip {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
 }
 
@@ -612,9 +681,8 @@ impl ParameterPlane for BurningShip {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 1.
+                    return (iters as IterCount) - 1.;
                 }
-
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
@@ -624,13 +692,28 @@ impl ParameterPlane for BurningShip {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         let z = ComplexNum::new(z.re.abs(), z.im.abs());
         z * z + c
     }
 
-    #[inline(always)]
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX //TODO
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX //TODO
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        (ONE_COMPLEX, ONE_COMPLEX) //TODO
+    }
+
+    #[inline]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
     }
@@ -639,7 +722,6 @@ impl ParameterPlane for BurningShip {
 #[derive(Clone, Copy, Debug)]
 pub struct Sailboat {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
     shift: ComplexNum,
 }
@@ -653,7 +735,7 @@ impl Sailboat {
     };
     const JULIA_BOUNDS: Bounds = Bounds::square(5.);
 
-    pub fn new(
+    pub const fn new(
         res_x: usize,
         res_y: usize,
         max_iter: Period,
@@ -661,40 +743,34 @@ impl Sailboat {
         bounds: Bounds,
     ) -> Self {
         let point_grid = PointGrid::new(res_x, res_y, bounds);
-        let point_grid_child = PointGrid::new(res_x, res_y, Self::JULIA_BOUNDS);
 
         Self {
             point_grid,
-            point_grid_child,
             max_iter,
             shift,
         }
     }
 
-    pub fn with_res_y(res_y: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
+    pub const fn with_res_y(res_y: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
         let point_grid = PointGrid::with_res_y(res_y, bounds);
-        let point_grid_child = PointGrid::with_res_y(res_y, Self::JULIA_BOUNDS);
 
         Self {
             point_grid,
-            point_grid_child,
             max_iter,
             shift,
         }
     }
 
-    pub fn with_res_x(res_x: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
+    pub const fn with_res_x(res_x: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
         let point_grid = PointGrid::with_res_x(res_x, bounds);
-        let point_grid_child = PointGrid::with_res_x(res_x, Self::JULIA_BOUNDS);
         Self {
             point_grid,
-            point_grid_child,
             max_iter,
             shift,
         }
     }
 
-    pub fn new_default(res_y: usize, max_iter: Period, shift: ComplexNum) -> Self {
+    pub const fn new_default(res_y: usize, max_iter: Period, shift: ComplexNum) -> Self {
         let bounds = Self::DEFAULT_BOUNDS;
         Self::with_res_y(res_y, max_iter, shift, bounds)
     }
@@ -713,9 +789,8 @@ impl ParameterPlane for Sailboat {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 1.
+                    return (iters as IterCount) - 1.;
                 }
-
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
@@ -725,17 +800,33 @@ impl ParameterPlane for Sailboat {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         let z = ComplexNum::new(z.re.abs(), z.im.abs()) + self.shift;
         z * z + c
     }
 
-    #[inline(always)]
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX //TODO
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX //TODO
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        (ONE_COMPLEX, ONE_COMPLEX) //TODO
+    }
+
+    #[inline]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
     }
 
+    #[inline]
     fn name(&self) -> String {
         let shift = self.shift;
         format!("Sailboat({shift})")
@@ -745,7 +836,6 @@ impl ParameterPlane for Sailboat {
 #[derive(Clone, Copy, Debug)]
 pub struct Exponential {
     point_grid: PointGrid,
-    point_grid_child: PointGrid,
     max_iter: Period,
 }
 
@@ -780,9 +870,8 @@ impl ParameterPlane for Exponential {
                 final_value: z,
             } => {
                 if z.is_nan() {
-                    return (iters as IterCount) - 1.
+                    return (iters as IterCount) - 1.;
                 }
-
 
                 if z.re < 0. {
                     return -1.;
@@ -798,12 +887,27 @@ impl ParameterPlane for Exponential {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
         z.exp() + c
     }
 
-    #[inline(always)]
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        z.exp()
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+        ONE_COMPLEX
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+        (z.exp(), ONE_COMPLEX)
+    }
+
+    #[inline]
     fn param_map(&self, c: ComplexNum) -> ComplexNum {
         c
     }

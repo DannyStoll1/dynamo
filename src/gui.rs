@@ -1,13 +1,16 @@
+use crate::dynamics::*;
+use crate::dynamics::julia::JuliaSet;
 use crate::palette::ColorPalette;
 use crate::point_grid::*;
 use crate::primitive_types::*;
 use crate::profiles::*;
-use crate::traits::*;
 use eframe::egui;
 use egui::*;
 use egui_extras::{Column, RetainedImage, TableBuilder};
+use epaint::PathShape;
+use ndarray::Array2;
 
-pub fn run_gui() -> Result<(), eframe::Error> {
+pub fn run_app() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(300.0, 900.0)),
         ..Default::default()
@@ -80,6 +83,30 @@ trait GuiPlane {
     fn get_iter_plane(&self) -> &IterPlane;
     fn get_iter_plane_mut(&mut self) -> &mut IterPlane;
 
+    fn get_marked_points(&self) -> &PathShape;
+    fn get_marked_points_mut(&mut self) -> &mut PathShape;
+    // fn mark_point(&mut self, z: ComplexNum, color: Color32) {
+    //     if let Some((x, y)) = self.plane().point_grid().locate_point(z) {
+    //         let marked_points = self.get_marked_points_mut();
+    //         marked_points[[x, y]] = Some(color);
+    //     }
+    // }
+    fn mark_curve(&mut self, zs: Vec<ComplexNum>, color: Color32) {
+        // zs.iter().for_each(|z| self.mark_point(*z, color));
+        // Convert the points to a vector of `Pos2` points:
+        let grid = self.plane().point_grid();
+        let path = self.get_marked_points_mut();
+        let points = zs.iter().map(|z| grid.locate_point(*z)).collect();
+        let stroke = Stroke::new(1.0, color);
+        *path = PathShape::line(points, stroke);
+    }
+
+    fn put_marked_curves(&self, ui: &mut Ui) {
+        let frame = self.get_frame();
+        let painter = ui.painter().with_clip_rect(frame.region);
+        painter.add(self.get_marked_points().clone());
+    }
+
     fn name(&self) -> String {
         self.plane().name()
     }
@@ -129,7 +156,7 @@ trait GuiPlane {
     fn redraw(&mut self) {
         let image = self.get_iter_plane().render(self.get_palette());
         let image_frame = self.get_frame_mut();
-        (*image_frame).image = RetainedImage::from_color_image("Parameter Plane", image);
+        image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     }
 
     fn zoom(&mut self, scale: RealNum, base_point: ComplexNum) {
@@ -184,77 +211,10 @@ struct Parent {
     image_frame: ImageFrame,
     task: RedrawMessage,
     selection: ComplexNum,
+    marked_points: PathShape,
 }
 impl Parent {
-    fn make_child(&self) -> Child {
-        let iter_plane = self.plane.compute_child(self.selection);
-        let task = RedrawMessage::Redraw;
-        let selection_child = ComplexNum::new(0., 0.);
-
-        let image =
-            RetainedImage::from_color_image("dynamical plane", iter_plane.render(self.palette));
-        let frame = ImageFrame {
-            image,
-            region: Rect::NOTHING,
-        };
-        let plane = dyn_clone::clone_box(&*self.plane);
-        Child {
-            plane,
-            palette: self.palette,
-            iter_plane,
-            image_frame: frame,
-            task,
-            selection: selection_child,
-            selection_parent: self.selection,
-        }
-    }
-}
-
-impl GuiPlane for Parent {
-    fn plane(&self) -> &Box<dyn ParameterPlane> {
-        &self.plane
-    }
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane> {
-        &mut self.plane
-    }
-    fn get_task(&self) -> RedrawMessage {
-        self.task
-    }
-    fn set_task(&mut self, new_task: RedrawMessage) {
-        self.task = new_task;
-    }
-    fn get_frame(&self) -> &ImageFrame {
-        &self.image_frame
-    }
-    fn get_frame_mut(&mut self) -> &mut ImageFrame {
-        &mut self.image_frame
-    }
-    fn get_iter_plane(&self) -> &IterPlane {
-        &self.iter_plane
-    }
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane {
-        &mut self.iter_plane
-    }
-    fn get_palette(&self) -> ColorPalette {
-        self.palette
-    }
-    fn get_palette_mut(&mut self) -> &mut ColorPalette {
-        &mut self.palette
-    }
-    fn select_point(&mut self, point: ComplexNum) {
-        self.selection = point
-    }
-    fn recompute(&mut self) {
-        self.iter_plane = self.plane.compute();
-    }
-}
-
-impl Default for Parent {
-    fn default() -> Self {
-        // let plane = Box::new(QuadRatPer2::new_default(1024, 1024).misiurewicz_curve(2,1));
-        let plane = Box::new(Mandelbrot::new_default(1024, 1024));
-        let palette = ColorPalette::black(32.);
-
+    fn new(plane: Box<dyn ParameterPlane>, palette: ColorPalette) -> Self {
         let iter_plane = plane.compute();
         let task = RedrawMessage::Redraw;
         let selection = ComplexNum::new(-1., 0.);
@@ -264,6 +224,12 @@ impl Default for Parent {
             image,
             region: Rect::NOTHING,
         };
+        let marked_points = PathShape {
+            points: vec![],
+            closed: false,
+            fill: Color32::RED,
+            stroke: Stroke::new(1.0, Color32::RED),
+        };
         Self {
             plane,
             palette,
@@ -271,7 +237,77 @@ impl Default for Parent {
             image_frame: frame,
             task,
             selection,
+            marked_points,
         }
+    }
+}
+
+impl GuiPlane for Parent {
+    #[inline]
+    fn plane(&self) -> &Box<dyn ParameterPlane> {
+        &self.plane
+    }
+    #[inline]
+    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane> {
+        &mut self.plane
+    }
+    #[inline]
+    fn get_task(&self) -> RedrawMessage {
+        self.task
+    }
+    #[inline]
+    fn set_task(&mut self, new_task: RedrawMessage) {
+        self.task = new_task;
+    }
+    #[inline]
+    fn get_frame(&self) -> &ImageFrame {
+        &self.image_frame
+    }
+    #[inline]
+    fn get_frame_mut(&mut self) -> &mut ImageFrame {
+        &mut self.image_frame
+    }
+    #[inline]
+    fn get_iter_plane(&self) -> &IterPlane {
+        &self.iter_plane
+    }
+    #[inline]
+    fn get_iter_plane_mut(&mut self) -> &mut IterPlane {
+        &mut self.iter_plane
+    }
+    #[inline]
+    fn get_marked_points(&self) -> &PathShape {
+        &self.marked_points
+    }
+    #[inline]
+    fn get_marked_points_mut(&mut self) -> &mut PathShape {
+        &mut self.marked_points
+    }
+    #[inline]
+    fn get_palette(&self) -> ColorPalette {
+        self.palette
+    }
+    #[inline]
+    fn get_palette_mut(&mut self) -> &mut ColorPalette {
+        &mut self.palette
+    }
+    #[inline]
+    fn select_point(&mut self, point: ComplexNum) {
+        self.selection = point
+    }
+    #[inline]
+    fn recompute(&mut self) {
+        self.iter_plane = self.plane.compute();
+    }
+}
+
+impl Default for Parent {
+    fn default() -> Self {
+        // let plane = Box::new(QuadRatPer2::new_default(1024, 1024).misiurewicz_curve(2,1));
+        let plane = Box::new(QuadRatPer2::new_default(1024, 1024));
+        let palette = ColorPalette::black(32.);
+
+        Self::new(plane, palette)
     }
 }
 
@@ -282,61 +318,112 @@ struct Child {
     image_frame: ImageFrame,
     task: RedrawMessage,
     selection: ComplexNum,
-    selection_parent: ComplexNum,
+    marked_points: PathShape,
 }
 impl Child {
     fn set_param(&mut self, new_param: ComplexNum) {
-        self.selection_parent = new_param;
+        self.plane.set_param(new_param);
         self.schedule_recompute();
+    }
+
+    fn new(plane: Box<dyn ParameterPlane>, palette: ColorPalette) -> Self {
+        let iter_plane = plane.compute();
+        let task = RedrawMessage::Redraw;
+        let selection = ComplexNum::new(0., 0.);
+
+        let image = RetainedImage::from_color_image("parameter plane", iter_plane.render(palette));
+        let frame = ImageFrame {
+            image,
+            region: Rect::NOTHING,
+        };
+
+        let marked_points = PathShape {
+            points: vec![],
+            closed: false,
+            fill: Color32::RED,
+            stroke: Stroke::new(1.0, Color32::RED),
+        };
+
+        Self {
+            plane,
+            palette,
+            iter_plane,
+            image_frame: frame,
+            task,
+            selection,
+            marked_points,
+        }
     }
 }
 
 impl GuiPlane for Child {
+    #[inline]
     fn plane(&self) -> &Box<dyn ParameterPlane> {
         &self.plane
     }
+    #[inline]
     fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane> {
         &mut self.plane
     }
+    #[inline]
     fn get_task(&self) -> RedrawMessage {
         self.task
     }
+    #[inline]
     fn set_task(&mut self, new_task: RedrawMessage) {
         self.task = new_task;
     }
+    #[inline]
     fn grid(&self) -> PointGrid {
-        self.plane.point_grid_child()
+        self.plane.point_grid()
     }
+    #[inline]
     fn grid_mut(&mut self) -> &mut PointGrid {
-        self.plane.point_grid_child_mut()
+        self.plane.point_grid_mut()
     }
+    #[inline]
     fn get_frame(&self) -> &ImageFrame {
         &self.image_frame
     }
+    #[inline]
     fn get_frame_mut(&mut self) -> &mut ImageFrame {
         &mut self.image_frame
     }
+    #[inline]
     fn get_iter_plane(&self) -> &IterPlane {
         &self.iter_plane
     }
+    #[inline]
     fn get_iter_plane_mut(&mut self) -> &mut IterPlane {
         &mut self.iter_plane
     }
+    #[inline]
+    fn get_marked_points(&self) -> &PathShape {
+        &self.marked_points
+    }
+    #[inline]
+    fn get_marked_points_mut(&mut self) -> &mut PathShape {
+        &mut self.marked_points
+    }
+    #[inline]
     fn get_palette(&self) -> ColorPalette {
         self.palette
     }
+    #[inline]
     fn get_palette_mut(&mut self) -> &mut ColorPalette {
         &mut self.palette
     }
+    #[inline]
     fn select_point(&mut self, point: ComplexNum) {
         self.selection = point;
         self.schedule_recompute();
     }
+    #[inline]
     fn recompute(&mut self) {
-        self.iter_plane = self.plane.compute_child(self.selection_parent);
+        self.iter_plane = self.plane.compute();
     }
     fn name(&self) -> String {
-        format!("Child: c = {}", self.selection_parent)
+        format!("{}: c = {}", self.plane.name(), self.plane.get_param())
     }
 }
 
@@ -390,7 +477,7 @@ impl FractalApp {
 
     fn handle_mouse(&mut self, ctx: &egui::Context) {
         let clicked = ctx.input(|i| i.pointer.any_click());
-        let zoom_factor = ctx.input(|i| i.zoom_delta());
+        let zoom_factor = ctx.input(InputState::zoom_delta);
 
         if let Some(pointer_pos) = ctx.pointer_latest_pos() {
             if self.parent.frame_contains_pixel(pointer_pos) {
@@ -399,12 +486,23 @@ impl FractalApp {
                 self.parent
                     .process_mouse_input(pointer_value, zoom_factor, reselect_point);
                 if reselect_point {
-                    self.child.set_param(pointer_value);
+                    let child_param = self.parent.plane.param_map(pointer_value);
+                    self.child.set_param(child_param);
                 }
 
                 if clicked {
+                    // if let Some(ray) = self.parent.plane.external_ray(2. / 5., 20, 150, 50) {
+                    //     self.parent.mark_curve(ray, Color32::GREEN);
+                    //     // dbg!(&self.parent.marked_points);
+                    // }
                     let orbit = self.parent.plane.get_orbit_info(pointer_value);
                     dbg!(orbit);
+                    // dbg!(&self.parent.marked_points);
+                    // for ((x,y),c) in self.parent.marked_points.indexed_iter() {
+                    //     if let Some(col) = c {
+                    //         dbg!(x,y,col);
+                    //     }
+                    // }
                 }
             } else if self.child.frame_contains_pixel(pointer_pos) {
                 let pointer_value = self.child.map_pixel(pointer_pos);
@@ -417,8 +515,14 @@ impl FractalApp {
 
 impl Default for FractalApp {
     fn default() -> Self {
-        let parent = Parent::default();
-        let child = parent.make_child();
+        let parameter_plane = QuadRatPer2::new_default(1024, 2048).marked_cycle_curve(5);
+        // let parameter_plane = QuadRatPer2::new_default(1024, 2048);
+        // let parameter_plane = Mandelbrot::new_default(1024, 2048).marked_cycle_curve(4);
+        let dynamical_plane = JuliaSet::from(parameter_plane);
+        let palette = ColorPalette::black(32.);
+
+        let parent = Parent::new(Box::new(parameter_plane), palette);
+        let child = Child::new(Box::new(dynamical_plane), palette);
 
         Self {
             parent,
@@ -450,6 +554,7 @@ impl eframe::App for FractalApp {
                     body.row(self.parent.image_frame.height() as f32, |mut row| {
                         row.col(|ui| {
                             self.parent.image_frame.put(ui);
+                            self.parent.put_marked_curves(ui);
                         });
                         row.col(|ui| {
                             self.child.image_frame.put(ui);
