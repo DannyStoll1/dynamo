@@ -1,6 +1,6 @@
 use crate::dynamics::ParameterPlane;
-use crate::point_grid::*;
-use crate::primitive_types::*;
+use crate::point_grid::{Bounds, PointGrid};
+use crate::primitive_types::{ComplexNum, EscapeState, IterCount, Period};
 
 #[derive(Clone, Copy)]
 pub struct CoveringMap<C>

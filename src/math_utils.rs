@@ -1,6 +1,6 @@
-use crate::primitive_types::*;
+use crate::primitive_types::{ComplexNum, RealNum};
 
-pub fn weierstrass_p(
+#[must_use] pub fn weierstrass_p(
     g2: ComplexNum,
     g3: ComplexNum,
     z: ComplexNum,
@@ -36,7 +36,7 @@ pub fn weierstrass_p(
     (p, dp)
 }
 
-pub fn slog(x: RealNum) -> RealNum {
+#[must_use] pub fn slog(x: RealNum) -> RealNum {
     if x.is_infinite() {1000.}
     else if x <= 0. {slog(x.exp()) - 1.}
     else if x > 1. {1. + slog(x.ln())}

@@ -1,6 +1,8 @@
 macro_rules! fractal_impl {
     () => {
-        pub fn new(res_x: usize, res_y: usize, max_iter: Period, bounds: Bounds) -> Self {
+        #[must_use]
+        pub fn new(res_x: usize, res_y: usize, max_iter: Period, bounds: Bounds) -> Self
+        {
             let point_grid = PointGrid::new(res_x, res_y, bounds);
 
             Self {
@@ -9,7 +11,9 @@ macro_rules! fractal_impl {
             }
         }
 
-        pub fn with_res_x(res_x: usize, max_iter: Period, bounds: Bounds) -> Self {
+        #[must_use]
+        pub fn with_res_x(res_x: usize, max_iter: Period, bounds: Bounds) -> Self
+        {
             let point_grid = PointGrid::with_res_x(res_x, bounds);
 
             Self {
@@ -18,7 +22,9 @@ macro_rules! fractal_impl {
             }
         }
 
-        pub fn with_res_y(res_y: usize, max_iter: Period, bounds: Bounds) -> Self {
+        #[must_use]
+        pub fn with_res_y(res_y: usize, max_iter: Period, bounds: Bounds) -> Self
+        {
             let point_grid = PointGrid::with_res_y(res_y, bounds);
 
             Self {
@@ -27,7 +33,9 @@ macro_rules! fractal_impl {
             }
         }
 
-        pub fn new_default(res_y: usize, max_iter: Period) -> Self {
+        #[must_use]
+        pub fn new_default(res_y: usize, max_iter: Period) -> Self
+        {
             let bounds = Self::DEFAULT_BOUNDS;
             Self::with_res_y(res_y, max_iter, bounds)
         }
@@ -37,12 +45,14 @@ macro_rules! fractal_impl {
 macro_rules! point_grid_getters {
     () => {
         #[inline]
-        fn point_grid(&self) -> PointGrid {
+        fn point_grid(&self) -> PointGrid
+        {
             self.point_grid
         }
 
         #[inline]
-        fn point_grid_mut(&mut self) -> &mut PointGrid {
+        fn point_grid_mut(&mut self) -> &mut PointGrid
+        {
             &mut self.point_grid
         }
     };
@@ -53,22 +63,26 @@ macro_rules! parameter_plane_impl {
         crate::macros::point_grid_getters!();
 
         #[inline]
-        fn max_iter(&self) -> Period {
+        fn max_iter(&self) -> Period
+        {
             self.max_iter
         }
 
         #[inline]
-        fn max_iter_mut(&mut self) -> &mut Period {
+        fn max_iter_mut(&mut self) -> &mut Period
+        {
             &mut self.max_iter
         }
 
         #[inline]
-        fn set_max_iter(&mut self, new_max_iter: Period) {
+        fn set_max_iter(&mut self, new_max_iter: Period)
+        {
             self.max_iter = new_max_iter
         }
 
         #[inline]
-        fn default_julia_bounds(&self) -> Bounds {
+        fn default_julia_bounds(&self) -> Bounds
+        {
             Self::JULIA_BOUNDS
         }
     };
@@ -76,19 +90,21 @@ macro_rules! parameter_plane_impl {
 
 macro_rules! default_name {
     () => {
-        fn name(&self) -> String {
+        fn name(&self) -> String
+        {
             let full_struct_name = type_name::<Self>();
             let parts: Vec<&str> = full_struct_name.split("::").collect();
-            if let Some(struct_name) = parts.last() {
+            if let Some(struct_name) = parts.last()
+            {
                 format!("{struct_name}")
-            } else {
+            }
+            else
+            {
                 "Unknown".to_owned()
             }
         }
     };
 }
-
-pub(crate) use {default_name, fractal_impl, parameter_plane_impl, point_grid_getters};
 
 macro_rules! max {
     ($x:expr) => ( $x );
@@ -104,12 +120,8 @@ macro_rules! min {
     };
 }
 
-// macro_rules! debug {
-//     ($x:expr) => { println!("{} = {:?}", stringify!($x), $x ); };
-//     ($x:expr, $($xs:expr),+) => {
-//         debug!($x);
-//         debug!($xs);
-//     };
-// }
+pub(crate) use {
+    default_name, fractal_impl, parameter_plane_impl, point_grid_getters,
+};
 
 pub(crate) use {max, min};

@@ -1,5 +1,5 @@
-use crate::macros::*;
-use crate::primitive_types::*;
+use crate::macros::{max, min};
+use crate::primitive_types::IterCount;
 use eframe::egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
@@ -13,6 +13,7 @@ pub struct Hsv {
     luminosity: f32,
 }
 impl Hsv {
+    #[must_use]
     pub fn new(hue: f32, saturation: f32, luminosity: f32) -> Self {
         Self {
             hue,
@@ -61,17 +62,17 @@ impl From<Color32> for Hsv {
             };
         }
 
-        let range = range as f32;
-        let c_max_f32 = c_max as f32;
+        let range = f32::from(range);
+        let c_max_f32 = f32::from(c_max);
 
         let normalization = 1. / (6. * range);
         let hue = {
             if c_max == r {
-                ((g - b) as f32 * normalization) % 1.
+                (f32::from(g - b) * normalization) % 1.
             } else if c_max == g {
-                (b - r) as f32 * normalization + 1. / 3.
+                f32::from(b - r) * normalization + 1. / 3.
             } else {
-                (r - g) as f32 * normalization + 2. / 3.
+                f32::from(r - g) * normalization + 2. / 3.
             }
         };
 
@@ -103,7 +104,7 @@ impl Sinusoid {
         }
     }
     fn get_value_f64(&self, potential: IterCount) -> f64 {
-        let theta = 2.0 * PI * (potential as f64 / self.period - self.phase);
+        let theta = 2.0 * PI * (f64::from(potential) / self.period - self.phase);
         self.amplitude * theta.cos() + self.midline
     }
     fn get_value_u8(&self, potential: IterCount) -> u8 {
@@ -144,6 +145,7 @@ pub struct ColorPalette {
 }
 
 impl ColorPalette {
+    #[must_use]
     pub fn new(period_r: f64, period_g: f64, period_b: f64) -> Self {
         Self {
             color_map_r: Sinusoid::new(period_r),
@@ -154,6 +156,7 @@ impl ColorPalette {
         }
     }
 
+    #[must_use]
     pub fn white(period: f64) -> Self {
         let color_map = Sinusoid::new(period);
         Self {
@@ -165,6 +168,7 @@ impl ColorPalette {
         }
     }
 
+    #[must_use]
     pub fn black(period: f64) -> Self {
         let color_map = Sinusoid {
             period,
@@ -181,6 +185,7 @@ impl ColorPalette {
         }
     }
 
+    #[must_use]
     pub fn new_random(contrast: f64, brightness: f64) -> Self {
         let mut rng = thread_rng();
         let period_dist = ChiSquared::new(7.5).unwrap();
@@ -192,6 +197,7 @@ impl ColorPalette {
         Self::new_with_contrast(period_r, period_g, period_b, contrast, brightness)
     }
 
+    #[must_use]
     pub fn new_with_contrast(
         period_r: f64,
         period_g: f64,
@@ -234,6 +240,7 @@ impl ColorPalette {
         }
     }
 
+    #[must_use]
     pub fn map_rgb(&self, value: IterCount) -> Rgb<u8> {
         if value <= 0.0 {
             let (r, g, b) = self.in_color;
@@ -247,9 +254,12 @@ impl ColorPalette {
         }
     }
 
+    #[must_use]
     pub fn map_color32(&self, value: IterCount) -> Color32 {
         if value < 0.0 {
-            self.period_coloring.map_color32(-value as f32)
+            let preperiod = -value % 1.;
+            let period = -(value + preperiod);
+            self.period_coloring.map_color32(period as f32, preperiod as f32)
         } else if value == 0.0 {
             let (r, g, b) = self.in_color;
             Color32::from_rgb(r, g, b)
@@ -278,23 +288,26 @@ pub struct DiscretePalette {
 }
 
 impl DiscretePalette {
-    const DEFAULT_BASE_HUE: f32 = 0.87;
+    const DEFAULT_BASE_HUE: f32 = 0.47;
     const DEFAULT_SATURATION: f32 = 0.7;
-    const DEFAULT_LUMINOSITY: f32 = 0.5;
+    const DEFAULT_LUMINOSITY: f32 = 0.75;
     const DEFAULT_NUM_COLORS: f32 = 7.;
 
-    pub fn map_hsv(&self, value: f32) -> Hsv {
-        let hue = (value / self.num_colors + self.base_hue) % 1.;
+    #[must_use]
+    pub fn map_hsv(&self, period: f32, preperiod: f32) -> Hsv {
+        let hue = (period / self.num_colors + self.base_hue) % 1.;
 
         Hsv {
             hue,
             saturation: self.saturation,
-            luminosity: self.luminosity,
+            luminosity: self.luminosity * preperiod,
         }
     }
-    pub fn map_color32(&self, value: f32) -> Color32 {
-        self.map_hsv(value).into()
+    #[must_use]
+    pub fn map_color32(&self, period: f32, preperiod: f32) -> Color32 {
+        self.map_hsv(period, preperiod).into()
     }
+    #[must_use]
     pub fn black() -> Self {
         Self {
             num_colors: 1.,
@@ -303,6 +316,7 @@ impl DiscretePalette {
             luminosity: 0.,
         }
     }
+    #[must_use]
     pub fn white() -> Self {
         Self {
             num_colors: 1.,

@@ -1,4 +1,4 @@
-use crate::primitive_types::*;
+use crate::primitive_types::{ComplexNum, EscapeState};
 
 #[derive(Clone, Copy, Debug)]
 pub struct OrbitInfo {

@@ -1,20 +1,26 @@
 use crate::covering_maps::CoveringMap;
 use crate::dynamics::{HasDynamicalCovers, ParameterPlane};
-use crate::math_utils::*;
-use crate::point_grid::*;
-use crate::primitive_types::*;
+use crate::math_utils::{slog, weierstrass_p};
+use crate::point_grid::{Bounds, PointGrid};
+use crate::primitive_types::{
+    ComplexNum, EscapeState, IterCount, Period, RealNum, ONE_COMPLEX, TWO,
+};
 
 use crate::macros::*;
 
 use std::any::type_name;
 
+const INTERNAL_COLORING_RATE: IterCount = 0.02;
+
 #[derive(Clone, Copy, Debug)]
-pub struct Mandelbrot {
+pub struct Mandelbrot
+{
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl Mandelbrot {
+impl Mandelbrot
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -2.2,
         max_x: 0.65,
@@ -25,59 +31,60 @@ impl Mandelbrot {
     fractal_impl!();
 }
 
-impl ParameterPlane for Mandelbrot {
+impl ParameterPlane for Mandelbrot
+{
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
-        match state {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } => {
-                if z.is_nan() {
-                    return (iters as IterCount) - 1.;
-                }
-
-                let u = self.escape_radius().log2();
-                let v = z.norm_sqr().log2();
-                let residual = (v / u).log2();
-                (iters as IterCount) - (residual as IterCount)
-            }
+    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    {
+        if z.is_nan()
+        {
+            return (iters as IterCount) - 1.;
         }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        (iters as IterCount) - (residual as IterCount)
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         z * z + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
-        z+z
+    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
+        z + z
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         (z + z, ONE_COMPLEX)
     }
 }
 
-impl HasDynamicalCovers for Mandelbrot {
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
+impl HasDynamicalCovers for Mandelbrot
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let bounds: Bounds;
 
-        match period {
-            1 => {
+        match period
+        {
+            1 =>
+            {
                 param_map = |c| 0.25 - c * c;
                 bounds = Bounds {
                     min_x: -1.8,
@@ -86,7 +93,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 1.0,
                 };
             }
-            3 => {
+            3 =>
+            {
                 param_map = |c| -1.75 * (1. + 7. * c * c);
                 bounds = Bounds {
                     min_x: -0.3,
@@ -95,7 +103,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 0.5,
                 };
             }
-            4 => {
+            4 =>
+            {
                 param_map = |c| {
                     let u = c * c;
                     -0.25 * u - 0.75 - 1. / c
@@ -107,7 +116,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 3.1,
                 };
             }
-            _ => {
+            _ =>
+            {
                 param_map = |c| c;
                 bounds = self.point_grid.bounds;
             }
@@ -116,12 +126,15 @@ impl HasDynamicalCovers for Mandelbrot {
         CoveringMap::new(self, param_map, grid)
     }
 
-    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self> {
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let bounds: Bounds;
 
-        match period {
-            1 => {
+        match period
+        {
+            1 =>
+            {
                 param_map = |c| 0.25 - c * c;
                 bounds = Bounds {
                     min_x: -1.8,
@@ -130,7 +143,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 1.0,
                 };
             }
-            3 => {
+            3 =>
+            {
                 param_map = |c| {
                     let c2 = c * c;
                     let v = c2 * (c2 - 3. * c + 6.) - c - c + 2.;
@@ -144,7 +158,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 3.,
                 };
             }
-            _ => {
+            _ =>
+            {
                 param_map = |c| c;
                 bounds = self.point_grid.bounds;
             }
@@ -152,12 +167,15 @@ impl HasDynamicalCovers for Mandelbrot {
         let grid = self.point_grid.with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
     }
-    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self> {
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let bounds: Bounds;
 
-        match (preperiod, period) {
-            (2, 1) => {
+        match (preperiod, period)
+        {
+            (2, 1) =>
+            {
                 param_map = |c| {
                     let c2 = c * c;
                     -2. * (c2 + 1.) / ((c2 - 1.) * (c2 - 1.))
@@ -169,7 +187,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 3.0,
                 };
             }
-            (2, 2) => {
+            (2, 2) =>
+            {
                 param_map = |c| {
                     let c2 = c * c;
                     -(c2 * (c2 + c + c + 2.) - c - c + 1.) / (4. * c2)
@@ -181,7 +200,8 @@ impl HasDynamicalCovers for Mandelbrot {
                     max_y: 2.5,
                 };
             }
-            (_, _) => {
+            (_, _) =>
+            {
                 param_map = |c| c;
                 bounds = self.point_grid.bounds;
             }
@@ -192,12 +212,14 @@ impl HasDynamicalCovers for Mandelbrot {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct QuadRatPer2 {
+pub struct QuadRatPer2
+{
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl QuadRatPer2 {
+impl QuadRatPer2
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -2.8,
         max_x: 3.2,
@@ -208,20 +230,42 @@ impl QuadRatPer2 {
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPer2 {
+impl ParameterPlane for QuadRatPer2
+{
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
-        match state {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    {
+        match state
+        {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
+            EscapeState::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let u = period as IterCount;
+                let mut w = (-(final_error.norm_sqr() / self.periodicity_tolerance())
+                    .log(multiplier.norm()) as IterCount);
+                if w.is_infinite() || w.is_nan()
+                {
+                    w = -0.2;
+                }
+                let v = preperiod as IterCount + u * w;
+                // -(u + 0.99 * multiplier.norm_sqr())
+                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+            }
             EscapeState::Escaped {
                 iters,
                 final_value: z,
-            } => {
-                if z.is_nan() {
+            } =>
+            {
+                if z.is_nan()
+                {
                     return (iters as IterCount) - 2.;
                 }
 
@@ -238,40 +282,50 @@ impl ParameterPlane for QuadRatPer2 {
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         (z * z + c) / (z * z - 1.)
+        // c / (z*z + 2.*z)
         // c / z + 1. / (z * z)
     }
 
     // fn start_point(&self, c: ComplexNum) -> ComplexNum {
     //     -2. / c
+    //     (-1.).into()
     // }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         let u = 1. / (z * z - 1.);
         -TWO * (c + 1.) * z * u * u
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         1. / (z * z - 1.)
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         let u = 1. / (z * z - 1.);
         (-TWO * (c + 1.) * z * u * u, u)
     }
 }
 
-impl HasDynamicalCovers for QuadRatPer2 {
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
+impl HasDynamicalCovers for QuadRatPer2
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let bounds: Bounds;
 
-        match period {
-            1 => {
+        match period
+        {
+            1 =>
+            {
                 param_map = |c| (4. - c * (c + 2.)) * c / 8.;
                 bounds = Bounds {
                     min_x: -5.0,
@@ -280,7 +334,8 @@ impl HasDynamicalCovers for QuadRatPer2 {
                     max_y: 3.0,
                 };
             }
-            4 => {
+            4 =>
+            {
                 param_map = |c| {
                     let u = c * c;
                     u * c - 2. * u + 4. * c - 1.
@@ -292,30 +347,31 @@ impl HasDynamicalCovers for QuadRatPer2 {
                     max_y: 2.2,
                 };
             }
-            5 => {
+            5 =>
+            {
                 param_map = |c| {
                     // t = sqrt(-2235)
                     // ((-2043332879690812551104*t + 322671215001188162496)*c^6 + (-7211787718815174272*t + 38457203855637713472)*c^5 + (-10445615819508480*t + 113836835145028800)*c^4 + (-7931553616080*t + 135137329840080)*c^3 + (-3321323160*t + 79799557200)*c^2 + (-724598*t + 23400162)*c + (-64*t + 2724))/((-165726073638468871360*t + 59671792608719217337728)*c^6 + (-532082528560799520*t + 218792941658814953376)*c^5 + (-681491680626360*t + 334169395252260120)*c^4 + (-435333784880*t + 272101938829200)*c^3 + (-138715290*t + 124564255830)*c^2 + (-17640*t + 30391956)*c + 3087)
-                    let pole = ComplexNum::new(-1.02913187270464, 0.0515641552714143);
+                    let pole = ComplexNum::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
                     let angle = ComplexNum::new(1., 0.);
 
                     let c = angle / c + pole;
 
-                    let a0 = ComplexNum::new(-5448., 6051.30068662928);
-                    let a1 = ComplexNum::new(-29961.7951344430, 43861.6394739337);
-                    let a2 = ComplexNum::new(-65413.6552992732, 128711.643030672);
-                    let a3 = ComplexNum::new(-70918.9407863760, 196781.349743989);
-                    let a4 = ComplexNum::new(-38246.2351271793, 165912.340564512);
-                    let a5 = ComplexNum::new(-8271.84813212745, 73334.1979222552);
-                    let a6 = ComplexNum::new(-44.4328369324866, 13302.1458570374);
+                    let a0 = ComplexNum::new(-5448., 6_051.300_686_629_28);
+                    let a1 = ComplexNum::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
+                    let a2 = ComplexNum::new(-65_413.655_299_273_2, 128_711.643_030_672);
+                    let a3 = ComplexNum::new(-70_918.940_786_376_0, 196_781.349_743_989);
+                    let a4 = ComplexNum::new(-38_246.235_127_179_3, 165_912.340_564_512);
+                    let a5 = ComplexNum::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
+                    let a6 = ComplexNum::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
 
                     let b0 = ComplexNum::new(-6174., 0.);
-                    let b1 = ComplexNum::new(-38914.1562099872, 1067.79113428438);
-                    let b2 = ComplexNum::new(-102108.377281498, 5375.65061551438);
-                    let b3 = ComplexNum::new(-142796.822391875, 10800.6040082957);
-                    let b4 = ComplexNum::new(-112272.282050380, 10824.4340747047);
-                    let b5 = ComplexNum::new(-47060.6753568701, 5410.56489483889);
-                    let b6 = ComplexNum::new(-8216.99273808066, 1078.88069817905);
+                    let b1 = ComplexNum::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
+                    let b2 = ComplexNum::new(-102_108.377_281_498, 5_375.650_615_514_38);
+                    let b3 = ComplexNum::new(-142_796.822_391_875, 10_800.604_008_295_7);
+                    let b4 = ComplexNum::new(-112_272.282_050_380, 10_824.434_074_704_7);
+                    let b5 = ComplexNum::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
+                    let b6 = ComplexNum::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
 
                     let numer = a0 + c * (a1 + c * (a2 + c * (a3 + c * (a4 + c * (a5 + c * a6)))));
                     let denom = b0 + c * (b1 + c * (b2 + c * (b3 + c * (b4 + c * (b5 + c * b6)))));
@@ -325,11 +381,12 @@ impl HasDynamicalCovers for QuadRatPer2 {
                 bounds = Bounds {
                     min_x: -8.,
                     max_x: 5.5,
-                    min_y: -8.,
-                    max_y: 1.5,
+                    min_y: -1.5,
+                    max_y: 8.,
                 };
             }
-            _ => {
+            _ =>
+            {
                 param_map = |c| c;
                 bounds = self.point_grid.bounds;
             }
@@ -338,12 +395,15 @@ impl HasDynamicalCovers for QuadRatPer2 {
         CoveringMap::new(self, param_map, grid)
     }
 
-    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self> {
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let bounds: Bounds;
 
-        match (preperiod, period) {
-            (2, 1) => {
+        match (preperiod, period)
+        {
+            (2, 1) =>
+            {
                 param_map = |c| {
                     let c2 = c * c;
                     // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
@@ -358,7 +418,8 @@ impl HasDynamicalCovers for QuadRatPer2 {
                     max_y: 5.1,
                 };
             }
-            (2, 2) => {
+            (2, 2) =>
+            {
                 param_map = |c| {
                     //(-t^4 + 2*t^2 + 1)/(2*t^4)
                     let c2 = c * c;
@@ -371,7 +432,8 @@ impl HasDynamicalCovers for QuadRatPer2 {
                     max_y: 4.,
                 };
             }
-            (_, _) => {
+            (_, _) =>
+            {
                 param_map = |c| c;
                 bounds = self.point_grid.bounds;
             }
@@ -382,12 +444,14 @@ impl HasDynamicalCovers for QuadRatPer2 {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct QuadRatPer3 {
+pub struct QuadRatPer3
+{
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl QuadRatPer3 {
+impl QuadRatPer3
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -2.5,
         max_x: 3.2,
@@ -398,24 +462,40 @@ impl QuadRatPer3 {
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPer3 {
+impl ParameterPlane for QuadRatPer3
+{
     parameter_plane_impl!();
     default_name!();
 
-    fn start_point(&self, _c: ComplexNum) -> ComplexNum {
+    fn start_point(&self, _c: ComplexNum) -> ComplexNum
+    {
         0.0.into()
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount {
-        match state {
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount
+    {
+        match state
+        {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period, .. } => -(period as IterCount),
+            EscapeState::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let u = period as IterCount;
+                let v = preperiod as IterCount;
+                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+            }
             EscapeState::Escaped {
                 iters,
                 final_value: z,
-            } => {
-                if z.is_nan() {
+            } =>
+            {
+                if z.is_nan()
+                {
                     return (iters as IterCount) - 3.;
                 }
 
@@ -429,26 +509,30 @@ impl ParameterPlane for QuadRatPer3 {
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         (z * z + c * c * c - c - 1.) / (z * z - c * c)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         let u = 1. / (c * c - z * z);
         let v = c + 1.;
         TWO * (1. - c) * v * v * z * u * u
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         let r = c * c - z * z;
         let u2 = 1. / (r * r);
         (c + 1.) * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)))
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         let r = c * c - z * z;
         let u = 1. / r;
         let u2 = u * u;
@@ -458,15 +542,19 @@ impl ParameterPlane for QuadRatPer3 {
         (df_dz, df_dc)
     }
 }
-impl HasDynamicalCovers for QuadRatPer3 {
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
+impl HasDynamicalCovers for QuadRatPer3
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let bounds: Bounds;
 
-        match period {
-            1 => {
+        match period
+        {
+            1 =>
+            {
                 param_map = |c| {
-                    let pole = 1.32471795724475;
+                    let pole = 1.324_717_957_244_75;
                     let c = 1. / c + pole;
                     let c2 = c * c;
                     let c3 = c2 * c;
@@ -479,7 +567,8 @@ impl HasDynamicalCovers for QuadRatPer3 {
                     max_y: 5.32,
                 };
             }
-            4 => {
+            4 =>
+            {
                 param_map = |c| {
                     let t = (13.0 as RealNum).sqrt();
                     let g2 = ComplexNum::new(-8.0 / 3.0, 0.);
@@ -511,7 +600,8 @@ impl HasDynamicalCovers for QuadRatPer3 {
                     max_y: 2.6,
                 };
             }
-            _ => {
+            _ =>
+            {
                 param_map = |c| c;
                 bounds = self.point_grid.bounds;
             }
@@ -522,12 +612,14 @@ impl HasDynamicalCovers for QuadRatPer3 {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct QuadRatPer4 {
+pub struct QuadRatPer4
+{
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl QuadRatPer4 {
+impl QuadRatPer4
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -1.,
         max_x: 0.2,
@@ -538,20 +630,35 @@ impl QuadRatPer4 {
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPer4 {
+impl ParameterPlane for QuadRatPer4
+{
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, c: ComplexNum) -> IterCount {
-        match state {
+    fn encode_escape_result(&self, state: EscapeState, c: ComplexNum) -> IterCount
+    {
+        match state
+        {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
+            EscapeState::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let u = period as IterCount;
+                let v = preperiod as IterCount;
+                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+            }
             EscapeState::Escaped {
                 iters,
                 final_value: z,
-            } => {
-                if z.is_nan() {
+            } =>
+            {
+                if z.is_nan()
+                {
                     return (iters as IterCount) - 4.;
                 }
 
@@ -576,48 +683,58 @@ impl ParameterPlane for QuadRatPer4 {
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum {
-        let pole = 2.61803398874989;
+    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    {
+        let pole = 2.618_033_988_749_89;
         1. / c + pole
     }
 
     #[inline]
-    fn start_point(&self, c: ComplexNum) -> ComplexNum {
+    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    {
         (c + c) * (c + c - 1.) / (c * (c + 1.) - 1.)
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         (c * z - c - c - z + 1.) * (z - c) / (z * z * (c - 1.))
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn dynamical_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX //TODO
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX //TODO
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         (ONE_COMPLEX, ONE_COMPLEX) //TODO
     }
 }
 
-impl HasDynamicalCovers for QuadRatPer4 {
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self> {
+impl HasDynamicalCovers for QuadRatPer4
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
         let param_map: fn(ComplexNum) -> ComplexNum;
         let grid: PointGrid;
         let bounds: Bounds;
 
-        match period {
-            3 => {
+        match period
+        {
+            3 =>
+            {
                 param_map = |c| {
                     // (18)^(2/3) / 3
-                    let alpha = ComplexNum::new(2.28942848510666, 0.);
+                    let alpha = ComplexNum::new(2.289_428_485_106_66, 0.);
                     let g2 = alpha;
                     let g3 = ComplexNum::new(-19. / 12., 0.);
 
@@ -641,7 +758,8 @@ impl HasDynamicalCovers for QuadRatPer4 {
                 };
                 grid = self.point_grid.with_same_height(bounds);
             }
-            _ => {
+            _ =>
+            {
                 param_map = |c| c;
                 grid = self.point_grid;
             }
@@ -651,12 +769,279 @@ impl HasDynamicalCovers for QuadRatPer4 {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct BurningShip {
+pub struct OddCubic
+{
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl BurningShip {
+impl OddCubic
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -1.6,
+        max_x: 1.6,
+        min_y: -1.3,
+        max_y: 1.3,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(2.2);
+    fractal_impl!();
+}
+
+impl ParameterPlane for OddCubic
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    {
+        if z.is_nan()
+        {
+            return (iters as IterCount) - 1.;
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log(3.);
+        (iters as IterCount) - (residual as IterCount)
+    }
+
+    #[inline]
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        2. * (z * z * z / 3. - c * z)
+    }
+
+    #[inline]
+    fn start_point(&self, param: ComplexNum) -> ComplexNum
+    {
+        param.powf(0.5)
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        2. * (z * z - c)
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
+        -(z + z)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct CubicPer2CritMarked
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl CubicPer2CritMarked
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -1.6,
+        max_x: 1.6,
+        min_y: -1.3,
+        max_y: 1.3,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(2.2);
+    fractal_impl!();
+}
+
+impl ParameterPlane for CubicPer2CritMarked
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    {
+        if z.is_nan()
+        {
+            return (iters as IterCount) - 1.;
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log(3.);
+        (iters as IterCount) - (residual as IterCount)
+    }
+
+    #[inline]
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        z * z * (z - c - 1. / c) + c
+    }
+
+    #[inline]
+    fn start_point(&self, param: ComplexNum) -> ComplexNum
+    {
+        2. / 3. * (param + 1. / param)
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        z * (3. * z - c - c - 2. / c)
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        let z2 = z*z;
+        let c2 = c*c;
+        1. + z2/c2 + -z2
+    }
+}
+#[derive(Clone, Copy, Debug)]
+pub struct Biquadratic
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+    param: ComplexNum,
+}
+
+impl Biquadratic
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -1.6,
+        max_x: 1.25,
+        min_y: -1.25,
+        max_y: 1.25,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::square(2.5);
+
+    #[must_use]
+    pub const fn new(
+        res_x: usize,
+        res_y: usize,
+        max_iter: Period,
+        param: ComplexNum,
+        bounds: Bounds,
+    ) -> Self
+    {
+        let point_grid = PointGrid::new(res_x, res_y, bounds);
+
+        Self {
+            point_grid,
+            max_iter,
+            param,
+        }
+    }
+
+    #[must_use]
+    pub const fn with_res_y(
+        res_y: usize,
+        max_iter: Period,
+        param: ComplexNum,
+        bounds: Bounds,
+    ) -> Self
+    {
+        let point_grid = PointGrid::with_res_y(res_y, bounds);
+
+        Self {
+            point_grid,
+            max_iter,
+            param,
+        }
+    }
+
+    #[must_use]
+    pub const fn with_res_x(
+        res_x: usize,
+        max_iter: Period,
+        param: ComplexNum,
+        bounds: Bounds,
+    ) -> Self
+    {
+        let point_grid = PointGrid::with_res_x(res_x, bounds);
+        Self {
+            point_grid,
+            max_iter,
+            param,
+        }
+    }
+
+    #[must_use]
+    pub const fn new_default(res_y: usize, max_iter: Period, param: ComplexNum) -> Self
+    {
+        let bounds = Self::DEFAULT_BOUNDS;
+        Self::with_res_y(res_y, max_iter, param, bounds)
+    }
+}
+
+impl ParameterPlane for Biquadratic
+{
+    parameter_plane_impl!();
+
+    #[inline]
+    fn name(&self) -> String
+    {
+        let param = self.param;
+        format!("Biquadratic({param})")
+    }
+
+    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    {
+        if z.is_nan()
+        {
+            return (iters as IterCount) - 1.;
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2() / 2.;
+        (iters as IterCount) - (residual as IterCount)
+    }
+
+    #[inline]
+    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    {
+        c
+    }
+
+    #[inline]
+    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    {
+        ComplexNum::new(0., 0.)
+    }
+
+    #[inline]
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        let u = z * z + c;
+        u * u + self.param
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        4. * z * (z * z + c)
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        2. * (z * z + c)
+    }
+
+    #[inline]
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
+        let w = z * z + c;
+        (4. * z * w, w + w)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct BurningShip
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl BurningShip
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -2.2,
         max_x: 1.25,
@@ -667,20 +1052,36 @@ impl BurningShip {
     fractal_impl!();
 }
 
-impl ParameterPlane for BurningShip {
+impl ParameterPlane for BurningShip
+{
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
-        match state {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    {
+        match state
+        {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period, .. } => -(period as IterCount),
+            // EscapeState::Periodic { period, .. } => -(period as IterCount),
+            EscapeState::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let u = period as IterCount;
+                let v = preperiod as IterCount;
+                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+            }
             EscapeState::Escaped {
                 iters,
                 final_value: z,
-            } => {
-                if z.is_nan() {
+            } =>
+            {
+                if z.is_nan()
+                {
                     return (iters as IterCount) - 1.;
                 }
 
@@ -693,40 +1094,47 @@ impl ParameterPlane for BurningShip {
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         let z = ComplexNum::new(z.re.abs(), z.im.abs());
         z * z + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn dynamical_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX //TODO
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX //TODO
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         (ONE_COMPLEX, ONE_COMPLEX) //TODO
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum {
+    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    {
         c
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Sailboat {
+pub struct Sailboat
+{
     point_grid: PointGrid,
     max_iter: Period,
     shift: ComplexNum,
 }
 
-impl Sailboat {
+impl Sailboat
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -6.,
         max_x: 6.,
@@ -735,13 +1143,15 @@ impl Sailboat {
     };
     const JULIA_BOUNDS: Bounds = Bounds::square(5.);
 
+    #[must_use]
     pub const fn new(
         res_x: usize,
         res_y: usize,
         max_iter: Period,
         shift: ComplexNum,
         bounds: Bounds,
-    ) -> Self {
+    ) -> Self
+    {
         let point_grid = PointGrid::new(res_x, res_y, bounds);
 
         Self {
@@ -751,7 +1161,14 @@ impl Sailboat {
         }
     }
 
-    pub const fn with_res_y(res_y: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
+    #[must_use]
+    pub const fn with_res_y(
+        res_y: usize,
+        max_iter: Period,
+        shift: ComplexNum,
+        bounds: Bounds,
+    ) -> Self
+    {
         let point_grid = PointGrid::with_res_y(res_y, bounds);
 
         Self {
@@ -761,7 +1178,14 @@ impl Sailboat {
         }
     }
 
-    pub const fn with_res_x(res_x: usize, max_iter: Period, shift: ComplexNum, bounds: Bounds) -> Self {
+    #[must_use]
+    pub const fn with_res_x(
+        res_x: usize,
+        max_iter: Period,
+        shift: ComplexNum,
+        bounds: Bounds,
+    ) -> Self
+    {
         let point_grid = PointGrid::with_res_x(res_x, bounds);
         Self {
             point_grid,
@@ -770,25 +1194,42 @@ impl Sailboat {
         }
     }
 
-    pub const fn new_default(res_y: usize, max_iter: Period, shift: ComplexNum) -> Self {
+    #[must_use]
+    pub const fn new_default(res_y: usize, max_iter: Period, shift: ComplexNum) -> Self
+    {
         let bounds = Self::DEFAULT_BOUNDS;
         Self::with_res_y(res_y, max_iter, shift, bounds)
     }
 }
 
-impl ParameterPlane for Sailboat {
+impl ParameterPlane for Sailboat
+{
     parameter_plane_impl!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
-        match state {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    {
+        match state
+        {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
+            EscapeState::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let u = period as IterCount;
+                let v = preperiod as IterCount;
+                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+            }
             EscapeState::Escaped {
                 iters,
                 final_value: z,
-            } => {
-                if z.is_nan() {
+            } =>
+            {
+                if z.is_nan()
+                {
                     return (iters as IterCount) - 1.;
                 }
 
@@ -801,45 +1242,53 @@ impl ParameterPlane for Sailboat {
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         let z = ComplexNum::new(z.re.abs(), z.im.abs()) + self.shift;
         z * z + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn dynamical_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX //TODO
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX //TODO
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         (ONE_COMPLEX, ONE_COMPLEX) //TODO
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum {
+    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    {
         c
     }
 
     #[inline]
-    fn name(&self) -> String {
+    fn name(&self) -> String
+    {
         let shift = self.shift;
         format!("Sailboat({shift})")
     }
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Exponential {
+pub struct Exponential
+{
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl Exponential {
+impl Exponential
+{
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -7.,
         max_x: 7.,
@@ -856,27 +1305,44 @@ impl Exponential {
     fractal_impl!();
 }
 
-impl ParameterPlane for Exponential {
+impl ParameterPlane for Exponential
+{
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount {
-        match state {
+    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    {
+        match state
+        {
             EscapeState::NotYetEscaped => 0.,
             EscapeState::Bounded => 0.,
-            EscapeState::Periodic { period: n, .. } => -(n as IterCount),
+            EscapeState::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let u = period as IterCount;
+                let v = preperiod as IterCount;
+                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+            }
             EscapeState::Escaped {
                 iters,
                 final_value: z,
-            } => {
-                if z.is_nan() {
+            } =>
+            {
+                if z.is_nan()
+                {
                     return (iters as IterCount) - 1.;
                 }
 
-                if z.re < 0. {
+                if z.re < 0.
+                {
                     return -1.;
                 }
-                if z.is_infinite() {
+                if z.is_infinite()
+                {
                     return (iters + 1) as IterCount;
                 }
                 let u = slog(self.escape_radius());
@@ -888,27 +1354,32 @@ impl ParameterPlane for Exponential {
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
         z.exp() + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         z.exp()
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum {
+    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
         ONE_COMPLEX
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum) {
+    fn gradient(&self, z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
         (z.exp(), ONE_COMPLEX)
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum {
+    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    {
         c
     }
 }
