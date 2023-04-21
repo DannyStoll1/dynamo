@@ -1,5 +1,4 @@
-use crate::primitive_types::*;
-use super::ParameterPlane;
+use crate::primitive_types::{ComplexNum, EscapeState, Period};
 
 pub struct Orbit<F, S>
 where
@@ -77,30 +76,35 @@ where
     }
 }
 
-pub struct CycleDetectedOrbit<F, S, C>
+pub struct CycleDetectedOrbit<F, G, S, C>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
     S: Fn(Period, ComplexNum) -> EscapeState,
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
 {
     f: F,
+    df_dz: G,
     stop_condition: S,
     check_periodicity: C,
     param: ComplexNum,
     pub z_slow: ComplexNum,
     pub z_fast: ComplexNum,
+    pub multiplier: ComplexNum,
     pub iter: Period,
     pub state: EscapeState,
 }
 
-impl<F, S, C> CycleDetectedOrbit<F, S, C>
+impl<F, G, S, C> CycleDetectedOrbit<F, G, S, C>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
     S: Fn(Period, ComplexNum) -> EscapeState,
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
 {
     pub fn new(
         f: F,
+        df_dz: G,
         stop_condition: S,
         check_periodicity: C,
         z: ComplexNum,
@@ -109,11 +113,13 @@ where
     {
         Self {
             f,
+            df_dz,
             stop_condition,
             check_periodicity,
             param,
             z_slow: z,
             z_fast: z,
+            multiplier: (1.).into(),
             iter: 0,
             state: EscapeState::NotYetEscaped,
         }
@@ -122,6 +128,11 @@ where
     fn apply_map(&self, z: ComplexNum) -> ComplexNum
     {
         (self.f)(z, self.param)
+    }
+
+    fn derivative(&self, z: ComplexNum) -> ComplexNum
+    {
+        (self.df_dz)(z, self.param)
     }
 
     // pub fn from_plane(plane: impl ParameterPlane, param: ComplexNum) -> Self
@@ -137,9 +148,10 @@ where
     // }
 }
 
-impl<F, S, C> Iterator for CycleDetectedOrbit<F, S, C>
+impl<F, G, S, C> Iterator for CycleDetectedOrbit<F, G, S, C>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
     S: Fn(Period, ComplexNum) -> EscapeState,
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
 {
@@ -154,11 +166,13 @@ where
             {
                 self.z_slow = self.apply_map(self.z_slow);
                 self.z_fast = self.apply_map(self.z_fast);
+                self.multiplier *= self.derivative(self.z_fast);
                 self.state = (self.stop_condition)(self.iter, self.z_fast);
             }
             else
             {
                 self.z_fast = self.apply_map(self.z_fast);
+                self.multiplier *= self.derivative(self.z_fast);
                 self.state =
                     (self.check_periodicity)(self.iter, self.z_slow, self.z_fast, self.param);
             }

@@ -12,6 +12,7 @@ pub mod gui;
 pub mod macros;
 pub mod orbit_info;
 pub mod iter_plane;
+pub mod coloring;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gui::run_app()?;

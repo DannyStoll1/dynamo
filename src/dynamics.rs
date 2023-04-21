@@ -1,10 +1,10 @@
 use crate::{
+    coloring::ColoringAlgorithm,
     covering_maps::CoveringMap,
     iter_plane::IterPlane,
     orbit_info::OrbitInfo,
-    palette::ColorPalette,
     point_grid::{Bounds, PointGrid},
-    primitive_types::*,
+    primitive_types::{ComplexNum, EscapeState, IterCount, Period, RealNum, ONE_COMPLEX, TAU, TWO},
 };
 use dyn_clone::DynClone;
 use ndarray::Array2;
@@ -21,6 +21,10 @@ pub trait ParameterPlane: Sync + Send + DynClone
     fn point_grid(&self) -> PointGrid;
 
     fn point_grid_mut(&mut self) -> &mut PointGrid;
+
+    fn get_coloring_algorithm(&self) -> ColoringAlgorithm;
+
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm);
 
     fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState
     {
@@ -106,7 +110,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     #[inline]
     fn periodicity_tolerance(&self) -> RealNum
     {
-        self.point_grid().bounds.area() * 1e-12
+        self.point_grid().bounds.area() * 1e-13
     }
 
     fn compute_period(
@@ -162,8 +166,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     {
         match state
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
+            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
             EscapeState::Periodic {
                 period,
                 preperiod,
@@ -172,7 +175,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             } => self.encode_periodic_point(period, preperiod, multiplier, final_error),
             EscapeState::Escaped { iters, final_value } =>
             {
-                self.encode_escaping_point(iters, final_value)
+                self.encode_escaping_point(iters, final_value, base_param)
             }
         }
     }
@@ -185,31 +188,31 @@ pub trait ParameterPlane: Sync + Send + DynClone
         final_error: ComplexNum,
     ) -> IterCount
     {
-        let u = period as IterCount;
-        // let mut w = -(final_error.norm_sqr() / self.periodicity_tolerance()).log(multiplier.norm())
-        //     as IterCount;
-        // if w.is_infinite() || w.is_nan()
-        // {
-        //     w = -0.2;
-        // }
-        // let v = preperiod as IterCount + u * w;
-        // 0.02 is the internal coloring rate. Larger numbers mean faster darkening of the
-        //   interiors of hyperbolic components.
-        // -(u + 0.99 * (v * 0.02 / u).tanh())
-        -(u + 0.99 * multiplier.norm())
+        self.get_coloring_algorithm().encode(
+            period,
+            preperiod,
+            multiplier,
+            final_error,
+            self.periodicity_tolerance(),
+        )
     }
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
         if z.is_nan()
         {
-            return (iters as IterCount) - 1.;
+            return f64::from(iters) - 1.;
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        (iters as IterCount) - (residual as IterCount)
+        f64::from(iters) - (residual as IterCount)
     }
 
     fn run_until_escape(
@@ -253,6 +256,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     {
         let orbit = CycleDetectedOrbit::new(
             |z, c| self.map(z, c),
+            |z, c| self.dynamical_derivative(z, c),
             |i, z| self.stop_condition(i, z),
             |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
             start,
@@ -280,6 +284,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
                 let start = self.start_point(param);
                 let orbit = CycleDetectedOrbit::new(
                     |z, c| self.map(z, c),
+                    |z, c| self.dynamical_derivative(z, c),
                     |i, z| self.stop_condition(i, z),
                     |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
                     start,
@@ -395,7 +400,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
                 let mut c_k;
                 let mut d_k;
 
-                let mut difference = f64::INFINITY;
+                let mut difference: f64;
 
                 loop
                 {
@@ -540,7 +545,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             start,
             param,
         );
-        orbit.map(|(z, s)| z).collect()
+        orbit.map(|(z, _s)| z).collect()
     }
     // fn orbit<F,S> (&self, param: ComplexNum) -> Orbit<F, S>
     // where
@@ -584,7 +589,15 @@ pub trait ParameterPlane: Sync + Send + DynClone
         }
     }
 
-    fn default_julia_bounds(&self) -> Bounds;
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+
+    fn default_julia_param(&self) -> ComplexNum
+    {
+        ComplexNum::new(0., 0.)
+    }
 
     fn julia_set(&self, point: ComplexNum) -> Option<JuliaSet<Self>>
     where
@@ -593,12 +606,13 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let param = self.param_map(point);
         let point_grid = self
             .point_grid()
-            .with_same_height(self.default_julia_bounds());
+            .with_same_height(self.default_julia_bounds(param));
         Some(JuliaSet {
             point_grid,
             max_iter: self.max_iter(),
             parent: self.clone(),
             param,
+            coloring_algorithm: ColoringAlgorithm::PreperiodSmooth,
             // parent_params: Vec::new(),
         })
     }

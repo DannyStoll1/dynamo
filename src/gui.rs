@@ -1,15 +1,18 @@
-use crate::dynamics::{julia::JuliaSet, orbit::Orbit, HasDynamicalCovers, ParameterPlane};
-use crate::iter_plane::{FractalImage, IterPlane};
+use crate::coloring::ColoringAlgorithm;
+use crate::dynamics::{julia::JuliaSet, HasDynamicalCovers, ParameterPlane};
 use crate::palette::ColorPalette;
-use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::{ComplexNum, RealNum};
+use crate::primitive_types::{ComplexNum, Period};
 use crate::profiles::*;
-use eframe::egui;
-use egui::{epaint, Color32, InputState, Key, Pos2, Rect, Stroke, Ui, Vec2};
-use egui_extras::{Column, RetainedImage, TableBuilder};
-use epaint::PathShape;
 
-pub type ColoredCurve = (Vec<ComplexNum>, Color32);
+use eframe::egui;
+use egui::{Color32, InputState, Key};
+use egui_extras::{Column, TableBuilder};
+use input_macro::input;
+
+pub mod image_frame;
+pub mod pane;
+use image_frame::ImageFrame;
+use pane::{Child, Pane, PaneID, Parent};
 
 pub fn run_app() -> Result<(), eframe::Error>
 {
@@ -25,532 +28,51 @@ pub fn run_app() -> Result<(), eframe::Error>
     )
 }
 
-#[derive(Clone, Copy, Debug)]
-enum RedrawMessage
-{
-    DoNothing,
-    Redraw,
-    Recompute,
+macro_rules! change_plane {
+    ($fractal: expr) => {
+        let parent_plane_ref = self.parent.plane_mut();
+
+        let res_y = parent_plane_ref.point_grid().res_y;
+        let max_iters = 2048;
+        let selected_point = ComplexNum::new(0., 0.);
+
+        let parent_plane = $fractal::new_default(res_y, max_iters);
+        *parent_plane_ref = Box::new(parent_plane);
+
+        let child_plane = JuliaSet::new(parent_plane, selected_point);
+        let child_plane_ref = self.child.plane_mut();
+        *child_plane_ref = Box::new(child_plane);
+
+        self.parent.select_point(selected_point);
+        self.parent.schedule_recompute();
+        self.child.schedule_recompute();
+    };
 }
 
-struct ImageFrame
-{
-    image: RetainedImage,
-    region: Rect,
-}
-impl ImageFrame
-{
-    fn show(&self, ui: &mut Ui)
-    {
-        self.image.show(ui);
-    }
-    fn height(&self) -> usize
-    {
-        self.image.height()
-    }
-    fn width(&self) -> usize
-    {
-        self.image.height()
-    }
-    fn image_dims(&self) -> Vec2
-    {
-        Vec2 {
-            x: self.image.width() as f32,
-            y: self.image.height() as f32,
-        }
-    }
-    fn set_position(&mut self, anchor: Pos2)
-    {
-        self.region.min = anchor;
-        self.region.max = anchor + self.image_dims();
-    }
-    fn put(&mut self, ui: &mut Ui)
-    {
-        let anchor = ui.cursor().min;
-        self.set_position(anchor);
-        self.show(ui);
-    }
-    fn to_local_coords(&self, absolute_pos: Pos2) -> Vec2
-    {
-        absolute_pos - self.region.min
-    }
-    fn to_global_coords(&self, local_pos: Vec2) -> Pos2
-    {
-        self.region.min + local_pos
-    }
-}
-
-trait GuiPlane
-{
-    fn plane(&self) -> &Box<dyn ParameterPlane>;
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>;
-
-    fn get_task(&self) -> RedrawMessage;
-    fn set_task(&mut self, new_task: RedrawMessage);
-
-    fn get_frame(&self) -> &ImageFrame;
-    fn get_frame_mut(&mut self) -> &mut ImageFrame;
-
-    fn get_palette(&self) -> ColorPalette;
-    fn get_palette_mut(&mut self) -> &mut ColorPalette;
-
-    fn get_iter_plane(&self) -> &IterPlane;
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane;
-
-    fn get_marked_curves(&self) -> &Vec<ColoredCurve>;
-    fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>;
-    fn get_marked_points(&self) -> &Vec<ComplexNum>;
-    fn get_marked_points_mut(&mut self) -> &mut Vec<ComplexNum>;
-    fn mark_curve(&mut self, zs: Vec<ComplexNum>, color: Color32)
-    {
-        let curves = self.get_marked_curves_mut();
-        curves.push((zs, color));
-    }
-
-    fn clear_marked_curves(&mut self)
-    {
-        let curves = self.get_marked_curves_mut();
-        *curves = vec![];
-    }
-
-    fn put_marked_curves(&self, ui: &mut Ui)
-    {
-        let frame = self.get_frame();
-        let grid = self.plane().point_grid();
-        let painter = ui.painter().with_clip_rect(frame.region);
-        for (zs, color) in self.get_marked_curves().iter()
-        {
-            let points = zs
-                .iter()
-                .map(|z| {
-                    let pt = grid.locate_point(*z);
-                    frame.to_global_coords(pt.to_vec2())
-                })
-                .collect();
-            let stroke = Stroke::new(1.0, *color);
-            let path = PathShape::line(points, stroke);
-            painter.add(path);
-        }
-    }
-
-    fn name(&self) -> String
-    {
-        self.plane().name()
-    }
-
-    fn grid(&self) -> PointGrid
-    {
-        self.plane().point_grid()
-    }
-
-    fn grid_mut(&mut self) -> &mut PointGrid
-    {
-        self.plane_mut().point_grid_mut()
-    }
-
-    fn select_point(&mut self, point: ComplexNum);
-
-    fn rescale(&mut self, new_bounds: Bounds)
-    {
-        self.grid_mut().rescale(new_bounds);
-        self.schedule_recompute();
-    }
-
-    fn schedule_recompute(&mut self)
-    {
-        self.set_task(RedrawMessage::Recompute);
-    }
-
-    fn schedule_redraw(&mut self)
-    {
-        if let RedrawMessage::DoNothing = self.get_task()
-        {
-            self.set_task(RedrawMessage::Redraw);
-        }
-    }
-
-    fn resize_x(&mut self, width: usize)
-    {
-        self.grid_mut().resize_x(width);
-        self.schedule_recompute();
-    }
-
-    fn resize_y(&mut self, height: usize)
-    {
-        self.grid_mut().resize_y(height);
-        self.schedule_recompute();
-    }
-
-    fn change_palette(&mut self, palette: ColorPalette)
-    {
-        *self.get_palette_mut() = palette;
-        self.schedule_redraw();
-    }
-
-    fn recompute(&mut self);
-
-    fn redraw(&mut self)
-    {
-        let image = self.get_iter_plane().render(self.get_palette());
-        let image_frame = self.get_frame_mut();
-        image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
-    }
-
-    fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
-    {
-        self.grid_mut().zoom(scale, base_point);
-        self.schedule_recompute();
-    }
-
-    fn process_task(&mut self)
-    {
-        let task = self.get_task();
-        match task
-        {
-            RedrawMessage::Recompute =>
-            {
-                self.recompute();
-                self.redraw();
-            }
-            RedrawMessage::Redraw =>
-            {
-                self.redraw();
-            }
-            RedrawMessage::DoNothing =>
-            {}
-        }
-        self.set_task(RedrawMessage::DoNothing);
-    }
-
-    fn frame_contains_pixel(&self, pointer_pos: Pos2) -> bool
-    {
-        self.get_frame().region.contains(pointer_pos)
-    }
-
-    fn map_pixel(&self, pointer_pos: Pos2) -> ComplexNum
-    {
-        let relative_pos = self.get_frame().to_local_coords(pointer_pos);
-        self.grid().map_vec2(relative_pos)
-    }
-
-    fn process_mouse_input(
-        &mut self,
-        pointer_value: ComplexNum,
-        zoom_factor: f32,
-        reselect_point: bool,
-    )
-    {
-        if zoom_factor != 1.0
-        {
-            self.zoom((1. / zoom_factor).into(), pointer_value);
-        }
-
-        if reselect_point
-        {
-            self.select_point(pointer_value);
-        }
-    }
-}
-
-struct Parent
-{
-    plane: Box<dyn ParameterPlane>,
-    palette: ColorPalette,
-    iter_plane: IterPlane,
-    image_frame: ImageFrame,
-    task: RedrawMessage,
-    selection: ComplexNum,
-    marked_curves: Vec<ColoredCurve>,
-    marked_points: Vec<ComplexNum>,
-}
-impl Parent
-{
-    fn new(plane: Box<dyn ParameterPlane>, palette: ColorPalette) -> Self
-    {
-        let iter_plane = plane.compute();
-        let task = RedrawMessage::Redraw;
-        let selection = ComplexNum::new(-1., 0.);
-
-        let image = RetainedImage::from_color_image("parameter plane", iter_plane.render(palette));
-        let frame = ImageFrame {
-            image,
-            region: Rect::NOTHING,
-        };
-        let marked_curves = vec![];
-        let marked_points = vec![];
-        Self {
-            plane,
-            palette,
-            iter_plane,
-            image_frame: frame,
-            task,
-            selection,
-            marked_curves,
-            marked_points,
-        }
-    }
-}
-
-impl GuiPlane for Parent
-{
-    #[inline]
-    fn plane(&self) -> &Box<dyn ParameterPlane>
-    {
-        &self.plane
-    }
-    #[inline]
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>
-    {
-        &mut self.plane
-    }
-    #[inline]
-    fn get_task(&self) -> RedrawMessage
-    {
-        self.task
-    }
-    #[inline]
-    fn set_task(&mut self, new_task: RedrawMessage)
-    {
-        self.task = new_task;
-    }
-    #[inline]
-    fn get_frame(&self) -> &ImageFrame
-    {
-        &self.image_frame
-    }
-    #[inline]
-    fn get_frame_mut(&mut self) -> &mut ImageFrame
-    {
-        &mut self.image_frame
-    }
-    #[inline]
-    fn get_iter_plane(&self) -> &IterPlane
-    {
-        &self.iter_plane
-    }
-    #[inline]
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane
-    {
-        &mut self.iter_plane
-    }
-    #[inline]
-    fn get_marked_curves(&self) -> &Vec<ColoredCurve>
-    {
-        &self.marked_curves
-    }
-    #[inline]
-    fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>
-    {
-        &mut self.marked_curves
-    }
-    #[inline]
-    fn get_marked_points(&self) -> &Vec<ComplexNum>
-    {
-        &self.marked_points
-    }
-    #[inline]
-    fn get_marked_points_mut(&mut self) -> &mut Vec<ComplexNum>
-    {
-        &mut self.marked_points
-    }
-    #[inline]
-    fn get_palette(&self) -> ColorPalette
-    {
-        self.palette
-    }
-    #[inline]
-    fn get_palette_mut(&mut self) -> &mut ColorPalette
-    {
-        &mut self.palette
-    }
-    #[inline]
-    fn select_point(&mut self, point: ComplexNum)
-    {
-        self.selection = point
-    }
-    #[inline]
-    fn recompute(&mut self)
-    {
-        self.iter_plane = self.plane.compute();
-    }
-}
-
-impl Default for Parent
-{
-    fn default() -> Self
-    {
-        // let plane = Box::new(QuadRatPer2::new_default(1024, 1024).misiurewicz_curve(2,1));
-        let plane = Box::new(QuadRatPer2::new_default(1024, 1024));
-        let palette = ColorPalette::black(32.);
-
-        Self::new(plane, palette)
-    }
-}
-
-struct Child
-{
-    plane: Box<dyn ParameterPlane>,
-    palette: ColorPalette,
-    iter_plane: IterPlane,
-    image_frame: ImageFrame,
-    task: RedrawMessage,
-    selection: ComplexNum,
-    marked_curves: Vec<ColoredCurve>,
-    marked_points: Vec<ComplexNum>,
-}
-impl Child
-{
-    fn set_param(&mut self, new_param: ComplexNum)
-    {
-        self.plane.set_param(new_param);
-        self.schedule_recompute();
-        self.clear_marked_curves();
-    }
-
-    fn new(plane: Box<dyn ParameterPlane>, palette: ColorPalette) -> Self
-    {
-        let iter_plane = plane.compute();
-        let task = RedrawMessage::Redraw;
-        let selection = ComplexNum::new(0., 0.);
-
-        let image = RetainedImage::from_color_image("parameter plane", iter_plane.render(palette));
-        let frame = ImageFrame {
-            image,
-            region: Rect::NOTHING,
-        };
-
-        let marked_curves = vec![];
-        let marked_points = vec![];
-
-        Self {
-            plane,
-            palette,
-            iter_plane,
-            image_frame: frame,
-            task,
-            selection,
-            marked_curves,
-            marked_points,
-        }
-    }
-}
-
-impl GuiPlane for Child
-{
-    #[inline]
-    fn plane(&self) -> &Box<dyn ParameterPlane>
-    {
-        &self.plane
-    }
-    #[inline]
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>
-    {
-        &mut self.plane
-    }
-    #[inline]
-    fn get_task(&self) -> RedrawMessage
-    {
-        self.task
-    }
-    #[inline]
-    fn set_task(&mut self, new_task: RedrawMessage)
-    {
-        self.task = new_task;
-    }
-    #[inline]
-    fn grid(&self) -> PointGrid
-    {
-        self.plane.point_grid()
-    }
-    #[inline]
-    fn grid_mut(&mut self) -> &mut PointGrid
-    {
-        self.plane.point_grid_mut()
-    }
-    #[inline]
-    fn get_frame(&self) -> &ImageFrame
-    {
-        &self.image_frame
-    }
-    #[inline]
-    fn get_frame_mut(&mut self) -> &mut ImageFrame
-    {
-        &mut self.image_frame
-    }
-    #[inline]
-    fn get_iter_plane(&self) -> &IterPlane
-    {
-        &self.iter_plane
-    }
-    #[inline]
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane
-    {
-        &mut self.iter_plane
-    }
-    #[inline]
-    fn get_marked_curves(&self) -> &Vec<ColoredCurve>
-    {
-        &self.marked_curves
-    }
-    #[inline]
-    fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>
-    {
-        &mut self.marked_curves
-    }
-    #[inline]
-    fn get_marked_points(&self) -> &Vec<ComplexNum>
-    {
-        &self.marked_points
-    }
-    #[inline]
-    fn get_marked_points_mut(&mut self) -> &mut Vec<ComplexNum>
-    {
-        &mut self.marked_points
-    }
-    #[inline]
-    fn get_palette(&self) -> ColorPalette
-    {
-        self.palette
-    }
-    #[inline]
-    fn get_palette_mut(&mut self) -> &mut ColorPalette
-    {
-        &mut self.palette
-    }
-    #[inline]
-    fn select_point(&mut self, point: ComplexNum)
-    {
-        self.selection = point;
-        self.schedule_recompute();
-    }
-    #[inline]
-    fn recompute(&mut self)
-    {
-        self.iter_plane = self.plane.compute();
-    }
-    fn name(&self) -> String
-    {
-        format!("{}: c = {}", self.plane.name(), self.plane.get_param())
-    }
-}
-
-struct FractalApp
+pub struct FractalApp
 {
     parent: Parent,
     child: Child,
     live_mode: bool,
+    active_pane: PaneID,
 }
 
 impl FractalApp
 {
-    fn toggle_live_mode(&mut self)
+    pub fn toggle_live_mode(&mut self)
     {
         self.live_mode = !self.live_mode;
     }
 
-    fn randomize_palette(&mut self)
+    pub fn randomize_palette(&mut self)
     {
         let palette = ColorPalette::new_random(0.45, 0.38);
+        self.parent.change_palette(palette);
+        self.child.change_palette(palette);
+    }
+
+    pub fn set_palette(&mut self, palette: ColorPalette)
+    {
         self.parent.change_palette(palette);
         self.child.change_palette(palette);
     }
@@ -561,6 +83,16 @@ impl FractalApp
         self.child.process_task();
     }
 
+    fn set_child_param(&mut self, new_param: ComplexNum)
+    {
+        let old_bounds = self.child.grid().bounds;
+        let mut new_bounds = self.parent.plane.default_julia_bounds(new_param);
+        let zoom_factor = old_bounds.range_x() / new_bounds.range_x();
+        new_bounds.zoom(zoom_factor, new_bounds.center());
+        self.child.grid_mut().change_bounds(new_bounds);
+        self.child.set_param(new_param);
+    }
+
     fn handle_input(&mut self, ctx: &egui::Context)
     {
         if ctx.input(|i| i.key_pressed(Key::R))
@@ -568,20 +100,106 @@ impl FractalApp
             self.randomize_palette();
         }
 
+        if ctx.input(|i| i.key_pressed(Key::B))
+        {
+            let black_palette = ColorPalette::black(32.);
+            self.set_palette(black_palette);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::W))
+        {
+            let white_palette = ColorPalette::white(32.);
+            self.set_palette(white_palette);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowUp))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.scale_palette(1.25);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowDown))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.scale_palette(0.8);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowLeft))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.shift_palette(-0.02);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowRight))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.shift_palette(0.02);
+        }
+
         if ctx.input(|i| i.key_pressed(Key::Z))
         {
-            self.parent.zoom(0.8, self.parent.selection);
+            let pane = self.get_active_pane_mut();
+            pane.zoom(0.8, pane.get_selection());
         }
 
         if ctx.input(|i| i.key_pressed(Key::V))
         {
-            self.parent.zoom(1.25, self.parent.selection);
+            let pane = self.get_active_pane_mut();
+            pane.zoom(1.25, pane.get_selection());
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::PlusEquals))
+        {
+            let pane = self.get_active_pane_mut();
+            let selection = pane.get_selection();
+            pane.grid_mut().recenter(selection);
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num0))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.plane_mut()
+                .set_coloring_algorithm(ColoringAlgorithm::Solid);
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num1))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.plane_mut()
+                .set_coloring_algorithm(ColoringAlgorithm::Period);
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num2))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.plane_mut()
+                .set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num3))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.plane_mut()
+                .set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num4))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.plane_mut()
+                .set_coloring_algorithm(ColoringAlgorithm::PreperiodSmooth);
+            pane.schedule_recompute();
         }
 
         if ctx.input(|i| i.key_pressed(Key::C))
         {
-            self.parent.clear_marked_curves();
-            self.child.clear_marked_curves();
+            let pane = self.get_active_pane_mut();
+            pane.clear_marked_curves();
         }
 
         if ctx.input(|i| i.key_pressed(Key::L))
@@ -589,12 +207,35 @@ impl FractalApp
             self.toggle_live_mode();
         }
 
+        if ctx.input(|i| i.key_pressed(Key::S))
+        {
+            let pane = self.get_active_pane_mut();
+            let filename = input!("Enter image filename to save: ");
+            match input!("Enter width of image: ").parse::<usize>()
+            {
+                Ok(width) =>
+                {
+                    pane.save_image(width, &filename);
+                    println!("Image saved to images/{}", &filename);
+                }
+                Err(e) => println!("Error parsing width: {:?}", e),
+            }
+        }
+
         if ctx.input(|i| i.key_pressed(Key::N))
         {
-            let iters = self.parent.plane.max_iter_mut();
+            let pane = self.get_active_pane_mut();
+            let iters = pane.plane_mut().max_iter_mut();
             *iters *= 2;
-            self.parent.schedule_recompute();
-            self.child.schedule_recompute();
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::M))
+        {
+            let pane = self.get_active_pane_mut();
+            let iters = pane.plane_mut().max_iter_mut();
+            *iters /= 2;
+            pane.schedule_recompute();
         }
         self.handle_mouse(ctx);
     }
@@ -608,6 +249,7 @@ impl FractalApp
         {
             if self.parent.frame_contains_pixel(pointer_pos)
             {
+                self.active_pane = PaneID::Parent;
                 let reselect_point = self.live_mode || clicked;
                 let pointer_value = self.parent.map_pixel(pointer_pos);
                 self.parent
@@ -615,7 +257,7 @@ impl FractalApp
                 if reselect_point
                 {
                     let child_param = self.parent.plane.param_map(pointer_value);
-                    self.child.set_param(child_param);
+                    self.set_child_param(child_param);
                 }
 
                 if clicked
@@ -636,6 +278,7 @@ impl FractalApp
             }
             else if self.child.frame_contains_pixel(pointer_pos)
             {
+                self.active_pane = PaneID::Child;
                 let pointer_value = self.child.map_pixel(pointer_pos);
                 self.child
                     .process_mouse_input(pointer_value, zoom_factor, false);
@@ -653,21 +296,120 @@ impl FractalApp
             }
         }
     }
+    fn get_active_pane(&self) -> &dyn Pane
+    {
+        match self.active_pane
+        {
+            PaneID::Parent => &self.parent,
+            PaneID::Child => &self.child,
+        }
+    }
+    fn get_active_pane_mut(&mut self) -> &mut dyn Pane
+    {
+        match self.active_pane
+        {
+            PaneID::Parent => &mut self.parent,
+            PaneID::Child => &mut self.child,
+        }
+    }
+
+    fn change_fractal<T>(&mut self, create_parent_plane: fn(usize, Period) -> T)
+    where
+        T: ParameterPlane + Copy + 'static,
+    {
+        let parent_plane_ref = self.parent.plane_mut();
+        let child_plane_ref = self.child.plane_mut();
+
+        let res_y = parent_plane_ref.point_grid().res_y;
+        let max_iters = 2048;
+
+        let parent_plane = create_parent_plane(res_y, max_iters);
+        let selected_point = parent_plane.default_julia_param();
+        let child_plane = JuliaSet::new(parent_plane, selected_point);
+
+        *parent_plane_ref = Box::new(parent_plane);
+        *child_plane_ref = Box::new(child_plane);
+
+        self.parent.select_point(selected_point);
+        self.parent.clear_marked_curves();
+        self.child.clear_marked_curves();
+
+        self.parent.schedule_recompute();
+        self.child.schedule_recompute();
+    }
+
+    fn show_menu(&mut self, ui: &mut egui::Ui)
+    {
+        egui::menu::bar(ui, |ui| {
+            ui.menu_button("File", |ui| {
+                if ui.button("Save").clicked()
+                {}
+            });
+            ui.menu_button("Fractal", |ui| {
+                ui.menu_button("Polynomials", |ui| {
+                    if ui.button("Mandelbrot").clicked()
+                    {
+                        self.change_fractal(|res, iter| Mandelbrot::new_default(res, iter));
+                    }
+                    else if ui.button("Odd Cubics").clicked()
+                    {
+                        self.change_fractal(|res, iter| OddCubic::new_default(res, iter));
+                    }
+                    else if ui.button("Cubic Per(2, 0)").clicked()
+                    {
+                        self.change_fractal(|res, iter| {
+                            CubicPer2CritMarked::new_default(res, iter)
+                        });
+                    }
+                    else if ui.button("Cubic Per(1, 1)").clicked()
+                    {
+                        self.change_fractal(|res, iter| CubicPer1_1::new_default(res, iter));
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    ui.close_menu();
+                });
+                ui.menu_button("Quadratic Rational Maps", |ui| {
+                    if ui.button("QuadRat Per(2)").clicked()
+                    {
+                        self.change_fractal(|res, iter| QuadRatPer2::new_default(res, iter));
+                    }
+                    else if ui.button("QuadRat Per(3)").clicked()
+                    {
+                        self.change_fractal(|res, iter| QuadRatPer3::new_default(res, iter));
+                    }
+                    else if ui.button("QuadRat Per(4)").clicked()
+                    {
+                        self.change_fractal(|res, iter| QuadRatPer4::new_default(res, iter));
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    ui.close_menu();
+                });
+            });
+        });
+    }
 }
 
 impl Default for FractalApp
 {
     fn default() -> Self
     {
-        // let parameter_plane = QuadRatPer2::new_default(1024, 2048).marked_cycle_curve(5);
-        // let parameter_plane = QuadRatPer2::new_default(1024, 2048);
-        // let parameter_plane = Mandelbrot::new_default(1024, 2048).marked_cycle_curve(4);
-        // let biquadratic_param = ComplexNum::new(-1., 0.);
-        // let parameter_plane = Biquadratic::new_default(1024, 2048, biquadratic_param);
-        let parameter_plane = CubicPer2CritMarked::new_default(1024, 2048);
-        let mut dynamical_plane = JuliaSet::from(parameter_plane);
-        dynamical_plane.set_param((1.).into());
-        // let parameter_plane = dynamical_plane.clone();
+        let width = 1024;
+        // let parameter_plane = QuadRatPer2::new_default(width, 2048).marked_cycle_curve(5);
+        // let parameter_plane = QuadRatPer2::new_default(width, 2048);
+        let parameter_plane = Mandelbrot::new_default(width, 2048).marked_cycle_curve(4);
+        // let biquadratic_param = ComplexNum::new(0., -0.5);
+        // let parameter_plane = Biquadratic::new_default(width, 2048, biquadratic_param);
+        // let parameter_plane = CubicPer2CritMarked::new_default(width, 2048);
+        // let parameter_plane = CubicPer1_1::new_default(width, 2048);
+
+        let dynamical_plane = JuliaSet::new(parameter_plane, ((2_f64).powf(0.5)).into());
+
         let palette = ColorPalette::black(32.);
 
         let parent = Parent::new(Box::new(parameter_plane), palette);
@@ -677,6 +419,7 @@ impl Default for FractalApp
             parent,
             child,
             live_mode: false,
+            active_pane: PaneID::Parent,
         }
     }
 }
@@ -689,6 +432,8 @@ impl eframe::App for FractalApp
         self.process_tasks();
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            self.show_menu(ui);
+
             TableBuilder::new(ui)
                 .column(Column::auto().resizable(true))
                 .column(Column::remainder())

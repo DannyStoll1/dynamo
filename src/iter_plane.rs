@@ -46,6 +46,8 @@ impl FractalImage for IterPlane
             let iter_count = self.iter_counts[(x as usize, y as usize)];
             *pixel = palette.map_rgb(iter_count);
         }
-        image.save(filename).unwrap();
+        if let Err(e) = image.save(filename) {
+            println!("Error encountered saving file: {:?}", e)
+        }
     }
 }

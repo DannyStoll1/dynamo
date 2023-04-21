@@ -5,6 +5,7 @@ pub type IterCount = f64;
 pub type RealNum = f64;
 pub type ComplexNum = Complex<RealNum>;
 pub type Period = u32;
+pub type ComplexVec = Vec<ComplexNum>;
 
 pub const TAU: RealNum = 2.*PI;
 pub const TWO: RealNum = 2.;

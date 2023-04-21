@@ -8,6 +8,7 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter,
+                coloring_algorithm: ColoringAlgorithm::Multiplier,
             }
         }
 
@@ -19,6 +20,7 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter,
+                coloring_algorithm: ColoringAlgorithm::Multiplier,
             }
         }
 
@@ -30,6 +32,7 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter,
+                coloring_algorithm: ColoringAlgorithm::Multiplier,
             }
         }
 
@@ -81,9 +84,13 @@ macro_rules! parameter_plane_impl {
         }
 
         #[inline]
-        fn default_julia_bounds(&self) -> Bounds
-        {
-            Self::JULIA_BOUNDS
+        fn get_coloring_algorithm(&self) -> ColoringAlgorithm {
+            self.coloring_algorithm
+        }
+
+        #[inline]
+        fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm) {
+            self.coloring_algorithm = coloring_algorithm;
         }
     };
 }

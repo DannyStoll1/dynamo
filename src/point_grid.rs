@@ -1,41 +1,91 @@
 use crate::primitive_types::{ComplexNum, RealNum};
 use eframe::egui::{Pos2, Vec2};
+use std::ops::{Deref, DerefMut};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
 
 #[derive(Clone, Copy, Debug)]
-pub struct Bounds {
+pub struct Bounds
+{
     pub min_x: RealNum,
     pub max_x: RealNum,
     pub min_y: RealNum,
     pub max_y: RealNum,
 }
-impl Bounds {
-    #[inline(always)]
-    #[must_use] pub fn range_x(&self) -> RealNum {
+impl Bounds
+{
+    #[inline]
+    #[must_use]
+    pub fn range_x(&self) -> RealNum
+    {
         self.max_x - self.min_x
     }
 
-    #[inline(always)]
-    #[must_use] pub fn range_y(&self) -> RealNum {
+    #[inline]
+    #[must_use]
+    pub fn range_y(&self) -> RealNum
+    {
         self.max_y - self.min_y
     }
 
-    #[inline(always)]
-    #[must_use] pub fn area(&self) -> RealNum {
+    #[inline]
+    #[must_use]
+    pub fn area(&self) -> RealNum
+    {
         self.range_x() * self.range_y()
     }
 
-    #[inline(always)]
-    #[must_use] pub fn mid_x(&self) -> RealNum {
+    #[inline]
+    #[must_use]
+    pub fn mid_x(&self) -> RealNum
+    {
         (self.max_x + self.min_x) / 2.
     }
 
-    #[inline(always)]
-    #[must_use] pub fn mid_y(&self) -> RealNum {
+    #[inline]
+    #[must_use]
+    pub fn mid_y(&self) -> RealNum
+    {
         (self.max_y + self.min_y) / 2.
     }
-    #[must_use] pub const fn square(radius: RealNum) -> Self {
+
+    pub fn shift(&mut self, translation: ComplexNum)
+    {
+        self.min_x += translation.re;
+        self.max_x += translation.re;
+        self.min_y += translation.im;
+        self.max_y += translation.im;
+    }
+
+    pub fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
+    {
+        self.shift(-base_point);
+        self.min_x *= scale;
+        self.max_x *= scale;
+        self.min_y *= scale;
+        self.max_y *= scale;
+        self.shift(base_point);
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn center(&self) -> ComplexNum
+    {
+        let re = self.mid_x();
+        let im = self.mid_y();
+        ComplexNum::new(re, im)
+    }
+
+    #[inline]
+    pub fn recenter(&mut self, new_center: ComplexNum)
+    {
+        let old_center = self.center();
+        self.shift(new_center - old_center);
+    }
+
+    #[must_use]
+    pub const fn centered_square(radius: RealNum) -> Self
+    {
         Self {
             min_x: -radius,
             max_x: radius,
@@ -43,10 +93,23 @@ impl Bounds {
             max_y: radius,
         }
     }
+
+    #[must_use]
+    pub const fn square(radius: RealNum, center: ComplexNum) -> Self
+    {
+        Self {
+            min_x: -radius + center.re,
+            max_x: radius + center.re,
+            min_y: -radius + center.im,
+            max_y: radius + center.im,
+        }
+    }
 }
 
-impl Default for Bounds {
-    fn default() -> Self {
+impl Default for Bounds
+{
+    fn default() -> Self
+    {
         Bounds {
             min_x: -1.,
             max_x: 1.,
@@ -57,14 +120,18 @@ impl Default for Bounds {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct PointGrid {
+pub struct PointGrid
+{
     pub res_x: usize,
     pub res_y: usize,
     pub bounds: Bounds,
 }
 
-impl PointGrid {
-    #[must_use] pub const fn new(res_x: usize, res_y: usize, bounds: Bounds) -> PointGrid {
+impl PointGrid
+{
+    #[must_use]
+    pub const fn new(res_x: usize, res_y: usize, bounds: Bounds) -> PointGrid
+    {
         Self {
             res_x,
             res_y,
@@ -72,7 +139,9 @@ impl PointGrid {
         }
     }
 
-    #[must_use] pub const fn infer_height(res_x: usize, bounds: Bounds) -> usize {
+    #[must_use]
+    pub const fn infer_height(res_x: usize, bounds: Bounds) -> usize
+    {
         debug_assert!(bounds.max_x > bounds.min_x);
         debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_x > 0);
@@ -83,7 +152,9 @@ impl PointGrid {
         res_y_float as usize
     }
 
-    #[must_use] pub const fn infer_width(res_y: usize, bounds: Bounds) -> usize {
+    #[must_use]
+    pub const fn infer_width(res_y: usize, bounds: Bounds) -> usize
+    {
         debug_assert!(bounds.max_x > bounds.min_x);
         debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_y > 0);
@@ -94,73 +165,99 @@ impl PointGrid {
         res_x_float as usize
     }
 
-    #[must_use] pub const fn with_res_x(res_x: usize, bounds: Bounds) -> Self {
+    #[must_use]
+    pub const fn with_res_x(res_x: usize, bounds: Bounds) -> Self
+    {
         let res_y = Self::infer_height(res_x, bounds);
 
         Self::new(res_x, res_y, bounds)
     }
 
-    #[must_use] pub const fn with_res_y(res_y: usize, bounds: Bounds) -> Self {
+    #[must_use]
+    pub const fn with_res_y(res_y: usize, bounds: Bounds) -> Self
+    {
         let res_x = Self::infer_width(res_y, bounds);
 
         Self::new(res_x, res_y, bounds)
     }
 
     #[inline]
-    #[must_use] pub fn with_same_height(&self, bounds: Bounds) -> Self {
+    #[must_use]
+    pub fn with_same_height(&self, bounds: Bounds) -> Self
+    {
         Self::with_res_y(self.res_y, bounds)
     }
 
     #[inline]
-    #[must_use] pub fn with_same_width(&self, bounds: Bounds) -> Self {
+    #[must_use]
+    pub fn with_same_width(&self, bounds: Bounds) -> Self
+    {
         Self::with_res_x(self.res_x, bounds)
     }
 
     #[inline]
-    #[must_use] pub fn with_new_width(&self, res_x: usize) -> Self {
+    #[must_use]
+    pub fn with_new_width(&self, res_x: usize) -> Self
+    {
         Self::with_res_x(res_x, self.bounds)
     }
 
     #[inline]
-    #[must_use] pub fn with_new_height(&self, res_y: usize) -> Self {
+    #[must_use]
+    pub fn with_new_height(&self, res_y: usize) -> Self
+    {
         Self::with_res_y(res_y, self.bounds)
     }
 
-    #[must_use] pub fn map_pixel(&self, pixel_x: usize, pixel_y: usize) -> ComplexNum {
+    #[must_use]
+    pub fn map_pixel(&self, pixel_x: usize, pixel_y: usize) -> ComplexNum
+    {
         let re = self.bounds.min_x + (pixel_x as RealNum) * self.pixel_width();
         let im = self.bounds.min_y + (pixel_y as RealNum) * self.pixel_height();
         ComplexNum::new(re, im)
     }
 
-    #[must_use] pub fn map_vec2(&self, pos: Vec2) -> ComplexNum {
+    #[must_use]
+    pub fn map_vec2(&self, pos: Vec2) -> ComplexNum
+    {
         let re = self.bounds.min_x + f64::from(pos.x) * self.pixel_width();
         let im = self.bounds.max_y - f64::from(pos.y) * self.pixel_height();
         ComplexNum::new(re, im)
     }
 
     #[inline]
-    #[must_use] pub fn pixel_width(&self) -> RealNum {
+    #[must_use]
+    pub fn pixel_width(&self) -> RealNum
+    {
         self.bounds.range_x() / self.res_x as RealNum
     }
 
     #[inline]
-    #[must_use] pub fn pixel_height(&self) -> RealNum {
+    #[must_use]
+    pub fn pixel_height(&self) -> RealNum
+    {
         self.bounds.range_y() / self.res_y as RealNum
     }
 
     #[inline]
-    #[must_use] pub fn shape(&self) -> (usize, usize) {
+    #[must_use]
+    pub fn shape(&self) -> (usize, usize)
+    {
         (self.res_x, self.res_y)
     }
 
-    #[must_use] pub fn locate_point(&self, z: ComplexNum) -> Pos2 {
+    #[must_use]
+    pub fn locate_point(&self, z: ComplexNum) -> Pos2
+    {
         let x = (z.re - self.bounds.min_x) / (self.pixel_width());
         let y = (z.im - self.bounds.min_y) / (self.pixel_height());
 
         Pos2::new(x as f32, self.res_y as f32 - 1. - y as f32)
     }
 
-    #[must_use] pub fn locate_point_safe(&self, z: ComplexNum) -> Option<(usize, usize)> {
+    #[must_use]
+    pub fn locate_point_safe(&self, z: ComplexNum) -> Option<(usize, usize)>
+    {
         if z.re >= self.bounds.max_x
             || z.re < self.bounds.min_x
             || z.im >= self.bounds.max_y
@@ -176,49 +273,43 @@ impl PointGrid {
     }
 
     #[inline]
-    #[must_use] pub fn center(&self) -> ComplexNum {
+    #[must_use]
+    pub fn center(&self) -> ComplexNum
+    {
         let re = self.bounds.mid_x();
         let im = self.bounds.mid_y();
         ComplexNum::new(re, im)
     }
 
-    pub fn shift(&mut self, translation: ComplexNum) {
-        self.bounds.min_x += translation.re;
-        self.bounds.max_x += translation.re;
-        self.bounds.min_y += translation.im;
-        self.bounds.max_y += translation.im;
+    pub fn recenter(&mut self, new_center: ComplexNum)
+    {
+        let old_center = self.center();
+        self.shift(new_center - old_center);
     }
 
-    pub fn zoom(&mut self, scale: RealNum, base_point: ComplexNum) {
-        self.shift(-base_point);
-        self.bounds.min_x *= scale;
-        self.bounds.max_x *= scale;
-        self.bounds.min_y *= scale;
-        self.bounds.max_y *= scale;
-        self.shift(base_point);
-    }
-
-    pub fn rescale(&mut self, new_bounds: Bounds) {
+    pub fn change_bounds(&mut self, new_bounds: Bounds)
+    {
         self.res_y = Self::infer_height(self.res_x, new_bounds);
-        self.bounds.min_x = new_bounds.min_x;
-        self.bounds.max_x = new_bounds.max_x;
-        self.bounds.min_y = new_bounds.min_y;
-        self.bounds.max_y = new_bounds.max_y;
+        self.bounds = new_bounds;
     }
 
     #[inline]
-    pub fn resize_x(&mut self, res_x: usize) {
+    pub fn resize_x(&mut self, res_x: usize)
+    {
         self.res_x = res_x;
         self.res_y = Self::infer_height(res_x, self.bounds);
     }
 
     #[inline]
-    pub fn resize_y(&mut self, res_y: usize) {
+    pub fn resize_y(&mut self, res_y: usize)
+    {
         self.res_y = res_y;
         self.res_y = Self::infer_width(res_y, self.bounds);
     }
 
-    #[must_use] pub fn to_array(&self) -> Array2<ComplexNum> {
+    #[must_use]
+    pub fn to_array(&self) -> Array2<ComplexNum>
+    {
         let mut points = Array2::zeros((self.res_x, self.res_y));
         let pixel_width = self.pixel_width();
         let pixel_height = self.pixel_height();
@@ -230,17 +321,23 @@ impl PointGrid {
         points
     }
 
-    #[must_use] pub fn par_iter(&self) -> IterBridge<PointGridIterator> {
+    #[must_use]
+    pub fn par_iter(&self) -> IterBridge<PointGridIterator>
+    {
         self.into_iter().par_bridge()
     }
 
-    #[must_use] pub fn iter(&self) -> PointGridIterator {
+    #[must_use]
+    pub fn iter(&self) -> PointGridIterator
+    {
         PointGridIterator::new(self.res_x, self.res_y, self.bounds)
     }
 }
 
-impl Default for PointGrid {
-    fn default() -> Self {
+impl Default for PointGrid
+{
+    fn default() -> Self
+    {
         Self {
             res_x: 1,
             res_y: 1,
@@ -249,16 +346,33 @@ impl Default for PointGrid {
     }
 }
 
-impl IntoIterator for PointGrid {
+impl Deref for PointGrid {
+    type Target = Bounds;
+
+    fn deref(&self) -> &Self::Target {
+        &self.bounds
+    }
+}
+
+impl DerefMut for PointGrid {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.bounds
+    }
+}
+
+impl IntoIterator for PointGrid
+{
     type Item = ((usize, usize), ComplexNum);
     type IntoIter = PointGridIterator;
 
-    fn into_iter(self) -> PointGridIterator {
+    fn into_iter(self) -> PointGridIterator
+    {
         PointGridIterator::new(self.res_x, self.res_y, self.bounds)
     }
 }
 
-pub struct PointGridIterator {
+pub struct PointGridIterator
+{
     step_x: RealNum,
     step_y: RealNum,
     res_x: usize,
@@ -269,8 +383,11 @@ pub struct PointGridIterator {
     idx_y: usize,
 }
 
-impl PointGridIterator {
-    #[must_use] pub fn new(res_x: usize, res_y: usize, bounds: Bounds) -> Self {
+impl PointGridIterator
+{
+    #[must_use]
+    pub fn new(res_x: usize, res_y: usize, bounds: Bounds) -> Self
+    {
         let step_x = bounds.range_x() / (res_x as RealNum);
         let step_y = bounds.range_y() / (res_y as RealNum);
 
@@ -287,14 +404,17 @@ impl PointGridIterator {
     }
 }
 
-impl Iterator for PointGridIterator {
+impl Iterator for PointGridIterator
+{
     type Item = ((usize, usize), ComplexNum);
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self::Item>
+    {
         self.idx_x += 1;
         self.idx_y += self.idx_x / self.res_x;
 
-        if self.idx_y == self.res_y {
+        if self.idx_y == self.res_y
+        {
             return None;
         }
 

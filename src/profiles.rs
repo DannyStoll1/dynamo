@@ -2,11 +2,10 @@ use crate::covering_maps::CoveringMap;
 use crate::dynamics::{HasDynamicalCovers, ParameterPlane};
 use crate::math_utils::{slog, weierstrass_p};
 use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::{
-    ComplexNum, EscapeState, IterCount, Period, RealNum, ONE_COMPLEX, TWO,
-};
+use crate::primitive_types::*;
+use crate::coloring::ColoringAlgorithm;
 
-use crate::macros::*;
+use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
 
 use std::any::type_name;
 
@@ -17,6 +16,7 @@ pub struct Mandelbrot
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Mandelbrot
@@ -27,7 +27,6 @@ impl Mandelbrot
         min_y: -1.4,
         max_y: 1.4,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(2.2);
     fractal_impl!();
 }
 
@@ -36,17 +35,22 @@ impl ParameterPlane for Mandelbrot
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
         if z.is_nan()
         {
-            return (iters as IterCount) - 1.;
+            return f64::from(iters) - 1.;
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        (iters as IterCount) - (residual as IterCount)
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
@@ -71,6 +75,12 @@ impl ParameterPlane for Mandelbrot
     fn gradient(&self, z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
     {
         (z + z, ONE_COMPLEX)
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(2.2)
     }
 }
 
@@ -216,6 +226,7 @@ pub struct QuadRatPer2
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl QuadRatPer2
@@ -226,7 +237,6 @@ impl QuadRatPer2
         min_y: -2.8,
         max_y: 2.8,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -235,50 +245,26 @@ impl ParameterPlane for QuadRatPer2
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
-        match state
+        if z.is_nan()
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            } =>
-            {
-                let u = period as IterCount;
-                let mut w = (-(final_error.norm_sqr() / self.periodicity_tolerance())
-                    .log(multiplier.norm()) as IterCount);
-                if w.is_infinite() || w.is_nan()
-                {
-                    w = -0.2;
-                }
-                let v = preperiod as IterCount + u * w;
-                // -(u + 0.99 * multiplier.norm_sqr())
-                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
-            }
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } =>
-            {
-                if z.is_nan()
-                {
-                    return (iters as IterCount) - 2.;
-                }
-
-                let u = self.escape_radius().log2();
-                let v = z.norm_sqr().log2();
-                // let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
-                let q = -1.;
-                let residual = ((u + q) / (v + q)).log2();
-                // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
-                // (F - M) / (2L - M)
-                (iters as IterCount) + (residual as IterCount) * 2.
-            }
+            return f64::from(iters) - 2.;
         }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        // let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
+        let q = -1.;
+        let residual = ((u + q) / (v + q)).log2();
+        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
+        // (F - M) / (2L - M)
+        f64::from(iters) + (residual as IterCount) * 2.
     }
 
     #[inline]
@@ -312,6 +298,12 @@ impl ParameterPlane for QuadRatPer2
     {
         let u = 1. / (z * z - 1.);
         (-TWO * (c + 1.) * z * u * u, u)
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(4.)
     }
 }
 
@@ -448,6 +440,7 @@ pub struct QuadRatPer3
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl QuadRatPer3
@@ -458,7 +451,6 @@ impl QuadRatPer3
         min_y: -2.5,
         max_y: 2.5,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -472,40 +464,23 @@ impl ParameterPlane for QuadRatPer3
         0.0.into()
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        base_param: ComplexNum,
+    ) -> IterCount
     {
-        match state
+        if z.is_nan()
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            } =>
-            {
-                let u = period as IterCount;
-                let v = preperiod as IterCount;
-                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
-            }
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } =>
-            {
-                if z.is_nan()
-                {
-                    return (iters as IterCount) - 3.;
-                }
-
-                let u = self.escape_radius().log2();
-                let v = z.norm_sqr().log2();
-                let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
-                let residual = ((u + q) / (v + q)).log2();
-                (iters as IterCount) + (residual as IterCount) * 3.
-            }
+            return f64::from(iters) - 3.;
         }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
+        let residual = ((u + q) / (v + q)).log2();
+        f64::from(iters) + (residual as IterCount) * 3.
     }
 
     #[inline]
@@ -540,6 +515,12 @@ impl ParameterPlane for QuadRatPer3
         let df_dz = TWO * (1. - c) * v * v * z * u2;
         let df_dc = v * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)));
         (df_dz, df_dc)
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(4.)
     }
 }
 impl HasDynamicalCovers for QuadRatPer3
@@ -616,6 +597,7 @@ pub struct QuadRatPer4
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl QuadRatPer4
@@ -626,7 +608,6 @@ impl QuadRatPer4
         min_y: -0.5,
         max_y: 0.5,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
     fractal_impl!();
 }
 
@@ -635,50 +616,30 @@ impl ParameterPlane for QuadRatPer4
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, c: ComplexNum) -> IterCount
+    fn encode_escaping_point(&self, iters: Period, z: ComplexNum, c: ComplexNum) -> IterCount
     {
-        match state
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            } =>
+            if z.is_nan()
             {
-                let u = period as IterCount;
-                let v = preperiod as IterCount;
-                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
+                return f64::from(iters) - 4.;
             }
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } =>
-            {
-                if z.is_nan()
-                {
-                    return (iters as IterCount) - 4.;
-                }
 
-                let u = self.escape_radius().log2();
-                let v = z.norm_sqr().log2();
-                let c2 = c * c;
-                let _2c = c + c;
-                let c12 = c2 - _2c + 1.; // (c-1)^2
+            let u = self.escape_radius().log2();
+            let v = z.norm_sqr().log2();
+            let c2 = c * c;
+            let two_c = c + c;
+            let c12 = c2 - two_c + 1.; // (c-1)^2
 
-                let d0 = c2 + c - 1.; // c^2 + c - 1
-                let d1 = d0 - _2c - _2c + 2.; // c^2 - 3c + 1
-                let d2 = c2 + c2 + d1; // 3c^2 - 3c + 1
+            let d0 = c2 + c - 1.; // c^2 + c - 1
+            let d1 = d0 - two_c - two_c + 2.; // c^2 - 3c + 1
+            let d2 = c2 + c2 + d1; // 3c^2 - 3c + 1
 
-                // (2*a - 1) * (a - 1)^5 * a^5 * (a^2 - 3*a + 1)^-2 * (3a^2 - 3a + 1)^-2 * (a^2 + a - 1)^-2
-                let q_numer = (_2c - 1.) * c2 * c2 * c * c12 * c12 * (c - 1.);
-                let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
-                let q = (q_numer / q_denom).norm().log2();
-                let residual = ((u + q) / (v + q)).log2();
-                (iters as IterCount) + (residual as IterCount) * 4.
-            }
+            // (2*a - 1) * (a - 1)^5 * a^5 * (a^2 - 3*a + 1)^-2 * (3a^2 - 3a + 1)^-2 * (a^2 + a - 1)^-2
+            let q_numer = (two_c - 1.) * c2 * c2 * c * c12 * c12 * (c - 1.);
+            let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
+            let q = (q_numer / q_denom).norm().log2();
+            let residual = ((u + q) / (v + q)).log2();
+            f64::from(iters) + (residual as IterCount) * 4.
         }
     }
 
@@ -717,6 +678,12 @@ impl ParameterPlane for QuadRatPer4
     fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
     {
         (ONE_COMPLEX, ONE_COMPLEX) //TODO
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(4.)
     }
 }
 
@@ -769,10 +736,92 @@ impl HasDynamicalCovers for QuadRatPer4
 }
 
 #[derive(Clone, Copy, Debug)]
+pub struct CubicPer1_1
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
+}
+
+impl CubicPer1_1
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.2,
+        max_y: 2.2,
+    };
+    fractal_impl!();
+}
+
+impl ParameterPlane for CubicPer1_1
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn periodicity_tolerance(&self) -> RealNum {
+        1e-6
+    }
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
+    {
+        if z.is_nan()
+        {
+            return f64::from(iters) - 1.;
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log(3.);
+        f64::from(iters) - (residual as IterCount)
+    }
+
+    #[inline]
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        z * (z * (z + c) + 1.)
+    }
+
+    #[inline]
+    fn start_point(&self, param: ComplexNum) -> ComplexNum
+    {
+        let mut u = (param * param - 3.).sqrt();
+        if param.re < 0.
+        {
+            u = -u
+        }
+        -(param + u) / 3.
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        z * (2. * c + 3. * z) + 1.
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
+        z * z
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct OddCubic
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl OddCubic
@@ -783,7 +832,6 @@ impl OddCubic
         min_y: -1.3,
         max_y: 1.3,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(2.2);
     fractal_impl!();
 }
 
@@ -792,17 +840,22 @@ impl ParameterPlane for OddCubic
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
         if z.is_nan()
         {
-            return (iters as IterCount) - 1.;
+            return f64::from(iters) - 1.;
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        (iters as IterCount) - (residual as IterCount)
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
@@ -828,6 +881,12 @@ impl ParameterPlane for OddCubic
     {
         -(z + z)
     }
+
+    #[inline]
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -835,17 +894,17 @@ pub struct CubicPer2CritMarked
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl CubicPer2CritMarked
 {
     const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -1.6,
-        max_x: 1.6,
-        min_y: -1.3,
-        max_y: 1.3,
+        min_x: -2.6,
+        max_x: 2.6,
+        min_y: -1.9,
+        max_y: 1.9,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(2.2);
     fractal_impl!();
 }
 
@@ -854,17 +913,22 @@ impl ParameterPlane for CubicPer2CritMarked
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
         if z.is_nan()
         {
-            return (iters as IterCount) - 1.;
+            return f64::from(iters) - 1.;
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        (iters as IterCount) - (residual as IterCount)
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
@@ -888,9 +952,15 @@ impl ParameterPlane for CubicPer2CritMarked
     #[inline]
     fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
     {
-        let z2 = z*z;
-        let c2 = c*c;
-        1. + z2/c2 + -z2
+        let z2 = z * z;
+        let c2 = c * c;
+        1. + z2 / c2 + -z2
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    {
+        Bounds::square(2.2, param/2.)
     }
 }
 #[derive(Clone, Copy, Debug)]
@@ -899,6 +969,7 @@ pub struct Biquadratic
     point_grid: PointGrid,
     max_iter: Period,
     param: ComplexNum,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Biquadratic
@@ -909,7 +980,7 @@ impl Biquadratic
         min_y: -1.25,
         max_y: 1.25,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(2.5);
+    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 
     #[must_use]
     pub const fn new(
@@ -926,6 +997,7 @@ impl Biquadratic
             point_grid,
             max_iter,
             param,
+            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -943,6 +1015,7 @@ impl Biquadratic
             point_grid,
             max_iter,
             param,
+            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -959,6 +1032,7 @@ impl Biquadratic
             point_grid,
             max_iter,
             param,
+            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -981,17 +1055,22 @@ impl ParameterPlane for Biquadratic
         format!("Biquadratic({param})")
     }
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
         if z.is_nan()
         {
-            return (iters as IterCount) - 1.;
+            return f64::from(iters) - 1.;
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
-        (iters as IterCount) - (residual as IterCount)
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
@@ -1001,7 +1080,7 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _c: ComplexNum) -> ComplexNum
     {
         ComplexNum::new(0., 0.)
     }
@@ -1038,6 +1117,7 @@ pub struct BurningShip
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl BurningShip
@@ -1048,7 +1128,7 @@ impl BurningShip
         min_y: -1.9,
         max_y: 0.6,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(4.);
+    const JULIA_BOUNDS: Bounds = Bounds::centered_square(4.);
     fractal_impl!();
 }
 
@@ -1061,18 +1141,17 @@ impl ParameterPlane for BurningShip
     {
         match state
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
+            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
             // EscapeState::Periodic { period, .. } => -(period as IterCount),
             EscapeState::Periodic {
                 period,
                 preperiod,
-                multiplier,
-                final_error,
+                multiplier: _,
+                final_error: _,
             } =>
             {
-                let u = period as IterCount;
-                let v = preperiod as IterCount;
+                let u = f64::from(period);
+                let v = f64::from(preperiod);
                 -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
             }
             EscapeState::Escaped {
@@ -1082,13 +1161,13 @@ impl ParameterPlane for BurningShip
             {
                 if z.is_nan()
                 {
-                    return (iters as IterCount) - 1.;
+                    return f64::from(iters) - 1.;
                 }
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
-                (iters as IterCount) - (residual as IterCount)
+                f64::from(iters) - (residual as IterCount)
             }
         }
     }
@@ -1131,6 +1210,7 @@ pub struct Sailboat
     point_grid: PointGrid,
     max_iter: Period,
     shift: ComplexNum,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Sailboat
@@ -1141,7 +1221,7 @@ impl Sailboat
         min_y: -6.,
         max_y: 6.,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::square(5.);
+    const JULIA_BOUNDS: Bounds = Bounds::centered_square(5.);
 
     #[must_use]
     pub const fn new(
@@ -1158,6 +1238,7 @@ impl Sailboat
             point_grid,
             max_iter,
             shift,
+            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -1175,6 +1256,7 @@ impl Sailboat
             point_grid,
             max_iter,
             shift,
+            coloring_algorithm: ColoringAlgorithm::Solid,
         }
     }
 
@@ -1191,6 +1273,7 @@ impl Sailboat
             point_grid,
             max_iter,
             shift,
+            coloring_algorithm: ColoringAlgorithm::Solid,
         }
     }
 
@@ -1210,17 +1293,16 @@ impl ParameterPlane for Sailboat
     {
         match state
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
+            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
             EscapeState::Periodic {
                 period,
                 preperiod,
-                multiplier,
-                final_error,
+                multiplier: _,
+                final_error: _,
             } =>
             {
-                let u = period as IterCount;
-                let v = preperiod as IterCount;
+                let u = f64::from(period);
+                let v = f64::from(preperiod);
                 -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
             }
             EscapeState::Escaped {
@@ -1230,13 +1312,13 @@ impl ParameterPlane for Sailboat
             {
                 if z.is_nan()
                 {
-                    return (iters as IterCount) - 1.;
+                    return f64::from(iters) - 1.;
                 }
 
                 let u = self.escape_radius().log2();
                 let v = z.norm_sqr().log2();
                 let residual = (v / u).log2();
-                (iters as IterCount) - (residual as IterCount)
+                f64::from(iters) - (residual as IterCount)
             }
         }
     }
@@ -1285,6 +1367,7 @@ pub struct Exponential
 {
     point_grid: PointGrid,
     max_iter: Period,
+    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Exponential
@@ -1314,17 +1397,16 @@ impl ParameterPlane for Exponential
     {
         match state
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
+            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
             EscapeState::Periodic {
                 period,
                 preperiod,
-                multiplier,
-                final_error,
+                multiplier: _,
+                final_error: _,
             } =>
             {
-                let u = period as IterCount;
-                let v = preperiod as IterCount;
+                let u = f64::from(period);
+                let v = f64::from(preperiod);
                 -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
             }
             EscapeState::Escaped {
@@ -1334,7 +1416,7 @@ impl ParameterPlane for Exponential
             {
                 if z.is_nan()
                 {
-                    return (iters as IterCount) - 1.;
+                    return f64::from(iters) - 1.;
                 }
 
                 if z.re < 0.
@@ -1343,12 +1425,12 @@ impl ParameterPlane for Exponential
                 }
                 if z.is_infinite()
                 {
-                    return (iters + 1) as IterCount;
+                    return f64::from(iters + 1);
                 }
                 let u = slog(self.escape_radius());
                 let v = slog(z.norm_sqr());
                 let residual = v - u;
-                (iters as IterCount) - (residual as IterCount)
+                f64::from(iters) - (residual as IterCount)
             }
         }
     }

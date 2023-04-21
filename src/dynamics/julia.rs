@@ -1,6 +1,7 @@
+use crate::coloring::ColoringAlgorithm;
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::{ComplexNum, EscapeState, IterCount, Period};
+use crate::primitive_types::*;
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
@@ -10,11 +11,28 @@ where
     pub point_grid: PointGrid,
     pub max_iter: Period,
     pub parent: T,
-    // pub map: Box<dyn Fn(ComplexNum, ComplexNum) -> ComplexNum>,
-    // pub stop_condition: Box<dyn Fn(Period, ComplexNum) -> EscapeState>,
-    // pub escape_encoding: Box<dyn Fn(EscapeState, ComplexNum) -> IterCount>,
     pub param: ComplexNum,
-    // pub parent_params: Vec<ComplexNum>,
+    pub coloring_algorithm: ColoringAlgorithm,
+}
+
+impl<T> JuliaSet<T>
+where
+    T: ParameterPlane + Clone,
+{
+    #[must_use]
+    pub fn new(parent: T, param: ComplexNum) -> Self
+    {
+        let point_grid = parent
+            .point_grid()
+            .with_same_height(parent.default_julia_bounds(param));
+        Self {
+            point_grid,
+            parent: parent.clone(),
+            max_iter: parent.max_iter(),
+            param,
+            coloring_algorithm: ColoringAlgorithm::PreperiodSmooth,
+        }
+    }
 }
 
 impl<T> From<T> for JuliaSet<T>
@@ -23,14 +41,16 @@ where
 {
     fn from(parent: T) -> Self
     {
+        let param = ComplexNum::new(0., 0.);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds());
+            .with_same_height(parent.default_julia_bounds(param));
         Self {
             point_grid,
             parent: parent.clone(),
             max_iter: parent.max_iter(),
-            param: (0.).into(),
+            param,
+            coloring_algorithm: ColoringAlgorithm::PreperiodSmooth,
         }
     }
 }
@@ -105,45 +125,11 @@ where
         self.max_iter = new_max_iter;
     }
 
-    fn encode_periodic_point(
-        &self,
-        period: Period,
-        preperiod: Period,
-        multiplier: ComplexNum,
-        final_error: ComplexNum,
-    ) -> IterCount
-    {
-        let scaling_rate = multiplier.norm();
-        let coloring_rate: f64;
-
-        if scaling_rate > 1e-50
-        {
-            coloring_rate = -scaling_rate.log2() / 50.;
-        }
-        else
-        {
-            coloring_rate = 10.
-        }
-
-        let u = period as IterCount;
-        let mut w = -(final_error.norm_sqr() / self.periodicity_tolerance()).log(scaling_rate)
-            as IterCount;
-        if w.is_infinite() || w.is_nan()
-        {
-            w = -0.2;
-        }
-        let v = preperiod as IterCount + u * w;
-        // 0.02 is the internal coloring rate. Larger numbers mean faster darkening of the
-        //   interiors of hyperbolic components.
-        -(u + 0.99 * (v * coloring_rate / u).tanh())
-    }
-
     fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount
     {
         match state
         {
-            EscapeState::NotYetEscaped => 0.,
-            EscapeState::Bounded => 0.,
+            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
             EscapeState::Periodic {
                 period,
                 preperiod,
@@ -152,19 +138,10 @@ where
             } => self.encode_periodic_point(period, preperiod, multiplier, final_error),
             EscapeState::Escaped { iters, final_value } =>
             {
-                self.parent.encode_escaping_point(iters, final_value)
+                self.parent
+                    .encode_escaping_point(iters, final_value, base_param)
             }
         }
-    }
-
-    // fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
-    // {
-    //     self.parent.encode_escape_result(state, self.param)
-    // }
-
-    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState
-    {
-        self.parent.stop_condition(iter, z)
     }
 
     #[inline]
@@ -186,7 +163,7 @@ where
     }
 
     #[inline]
-    fn default_julia_bounds(&self) -> Bounds
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
         self.point_grid.bounds
     }
@@ -195,5 +172,22 @@ where
     fn name(&self) -> String
     {
         "JuliaSet".to_owned()
+    }
+
+    #[inline]
+    fn get_coloring_algorithm(&self) -> ColoringAlgorithm
+    {
+        self.coloring_algorithm
+    }
+
+    #[inline]
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    {
+        self.coloring_algorithm = coloring_algorithm;
+    }
+
+    #[inline]
+    fn periodicity_tolerance(&self) -> RealNum {
+        self.parent.periodicity_tolerance()
     }
 }
