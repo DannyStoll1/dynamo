@@ -1,99 +1,100 @@
-use crate::primitive_types::*;
+use std::ops::{Deref, DerefMut};
 
-fn multiplier_coloring_rate(multiplier: ComplexNum) -> f64
+use crate::primitive_types::PointInfo;
+pub mod coloring_algorithm;
+pub mod palette;
+
+use coloring_algorithm::ColoringAlgorithm;
+use epaint::Color32;
+use image::Rgb;
+use palette::ColorPalette;
+
+#[derive(Clone, Copy)]
+pub struct Coloring
 {
-    let scaling_rate = multiplier.norm();
-
-    if scaling_rate > 1e-10
-    {
-        -scaling_rate.log2() / 40.
-    }
-    else
-    {
-        10.
-    }
+    algorithm: ColoringAlgorithm,
+    palette: ColorPalette,
 }
-
-#[derive(Clone, Copy, Debug)]
-pub enum ColoringAlgorithm
+impl Coloring
 {
-    Multiplier,
-    Period,
-    Solid,
-    PreperiodSmooth,
-    Preperiod,
-}
-impl ColoringAlgorithm
-{
-    pub fn encode(
-        &self,
-        period: Period,
-        preperiod: Period,
-        multiplier: ComplexNum,
-        final_error: ComplexNum,
-        periodicity_tolerance: f64,
-    ) -> IterCount
+    pub fn map_color32(&self, point_info: PointInfo) -> Color32
     {
-        let hue: f64;
-        let luminosity: f64;
-        match self
+        use PointInfo::*;
+        match point_info
         {
-            Self::Solid => return 0.,
-            Self::Period =>
-            {
-                hue = IterCount::from(period);
-                luminosity = 1.;
-            }
-            Self::Multiplier =>
-            {
-                hue = IterCount::from(period);
-                luminosity = multiplier.norm();
-            }
-            Self::Preperiod =>
-            {
-                let coloring_rate = 0.02;
-
-                hue = IterCount::from(period);
-
-                let v = IterCount::from(preperiod);
-                luminosity = (v * coloring_rate / hue).tanh();
-            }
-            Self::PreperiodSmooth =>
-            {
-                hue = IterCount::from(period);
-                let mult_norm = multiplier.norm();
-
-                // Superattracting case
-                if mult_norm <= 1e-10
-                {
-                    let w = 2.
-                        * (final_error.norm_sqr().log2() / periodicity_tolerance.log2()).log2()
-                            as IterCount;
-                    let v = preperiod as IterCount - hue * w;
-                    luminosity = (0.1 * v / hue).tanh();
-                }
-                // Parabolic case
-                else if 1. - mult_norm <= 1e-5
-                {
-                    let w = final_error.norm_sqr() / periodicity_tolerance;
-                    let v = preperiod as IterCount - hue * w;
-                    luminosity = (0.1 * v / hue).tanh();
-                }
-                else
-                {
-                    let coloring_rate = multiplier_coloring_rate(multiplier);
-
-                    let mut w = -(final_error.norm_sqr() / periodicity_tolerance)
-                        .log(multiplier.norm()) as IterCount;
-                    if w.is_infinite() || w.is_nan()
-                    {
-                        w = -0.2;
-                    }
-                    let v = preperiod as IterCount + hue * w;
-                    luminosity = (v * coloring_rate / hue).tanh();
-                }
-            }
+            Escaping { potential } => self.palette.map_color32(potential),
+            Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } => self
+                .algorithm
+                .color_periodic(self.palette, period, preperiod, multiplier, final_error)
+                .into(),
+            Bounded => self.palette.map_color32(0.),
         }
-        -(hue + 0.9999 * luminosity)
+    }
+
+    pub fn map_rgb(&self, point_info: PointInfo) -> Rgb<u8>
+    {
+        use PointInfo::*;
+        match point_info
+        {
+            Escaping { potential } => self.palette.map_rgb(potential),
+            Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            } => self
+                .algorithm
+                .color_periodic(self.palette, period, preperiod, multiplier, final_error)
+                .into(),
+            Bounded => self.palette.map_rgb(0.),
+        }
+    }
+
+    pub fn set_palette(&mut self, palette: ColorPalette)
+    {
+        self.palette = palette;
+    }
+    pub fn get_algorithm(&self) -> &ColoringAlgorithm
+    {
+        &self.algorithm
+    }
+    pub fn get_algorithm_mut(&mut self) -> &mut ColoringAlgorithm
+    {
+        &mut self.algorithm
+    }
+    pub fn set_algorithm(&mut self, algorithm: ColoringAlgorithm)
+    {
+        self.algorithm = algorithm;
+    }
+}
+
+impl Default for Coloring
+{
+    fn default() -> Self
+    {
+        Self {
+            palette: ColorPalette::black(32.),
+            algorithm: ColoringAlgorithm::Solid,
+        }
+    }
+}
+
+
+impl Deref for Coloring {
+    type Target = ColorPalette;
+
+    fn deref(&self) -> &Self::Target {
+        &self.palette
+    }
+}
+
+impl DerefMut for Coloring {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.palette
     }
 }

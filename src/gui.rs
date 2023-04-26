@@ -1,6 +1,5 @@
-use crate::coloring::ColoringAlgorithm;
+use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use crate::dynamics::{julia::JuliaSet, HasDynamicalCovers, ParameterPlane};
-use crate::palette::ColorPalette;
 use crate::primitive_types::{ComplexNum, Period};
 use crate::profiles::*;
 
@@ -75,6 +74,12 @@ impl FractalApp
     {
         self.parent.change_palette(palette);
         self.child.change_palette(palette);
+    }
+
+    pub fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    {
+        self.parent.set_coloring_algorithm(coloring_algorithm);
+        self.child.set_coloring_algorithm(coloring_algorithm);
     }
 
     fn process_tasks(&mut self)
@@ -159,41 +164,40 @@ impl FractalApp
         if ctx.input(|i| i.key_pressed(Key::Num0))
         {
             let pane = self.get_active_pane_mut();
-            pane.plane_mut()
-                .set_coloring_algorithm(ColoringAlgorithm::Solid);
-            pane.schedule_recompute();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
         }
 
         if ctx.input(|i| i.key_pressed(Key::Num1))
         {
             let pane = self.get_active_pane_mut();
-            pane.plane_mut()
-                .set_coloring_algorithm(ColoringAlgorithm::Period);
-            pane.schedule_recompute();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Period);
         }
 
         if ctx.input(|i| i.key_pressed(Key::Num2))
         {
             let pane = self.get_active_pane_mut();
-            pane.plane_mut()
-                .set_coloring_algorithm(ColoringAlgorithm::Multiplier);
-            pane.schedule_recompute();
+            pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
         }
 
         if ctx.input(|i| i.key_pressed(Key::Num3))
         {
             let pane = self.get_active_pane_mut();
-            pane.plane_mut()
-                .set_coloring_algorithm(ColoringAlgorithm::Preperiod);
-            pane.schedule_recompute();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
         }
 
         if ctx.input(|i| i.key_pressed(Key::Num4))
         {
             let pane = self.get_active_pane_mut();
-            pane.plane_mut()
-                .set_coloring_algorithm(ColoringAlgorithm::PreperiodSmooth);
-            pane.schedule_recompute();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num5))
+        {
+            let pane = self.get_active_pane_mut();
+            let periodicity_tolerance = pane.plane().periodicity_tolerance();
+            pane.set_coloring_algorithm(ColoringAlgorithm::PreperiodSmooth {
+                periodicity_tolerance,
+            });
         }
 
         if ctx.input(|i| i.key_pressed(Key::C))
@@ -343,7 +347,19 @@ impl FractalApp
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Save").clicked()
-                {}
+                {
+                    let pane = self.get_active_pane_mut();
+                    let filename = input!("Enter image filename to save: ");
+                    match input!("Enter width of image: ").parse::<usize>()
+                    {
+                        Ok(width) =>
+                        {
+                            pane.save_image(width, &filename);
+                            println!("Image saved to images/{}", &filename);
+                        }
+                        Err(e) => println!("Error parsing width: {:?}", e),
+                    }
+                }
             });
             ui.menu_button("Fractal", |ui| {
                 ui.menu_button("Polynomials", |ui| {
@@ -370,6 +386,7 @@ impl FractalApp
                         return;
                     }
                     ui.close_menu();
+                    ui.pointer().take_click();
                 });
                 ui.menu_button("Quadratic Rational Maps", |ui| {
                     if ui.button("QuadRat Per(2)").clicked()
@@ -389,6 +406,66 @@ impl FractalApp
                         return;
                     }
                     ui.close_menu();
+                    ui.pointer().take_click();
+                });
+            });
+            ui.menu_button("Coloring", |ui| {
+                ui.menu_button("Palette", |ui| {
+                    if ui.button("Black").clicked()
+                    {
+                        let black_palette = ColorPalette::black(32.);
+                        self.set_palette(black_palette);
+                    }
+                    else if ui.button("White").clicked()
+                    {
+                        let white_palette = ColorPalette::white(32.);
+                        self.set_palette(white_palette);
+                    }
+                    else if ui.button("Random").clicked()
+                    {
+                        self.randomize_palette();
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    ui.close_menu();
+                    ui.pointer().take_click();
+                });
+                ui.menu_button("Algorithm", |ui| {
+                    if ui.button("Solid").clicked()
+                    {
+                        self.set_coloring_algorithm(ColoringAlgorithm::Solid);
+                    }
+                    else if ui.button("Period").clicked()
+                    {
+                        self.set_coloring_algorithm(ColoringAlgorithm::Period);
+                    }
+                    else if ui.button("Period and Multiplier").clicked()
+                    {
+                        self.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+                    }
+                    else if ui.button("Multiplier").clicked()
+                    {
+                        self.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+                    }
+                    else if ui.button("Preperiod").clicked()
+                    {
+                        self.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+                    }
+                    else if ui.button("Preperiod (smooth)").clicked()
+                    {
+                        let periodicity_tolerance = self.parent.plane.periodicity_tolerance();
+                        self.set_coloring_algorithm(ColoringAlgorithm::PreperiodSmooth {
+                            periodicity_tolerance,
+                        });
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    ui.close_menu();
+                    ui.pointer().take_click();
                 });
             });
         });
@@ -410,10 +487,10 @@ impl Default for FractalApp
 
         let dynamical_plane = JuliaSet::new(parameter_plane, ((2_f64).powf(0.5)).into());
 
-        let palette = ColorPalette::black(32.);
+        let coloring = Coloring::default();
 
-        let parent = Parent::new(Box::new(parameter_plane), palette);
-        let child = Child::new(Box::new(dynamical_plane), palette);
+        let parent = Parent::new(Box::new(parameter_plane), coloring);
+        let child = Child::new(Box::new(dynamical_plane), coloring);
 
         Self {
             parent,

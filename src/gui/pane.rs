@@ -1,7 +1,7 @@
 use super::ImageFrame;
+use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::iter_plane::{FractalImage, IterPlane};
-use crate::palette::ColorPalette;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::primitive_types::{ComplexNum, ComplexVec, RealNum};
 use crate::profiles::QuadRatPer2;
@@ -39,8 +39,8 @@ pub(super) trait Pane
     fn get_frame(&self) -> &ImageFrame;
     fn get_frame_mut(&mut self) -> &mut ImageFrame;
 
-    fn get_palette(&self) -> ColorPalette;
-    fn get_palette_mut(&mut self) -> &mut ColorPalette;
+    fn get_coloring(&self) -> &Coloring;
+    fn get_coloring_mut(&mut self) -> &mut Coloring;
 
     fn get_iter_plane(&self) -> &IterPlane;
     fn get_iter_plane_mut(&mut self) -> &mut IterPlane;
@@ -140,19 +140,25 @@ pub(super) trait Pane
 
     fn change_palette(&mut self, palette: ColorPalette)
     {
-        *self.get_palette_mut() = palette;
+        self.get_coloring_mut().set_palette(palette);
         self.schedule_redraw();
     }
 
     fn scale_palette(&mut self, scale_factor: f64)
     {
-        self.get_palette_mut().scale_period(scale_factor);
+        self.get_coloring_mut().scale_period(scale_factor);
+        self.schedule_redraw();
+    }
+
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    {
+        self.get_coloring_mut().set_algorithm(coloring_algorithm);
         self.schedule_redraw();
     }
 
     fn shift_palette(&mut self, shift: f64)
     {
-        self.get_palette_mut().adjust_phase(shift);
+        self.get_coloring_mut().adjust_phase(shift);
         self.schedule_redraw();
     }
 
@@ -160,7 +166,7 @@ pub(super) trait Pane
 
     fn redraw(&mut self)
     {
-        let image = self.get_iter_plane().render(self.get_palette());
+        let image = self.get_iter_plane().render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     }
@@ -227,7 +233,7 @@ pub(super) trait Pane
         self.grid_mut().resize_x(img_width);
         let iter_plane = self.plane().compute();
         let filepath = format!("images/{}", filename);
-        iter_plane.save(self.get_palette(), filepath);
+        iter_plane.save(self.get_coloring(), filepath);
         self.grid_mut().resize_x(orig_width);
     }
 }
@@ -235,7 +241,7 @@ pub(super) trait Pane
 pub(super) struct Parent
 {
     pub plane: Box<dyn ParameterPlane>,
-    pub palette: ColorPalette,
+    pub coloring: Coloring,
     iter_plane: IterPlane,
     pub image_frame: ImageFrame,
     task: RedrawMessage,
@@ -246,13 +252,14 @@ pub(super) struct Parent
 impl Parent
 {
     #[must_use]
-    pub fn new(plane: Box<dyn ParameterPlane>, palette: ColorPalette) -> Self
+    pub fn new(plane: Box<dyn ParameterPlane>, coloring: Coloring) -> Self
     {
         let iter_plane = plane.compute();
         let task = RedrawMessage::Redraw;
         let selection = ComplexNum::new(-1., 0.);
 
-        let image = RetainedImage::from_color_image("parameter plane", iter_plane.render(palette));
+        let image =
+            RetainedImage::from_color_image("parameter plane", iter_plane.render(&coloring));
         let frame = ImageFrame {
             image,
             region: Rect::NOTHING,
@@ -261,7 +268,7 @@ impl Parent
         let marked_points = vec![];
         Self {
             plane,
-            palette,
+            coloring,
             iter_plane,
             image_frame: frame,
             task,
@@ -335,14 +342,14 @@ impl Pane for Parent
         &mut self.marked_points
     }
     #[inline]
-    fn get_palette(&self) -> ColorPalette
+    fn get_coloring(&self) -> &Coloring
     {
-        self.palette
+        &self.coloring
     }
     #[inline]
-    fn get_palette_mut(&mut self) -> &mut ColorPalette
+    fn get_coloring_mut(&mut self) -> &mut Coloring
     {
-        &mut self.palette
+        &mut self.coloring
     }
     #[inline]
     fn get_selection(&self) -> ComplexNum
@@ -367,16 +374,16 @@ impl Default for Parent
     {
         // let plane = Box::new(QuadRatPer2::new_default(1024, 1024).misiurewicz_curve(2,1));
         let plane = Box::new(QuadRatPer2::new_default(1024, 1024));
-        let palette = ColorPalette::black(32.);
+        let coloring = Coloring::default();
 
-        Self::new(plane, palette)
+        Self::new(plane, coloring)
     }
 }
 
 pub(super) struct Child
 {
     pub plane: Box<dyn ParameterPlane>,
-    pub palette: ColorPalette,
+    pub coloring: Coloring,
     iter_plane: IterPlane,
     pub image_frame: ImageFrame,
     task: RedrawMessage,
@@ -394,13 +401,14 @@ impl Child
     }
 
     #[must_use]
-    pub fn new(plane: Box<dyn ParameterPlane>, palette: ColorPalette) -> Self
+    pub fn new(plane: Box<dyn ParameterPlane>, coloring: Coloring) -> Self
     {
         let iter_plane = plane.compute();
         let task = RedrawMessage::Redraw;
         let selection = ComplexNum::new(0., 0.);
 
-        let image = RetainedImage::from_color_image("parameter plane", iter_plane.render(palette));
+        let image =
+            RetainedImage::from_color_image("parameter plane", iter_plane.render(&coloring));
         let frame = ImageFrame {
             image,
             region: Rect::NOTHING,
@@ -411,7 +419,7 @@ impl Child
 
         Self {
             plane,
-            palette,
+            coloring,
             iter_plane,
             image_frame: frame,
             task,
@@ -495,14 +503,14 @@ impl Pane for Child
         &mut self.marked_points
     }
     #[inline]
-    fn get_palette(&self) -> ColorPalette
+    fn get_coloring(&self) -> &Coloring
     {
-        self.palette
+        &self.coloring
     }
     #[inline]
-    fn get_palette_mut(&mut self) -> &mut ColorPalette
+    fn get_coloring_mut(&mut self) -> &mut Coloring
     {
-        &mut self.palette
+        &mut self.coloring
     }
     #[inline]
     fn get_selection(&self) -> ComplexNum

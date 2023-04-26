@@ -8,7 +8,6 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter,
-                coloring_algorithm: ColoringAlgorithm::Multiplier,
             }
         }
 
@@ -20,7 +19,6 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter,
-                coloring_algorithm: ColoringAlgorithm::Multiplier,
             }
         }
 
@@ -32,7 +30,6 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter,
-                coloring_algorithm: ColoringAlgorithm::Multiplier,
             }
         }
 
@@ -81,16 +78,6 @@ macro_rules! parameter_plane_impl {
         fn set_max_iter(&mut self, new_max_iter: Period)
         {
             self.max_iter = new_max_iter
-        }
-
-        #[inline]
-        fn get_coloring_algorithm(&self) -> ColoringAlgorithm {
-            self.coloring_algorithm
-        }
-
-        #[inline]
-        fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm) {
-            self.coloring_algorithm = coloring_algorithm;
         }
     };
 }

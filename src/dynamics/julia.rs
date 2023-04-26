@@ -1,4 +1,3 @@
-use crate::coloring::ColoringAlgorithm;
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::primitive_types::*;
@@ -12,7 +11,6 @@ where
     pub max_iter: Period,
     pub parent: T,
     pub param: ComplexNum,
-    pub coloring_algorithm: ColoringAlgorithm,
 }
 
 impl<T> JuliaSet<T>
@@ -30,7 +28,6 @@ where
             parent: parent.clone(),
             max_iter: parent.max_iter(),
             param,
-            coloring_algorithm: ColoringAlgorithm::PreperiodSmooth,
         }
     }
 }
@@ -45,12 +42,12 @@ where
         let point_grid = parent
             .point_grid()
             .with_same_height(parent.default_julia_bounds(param));
+        let periodicity_tolerance = parent.periodicity_tolerance();
         Self {
             point_grid,
             parent: parent.clone(),
             max_iter: parent.max_iter(),
             param,
-            coloring_algorithm: ColoringAlgorithm::PreperiodSmooth,
         }
     }
 }
@@ -125,23 +122,9 @@ where
         self.max_iter = new_max_iter;
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> PointInfo
     {
-        match state
-        {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            } => self.encode_periodic_point(period, preperiod, multiplier, final_error),
-            EscapeState::Escaped { iters, final_value } =>
-            {
-                self.parent
-                    .encode_escaping_point(iters, final_value, base_param)
-            }
-        }
+        self.parent.encode_escape_result(state, base_param)
     }
 
     #[inline]
@@ -172,18 +155,6 @@ where
     fn name(&self) -> String
     {
         "JuliaSet".to_owned()
-    }
-
-    #[inline]
-    fn get_coloring_algorithm(&self) -> ColoringAlgorithm
-    {
-        self.coloring_algorithm
-    }
-
-    #[inline]
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
-    {
-        self.coloring_algorithm = coloring_algorithm;
     }
 
     #[inline]

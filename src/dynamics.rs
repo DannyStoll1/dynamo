@@ -1,30 +1,26 @@
 use crate::{
-    coloring::ColoringAlgorithm,
-    covering_maps::CoveringMap,
     iter_plane::IterPlane,
     orbit_info::OrbitInfo,
     point_grid::{Bounds, PointGrid},
-    primitive_types::{ComplexNum, EscapeState, IterCount, Period, RealNum, ONE_COMPLEX, TAU, TWO},
+    primitive_types::*,
 };
 use dyn_clone::DynClone;
 use ndarray::Array2;
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
 pub mod julia;
-use julia::JuliaSet;
-
 pub mod orbit;
+pub mod covering_maps;
+
+use julia::JuliaSet;
 use orbit::{CycleDetectedOrbit, Orbit};
+use covering_maps::CoveringMap;
 
 pub trait ParameterPlane: Sync + Send + DynClone
 {
     fn point_grid(&self) -> PointGrid;
 
     fn point_grid_mut(&mut self) -> &mut PointGrid;
-
-    fn get_coloring_algorithm(&self) -> ColoringAlgorithm;
-
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm);
 
     fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState
     {
@@ -162,39 +158,29 @@ pub trait ParameterPlane: Sync + Send + DynClone
         )
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> IterCount
+    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> PointInfo
     {
         match state
         {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
+            EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Bounded,
             EscapeState::Periodic {
                 period,
                 preperiod,
                 multiplier,
                 final_error,
-            } => self.encode_periodic_point(period, preperiod, multiplier, final_error),
+            } => PointInfo::Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            },
             EscapeState::Escaped { iters, final_value } =>
             {
-                self.encode_escaping_point(iters, final_value, base_param)
+                PointInfo::Escaping {
+                    potential: self.encode_escaping_point(iters, final_value, base_param)
+                }
             }
         }
-    }
-
-    fn encode_periodic_point(
-        &self,
-        period: Period,
-        preperiod: Period,
-        multiplier: ComplexNum,
-        final_error: ComplexNum,
-    ) -> IterCount
-    {
-        self.get_coloring_algorithm().encode(
-            period,
-            preperiod,
-            multiplier,
-            final_error,
-            self.periodicity_tolerance(),
-        )
     }
 
     fn encode_escaping_point(
@@ -272,9 +258,9 @@ pub trait ParameterPlane: Sync + Send + DynClone
         }
     }
 
-    fn compute_escape_times(&self) -> Array2<IterCount>
+    fn compute_escape_times(&self) -> Array2<PointInfo>
     {
-        let mut iter_counts = Array2::zeros((self.point_grid().res_x, self.point_grid().res_y));
+        let mut iter_counts = Array2::from_elem((self.point_grid().res_x, self.point_grid().res_y), PointInfo::Bounded);
         iter_counts
             .indexed_iter_mut()
             .par_bridge()
@@ -607,12 +593,12 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let point_grid = self
             .point_grid()
             .with_same_height(self.default_julia_bounds(param));
+        let periodicity_tolerance = self.periodicity_tolerance();
         Some(JuliaSet {
             point_grid,
             max_iter: self.max_iter(),
             parent: self.clone(),
             param,
-            coloring_algorithm: ColoringAlgorithm::PreperiodSmooth,
             // parent_params: Vec::new(),
         })
     }

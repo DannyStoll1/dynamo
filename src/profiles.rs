@@ -1,22 +1,17 @@
-use crate::covering_maps::CoveringMap;
-use crate::dynamics::{HasDynamicalCovers, ParameterPlane};
+use crate::dynamics::{HasDynamicalCovers, ParameterPlane, covering_maps::CoveringMap};
 use crate::math_utils::{slog, weierstrass_p};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::primitive_types::*;
-use crate::coloring::ColoringAlgorithm;
 
 use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
 
 use std::any::type_name;
-
-const INTERNAL_COLORING_RATE: IterCount = 0.02;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Mandelbrot
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Mandelbrot
@@ -226,7 +221,6 @@ pub struct QuadRatPer2
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl QuadRatPer2
@@ -440,7 +434,6 @@ pub struct QuadRatPer3
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl QuadRatPer3
@@ -597,7 +590,6 @@ pub struct QuadRatPer4
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl QuadRatPer4
@@ -740,7 +732,6 @@ pub struct CubicPer1_1
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl CubicPer1_1
@@ -759,7 +750,8 @@ impl ParameterPlane for CubicPer1_1
     parameter_plane_impl!();
     default_name!();
 
-    fn periodicity_tolerance(&self) -> RealNum {
+    fn periodicity_tolerance(&self) -> RealNum
+    {
         1e-6
     }
     fn encode_escaping_point(
@@ -821,7 +813,6 @@ pub struct OddCubic
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl OddCubic
@@ -889,12 +880,12 @@ impl ParameterPlane for OddCubic
     }
 }
 
+// Cubic polynomials with critical 2-cycle 0 <-> c
 #[derive(Clone, Copy, Debug)]
 pub struct CubicPer2CritMarked
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl CubicPer2CritMarked
@@ -946,6 +937,8 @@ impl ParameterPlane for CubicPer2CritMarked
     #[inline]
     fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
     {
+        // let u = z * (3. * z - c - c - 2. / c) * (z / c).re.signum();
+        // u / u.norm()
         z * (3. * z - c - c - 2. / c)
     }
 
@@ -960,7 +953,7 @@ impl ParameterPlane for CubicPer2CritMarked
     #[inline]
     fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
     {
-        Bounds::square(2.2, param/2.)
+        Bounds::square(2.2, param / 2.)
     }
 }
 #[derive(Clone, Copy, Debug)]
@@ -969,7 +962,6 @@ pub struct Biquadratic
     point_grid: PointGrid,
     max_iter: Period,
     param: ComplexNum,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Biquadratic
@@ -997,7 +989,6 @@ impl Biquadratic
             point_grid,
             max_iter,
             param,
-            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -1015,7 +1006,6 @@ impl Biquadratic
             point_grid,
             max_iter,
             param,
-            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -1032,7 +1022,6 @@ impl Biquadratic
             point_grid,
             max_iter,
             param,
-            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -1117,7 +1106,6 @@ pub struct BurningShip
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl BurningShip
@@ -1137,39 +1125,22 @@ impl ParameterPlane for BurningShip
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
-        match state
+        if z.is_nan()
         {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
-            // EscapeState::Periodic { period, .. } => -(period as IterCount),
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier: _,
-                final_error: _,
-            } =>
-            {
-                let u = f64::from(period);
-                let v = f64::from(preperiod);
-                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
-            }
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } =>
-            {
-                if z.is_nan()
-                {
-                    return f64::from(iters) - 1.;
-                }
-
-                let u = self.escape_radius().log2();
-                let v = z.norm_sqr().log2();
-                let residual = (v / u).log2();
-                f64::from(iters) - (residual as IterCount)
-            }
+            return f64::from(iters) - 1.;
         }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
@@ -1210,7 +1181,6 @@ pub struct Sailboat
     point_grid: PointGrid,
     max_iter: Period,
     shift: ComplexNum,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Sailboat
@@ -1238,7 +1208,6 @@ impl Sailboat
             point_grid,
             max_iter,
             shift,
-            coloring_algorithm: ColoringAlgorithm::Multiplier,
         }
     }
 
@@ -1256,7 +1225,6 @@ impl Sailboat
             point_grid,
             max_iter,
             shift,
-            coloring_algorithm: ColoringAlgorithm::Solid,
         }
     }
 
@@ -1273,7 +1241,6 @@ impl Sailboat
             point_grid,
             max_iter,
             shift,
-            coloring_algorithm: ColoringAlgorithm::Solid,
         }
     }
 
@@ -1289,38 +1256,22 @@ impl ParameterPlane for Sailboat
 {
     parameter_plane_impl!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
-        match state
+        if z.is_nan()
         {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier: _,
-                final_error: _,
-            } =>
-            {
-                let u = f64::from(period);
-                let v = f64::from(preperiod);
-                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
-            }
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } =>
-            {
-                if z.is_nan()
-                {
-                    return f64::from(iters) - 1.;
-                }
-
-                let u = self.escape_radius().log2();
-                let v = z.norm_sqr().log2();
-                let residual = (v / u).log2();
-                f64::from(iters) - (residual as IterCount)
-            }
+            return f64::from(iters) - 1.;
         }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
@@ -1367,7 +1318,6 @@ pub struct Exponential
 {
     point_grid: PointGrid,
     max_iter: Period,
-    coloring_algorithm: ColoringAlgorithm,
 }
 
 impl Exponential
@@ -1393,46 +1343,30 @@ impl ParameterPlane for Exponential
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escape_result(&self, state: EscapeState, _base_param: ComplexNum) -> IterCount
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> IterCount
     {
-        match state
+        if z.is_nan()
         {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => 0.,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier: _,
-                final_error: _,
-            } =>
-            {
-                let u = f64::from(period);
-                let v = f64::from(preperiod);
-                -(u + 0.99 * (v * INTERNAL_COLORING_RATE / u).tanh())
-            }
-            EscapeState::Escaped {
-                iters,
-                final_value: z,
-            } =>
-            {
-                if z.is_nan()
-                {
-                    return f64::from(iters) - 1.;
-                }
-
-                if z.re < 0.
-                {
-                    return -1.;
-                }
-                if z.is_infinite()
-                {
-                    return f64::from(iters + 1);
-                }
-                let u = slog(self.escape_radius());
-                let v = slog(z.norm_sqr());
-                let residual = v - u;
-                f64::from(iters) - (residual as IterCount)
-            }
+            return f64::from(iters) - 1.;
         }
+
+        if z.re < 0.
+        {
+            return -1.;
+        }
+        if z.is_infinite()
+        {
+            return f64::from(iters + 1);
+        }
+        let u = slog(self.escape_radius());
+        let v = slog(z.norm_sqr());
+        let residual = v - u;
+        f64::from(iters) - (residual as IterCount)
     }
 
     #[inline]
