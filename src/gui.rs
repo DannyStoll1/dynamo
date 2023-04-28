@@ -1,6 +1,6 @@
 use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use crate::dynamics::{julia::JuliaSet, HasDynamicalCovers, ParameterPlane};
-use crate::primitive_types::{ComplexNum, Period};
+use crate::types::{ComplexNum, Period};
 use crate::profiles::*;
 
 use eframe::egui;
@@ -27,33 +27,13 @@ pub fn run_app() -> Result<(), eframe::Error>
     )
 }
 
-macro_rules! change_plane {
-    ($fractal: expr) => {
-        let parent_plane_ref = self.parent.plane_mut();
-
-        let res_y = parent_plane_ref.point_grid().res_y;
-        let max_iters = 2048;
-        let selected_point = ComplexNum::new(0., 0.);
-
-        let parent_plane = $fractal::new_default(res_y, max_iters);
-        *parent_plane_ref = Box::new(parent_plane);
-
-        let child_plane = JuliaSet::new(parent_plane, selected_point);
-        let child_plane_ref = self.child.plane_mut();
-        *child_plane_ref = Box::new(child_plane);
-
-        self.parent.select_point(selected_point);
-        self.parent.schedule_recompute();
-        self.child.schedule_recompute();
-    };
-}
-
 pub struct FractalApp
 {
     parent: Parent,
     child: Child,
     live_mode: bool,
     active_pane: PaneID,
+    click_used: bool,
 }
 
 impl FractalApp
@@ -246,7 +226,7 @@ impl FractalApp
 
     fn handle_mouse(&mut self, ctx: &egui::Context)
     {
-        let clicked = ctx.input(|i| i.pointer.any_click());
+        let clicked = (!self.click_used) && ctx.input(|i| i.pointer.any_click());
         let zoom_factor = ctx.input(InputState::zoom_delta);
 
         if let Some(pointer_pos) = ctx.pointer_latest_pos()
@@ -273,11 +253,12 @@ impl FractalApp
                     // if let Some(ray) = self.parent.plane.external_ray(pointer_value.arg(), 200, 25, 600) {
                     //     self.parent.mark_curve(ray, Color32::GREEN);
                     // }
+                    self.consume_click();
                     self.parent.clear_marked_curves();
                     let pointer_param = self.parent.plane.param_map(pointer_value);
-                    let orbit = self.parent.plane.get_orbit(pointer_param);
+                    let (orbit, info) = self.parent.plane.get_orbit_and_info(pointer_param);
                     self.parent.mark_curve(orbit, Color32::GREEN);
-                    // dbg!(orbit);
+                    self.parent.set_marked_info(info);
                 }
             }
             else if self.child.frame_contains_pixel(pointer_pos)
@@ -289,13 +270,15 @@ impl FractalApp
 
                 if clicked
                 {
+                    self.consume_click();
                     // if let Some(ray) = self.child.plane.external_ray(pointer_value.arg(), 200, 25, 600) {
                     //     self.child.mark_curve(ray, Color32::GREEN);
                     // }
                     self.child.clear_marked_curves();
-                    let orbit = self.child.plane.get_orbit(pointer_value);
+                    let pointer_param = self.child.plane.param_map(pointer_value);
+                    let (orbit, info) = self.child.plane.get_orbit_and_info(pointer_param);
                     self.child.mark_curve(orbit, Color32::GREEN);
-                    // let orbit = self.child.plane.get_orbit_info(pointer_value);
+                    self.child.set_marked_info(info);
                 }
             }
         }
@@ -315,6 +298,11 @@ impl FractalApp
             PaneID::Parent => &mut self.parent,
             PaneID::Child => &mut self.child,
         }
+    }
+
+    fn consume_click(&mut self)
+    {
+        self.click_used = true;
     }
 
     fn change_fractal<T>(&mut self, create_parent_plane: fn(usize, Period) -> T)
@@ -359,6 +347,7 @@ impl FractalApp
                         }
                         Err(e) => println!("Error parsing width: {:?}", e),
                     }
+                    self.consume_click();
                 }
             });
             ui.menu_button("Fractal", |ui| {
@@ -385,8 +374,8 @@ impl FractalApp
                     {
                         return;
                     }
+                    self.consume_click();
                     ui.close_menu();
-                    ui.pointer().take_click();
                 });
                 ui.menu_button("Quadratic Rational Maps", |ui| {
                     if ui.button("QuadRat Per(2)").clicked()
@@ -405,8 +394,8 @@ impl FractalApp
                     {
                         return;
                     }
+                    self.consume_click();
                     ui.close_menu();
-                    ui.pointer().take_click();
                 });
             });
             ui.menu_button("Coloring", |ui| {
@@ -429,8 +418,8 @@ impl FractalApp
                     {
                         return;
                     }
+                    self.consume_click();
                     ui.close_menu();
-                    ui.pointer().take_click();
                 });
                 ui.menu_button("Algorithm", |ui| {
                     if ui.button("Solid").clicked()
@@ -464,8 +453,8 @@ impl FractalApp
                     {
                         return;
                     }
+                    self.consume_click();
                     ui.close_menu();
-                    ui.pointer().take_click();
                 });
             });
         });
@@ -497,6 +486,7 @@ impl Default for FractalApp
             child,
             live_mode: false,
             active_pane: PaneID::Parent,
+            click_used: false,
         }
     }
 }
@@ -505,11 +495,10 @@ impl eframe::App for FractalApp
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
-        self.handle_input(ctx);
-        self.process_tasks();
-
         egui::CentralPanel::default().show(ctx, |ui| {
             self.show_menu(ui);
+            self.handle_input(ctx);
+            self.process_tasks();
 
             TableBuilder::new(ui)
                 .column(Column::auto().resizable(true))
@@ -534,7 +523,26 @@ impl eframe::App for FractalApp
                             self.child.put_marked_curves(ui);
                         });
                     });
+                    body.row(80., |mut row| {
+                        row.col(|ui| {
+                            let orbit_desc = if let Some(orbit_info) = self.parent.get_marked_info() {
+                                orbit_info.summarize()
+                            } else {
+                                "".to_owned()
+                            };
+                            ui.label(orbit_desc);
+                        });
+                        row.col(|ui| {
+                            let orbit_desc = if let Some(orbit_info) = self.child.get_marked_info() {
+                                orbit_info.summarize()
+                            } else {
+                                "".to_owned()
+                            };
+                            ui.label(orbit_desc);
+                        });
+                    });
                 });
         });
+        self.click_used = false;
     }
 }

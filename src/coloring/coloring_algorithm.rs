@@ -1,5 +1,6 @@
 use super::palette::*;
-use crate::primitive_types::*;
+use super::color_types::*;
+use crate::types::*;
 use epaint::Color32;
 
 fn multiplier_coloring_rate(multiplier: ComplexNum) -> f64
@@ -38,33 +39,36 @@ impl ColoringAlgorithm
         preperiod: Period,
         multiplier: ComplexNum,
         final_error: ComplexNum,
-    ) -> Hsv
+    ) -> Color32
     {
         match self
         {
-            Self::Solid => Hsv::new(0., 0., 0.),
+            Self::Solid =>
+            {
+                palette.in_color
+            }
             Self::Period =>
             {
                 let hue = period as f32;
-                palette.period_coloring.map_hsv(hue, 0.)
+                palette.period_coloring.map_color32(hue, 0.)
             }
             Self::PeriodMultiplier =>
             {
                 let hue = period as f32;
-                let luminosity = 1.0_f32;//multiplier.norm() as f32;
-                palette.period_coloring.map_hsv(hue, luminosity)
+                let luminosity = 1.0_f32; //multiplier.norm() as f32;
+                palette.period_coloring.map_color32(hue, luminosity)
             }
             Self::Preperiod =>
             {
                 let coloring_rate = 0.02;
 
-                let hue = IterCount::from(period);
+                let per = IterCount::from(period);
 
                 let v = IterCount::from(preperiod);
-                let luminosity = (v * coloring_rate / hue).tanh();
+                let potential = (v * coloring_rate / per).tanh();
                 palette
                     .period_coloring
-                    .map_hsv(hue as f32, luminosity as f32)
+                    .map_color32(per as f32, potential as f32)
             }
             Self::PreperiodSmooth {
                 periodicity_tolerance,
@@ -106,13 +110,13 @@ impl ColoringAlgorithm
                 }
                 palette
                     .period_coloring
-                    .map_hsv(hue as f32, luminosity as f32)
+                    .map_color32(hue as f32, luminosity as f32)
             }
             Self::Multiplier => Hsv::new(
                 (multiplier.arg() / TAU) as f32 + 0.5,
                 1.,
                 multiplier.norm() as f32,
-            ),
+            ).into(),
         }
     }
 

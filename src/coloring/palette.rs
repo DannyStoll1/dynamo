@@ -1,119 +1,11 @@
-use crate::macros::{max, min};
-use crate::primitive_types::IterCount;
+use crate::types::IterCount;
+use super::Hsv;
 use eframe::egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution};
 use std::f64::consts::PI;
 
-#[derive(Clone, Copy, Debug)]
-pub struct Hsv
-{
-    hue: f32,
-    saturation: f32,
-    luminosity: f32,
-}
-impl Hsv
-{
-    #[must_use]
-    pub fn new(hue: f32, saturation: f32, luminosity: f32) -> Self
-    {
-        Self {
-            hue,
-            saturation,
-            luminosity,
-        }
-    }
-
-    fn as_rgb_tuple(&self) -> (u8, u8, u8)
-    {
-        let c = self.luminosity * self.saturation;
-        let mode = self.hue * 6.;
-        let x = c * (1. - (mode % 2. - 1.).abs());
-        let m = self.luminosity - c;
-
-        let (r_, g_, b_) = match (mode as i32) % 6
-        {
-            0 => (c, x, 0.),
-            1 => (x, c, 0.),
-            2 => (0., c, x),
-            3 => (0., x, c),
-            4 => (x, 0., c),
-            5 => (c, 0., x),
-            _ => (0., 0., 0.),
-        };
-        let r = (256. * (r_ + m)) as u8;
-        let g = (256. * (g_ + m)) as u8;
-        let b = (256. * (b_ + m)) as u8;
-        (r, g, b)
-    }
-}
-impl From<Hsv> for Color32
-{
-    fn from(val: Hsv) -> Self
-    {
-        let (r, g, b) = val.as_rgb_tuple();
-        Color32::from_rgb(r, g, b)
-    }
-}
-impl From<Hsv> for Rgb<u8>
-{
-    fn from(val: Hsv) -> Self
-    {
-        let (r, g, b) = val.as_rgb_tuple();
-        Self([r, g, b])
-    }
-}
-impl From<Color32> for Hsv
-{
-    fn from(color32: Color32) -> Self
-    {
-        let r = color32.r();
-        let g = color32.g();
-        let b = color32.b();
-
-        let c_max = max!(r, g, b);
-        let c_min = min!(r, g, b);
-        let range = c_max - c_min;
-
-        if range == 0
-        {
-            return Self {
-                hue: 0.,
-                saturation: 0.,
-                luminosity: 0.,
-            };
-        }
-
-        let range = f32::from(range);
-        let c_max_f32 = f32::from(c_max);
-
-        let normalization = 1. / (6. * range);
-        let hue = {
-            if c_max == r
-            {
-                (f32::from(g - b) * normalization) % 1.
-            }
-            else if c_max == g
-            {
-                f32::from(b - r) * normalization + 1. / 3.
-            }
-            else
-            {
-                f32::from(r - g) * normalization + 2. / 3.
-            }
-        };
-
-        let saturation = range / c_max_f32;
-        let luminosity = c_max_f32;
-
-        Self {
-            hue,
-            saturation,
-            luminosity,
-        }
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Sinusoid
@@ -197,7 +89,7 @@ pub struct ColorPalette
     pub color_map_g: Sinusoid,
     pub color_map_b: Sinusoid,
     pub period_coloring: DiscretePalette,
-    pub in_color: (u8, u8, u8),
+    pub in_color: Color32,
 }
 
 impl ColorPalette
@@ -210,7 +102,7 @@ impl ColorPalette
             color_map_g: Sinusoid::new(period_g),
             color_map_b: Sinusoid::new(period_b),
             period_coloring: DiscretePalette::default(),
-            in_color: (0, 0, 0),
+            in_color: Color32::BLACK,
         }
     }
 
@@ -223,7 +115,7 @@ impl ColorPalette
             color_map_g: color_map,
             color_map_b: color_map,
             period_coloring: DiscretePalette::black(),
-            in_color: (0, 0, 0),
+            in_color: Color32::BLACK,
         }
     }
 
@@ -241,7 +133,7 @@ impl ColorPalette
             color_map_g: color_map,
             color_map_b: color_map,
             period_coloring: DiscretePalette::white(),
-            in_color: (255, 255, 255),
+            in_color: Color32::WHITE,
         }
     }
 
@@ -306,23 +198,16 @@ impl ColorPalette
             color_map_g: palette_g,
             color_map_b: palette_b,
             period_coloring: DiscretePalette::default(),
-            in_color: (0, 0, 0),
+            in_color: Color32::BLACK,
         }
     }
 
     #[must_use]
     pub fn map_rgb(&self, value: IterCount) -> Rgb<u8>
     {
-        if value < 0.0
+        if value <= 0.0
         {
-            let preperiod = -value % 1.;
-            let period = -(value + preperiod);
-            self.period_coloring
-                .map_rgb(period as f32, preperiod as f32)
-        }
-        else if value == 0.0
-        {
-            let (r, g, b) = self.in_color;
+            let (r, g, b, _) = self.in_color.to_tuple();
             Rgb([r, g, b])
         }
         else
@@ -338,17 +223,9 @@ impl ColorPalette
     #[must_use]
     pub fn map_color32(&self, value: IterCount) -> Color32
     {
-        if value < 0.0
+        if value <= 0.0
         {
-            let preperiod = -value % 1.;
-            let period = -(value + preperiod);
-            self.period_coloring
-                .map_color32(period as f32, preperiod as f32)
-        }
-        else if value == 0.0
-        {
-            let (r, g, b) = self.in_color;
-            Color32::from_rgb(r, g, b)
+            self.in_color
         }
         else
         {
@@ -360,16 +237,18 @@ impl ColorPalette
         }
     }
 
-    pub fn scale_period(&mut self, scale_factor: f64) {
-       *self.color_map_r.get_period_mut() *= scale_factor;
-       *self.color_map_g.get_period_mut() *= scale_factor;
-       *self.color_map_b.get_period_mut() *= scale_factor;
+    pub fn scale_period(&mut self, scale_factor: f64)
+    {
+        *self.color_map_r.get_period_mut() *= scale_factor;
+        *self.color_map_g.get_period_mut() *= scale_factor;
+        *self.color_map_b.get_period_mut() *= scale_factor;
     }
 
-    pub fn adjust_phase(&mut self, shift: f64) {
-       *self.color_map_r.get_phase_mut() += shift;
-       *self.color_map_g.get_phase_mut() += shift;
-       *self.color_map_b.get_phase_mut() += shift;
+    pub fn adjust_phase(&mut self, shift: f64)
+    {
+        *self.color_map_r.get_phase_mut() += shift;
+        *self.color_map_g.get_phase_mut() += shift;
+        *self.color_map_b.get_phase_mut() += shift;
     }
 }
 

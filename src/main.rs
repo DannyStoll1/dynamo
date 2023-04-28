@@ -3,12 +3,11 @@
 
 pub mod math_utils;
 pub mod point_grid;
-pub mod primitive_types;
+pub mod types;
 pub mod profiles;
 pub mod dynamics;
 pub mod gui;
 pub mod macros;
-pub mod orbit_info;
 pub mod iter_plane;
 pub mod coloring;
 

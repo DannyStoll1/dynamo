@@ -1,4 +1,4 @@
-use crate::primitive_types::{ComplexNum, EscapeState, Period};
+use crate::types::{ComplexNum, EscapeState, Period};
 
 pub struct Orbit<F, S>
 where

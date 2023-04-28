@@ -1,5 +1,5 @@
 use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::*;
+use crate::types::*;
 use super::ParameterPlane;
 
 #[derive(Clone, Copy)]

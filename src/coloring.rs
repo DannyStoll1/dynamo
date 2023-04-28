@@ -1,9 +1,11 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::primitive_types::PointInfo;
+use crate::types::PointInfo;
+pub mod color_types;
 pub mod coloring_algorithm;
 pub mod palette;
 
+use color_types::*;
 use coloring_algorithm::ColoringAlgorithm;
 use epaint::Color32;
 use image::Rgb;
@@ -47,10 +49,14 @@ impl Coloring
                 preperiod,
                 multiplier,
                 final_error,
-            } => self
-                .algorithm
-                .color_periodic(self.palette, period, preperiod, multiplier, final_error)
-                .into(),
+            } =>
+            {
+                let (r, g, b, _) = self
+                    .algorithm
+                    .color_periodic(self.palette, period, preperiod, multiplier, final_error)
+                    .to_tuple();
+                Rgb([r, g, b])
+            }
             Bounded => self.palette.map_rgb(0.),
         }
     }
@@ -84,17 +90,20 @@ impl Default for Coloring
     }
 }
 
-
-impl Deref for Coloring {
+impl Deref for Coloring
+{
     type Target = ColorPalette;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self::Target
+    {
         &self.palette
     }
 }
 
-impl DerefMut for Coloring {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+impl DerefMut for Coloring
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
         &mut self.palette
     }
 }

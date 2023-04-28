@@ -3,7 +3,7 @@ use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalet
 use crate::dynamics::ParameterPlane;
 use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::{ComplexNum, ComplexVec, RealNum};
+use crate::types::{ComplexNum, ComplexVec, RealNum, OrbitInfo};
 use crate::profiles::QuadRatPer2;
 
 use eframe::egui::{Color32, Pos2, Rect, Stroke, Ui};
@@ -50,6 +50,11 @@ pub(super) trait Pane
 
     fn get_marked_curves(&self) -> &Vec<ColoredCurve>;
     fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>;
+
+    fn get_marked_info(&self) -> &Option<OrbitInfo>;
+    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo>;
+    fn set_marked_info(&mut self, info: OrbitInfo);
+    fn del_marked_info(&mut self);
 
     fn mark_curve(&mut self, zs: ComplexVec, color: Color32)
     {
@@ -248,6 +253,7 @@ pub(super) struct Parent
     selection: ComplexNum,
     marked_curves: Vec<ColoredCurve>,
     marked_points: ColoredPoints,
+    marked_info: Option<OrbitInfo>,
 }
 impl Parent
 {
@@ -275,6 +281,7 @@ impl Parent
             selection,
             marked_curves,
             marked_points,
+            marked_info: None,
         }
     }
 }
@@ -342,6 +349,24 @@ impl Pane for Parent
         &mut self.marked_points
     }
     #[inline]
+    fn get_marked_info(&self) -> &Option<OrbitInfo>
+    {
+        &self.marked_info
+    }
+    #[inline]
+    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo>
+    {
+        &mut self.marked_info
+    }
+    #[inline]
+    fn set_marked_info(&mut self, info: OrbitInfo) {
+        self.marked_info = Some(info);
+    }
+    #[inline]
+    fn del_marked_info(&mut self) {
+        self.marked_info = None;
+    }
+    #[inline]
     fn get_coloring(&self) -> &Coloring
     {
         &self.coloring
@@ -390,6 +415,7 @@ pub(super) struct Child
     selection: ComplexNum,
     marked_curves: Vec<ColoredCurve>,
     marked_points: ColoredPoints,
+    marked_info: Option<OrbitInfo>,
 }
 impl Child
 {
@@ -426,6 +452,7 @@ impl Child
             selection,
             marked_curves,
             marked_points,
+            marked_info: None,
         }
     }
 }
@@ -501,6 +528,24 @@ impl Pane for Child
     fn get_marked_points_mut(&mut self) -> &mut ColoredPoints
     {
         &mut self.marked_points
+    }
+    #[inline]
+    fn get_marked_info(&self) -> &Option<OrbitInfo>
+    {
+        &self.marked_info
+    }
+    #[inline]
+    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo>
+    {
+        &mut self.marked_info
+    }
+    #[inline]
+    fn set_marked_info(&mut self, info: OrbitInfo) {
+        self.marked_info = Some(info);
+    }
+    #[inline]
+    fn del_marked_info(&mut self) {
+        self.marked_info = None;
     }
     #[inline]
     fn get_coloring(&self) -> &Coloring

@@ -1,4 +1,4 @@
-use crate::primitive_types::{ComplexNum, RealNum};
+use crate::types::{ComplexNum, RealNum};
 use eframe::egui::{Pos2, Vec2};
 use std::ops::{Deref, DerefMut};
 use ndarray::Array2;

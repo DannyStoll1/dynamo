@@ -1,4 +1,4 @@
-use crate::primitive_types::{ComplexNum, RealNum};
+use crate::types::{ComplexNum, RealNum};
 
 #[must_use] pub fn weierstrass_p(
     g2: ComplexNum,

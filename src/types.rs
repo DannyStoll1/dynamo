@@ -47,3 +47,33 @@ pub enum PointInfo
     },
     Bounded,
 }
+
+#[derive(Clone, Copy, Debug)]
+pub struct OrbitInfo
+{
+    pub point: ComplexNum,
+    pub param: ComplexNum,
+    pub result: PointInfo,
+}
+impl OrbitInfo
+{
+    pub fn summarize(&self) -> String
+    {
+        use PointInfo::*;
+        let result_summary = match self.result
+        {
+            Escaping { potential } => format!("Escaped, potential: {}", potential),
+            Periodic {
+                period,
+                preperiod,
+                multiplier,
+                final_error: _,
+            } => format!(
+                "Cycle detected after {} iterations.\n    Period: {}\n    Multiplier: {}",
+                preperiod, period, multiplier
+            ),
+            Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
+        };
+        format!("Parameter: {}\nStarting point: {}\n{}", self.param, self.point, result_summary)
+    }
+}

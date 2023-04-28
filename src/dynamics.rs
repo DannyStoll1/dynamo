@@ -1,20 +1,19 @@
 use crate::{
     iter_plane::IterPlane,
-    orbit_info::OrbitInfo,
     point_grid::{Bounds, PointGrid},
-    primitive_types::*,
+    types::*,
 };
 use dyn_clone::DynClone;
 use ndarray::Array2;
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
+pub mod covering_maps;
 pub mod julia;
 pub mod orbit;
-pub mod covering_maps;
 
+use covering_maps::CoveringMap;
 use julia::JuliaSet;
 use orbit::{CycleDetectedOrbit, Orbit};
-use covering_maps::CoveringMap;
 
 pub trait ParameterPlane: Sync + Send + DynClone
 {
@@ -106,7 +105,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     #[inline]
     fn periodicity_tolerance(&self) -> RealNum
     {
-        self.point_grid().bounds.area() * 1e-13
+        self.point_grid().bounds.area() * 1e-9
     }
 
     fn compute_period(
@@ -174,12 +173,9 @@ pub trait ParameterPlane: Sync + Send + DynClone
                 multiplier,
                 final_error,
             },
-            EscapeState::Escaped { iters, final_value } =>
-            {
-                PointInfo::Escaping {
-                    potential: self.encode_escaping_point(iters, final_value, base_param)
-                }
-            }
+            EscapeState::Escaped { iters, final_value } => PointInfo::Escaping {
+                potential: self.encode_escaping_point(iters, final_value, base_param),
+            },
         }
     }
 
@@ -238,7 +234,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         }
     }
 
-    fn run_point(&self, start: ComplexNum, param: ComplexNum) -> EscapeState
+    fn run_point(&self, start: ComplexNum, param: ComplexNum) -> PointInfo
     {
         let orbit = CycleDetectedOrbit::new(
             |z, c| self.map(z, c),
@@ -250,17 +246,20 @@ pub trait ParameterPlane: Sync + Send + DynClone
         );
         if let Some((_, state)) = orbit.last()
         {
-            state
+            self.encode_escape_result(state, param)
         }
         else
         {
-            EscapeState::NotYetEscaped
+            PointInfo::Bounded
         }
     }
 
     fn compute_escape_times(&self) -> Array2<PointInfo>
     {
-        let mut iter_counts = Array2::from_elem((self.point_grid().res_x, self.point_grid().res_y), PointInfo::Bounded);
+        let mut iter_counts = Array2::from_elem(
+            (self.point_grid().res_x, self.point_grid().res_y),
+            PointInfo::Bounded,
+        );
         iter_counts
             .indexed_iter_mut()
             .par_bridge()
@@ -575,6 +574,35 @@ pub trait ParameterPlane: Sync + Send + DynClone
         }
     }
 
+    fn get_orbit_and_info(&self, param: ComplexNum) -> (ComplexVec, OrbitInfo)
+    {
+        let start = self.start_point(param);
+        let orbit = CycleDetectedOrbit::new(
+            |z, c| self.map(z, c),
+            |z, c| self.dynamical_derivative(z, c),
+            |i, z| self.stop_condition(i, z),
+            |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
+            start,
+            param,
+        );
+        let mut final_state = EscapeState::Bounded;
+        let trajectory: ComplexVec = orbit
+            .map(|(z, s)| {
+                final_state = s;
+                z
+            })
+            .collect();
+        let result = self.encode_escape_result(final_state, param);
+        (
+            trajectory,
+            OrbitInfo {
+                point: start,
+                param,
+                result,
+            },
+        )
+    }
+
     fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(2.2)
@@ -593,13 +621,12 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let point_grid = self
             .point_grid()
             .with_same_height(self.default_julia_bounds(param));
-        let periodicity_tolerance = self.periodicity_tolerance();
+
         Some(JuliaSet {
             point_grid,
             max_iter: self.max_iter(),
             parent: self.clone(),
             param,
-            // parent_params: Vec::new(),
         })
     }
 

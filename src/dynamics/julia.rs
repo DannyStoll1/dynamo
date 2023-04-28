@@ -1,6 +1,6 @@
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::*;
+use crate::types::*;
 
 #[derive(Clone)]
 pub struct JuliaSet<T>

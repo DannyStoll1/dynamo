@@ -1,7 +1,7 @@
 use crate::dynamics::{HasDynamicalCovers, ParameterPlane, covering_maps::CoveringMap};
 use crate::math_utils::{slog, weierstrass_p};
 use crate::point_grid::{Bounds, PointGrid};
-use crate::primitive_types::*;
+use crate::types::*;
 
 use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
 
