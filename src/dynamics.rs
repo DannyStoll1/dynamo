@@ -1,11 +1,15 @@
 use crate::{
+    coloring::{coloring_algorithm::ColoringAlgorithm, Coloring},
     iter_plane::IterPlane,
     point_grid::{Bounds, PointGrid},
     types::*,
 };
 use dyn_clone::DynClone;
-use ndarray::Array2;
+use ndarray::{Array2, Axis};
+use num_cpus;
 use rayon::iter::{ParallelBridge, ParallelIterator};
+use std::cell::RefCell;
+use thread_local::ThreadLocal;
 
 pub mod covering_maps;
 pub mod julia;
@@ -13,13 +17,18 @@ pub mod orbit;
 
 use covering_maps::CoveringMap;
 use julia::JuliaSet;
-use orbit::{CycleDetectedOrbit, Orbit};
+use orbit::*;
 
 pub trait ParameterPlane: Sync + Send + DynClone
 {
-    fn point_grid(&self) -> PointGrid;
+    fn point_grid(&self) -> &PointGrid;
 
     fn point_grid_mut(&mut self) -> &mut PointGrid;
+
+    fn early_bailout(&self, _start: ComplexNum, _param: ComplexNum) -> EscapeState
+    {
+        EscapeState::NotYetEscaped
+    }
 
     fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState
     {
@@ -68,7 +77,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             if let Some((period, multiplier)) = self.compute_period(
                 z_fast,
                 base_param,
-                self.periodicity_tolerance() * 10.,
+                self.periodicity_tolerance().powf(0.75),
                 iter as usize,
             )
             {
@@ -99,13 +108,14 @@ pub trait ParameterPlane: Sync + Send + DynClone
     #[inline]
     fn escape_radius(&self) -> RealNum
     {
-        1e16
+        1e12
     }
 
     #[inline]
     fn periodicity_tolerance(&self) -> RealNum
     {
-        self.point_grid().bounds.area() * 1e-9
+        // self.point_grid().bounds.area() * 1e-8
+        1e-14
     }
 
     fn compute_period(
@@ -173,9 +183,10 @@ pub trait ParameterPlane: Sync + Send + DynClone
                 multiplier,
                 final_error,
             },
-            EscapeState::Escaped { iters, final_value } => PointInfo::Escaping {
-                potential: self.encode_escaping_point(iters, final_value, base_param),
-            },
+            EscapeState::Escaped { iters, final_value } =>
+            {
+                self.encode_escaping_point(iters, final_value, base_param)
+            }
         }
     }
 
@@ -184,17 +195,21 @@ pub trait ParameterPlane: Sync + Send + DynClone
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        f64::from(iters) - (residual as IterCount)
+        PointInfo::Escaping {
+            potential: f64::from(iters) - (residual as IterCount),
+        }
     }
 
     fn run_until_escape(
@@ -241,6 +256,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             |z, c| self.dynamical_derivative(z, c),
             |i, z| self.stop_condition(i, z),
             |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
+            |z, c| self.early_bailout(z, c),
             start,
             param,
         );
@@ -256,28 +272,42 @@ pub trait ParameterPlane: Sync + Send + DynClone
 
     fn compute_escape_times(&self) -> Array2<PointInfo>
     {
+        let orbits = ThreadLocal::new();
+
+        let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
+
         let mut iter_counts = Array2::from_elem(
             (self.point_grid().res_x, self.point_grid().res_y),
             PointInfo::Bounded,
         );
         iter_counts
-            .indexed_iter_mut()
+            .axis_chunks_iter_mut(Axis(1), chunk_size)
+            .enumerate()
             .par_bridge()
-            .for_each(|((x, y), count)| {
-                let point = self.point_grid().map_pixel(x, y);
-                let param = self.param_map(point);
-                let start = self.start_point(param);
-                let orbit = CycleDetectedOrbit::new(
-                    |z, c| self.map(z, c),
-                    |z, c| self.dynamical_derivative(z, c),
-                    |i, z| self.stop_condition(i, z),
-                    |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
-                    start,
-                    param,
-                );
-
-                if let Some((_, result)) = orbit.last()
+            .for_each(|(chunk_idx, mut chunk)| {
+                for ((x, local_y), count) in chunk.indexed_iter_mut()
                 {
+                    let y = chunk_idx * chunk_size + local_y;
+                    let point = self.point_grid().map_pixel(x, y);
+                    let param = self.param_map(point);
+                    let start = self.start_point(param);
+
+                    let mut orbit = orbits
+                        .get_or(|| {
+                            RefCell::new(CycleDetectedOrbit::new(
+                                |z, c| self.map(z, c),
+                                |z, c| self.dynamical_derivative(z, c),
+                                |i, z| self.stop_condition(i, z),
+                                |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
+                                |z, c| self.early_bailout(z, c),
+                                param,
+                                start,
+                            ))
+                        })
+                        .borrow_mut();
+
+                    orbit.reset(param, start);
+                    let result = orbit.run_until_complete();
                     *count = self.encode_escape_result(result, point);
                 }
             });
@@ -289,7 +319,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let iter_counts = self.compute_escape_times();
         IterPlane {
             iter_counts,
-            point_grid: self.point_grid(),
+            point_grid: self.point_grid().clone(),
         }
     }
 
@@ -582,6 +612,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             |z, c| self.dynamical_derivative(z, c),
             |i, z| self.stop_condition(i, z),
             |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
+            |z, c| self.early_bailout(z, c),
             start,
             param,
         );
@@ -630,6 +661,21 @@ pub trait ParameterPlane: Sync + Send + DynClone
         })
     }
 
+    fn default_coloring(&self) -> Coloring
+    {
+        let mut coloring = Coloring::default();
+        coloring.set_algorithm(ColoringAlgorithm::PeriodMultiplier);
+        coloring
+    }
+
+    fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
+    {
+        ColoringAlgorithm::PreperiodSmooth {
+            periodicity_tolerance: self.periodicity_tolerance(),
+            fill_rate: 0.04,
+        }
+    }
+
     fn name(&self) -> String;
 }
 
@@ -638,7 +684,7 @@ pub trait HasDynamicalCovers: ParameterPlane + Clone
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
     {
         let param_map = |c| c;
-        let bounds = self.point_grid();
+        let bounds = self.point_grid().clone();
 
         println!("Marked cycle has not been implemented; falling back to base curve!");
         CoveringMap::new(self, param_map, bounds)
@@ -646,7 +692,7 @@ pub trait HasDynamicalCovers: ParameterPlane + Clone
     fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
     {
         let param_map = |c| c;
-        let bounds = self.point_grid();
+        let bounds = self.point_grid().clone();
 
         println!("Dynatomic curve has not been implemented; falling back to base curve!");
         CoveringMap::new(self, param_map, bounds)
@@ -654,7 +700,7 @@ pub trait HasDynamicalCovers: ParameterPlane + Clone
     fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
     {
         let param_map = |c| c;
-        let bounds = self.point_grid();
+        let bounds = self.point_grid().clone();
 
         println!("Misiurewicz curve has not been implemented; falling back to base curve!");
         CoveringMap::new(self, param_map, bounds)

@@ -2,7 +2,7 @@ use crate::point_grid::{Bounds, PointGrid};
 use crate::types::*;
 use super::ParameterPlane;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct CoveringMap<C>
 where
     C: ParameterPlane + Clone,
@@ -34,9 +34,9 @@ impl<C> ParameterPlane for CoveringMap<C>
 where
     C: ParameterPlane + Clone,
 {
-    fn point_grid(&self) -> PointGrid
+    fn point_grid(&self) -> &PointGrid
     {
-        self.point_grid
+        &self.point_grid
     }
 
     fn point_grid_mut(&mut self) -> &mut PointGrid
@@ -47,6 +47,10 @@ where
     fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState
     {
         self.base_curve.stop_condition(iter, z)
+    }
+
+    fn early_bailout(&self, start: ComplexNum, param: ComplexNum) -> EscapeState {
+        self.base_curve.early_bailout(start, param)
     }
 
     fn max_iter(&self) -> Period
@@ -115,6 +119,10 @@ where
     fn name(&self) -> String
     {
         format!("Cover over {}", self.base_curve.name())
+    }
+
+    fn default_coloring(&self) -> crate::coloring::Coloring {
+        self.base_curve.default_coloring()
     }
 
     fn default_julia_bounds(&self, param: ComplexNum) -> Bounds

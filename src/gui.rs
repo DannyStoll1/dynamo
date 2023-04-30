@@ -1,7 +1,7 @@
 use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use crate::dynamics::{julia::JuliaSet, HasDynamicalCovers, ParameterPlane};
-use crate::types::{ComplexNum, Period};
 use crate::profiles::*;
+use crate::types::{ComplexNum, Period};
 
 use eframe::egui;
 use egui::{Color32, InputState, Key};
@@ -70,7 +70,7 @@ impl FractalApp
 
     fn set_child_param(&mut self, new_param: ComplexNum)
     {
-        let old_bounds = self.child.grid().bounds;
+        let old_bounds = &self.child.grid().bounds;
         let mut new_bounds = self.parent.plane.default_julia_bounds(new_param);
         let zoom_factor = old_bounds.range_x() / new_bounds.range_x();
         new_bounds.zoom(zoom_factor, new_bounds.center());
@@ -174,10 +174,8 @@ impl FractalApp
         if ctx.input(|i| i.key_pressed(Key::Num5))
         {
             let pane = self.get_active_pane_mut();
-            let periodicity_tolerance = pane.plane().periodicity_tolerance();
-            pane.set_coloring_algorithm(ColoringAlgorithm::PreperiodSmooth {
-                periodicity_tolerance,
-            });
+            let coloring_algorithm = pane.plane().preperiod_smooth_coloring();
+            pane.set_coloring_algorithm(coloring_algorithm);
         }
 
         if ctx.input(|i| i.key_pressed(Key::C))
@@ -255,6 +253,8 @@ impl FractalApp
                     // }
                     self.consume_click();
                     self.parent.clear_marked_curves();
+                    dbg!(pointer_value);
+                    dbg!(self.parent.plane.periodicity_tolerance());
                     let pointer_param = self.parent.plane.param_map(pointer_value);
                     let (orbit, info) = self.parent.plane.get_orbit_and_info(pointer_param);
                     self.parent.mark_curve(orbit, Color32::GREEN);
@@ -307,7 +307,7 @@ impl FractalApp
 
     fn change_fractal<T>(&mut self, create_parent_plane: fn(usize, Period) -> T)
     where
-        T: ParameterPlane + Copy + 'static,
+        T: ParameterPlane + Clone + 'static,
     {
         let parent_plane_ref = self.parent.plane_mut();
         let child_plane_ref = self.child.plane_mut();
@@ -317,7 +317,7 @@ impl FractalApp
 
         let parent_plane = create_parent_plane(res_y, max_iters);
         let selected_point = parent_plane.default_julia_param();
-        let child_plane = JuliaSet::new(parent_plane, selected_point);
+        let child_plane = JuliaSet::new(parent_plane.clone(), selected_point, 256);
 
         *parent_plane_ref = Box::new(parent_plane);
         *child_plane_ref = Box::new(child_plane);
@@ -352,11 +352,39 @@ impl FractalApp
             });
             ui.menu_button("Fractal", |ui| {
                 ui.menu_button("Polynomials", |ui| {
-                    if ui.button("Mandelbrot").clicked()
-                    {
-                        self.change_fractal(|res, iter| Mandelbrot::new_default(res, iter));
-                    }
-                    else if ui.button("Odd Cubics").clicked()
+                    ui.menu_button("Quadratic Family", |ui| {
+                        if ui.button("Base Curve").clicked()
+                        {
+                            self.change_fractal(|res, iter| Mandelbrot::new_default(res, iter));
+                        }
+                        ui.menu_button("Marked Cycle curves", |ui| {
+                            if ui.button("Marked 1-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    Mandelbrot::new_default(res, iter).marked_cycle_curve(1)
+                                });
+                            }
+                            else if ui.button("Marked 3-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    Mandelbrot::new_default(res, iter).marked_cycle_curve(3)
+                                });
+                            }
+                            else if ui.button("Marked 4-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    Mandelbrot::new_default(res, iter).marked_cycle_curve(4)
+                                });
+                            }
+                            else
+                            {
+                                return;
+                            }
+                            self.consume_click();
+                            ui.close_menu();
+                        });
+                    });
+                    if ui.button("Odd Cubics").clicked()
                     {
                         self.change_fractal(|res, iter| OddCubic::new_default(res, iter));
                     }
@@ -378,24 +406,90 @@ impl FractalApp
                     ui.close_menu();
                 });
                 ui.menu_button("Quadratic Rational Maps", |ui| {
-                    if ui.button("QuadRat Per(2)").clicked()
-                    {
-                        self.change_fractal(|res, iter| QuadRatPer2::new_default(res, iter));
-                    }
-                    else if ui.button("QuadRat Per(3)").clicked()
-                    {
-                        self.change_fractal(|res, iter| QuadRatPer3::new_default(res, iter));
-                    }
-                    else if ui.button("QuadRat Per(4)").clicked()
-                    {
-                        self.change_fractal(|res, iter| QuadRatPer4::new_default(res, iter));
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.consume_click();
-                    ui.close_menu();
+                    ui.menu_button("QuadRat Per(2)", |ui| {
+                        if ui.button("Base Curve").clicked()
+                        {
+                            self.change_fractal(|res, iter| QuadRatPer2::new_default(res, iter));
+                            self.consume_click();
+                            ui.close_menu();
+                        }
+                        ui.menu_button("Marked Cycle curves", |ui| {
+                            if ui.button("Marked 1-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    QuadRatPer2::new_default(res, iter).marked_cycle_curve(1)
+                                });
+                            }
+                            else if ui.button("Marked 4-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    QuadRatPer2::new_default(res, iter).marked_cycle_curve(4)
+                                });
+                            }
+                            else if ui.button("Marked 5-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    QuadRatPer2::new_default(res, iter).marked_cycle_curve(5)
+                                });
+                            }
+                            else
+                            {
+                                return;
+                            }
+                            self.consume_click();
+                            ui.close_menu();
+                        });
+                    });
+                    ui.menu_button("QuadRat Per(3)", |ui| {
+                        if ui.button("Base Curve").clicked()
+                        {
+                            self.change_fractal(|res, iter| QuadRatPer3::new_default(res, iter));
+                            self.consume_click();
+                            ui.close_menu();
+                        }
+                        ui.menu_button("Marked Cycle curves", |ui| {
+                            if ui.button("Marked 1-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    QuadRatPer3::new_default(res, iter).marked_cycle_curve(1)
+                                });
+                            }
+                            else if ui.button("Marked 4-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    QuadRatPer3::new_default(res, iter).marked_cycle_curve(4)
+                                });
+                            }
+                            else
+                            {
+                                return;
+                            }
+                            self.consume_click();
+                            ui.close_menu();
+                        });
+                    });
+                    ui.menu_button("QuadRat Per(4)", |ui| {
+                        if ui.button("Base Curve").clicked()
+                        {
+                            self.change_fractal(|res, iter| QuadRatPer4::new_default(res, iter));
+                            self.consume_click();
+                            ui.close_menu();
+                        }
+                        ui.menu_button("Marked Cycle curves", |ui| {
+                            if ui.button("Marked 4-cycle").clicked()
+                            {
+                                self.change_fractal(|res, iter| {
+                                    QuadRatPer4::new_default(res, iter).marked_cycle_curve(4)
+                                });
+                            }
+                            else
+                            {
+                                return;
+                            }
+                            self.consume_click();
+                            ui.close_menu();
+                        });
+                    });
                 });
             });
             ui.menu_button("Coloring", |ui| {
@@ -444,10 +538,14 @@ impl FractalApp
                     }
                     else if ui.button("Preperiod (smooth)").clicked()
                     {
-                        let periodicity_tolerance = self.parent.plane.periodicity_tolerance();
-                        self.set_coloring_algorithm(ColoringAlgorithm::PreperiodSmooth {
-                            periodicity_tolerance,
-                        });
+                        let parent_coloring_algorithm =
+                            self.parent.plane().preperiod_smooth_coloring();
+                        self.parent
+                            .set_coloring_algorithm(parent_coloring_algorithm);
+
+                        let child_coloring_algorithm =
+                            self.child.plane().preperiod_smooth_coloring();
+                        self.child.set_coloring_algorithm(child_coloring_algorithm);
                     }
                     else
                     {
@@ -465,21 +563,22 @@ impl Default for FractalApp
 {
     fn default() -> Self
     {
-        let width = 1024;
+        let height = 1024;
         // let parameter_plane = QuadRatPer2::new_default(width, 2048).marked_cycle_curve(5);
         // let parameter_plane = QuadRatPer2::new_default(width, 2048);
-        let parameter_plane = Mandelbrot::new_default(width, 2048).marked_cycle_curve(4);
+        // let parameter_plane = Mandelbrot::new_default(height, 2048);
+        let parameter_plane = QuadRatSymmetryLocus::new_default(height, 2048);
+        // let parameter_plane = Mandelbrot::new_default(height, 2048).marked_cycle_curve(4);
         // let biquadratic_param = ComplexNum::new(0., -0.5);
         // let parameter_plane = Biquadratic::new_default(width, 2048, biquadratic_param);
         // let parameter_plane = CubicPer2CritMarked::new_default(width, 2048);
         // let parameter_plane = CubicPer1_1::new_default(width, 2048);
 
-        let dynamical_plane = JuliaSet::new(parameter_plane, ((2_f64).powf(0.5)).into());
+        let dynamical_plane =
+            JuliaSet::new(parameter_plane.clone(), ((2_f64).powf(0.5)).into(), 1024);
 
-        let coloring = Coloring::default();
-
-        let parent = Parent::new(Box::new(parameter_plane), coloring);
-        let child = Child::new(Box::new(dynamical_plane), coloring);
+        let parent = Parent::from(parameter_plane);
+        let child = Child::from(dynamical_plane);
 
         Self {
             parent,
@@ -525,17 +624,23 @@ impl eframe::App for FractalApp
                     });
                     body.row(80., |mut row| {
                         row.col(|ui| {
-                            let orbit_desc = if let Some(orbit_info) = self.parent.get_marked_info() {
+                            let orbit_desc = if let Some(orbit_info) = self.parent.get_marked_info()
+                            {
                                 orbit_info.summarize()
-                            } else {
+                            }
+                            else
+                            {
                                 "".to_owned()
                             };
                             ui.label(orbit_desc);
                         });
                         row.col(|ui| {
-                            let orbit_desc = if let Some(orbit_info) = self.child.get_marked_info() {
+                            let orbit_desc = if let Some(orbit_info) = self.child.get_marked_info()
+                            {
                                 orbit_info.summarize()
-                            } else {
+                            }
+                            else
+                            {
                                 "".to_owned()
                             };
                             ui.label(orbit_desc);

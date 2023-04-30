@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Bounds
 {
     pub min_x: RealNum,
@@ -119,7 +119,7 @@ impl Default for Bounds
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct PointGrid
 {
     pub res_x: usize,
@@ -140,7 +140,7 @@ impl PointGrid
     }
 
     #[must_use]
-    pub const fn infer_height(res_x: usize, bounds: Bounds) -> usize
+    pub const fn infer_height(res_x: usize, bounds: &Bounds) -> usize
     {
         debug_assert!(bounds.max_x > bounds.min_x);
         debug_assert!(bounds.max_y > bounds.min_y);
@@ -153,7 +153,7 @@ impl PointGrid
     }
 
     #[must_use]
-    pub const fn infer_width(res_y: usize, bounds: Bounds) -> usize
+    pub const fn infer_width(res_y: usize, bounds: &Bounds) -> usize
     {
         debug_assert!(bounds.max_x > bounds.min_x);
         debug_assert!(bounds.max_y > bounds.min_y);
@@ -168,7 +168,7 @@ impl PointGrid
     #[must_use]
     pub const fn with_res_x(res_x: usize, bounds: Bounds) -> Self
     {
-        let res_y = Self::infer_height(res_x, bounds);
+        let res_y = Self::infer_height(res_x, &bounds);
 
         Self::new(res_x, res_y, bounds)
     }
@@ -176,7 +176,7 @@ impl PointGrid
     #[must_use]
     pub const fn with_res_y(res_y: usize, bounds: Bounds) -> Self
     {
-        let res_x = Self::infer_width(res_y, bounds);
+        let res_x = Self::infer_width(res_y, &bounds);
 
         Self::new(res_x, res_y, bounds)
     }
@@ -199,14 +199,14 @@ impl PointGrid
     #[must_use]
     pub fn with_new_width(&self, res_x: usize) -> Self
     {
-        Self::with_res_x(res_x, self.bounds)
+        Self::with_res_x(res_x, self.bounds.clone())
     }
 
     #[inline]
     #[must_use]
     pub fn with_new_height(&self, res_y: usize) -> Self
     {
-        Self::with_res_y(res_y, self.bounds)
+        Self::with_res_y(res_y, self.bounds.clone())
     }
 
     #[must_use]
@@ -289,7 +289,7 @@ impl PointGrid
 
     pub fn change_bounds(&mut self, new_bounds: Bounds)
     {
-        self.res_y = Self::infer_height(self.res_x, new_bounds);
+        self.res_y = Self::infer_height(self.res_x, &new_bounds);
         self.bounds = new_bounds;
     }
 
@@ -297,14 +297,14 @@ impl PointGrid
     pub fn resize_x(&mut self, res_x: usize)
     {
         self.res_x = res_x;
-        self.res_y = Self::infer_height(res_x, self.bounds);
+        self.res_y = Self::infer_height(res_x, &self.bounds);
     }
 
     #[inline]
     pub fn resize_y(&mut self, res_y: usize)
     {
         self.res_y = res_y;
-        self.res_y = Self::infer_width(res_y, self.bounds);
+        self.res_y = Self::infer_width(res_y, &self.bounds);
     }
 
     #[must_use]
@@ -324,13 +324,13 @@ impl PointGrid
     #[must_use]
     pub fn par_iter(&self) -> IterBridge<PointGridIterator>
     {
-        self.into_iter().par_bridge()
+        self.iter().par_bridge()
     }
 
     #[must_use]
     pub fn iter(&self) -> PointGridIterator
     {
-        PointGridIterator::new(self.res_x, self.res_y, self.bounds)
+        PointGridIterator::new(self.res_x, self.res_y, &self.bounds)
     }
 }
 
@@ -367,7 +367,7 @@ impl IntoIterator for PointGrid
 
     fn into_iter(self) -> PointGridIterator
     {
-        PointGridIterator::new(self.res_x, self.res_y, self.bounds)
+        PointGridIterator::new(self.res_x, self.res_y, &self.bounds)
     }
 }
 
@@ -386,7 +386,7 @@ pub struct PointGridIterator
 impl PointGridIterator
 {
     #[must_use]
-    pub fn new(res_x: usize, res_y: usize, bounds: Bounds) -> Self
+    pub fn new(res_x: usize, res_y: usize, bounds: &Bounds) -> Self
     {
         let step_x = bounds.range_x() / (res_x as RealNum);
         let step_y = bounds.range_y() / (res_y as RealNum);

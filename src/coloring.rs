@@ -85,7 +85,7 @@ impl Default for Coloring
     {
         Self {
             palette: ColorPalette::black(32.),
-            algorithm: ColoringAlgorithm::Solid,
+            algorithm: ColoringAlgorithm::PeriodMultiplier,
         }
     }
 }

@@ -8,7 +8,7 @@ use ndarray::Array2;
 
 pub trait FractalImage
 {
-    fn point_grid(&self) -> PointGrid;
+    fn point_grid(&self) -> &PointGrid;
     fn render(&self, coloring: &Coloring) -> ColorImage;
     fn save(&self, coloring: &Coloring, filename: String);
 }
@@ -22,9 +22,9 @@ pub struct IterPlane
 
 impl FractalImage for IterPlane
 {
-    fn point_grid(&self) -> PointGrid
+    fn point_grid(&self) -> &PointGrid
     {
-        self.point_grid
+        &self.point_grid
     }
     fn render(&self, coloring: &Coloring) -> ColorImage
     {

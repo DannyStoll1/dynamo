@@ -1,3 +1,4 @@
+use crate::coloring::{coloring_algorithm::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::types::*;
@@ -18,7 +19,7 @@ where
     T: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(parent: T, param: ComplexNum) -> Self
+    pub fn new(parent: T, param: ComplexNum, max_iter: Period) -> Self
     {
         let point_grid = parent
             .point_grid()
@@ -26,7 +27,7 @@ where
         Self {
             point_grid,
             parent: parent.clone(),
-            max_iter: parent.max_iter(),
+            max_iter,
             param,
         }
     }
@@ -42,7 +43,6 @@ where
         let point_grid = parent
             .point_grid()
             .with_same_height(parent.default_julia_bounds(param));
-        let periodicity_tolerance = parent.periodicity_tolerance();
         Self {
             point_grid,
             parent: parent.clone(),
@@ -81,9 +81,9 @@ where
     }
 
     #[inline]
-    fn point_grid(&self) -> PointGrid
+    fn point_grid(&self) -> &PointGrid
     {
-        self.point_grid
+        &self.point_grid
     }
 
     #[inline]
@@ -148,7 +148,7 @@ where
     #[inline]
     fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
-        self.point_grid.bounds
+        self.point_grid.bounds.clone()
     }
 
     #[inline]
@@ -158,7 +158,24 @@ where
     }
 
     #[inline]
-    fn periodicity_tolerance(&self) -> RealNum {
+    fn periodicity_tolerance(&self) -> RealNum
+    {
         self.parent.periodicity_tolerance()
+    }
+
+    fn default_coloring(&self) -> Coloring
+    {
+        let mut coloring = Coloring::default();
+        let periodicity_tolerance = self.periodicity_tolerance();
+        coloring.set_algorithm(self.preperiod_smooth_coloring());
+        coloring
+    }
+
+    fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
+    {
+        ColoringAlgorithm::PreperiodSmooth {
+            periodicity_tolerance: self.periodicity_tolerance(),
+            fill_rate: 0.015,
+        }
     }
 }

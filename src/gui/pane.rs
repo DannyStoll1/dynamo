@@ -102,7 +102,7 @@ pub(super) trait Pane
         self.plane().name()
     }
 
-    fn grid(&self) -> PointGrid
+    fn grid(&self) -> &PointGrid
     {
         self.plane().point_grid()
     }
@@ -286,6 +286,13 @@ impl Parent
     }
 }
 
+impl<P> From<P> for Parent where P: ParameterPlane + 'static {
+    fn from(plane: P) -> Self {
+        let coloring = plane.default_coloring();
+        Self::new(Box::new(plane), coloring)
+    }
+}
+
 impl Pane for Parent
 {
     #[inline]
@@ -457,6 +464,13 @@ impl Child
     }
 }
 
+impl<P> From<P> for Child where P: ParameterPlane + 'static {
+    fn from(plane: P) -> Self {
+        let coloring = plane.default_coloring();
+        Self::new(Box::new(plane), coloring)
+    }
+}
+
 impl Pane for Child
 {
     #[inline]
@@ -480,7 +494,7 @@ impl Pane for Child
         self.task = new_task;
     }
     #[inline]
-    fn grid(&self) -> PointGrid
+    fn grid(&self) -> &PointGrid
     {
         self.plane.point_grid()
     }

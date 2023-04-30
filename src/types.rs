@@ -9,6 +9,7 @@ pub type ComplexVec = Vec<ComplexNum>;
 
 pub const TAU: RealNum = 2. * PI;
 pub const TWO: RealNum = 2.;
+pub const ZERO: ComplexNum = ComplexNum::new(0., 0.);
 pub const ONE_COMPLEX: ComplexNum = ComplexNum::new(1., 0.);
 pub const TAUI: ComplexNum = ComplexNum::new(0., 2. * PI);
 
@@ -74,6 +75,9 @@ impl OrbitInfo
             ),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
         };
-        format!("Parameter: {}\nStarting point: {}\n{}", self.param, self.point, result_summary)
+        format!(
+            "Parameter: {}\nStarting point: {}\n{}",
+            self.param, self.point, result_summary
+        )
     }
 }

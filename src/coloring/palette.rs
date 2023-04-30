@@ -1,11 +1,10 @@
-use crate::types::IterCount;
 use super::Hsv;
+use crate::types::IterCount;
 use eframe::egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution};
 use std::f64::consts::PI;
-
 
 #[derive(Clone, Copy, Debug)]
 pub struct Sinusoid
@@ -114,7 +113,7 @@ impl ColorPalette
             color_map_r: color_map,
             color_map_g: color_map,
             color_map_b: color_map,
-            period_coloring: DiscretePalette::black(),
+            period_coloring: DiscretePalette::default(),
             in_color: Color32::BLACK,
         }
     }
@@ -132,7 +131,7 @@ impl ColorPalette
             color_map_r: color_map,
             color_map_g: color_map,
             color_map_b: color_map,
-            period_coloring: DiscretePalette::white(),
+            period_coloring: DiscretePalette::default(),
             in_color: Color32::WHITE,
         }
     }

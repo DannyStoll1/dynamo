@@ -45,9 +45,9 @@ macro_rules! fractal_impl {
 macro_rules! point_grid_getters {
     () => {
         #[inline]
-        fn point_grid(&self) -> PointGrid
+        fn point_grid(&self) -> &PointGrid
         {
-            self.point_grid
+            &self.point_grid
         }
 
         #[inline]

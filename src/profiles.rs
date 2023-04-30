@@ -1,4 +1,4 @@
-use crate::dynamics::{HasDynamicalCovers, ParameterPlane, covering_maps::CoveringMap};
+use crate::dynamics::{covering_maps::CoveringMap, HasDynamicalCovers, ParameterPlane};
 use crate::math_utils::{slog, weierstrass_p};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::types::*;
@@ -7,7 +7,7 @@ use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
 
 use std::any::type_name;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Mandelbrot
 {
     point_grid: PointGrid,
@@ -35,17 +35,20 @@ impl ParameterPlane for Mandelbrot
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -70,6 +73,51 @@ impl ParameterPlane for Mandelbrot
     fn gradient(&self, z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
     {
         (z + z, ONE_COMPLEX)
+    }
+
+    fn early_bailout(&self, _start: ComplexNum, param: ComplexNum) -> EscapeState
+    {
+        // Main cardioid
+        let four_c = 4. * param;
+        let y2 = four_c.im * four_c.im;
+        let temp = four_c.re - 1.;
+        let mu_norm2 = temp * temp + y2;
+        let a = mu_norm2 * (mu_norm2 * 0.25 + temp);
+
+        if a < y2
+        {
+            let multiplier = 1. - (1. - four_c).sqrt();
+            let decay_rate = multiplier.norm();
+            let fixed_point = 0.5 * multiplier;
+            let init_dist = (param - fixed_point).norm_sqr();
+            let potential = init_dist.log(decay_rate);
+            let preperiod = potential as Period;
+            return EscapeState::Periodic {
+                period: 1,
+                preperiod,
+                multiplier,
+                final_error: (1e-6).into(),
+            };
+        }
+
+        // Basilica bulb
+        let mu2 = four_c + 4.;
+        if mu2.norm_sqr() < 1.
+        {
+            let decay_rate = mu2.norm();
+            let fixed_point = -0.5 - 0.5 * (-four_c - 3.).sqrt();
+            let init_dist = (param - fixed_point).norm_sqr();
+            let potential = 2. * init_dist.log(decay_rate);
+            let preperiod = potential as Period;
+            return EscapeState::Periodic {
+                period: 2,
+                preperiod,
+                multiplier: mu2,
+                final_error: (1e-6).into(),
+            };
+        }
+
+        EscapeState::NotYetEscaped
     }
 
     #[inline]
@@ -120,11 +168,17 @@ impl HasDynamicalCovers for Mandelbrot
                     min_y: -3.1,
                     max_y: 3.1,
                 };
+                // bounds = Bounds {
+                //     min_x: -1.029809,
+                //     max_x: -1.029387,
+                //     min_y: -0.682203,
+                //     max_y: -0.681675,
+                // };
             }
             _ =>
             {
                 param_map = |c| c;
-                bounds = self.point_grid.bounds;
+                bounds = self.point_grid.bounds.clone();
             }
         };
         let grid = self.point_grid.with_same_height(bounds);
@@ -166,7 +220,7 @@ impl HasDynamicalCovers for Mandelbrot
             _ =>
             {
                 param_map = |c| c;
-                bounds = self.point_grid.bounds;
+                bounds = self.point_grid.bounds.clone();
             }
         };
         let grid = self.point_grid.with_same_height(bounds);
@@ -208,7 +262,7 @@ impl HasDynamicalCovers for Mandelbrot
             (_, _) =>
             {
                 param_map = |c| c;
-                bounds = self.point_grid.bounds;
+                bounds = self.point_grid.bounds.clone();
             }
         };
         let grid = self.point_grid.with_same_height(bounds);
@@ -216,7 +270,7 @@ impl HasDynamicalCovers for Mandelbrot
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct QuadRatPer2
 {
     point_grid: PointGrid,
@@ -244,11 +298,13 @@ impl ParameterPlane for QuadRatPer2
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 2.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
         }
 
         let u = self.escape_radius().log2();
@@ -258,7 +314,8 @@ impl ParameterPlane for QuadRatPer2
         let residual = ((u + q) / (v + q)).log2();
         // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
         // (F - M) / (2L - M)
-        f64::from(iters) + (residual as IterCount) * 2.
+        let potential = f64::from(iters) + (residual as IterCount) * 2.;
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -295,7 +352,7 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -374,7 +431,7 @@ impl HasDynamicalCovers for QuadRatPer2
             _ =>
             {
                 param_map = |c| c;
-                bounds = self.point_grid.bounds;
+                bounds = self.point_grid.bounds.clone();
             }
         };
         let grid = self.point_grid.with_same_height(bounds);
@@ -421,7 +478,7 @@ impl HasDynamicalCovers for QuadRatPer2
             (_, _) =>
             {
                 param_map = |c| c;
-                bounds = self.point_grid.bounds;
+                bounds = self.point_grid.bounds.clone();
             }
         };
         let grid = self.point_grid.with_same_height(bounds);
@@ -429,7 +486,7 @@ impl HasDynamicalCovers for QuadRatPer2
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct QuadRatPer3
 {
     point_grid: PointGrid,
@@ -462,18 +519,21 @@ impl ParameterPlane for QuadRatPer3
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 3.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 3.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
         let residual = ((u + q) / (v + q)).log2();
-        f64::from(iters) + (residual as IterCount) * 3.
+        let potential = f64::from(iters) + (residual as IterCount) * 3.;
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -511,7 +571,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -577,7 +637,7 @@ impl HasDynamicalCovers for QuadRatPer3
             _ =>
             {
                 param_map = |c| c;
-                bounds = self.point_grid.bounds;
+                bounds = self.point_grid.bounds.clone();
             }
         };
         let grid = self.point_grid.with_same_height(bounds);
@@ -585,7 +645,7 @@ impl HasDynamicalCovers for QuadRatPer3
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct QuadRatPer4
 {
     point_grid: PointGrid,
@@ -608,12 +668,14 @@ impl ParameterPlane for QuadRatPer4
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum, c: ComplexNum) -> IterCount
+    fn encode_escaping_point(&self, iters: Period, z: ComplexNum, c: ComplexNum) -> PointInfo
     {
         {
             if z.is_nan()
             {
-                return f64::from(iters) - 4.;
+                return PointInfo::Escaping {
+                    potential: f64::from(iters) - 4.,
+                };
             }
 
             let u = self.escape_radius().log2();
@@ -631,7 +693,8 @@ impl ParameterPlane for QuadRatPer4
             let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
             let q = (q_numer / q_denom).norm().log2();
             let residual = ((u + q) / (v + q)).log2();
-            f64::from(iters) + (residual as IterCount) * 4.
+            let potential = f64::from(iters) + (residual as IterCount) * 4.;
+            PointInfo::Escaping { potential }
         }
     }
 
@@ -673,7 +736,7 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -720,14 +783,89 @@ impl HasDynamicalCovers for QuadRatPer4
             _ =>
             {
                 param_map = |c| c;
-                grid = self.point_grid;
+                grid = self.point_grid.clone();
             }
         };
         CoveringMap::new(self, param_map, grid)
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
+pub struct QuadRatSymmetryLocus
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl QuadRatSymmetryLocus
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -1.1,
+        max_x: 1.1,
+        min_y: -1.1,
+        max_y: 1.1,
+    };
+    fractal_impl!();
+}
+
+impl ParameterPlane for QuadRatSymmetryLocus
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        base_param: ComplexNum,
+    ) -> PointInfo
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
+        }
+
+        let expansion_rate = base_param.norm_sqr();
+        let u = self.escape_radius().log(expansion_rate);
+        let v = z.norm_sqr().log(expansion_rate);
+        let residual = u - v;
+        let potential = IterCount::from(iters) + (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+
+    #[inline]
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        c * (z + 1. / z)
+    }
+
+    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    {
+        (1.).into()
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        c * (1. - 1. / (z * z))
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    {
+        z + 1. / z
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(4.)
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct CubicPer1_1
 {
     point_grid: PointGrid,
@@ -759,17 +897,20 @@ impl ParameterPlane for CubicPer1_1
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -808,7 +949,7 @@ impl ParameterPlane for CubicPer1_1
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct OddCubic
 {
     point_grid: PointGrid,
@@ -836,17 +977,20 @@ impl ParameterPlane for OddCubic
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -881,7 +1025,7 @@ impl ParameterPlane for OddCubic
 }
 
 // Cubic polynomials with critical 2-cycle 0 <-> c
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct CubicPer2CritMarked
 {
     point_grid: PointGrid,
@@ -909,17 +1053,20 @@ impl ParameterPlane for CubicPer2CritMarked
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -956,7 +1103,7 @@ impl ParameterPlane for CubicPer2CritMarked
         Bounds::square(2.2, param / 2.)
     }
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Biquadratic
 {
     point_grid: PointGrid,
@@ -1049,17 +1196,20 @@ impl ParameterPlane for Biquadratic
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -1101,7 +1251,7 @@ impl ParameterPlane for Biquadratic
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct BurningShip
 {
     point_grid: PointGrid,
@@ -1130,17 +1280,20 @@ impl ParameterPlane for BurningShip
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -1175,7 +1328,7 @@ impl ParameterPlane for BurningShip
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Sailboat
 {
     point_grid: PointGrid,
@@ -1261,17 +1414,20 @@ impl ParameterPlane for Sailboat
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -1313,7 +1469,7 @@ impl ParameterPlane for Sailboat
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Exponential
 {
     point_grid: PointGrid,
@@ -1348,25 +1504,35 @@ impl ParameterPlane for Exponential
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> IterCount
+    ) -> PointInfo
     {
         if z.is_nan()
         {
-            return f64::from(iters) - 1.;
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
         }
 
         if z.re < 0.
         {
-            return -1.;
+            return PointInfo::Periodic {
+                period: 1,
+                preperiod: iters,
+                multiplier: (0.).into(),
+                final_error: (1e-8).into(),
+            };
         }
         if z.is_infinite()
         {
-            return f64::from(iters + 1);
+            return PointInfo::Escaping {
+                potential: f64::from(iters) + 1.,
+            };
         }
         let u = slog(self.escape_radius());
         let v = slog(z.norm_sqr());
         let residual = v - u;
-        f64::from(iters) - (residual as IterCount)
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 
     #[inline]
