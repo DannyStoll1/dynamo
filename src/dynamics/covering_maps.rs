@@ -1,6 +1,6 @@
+use super::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::types::*;
-use super::ParameterPlane;
 
 #[derive(Clone)]
 pub struct CoveringMap<C>
@@ -10,12 +10,14 @@ where
     base_curve: C,
     covering_map: fn(ComplexNum) -> ComplexNum,
     point_grid: PointGrid,
+    compose_parameterizations: bool,
 }
 
 impl<C> CoveringMap<C>
 where
     C: ParameterPlane + Clone,
 {
+    #[must_use]
     pub fn new(
         base_curve: C,
         covering_map: fn(ComplexNum) -> ComplexNum,
@@ -26,6 +28,22 @@ where
             base_curve,
             covering_map,
             point_grid,
+            compose_parameterizations: false,
+        }
+    }
+
+    #[must_use]
+    pub fn without_base_parameterization(
+        base_curve: C,
+        covering_map: fn(ComplexNum) -> ComplexNum,
+        point_grid: PointGrid,
+    ) -> Self
+    {
+        Self {
+            base_curve,
+            covering_map,
+            point_grid,
+            compose_parameterizations: true,
         }
     }
 }
@@ -49,7 +67,8 @@ where
         self.base_curve.stop_condition(iter, z)
     }
 
-    fn early_bailout(&self, start: ComplexNum, param: ComplexNum) -> EscapeState {
+    fn early_bailout(&self, start: ComplexNum, param: ComplexNum) -> EscapeState
+    {
         self.base_curve.early_bailout(start, param)
     }
 
@@ -81,9 +100,16 @@ where
 
     fn param_map(&self, c: ComplexNum) -> ComplexNum
     {
-        let f = self.covering_map;
-        let u = f(c);
-        self.base_curve.param_map(u)
+        if self.compose_parameterizations
+        {
+            let f = self.covering_map;
+            let u = f(c);
+            self.base_curve.param_map(u)
+        }
+        else
+        {
+            (self.covering_map)(c)
+        }
     }
 
     fn start_point(&self, c: ComplexNum) -> ComplexNum
@@ -121,12 +147,41 @@ where
         format!("Cover over {}", self.base_curve.name())
     }
 
-    fn default_coloring(&self) -> crate::coloring::Coloring {
+    fn default_coloring(&self) -> crate::coloring::Coloring
+    {
         self.base_curve.default_coloring()
     }
 
     fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
     {
         self.base_curve.default_julia_bounds(param)
+    }
+}
+
+pub trait HasDynamicalCovers: super::ParameterPlane + Clone
+{
+    fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
+    {
+        let param_map = |c| c;
+        let bounds = self.point_grid().clone();
+
+        println!("Marked cycle has not been implemented; falling back to base curve!");
+        CoveringMap::new(self, param_map, bounds)
+    }
+    fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
+    {
+        let param_map = |c| c;
+        let bounds = self.point_grid().clone();
+
+        println!("Dynatomic curve has not been implemented; falling back to base curve!");
+        CoveringMap::new(self, param_map, bounds)
+    }
+    fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
+    {
+        let param_map = |c| c;
+        let bounds = self.point_grid().clone();
+
+        println!("Misiurewicz curve has not been implemented; falling back to base curve!");
+        CoveringMap::new(self, param_map, bounds)
     }
 }

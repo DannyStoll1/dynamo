@@ -100,6 +100,25 @@ macro_rules! default_name {
     };
 }
 
+// macro_rules! covers_menu_marked_cycles {
+//     ($x: expr) => {
+//         ui.menu_button("Marked Periodic Point", |ui| {
+//             if ui.button("Period 1").clicked()
+//             {
+//                 self.change_fractal(|res, iter| {
+//                     QuadRatPer2::new_default(res, iter).marked_cycle_curve(1)
+//                 });
+//             }
+//             else
+//             {
+//                 return;
+//             }
+//             self.consume_click();
+//             ui.close_menu();
+//         });
+//     };
+// }
+
 macro_rules! max {
     ($x:expr) => ( $x );
     ($x:expr, $($xs:expr),+) => {
@@ -114,8 +133,6 @@ macro_rules! min {
     };
 }
 
-pub(crate) use {
-    default_name, fractal_impl, parameter_plane_impl, point_grid_getters,
-};
+pub(crate) use {default_name, fractal_impl, parameter_plane_impl, point_grid_getters};
 
 pub(crate) use {max, min};

@@ -11,7 +11,7 @@ ndarray = ">=0.15.6"
 image = "*"
 eframe = ">=0.21.3"
 egui_extras = { version = ">=0.21.0", features = ["image"] }
-show-image = { version = ">=0.13.1", features = ["macros", "image", "save"] }
+# show-image = { version = ">=0.13.1", features = ["macros", "image", "save"] }
 num = "0.4.0"
 rand = "0.8.5"
 rand_distr = "0.4.3"
@@ -21,3 +21,4 @@ epaint = "0.21.0"
 input-macro = "0.2.0"
 thread_local = "1.1.7"
 num_cpus = "1.15.0"
+fractal_derive = { path = "../fractal_derive" }

@@ -32,9 +32,8 @@ impl Coloring
                 final_error,
             } => self
                 .algorithm
-                .color_periodic(self.palette, period, preperiod, multiplier, final_error)
-                .into(),
-            Bounded => self.palette.map_color32(0.),
+                .color_periodic(self.palette, period, preperiod, multiplier, final_error),
+            Bounded => self.palette.in_color,
         }
     }
 

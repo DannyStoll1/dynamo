@@ -48,7 +48,7 @@ impl ColoringAlgorithm
             Self::Period =>
             {
                 let hue = period as f32;
-                palette.period_coloring.map_color32(hue, 1.)
+                palette.period_coloring.map_color32(hue, 0.75)
             }
             Self::PeriodMultiplier =>
             {

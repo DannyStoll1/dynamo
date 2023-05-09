@@ -1,7 +1,7 @@
 use crate::coloring::Coloring;
 use crate::point_grid::PointGrid;
-use crate::types::IterCount;
-use crate::types::{EscapeState, PointInfo};
+
+use crate::types::{PointInfo};
 use eframe::egui::{Color32, ColorImage};
 use image::ImageBuffer;
 use ndarray::Array2;

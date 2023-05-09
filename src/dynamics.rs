@@ -634,7 +634,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         )
     }
 
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -677,32 +677,4 @@ pub trait ParameterPlane: Sync + Send + DynClone
     }
 
     fn name(&self) -> String;
-}
-
-pub trait HasDynamicalCovers: ParameterPlane + Clone
-{
-    fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
-    {
-        let param_map = |c| c;
-        let bounds = self.point_grid().clone();
-
-        println!("Marked cycle has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map, bounds)
-    }
-    fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
-    {
-        let param_map = |c| c;
-        let bounds = self.point_grid().clone();
-
-        println!("Dynatomic curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map, bounds)
-    }
-    fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
-    {
-        let param_map = |c| c;
-        let bounds = self.point_grid().clone();
-
-        println!("Misiurewicz curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map, bounds)
-    }
 }

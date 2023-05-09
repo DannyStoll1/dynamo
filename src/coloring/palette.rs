@@ -222,18 +222,18 @@ impl ColorPalette
     #[must_use]
     pub fn map_color32(&self, value: IterCount) -> Color32
     {
-        if value <= 0.0
-        {
-            self.in_color
-        }
-        else
-        {
-            let potential = (value + 1.0 as IterCount).log2();
-            let r = self.color_map_r.get_value_u8(potential);
-            let g = self.color_map_g.get_value_u8(potential);
-            let b = self.color_map_b.get_value_u8(potential);
-            Color32::from_rgb(r, g, b)
-        }
+        // if value <= 0.0
+        // {
+        //     self.in_color
+        // }
+        // else
+        // {
+        let potential = (value + 1.0 as IterCount).log2();
+        let r = self.color_map_r.get_value_u8(potential);
+        let g = self.color_map_g.get_value_u8(potential);
+        let b = self.color_map_b.get_value_u8(potential);
+        Color32::from_rgb(r, g, b)
+        // }
     }
 
     pub fn scale_period(&mut self, scale_factor: f64)
@@ -272,7 +272,7 @@ impl DiscretePalette
 {
     const DEFAULT_BASE_HUE: f32 = 0.47;
     const DEFAULT_SATURATION: f32 = 0.7;
-    const DEFAULT_LUMINOSITY: f32 = 0.75;
+    const DEFAULT_LUMINOSITY: f32 = 1.;
     const DEFAULT_NUM_COLORS: f32 = 7.;
 
     #[must_use]

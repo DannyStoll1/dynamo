@@ -26,7 +26,7 @@ where
             .with_same_height(parent.default_julia_bounds(param));
         Self {
             point_grid,
-            parent: parent.clone(),
+            parent: parent,
             max_iter,
             param,
         }
@@ -166,7 +166,7 @@ where
     fn default_coloring(&self) -> Coloring
     {
         let mut coloring = Coloring::default();
-        let periodicity_tolerance = self.periodicity_tolerance();
+        let _periodicity_tolerance = self.periodicity_tolerance();
         coloring.set_algorithm(self.preperiod_smooth_coloring());
         coloring
     }
