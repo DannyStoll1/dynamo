@@ -58,20 +58,19 @@ pub struct OrbitInfo
 }
 impl OrbitInfo
 {
-    pub fn summarize(&self) -> String
+    #[must_use] pub fn summarize(&self) -> String
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, Periodic};
         let result_summary = match self.result
         {
-            Escaping { potential } => format!("Escaped, potential: {}", potential),
+            Escaping { potential } => format!("Escaped, potential: {potential}"),
             Periodic {
                 period,
                 preperiod,
                 multiplier,
                 final_error: _,
             } => format!(
-                "Cycle detected after {} iterations.\n    Period: {}\n    Multiplier: {}",
-                preperiod, period, multiplier
+                "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier}"
             ),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
         };

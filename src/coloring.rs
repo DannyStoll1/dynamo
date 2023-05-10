@@ -5,7 +5,7 @@ pub mod color_types;
 pub mod coloring_algorithm;
 pub mod palette;
 
-use color_types::*;
+use color_types::Hsv;
 use coloring_algorithm::ColoringAlgorithm;
 use epaint::Color32;
 use image::Rgb;
@@ -19,9 +19,9 @@ pub struct Coloring
 }
 impl Coloring
 {
-    pub fn map_color32(&self, point_info: PointInfo) -> Color32
+    #[must_use] pub fn map_color32(&self, point_info: PointInfo) -> Color32
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, Periodic};
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
@@ -37,9 +37,9 @@ impl Coloring
         }
     }
 
-    pub fn map_rgb(&self, point_info: PointInfo) -> Rgb<u8>
+    #[must_use] pub fn map_rgb(&self, point_info: PointInfo) -> Rgb<u8>
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, Periodic};
         match point_info
         {
             Escaping { potential } => self.palette.map_rgb(potential),
@@ -64,7 +64,7 @@ impl Coloring
     {
         self.palette = palette;
     }
-    pub fn get_algorithm(&self) -> &ColoringAlgorithm
+    #[must_use] pub const fn get_algorithm(&self) -> &ColoringAlgorithm
     {
         &self.algorithm
     }

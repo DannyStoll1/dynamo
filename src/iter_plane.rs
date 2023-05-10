@@ -54,7 +54,7 @@ impl FractalImage for IterPlane
         }
         if let Err(e) = image.save(filename)
         {
-            println!("Error encountered saving file: {:?}", e)
+            println!("Error encountered saving file: {e:?}")
         }
     }
 }

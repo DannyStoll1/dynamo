@@ -1,6 +1,6 @@
 use super::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::*;
+use crate::types::{ComplexNum, EscapeState, Period, PointInfo};
 
 #[derive(Clone)]
 pub struct CoveringMap<C>

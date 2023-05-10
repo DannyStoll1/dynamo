@@ -1,6 +1,6 @@
-use super::color_types::*;
-use super::palette::*;
-use crate::types::*;
+use super::color_types::Hsv;
+use super::palette::ColorPalette;
+use crate::types::{ComplexNum, IterCount, Period, TAU};
 use epaint::Color32;
 
 #[derive(Clone, Copy, Debug)]
@@ -33,7 +33,7 @@ impl ColoringAlgorithm
         }
     }
 
-    pub fn color_periodic(
+    #[must_use] pub fn color_periodic(
         &self,
         palette: ColorPalette,
         period: Period,
@@ -82,16 +82,16 @@ impl ColoringAlgorithm
                 if mult_norm <= 1e-10
                 {
                     let w = 2.
-                        * (final_error.norm_sqr().log2() / periodicity_tolerance.log2()).log2()
+                        * (final_error.norm_sqr().log(*periodicity_tolerance)).log2()
                             as IterCount;
-                    let v = preperiod as IterCount - hue * w;
+                    let v = hue.mul_add(-w, IterCount::from(preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
                 // Parabolic case
                 else if 1. - mult_norm <= 1e-5
                 {
                     let w = final_error.norm_sqr() / periodicity_tolerance;
-                    let v = preperiod as IterCount - hue * w;
+                    let v = hue.mul_add(-w, IterCount::from(preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
                 else
@@ -104,7 +104,7 @@ impl ColoringAlgorithm
                     {
                         w = -0.2;
                     }
-                    let v = preperiod as IterCount + hue * w;
+                    let v = hue.mul_add(w, f64::from(preperiod));
                     luminosity = (v * coloring_rate / hue).tanh();
                 }
                 palette

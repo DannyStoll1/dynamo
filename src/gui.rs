@@ -3,6 +3,8 @@ use crate::dynamics::{covering_maps::HasDynamicalCovers, julia::JuliaSet, Parame
 use crate::profiles::*;
 use crate::types::{ComplexNum, Period};
 
+type DefaultProfile = Mandelbrot;
+
 use eframe::egui;
 use egui::{Color32, InputState, Key};
 use egui_extras::{Column, TableBuilder};
@@ -200,7 +202,7 @@ impl FractalApp
                     pane.save_image(width, &filename);
                     println!("Image saved to images/{}", &filename);
                 }
-                Err(e) => println!("Error parsing width: {:?}", e),
+                Err(e) => println!("Error parsing width: {e:?}"),
             }
         }
 
@@ -231,6 +233,7 @@ impl FractalApp
         {
             if self.parent.frame_contains_pixel(pointer_pos)
             {
+                ctx.set_cursor_icon(egui::CursorIcon::Crosshair);
                 self.active_pane = PaneID::Parent;
                 let reselect_point = self.live_mode || clicked;
                 let pointer_value = self.parent.map_pixel(pointer_pos);
@@ -253,8 +256,8 @@ impl FractalApp
                     // }
                     self.consume_click();
                     self.parent.clear_marked_curves();
-                    dbg!(pointer_value);
-                    dbg!(self.parent.plane.periodicity_tolerance());
+                    // dbg!(pointer_value);
+                    // dbg!(self.parent.plane.periodicity_tolerance());
                     let pointer_param = self.parent.plane.param_map(pointer_value);
                     let (orbit, info) = self.parent.plane.get_orbit_and_info(pointer_param);
                     self.parent.mark_curve(orbit, Color32::GREEN);
@@ -263,6 +266,7 @@ impl FractalApp
             }
             else if self.child.frame_contains_pixel(pointer_pos)
             {
+                ctx.set_cursor_icon(egui::CursorIcon::Crosshair);
                 self.active_pane = PaneID::Child;
                 let pointer_value = self.child.map_pixel(pointer_pos);
                 self.child
@@ -280,6 +284,10 @@ impl FractalApp
                     self.child.mark_curve(orbit, Color32::GREEN);
                     self.child.set_marked_info(info);
                 }
+            }
+            else
+            {
+                ctx.set_cursor_icon(egui::CursorIcon::Default);
             }
         }
     }
@@ -514,7 +522,7 @@ impl FractalApp
             }
             else if ui.button("Cubic Per(2, 0)").clicked()
             {
-                self.change_fractal(|res, iter| CubicPer2CritMarked::new_default(res, iter));
+                self.change_fractal(CubicPer2CritMarked::new_default);
             }
             else if ui.button("Cubic Per(1, 1)").clicked()
             {
@@ -687,19 +695,10 @@ impl Default for FractalApp
     {
         let height = 1024;
         // let parameter_plane = QuadRatPer2::new_default(height, 2048).marked_cycle_curve(5);
-        // let parameter_plane = QuadRatPer2::new_default(height, 2048);
-        // let parameter_plane = Mandelbrot::new_default(height, 2048);
-        // let parameter_plane = QuadRatPreper21::new_default(height, 2048);
-        // let parameter_plane = QuadRatPer4::new_default(height, 2048).marked_cycle_curve(3);
-        let parameter_plane = QuadRatSymmetryLocus::new_default(height, 2048);
-        // let parameter_plane = Mandelbrot::new_default(height, 2048).marked_cycle_curve(4);
-        // let biquadratic_param = ComplexNum::new(0., -0.5);
-        // let parameter_plane = Biquadratic::new_default(height, 2048, biquadratic_param);
-        // let parameter_plane = CubicPer2CritMarked::new_default(height, 2048);
-        // let parameter_plane = CubicPer1_1::new_default(height, 2048);
+        let parameter_plane = DefaultProfile::new_default(height, 2048);
 
         let dynamical_plane =
-            JuliaSet::new(parameter_plane.clone(), ((2_f64).powf(0.5)).into(), 1024);
+            JuliaSet::new(parameter_plane.clone(), (2_f64.sqrt()).into(), 1024);
 
         let parent = Parent::from(parameter_plane);
         let child = Child::from(dynamical_plane);
@@ -748,25 +747,17 @@ impl eframe::App for FractalApp
                     });
                     body.row(80., |mut row| {
                         row.col(|ui| {
-                            let orbit_desc = if let Some(orbit_info) = self.parent.get_marked_info()
-                            {
-                                orbit_info.summarize()
-                            }
-                            else
-                            {
-                                "".to_owned()
-                            };
+                            let orbit_desc = self
+                                .parent
+                                .get_marked_info()
+                                .map_or_else(String::new, |orbit_info| orbit_info.summarize());
                             ui.label(orbit_desc);
                         });
                         row.col(|ui| {
-                            let orbit_desc = if let Some(orbit_info) = self.child.get_marked_info()
-                            {
-                                orbit_info.summarize()
-                            }
-                            else
-                            {
-                                "".to_owned()
-                            };
+                            let orbit_desc = self
+                                .child
+                                .get_marked_info()
+                                .map_or_else(String::new, |orbit_info| orbit_info.summarize());
                             ui.label(orbit_desc);
                         });
                     });

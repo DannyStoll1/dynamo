@@ -4,12 +4,15 @@ use crate::dynamics::{
 };
 use crate::math_utils::{slog, weierstrass_p};
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::*;
+use crate::types::{ComplexNum, IterCount, ONE_COMPLEX, Period, PointInfo, RealNum, TWO};
 
 use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
 
 pub mod mandelbrot;
 pub use mandelbrot::Mandelbrot;
+
+pub mod rulkov;
+pub use rulkov::Rulkov;
 
 use std::any::type_name;
 
@@ -627,11 +630,11 @@ impl HasDynamicalCovers for QuadRatPer4
             {
                 param_map = |c| {
                     // cbrt(12)
-                    let alpha = ComplexNum::new(2.28942848510666, 0.);
+                    let alpha = ComplexNum::new(2.289_428_485_106_66, 0.);
                     let g2 = alpha;
                     let g3 = ComplexNum::new(-19. / 12., 0.);
 
-                    let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
+                    let (p, _dp) = weierstrass_p(g2, g3, c, 0.01);
                     let x = (alpha * p + 1.) / 3.;
                     // let y = (dp - 1.5) / x;
 
@@ -844,7 +847,7 @@ impl HasDynamicalCovers for QuadRatPreper21
                     let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
 
                     let x = p + 1.0 / 24.0;
-                    let root_neg2_over_16 = ComplexNum::new(0., 0.0883883476483184);
+                    let root_neg2_over_16 = ComplexNum::new(0., 0.088_388_347_648_318_4);
                     let mut y = dp * root_neg2_over_16;
                     // e4 = 8*x^3 - x^2 + 256*y^2 + x/16 - 1.0/1024.0
 

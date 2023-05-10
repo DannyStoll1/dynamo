@@ -2,7 +2,7 @@ use crate::{
     coloring::{coloring_algorithm::ColoringAlgorithm, Coloring},
     iter_plane::IterPlane,
     point_grid::{Bounds, PointGrid},
-    types::*,
+    types::{ComplexNum, ComplexVec, EscapeState, IterCount, ONE_COMPLEX, OrbitInfo, Period, PointInfo, RealNum, TAU, TWO},
 };
 use dyn_clone::DynClone;
 use ndarray::{Array2, Axis};
@@ -15,9 +15,9 @@ pub mod covering_maps;
 pub mod julia;
 pub mod orbit;
 
-use covering_maps::CoveringMap;
+
 use julia::JuliaSet;
-use orbit::*;
+use orbit::{CycleDetectedOrbit, Orbit};
 
 pub trait ParameterPlane: Sync + Send + DynClone
 {
@@ -366,7 +366,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
                     {
                         println!("nan encountered!");
                         return Some(curr.arg() / TAU);
-                        break;
+                        // break;
                     }
 
                     difference = (target - z_k) / d_k;
@@ -407,7 +407,8 @@ pub trait ParameterPlane: Sync + Send + DynClone
             let targets = us.map(|u| (u + v).exp());
 
             let mut temp_c = *c_list.last()?;
-            let mut dist = pixel_width * 2.;
+            // let mut dist = pixel_width * 2.;
+            let mut dist: f64;
 
             for target in targets
             {

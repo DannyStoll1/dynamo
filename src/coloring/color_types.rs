@@ -12,7 +12,7 @@ pub struct Hsv
 impl Hsv
 {
     #[must_use]
-    pub fn new(hue: f32, saturation: f32, luminosity: f32) -> Self
+    pub const fn new(hue: f32, saturation: f32, luminosity: f32) -> Self
     {
         Self {
             hue,
@@ -70,11 +70,11 @@ impl Hsv
             }
             else if c_max == g
             {
-                f32::from(b - r) * normalization + 1. / 3.
+                f32::from(b - r).mul_add(normalization, 1. / 3.)
             }
             else
             {
-                f32::from(r - g) * normalization + 2. / 3.
+                f32::from(r - g).mul_add(normalization, 2. / 3.)
             }
         };
 
@@ -93,7 +93,7 @@ impl From<Hsv> for Color32
     fn from(val: Hsv) -> Self
     {
         let (r, g, b) = val.as_rgb_tuple();
-        Color32::from_rgb(r, g, b)
+        Self::from_rgb(r, g, b)
     }
 }
 impl From<Hsv> for Rgb<u8>

@@ -3,8 +3,8 @@ use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalet
 use crate::dynamics::ParameterPlane;
 use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::{ComplexNum, ComplexVec, RealNum, OrbitInfo};
 use crate::profiles::QuadRatPer2;
+use crate::types::{ComplexNum, ComplexVec, OrbitInfo, RealNum};
 
 use eframe::egui::{Color32, Pos2, Rect, Stroke, Ui};
 use egui_extras::RetainedImage;
@@ -30,7 +30,7 @@ pub(super) enum PaneID
 
 pub(super) trait Pane
 {
-    fn plane(&self) -> &Box<dyn ParameterPlane>;
+    fn plane(&self) -> &dyn ParameterPlane;
     fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>;
 
     fn get_task(&self) -> RedrawMessage;
@@ -125,7 +125,7 @@ pub(super) trait Pane
 
     fn schedule_redraw(&mut self)
     {
-        if let RedrawMessage::DoNothing = self.get_task()
+        if matches!(self.get_task(), RedrawMessage::DoNothing)
         {
             self.set_task(RedrawMessage::Redraw);
         }
@@ -237,7 +237,7 @@ pub(super) trait Pane
         let orig_width = self.grid().res_x;
         self.grid_mut().resize_x(img_width);
         let iter_plane = self.plane().compute();
-        let filepath = format!("images/{}", filename);
+        let filepath = format!("images/{filename}");
         iter_plane.save(self.get_coloring(), filepath);
         self.grid_mut().resize_x(orig_width);
     }
@@ -286,8 +286,12 @@ impl Parent
     }
 }
 
-impl<P> From<P> for Parent where P: ParameterPlane + 'static {
-    fn from(plane: P) -> Self {
+impl<P> From<P> for Parent
+where
+    P: ParameterPlane + 'static,
+{
+    fn from(plane: P) -> Self
+    {
         let coloring = plane.default_coloring();
         Self::new(Box::new(plane), coloring)
     }
@@ -296,9 +300,9 @@ impl<P> From<P> for Parent where P: ParameterPlane + 'static {
 impl Pane for Parent
 {
     #[inline]
-    fn plane(&self) -> &Box<dyn ParameterPlane>
+    fn plane(&self) -> &dyn ParameterPlane
     {
-        &self.plane
+        &*self.plane
     }
     #[inline]
     fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>
@@ -366,11 +370,13 @@ impl Pane for Parent
         &mut self.marked_info
     }
     #[inline]
-    fn set_marked_info(&mut self, info: OrbitInfo) {
+    fn set_marked_info(&mut self, info: OrbitInfo)
+    {
         self.marked_info = Some(info);
     }
     #[inline]
-    fn del_marked_info(&mut self) {
+    fn del_marked_info(&mut self)
+    {
         self.marked_info = None;
     }
     #[inline]
@@ -464,8 +470,12 @@ impl Child
     }
 }
 
-impl<P> From<P> for Child where P: ParameterPlane + 'static {
-    fn from(plane: P) -> Self {
+impl<P> From<P> for Child
+where
+    P: ParameterPlane + 'static,
+{
+    fn from(plane: P) -> Self
+    {
         let coloring = plane.default_coloring();
         Self::new(Box::new(plane), coloring)
     }
@@ -474,9 +484,9 @@ impl<P> From<P> for Child where P: ParameterPlane + 'static {
 impl Pane for Child
 {
     #[inline]
-    fn plane(&self) -> &Box<dyn ParameterPlane>
+    fn plane(&self) -> &dyn ParameterPlane
     {
-        &self.plane
+        &*self.plane
     }
     #[inline]
     fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>
@@ -554,11 +564,13 @@ impl Pane for Child
         &mut self.marked_info
     }
     #[inline]
-    fn set_marked_info(&mut self, info: OrbitInfo) {
+    fn set_marked_info(&mut self, info: OrbitInfo)
+    {
         self.marked_info = Some(info);
     }
     #[inline]
-    fn del_marked_info(&mut self) {
+    fn del_marked_info(&mut self)
+    {
         self.marked_info = None;
     }
     #[inline]

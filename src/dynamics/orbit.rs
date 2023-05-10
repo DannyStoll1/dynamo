@@ -1,4 +1,3 @@
-use super::ParameterPlane;
 use crate::types::{ComplexNum, EscapeState, Period};
 
 pub struct Orbit<F, S>
