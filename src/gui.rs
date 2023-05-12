@@ -3,7 +3,7 @@ use crate::dynamics::{covering_maps::HasDynamicalCovers, julia::JuliaSet, Parame
 use crate::profiles::*;
 use crate::types::{ComplexNum, Period};
 
-type DefaultProfile = Mandelbrot;
+type DefaultProfile = CubicMarked2Cycle;
 // type DefaultProfile = Rulkov;
 
 use eframe::egui;
@@ -717,6 +717,7 @@ impl Default for FractalApp
         let height = 1024;
         // let parameter_plane = QuadRatPer2::new_default(height, 2048).marked_cycle_curve(5);
         let parameter_plane = DefaultProfile::new_default(height, 2048);
+        // let parameter_plane = BiquadraticMult::new_default(height, 2048, (0.5).into());
 
         let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (2_f64.sqrt()).into(), 1024);
 
