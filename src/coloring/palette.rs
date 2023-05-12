@@ -255,13 +255,13 @@ impl Default for ColorPalette
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DiscretePalette
 {
-    num_colors: f32,
-    base_hue: f32,
-    saturation: f32,
-    luminosity: f32,
+    pub num_colors: f32,
+    pub base_hue: f32,
+    pub saturation: f32,
+    pub luminosity: f32,
 }
 
 impl DiscretePalette

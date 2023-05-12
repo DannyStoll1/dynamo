@@ -1,7 +1,7 @@
 use crate::coloring::{coloring_algorithm::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::{ComplexNum, EscapeState, Period, PointInfo, RealNum};
+use crate::types::{ComplexNum, ComplexVec, EscapeState, Period, PointInfo, RealNum};
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
@@ -24,7 +24,12 @@ where
         let point_grid = parent
             .point_grid()
             .with_same_height(parent.default_julia_bounds(param));
-        Self { point_grid, max_iter, parent, param }
+        Self {
+            point_grid,
+            max_iter,
+            parent,
+            param,
+        }
     }
 }
 
@@ -144,6 +149,17 @@ where
     fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
     {
         self.point_grid.bounds.clone()
+    }
+
+    #[inline]
+    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    {
+        self.parent.critical_points(self.param)
+    }
+
+    #[inline]
+    fn cycles(&self, _param: ComplexNum, period: Period) -> ComplexVec {
+        self.parent.cycles(self.param, period)
     }
 
     #[inline]

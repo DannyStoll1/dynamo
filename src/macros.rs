@@ -1,7 +1,7 @@
 macro_rules! fractal_impl {
     () => {
         #[must_use]
-        pub fn new(res_x: usize, res_y: usize, max_iter: Period, bounds: Bounds) -> Self
+        pub const fn new(res_x: usize, res_y: usize, max_iter: Period, bounds: Bounds) -> Self
         {
             let point_grid = PointGrid::new(res_x, res_y, bounds);
 
@@ -12,7 +12,7 @@ macro_rules! fractal_impl {
         }
 
         #[must_use]
-        pub fn with_res_x(res_x: usize, max_iter: Period, bounds: Bounds) -> Self
+        pub const fn with_res_x(res_x: usize, max_iter: Period, bounds: Bounds) -> Self
         {
             let point_grid = PointGrid::with_res_x(res_x, bounds);
 
@@ -23,7 +23,7 @@ macro_rules! fractal_impl {
         }
 
         #[must_use]
-        pub fn with_res_y(res_y: usize, max_iter: Period, bounds: Bounds) -> Self
+        pub const fn with_res_y(res_y: usize, max_iter: Period, bounds: Bounds) -> Self
         {
             let point_grid = PointGrid::with_res_y(res_y, bounds);
 
@@ -34,7 +34,7 @@ macro_rules! fractal_impl {
         }
 
         #[must_use]
-        pub fn new_default(res_y: usize, max_iter: Period) -> Self
+        pub const fn new_default(res_y: usize, max_iter: Period) -> Self
         {
             let bounds = Self::DEFAULT_BOUNDS;
             Self::with_res_y(res_y, max_iter, bounds)
@@ -133,6 +133,18 @@ macro_rules! min {
     };
 }
 
-pub(crate) use {default_name, fractal_impl, parameter_plane_impl, point_grid_getters};
+macro_rules! profile_imports {
+    () => {
+        use crate::macros::{fractal_impl, parameter_plane_impl, default_name};
+        use crate::point_grid::{PointGrid, Bounds};
+        use crate::types::*;
+        use crate::dynamics::ParameterPlane;
+        use crate::dynamics::covering_maps::{HasDynamicalCovers, CoveringMap};
+        use std::any::type_name;
+    }
+}
+
+
+pub(crate) use {default_name, fractal_impl, parameter_plane_impl, point_grid_getters, profile_imports};
 
 pub(crate) use {max, min};

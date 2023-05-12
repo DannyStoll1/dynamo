@@ -2,7 +2,10 @@ use crate::{
     coloring::{coloring_algorithm::ColoringAlgorithm, Coloring},
     iter_plane::IterPlane,
     point_grid::{Bounds, PointGrid},
-    types::{ComplexNum, ComplexVec, EscapeState, IterCount, ONE_COMPLEX, OrbitInfo, Period, PointInfo, RealNum, TAU, TWO},
+    types::{
+        ComplexNum, ComplexVec, EscapeState, IterCount, OrbitInfo, Period, PointInfo, RealNum,
+        ONE_COMPLEX, TAU, TWO,
+    },
 };
 use dyn_clone::DynClone;
 use ndarray::{Array2, Axis};
@@ -14,7 +17,6 @@ use thread_local::ThreadLocal;
 pub mod covering_maps;
 pub mod julia;
 pub mod orbit;
-
 
 use julia::JuliaSet;
 use orbit::{CycleDetectedOrbit, Orbit};
@@ -159,6 +161,12 @@ pub trait ParameterPlane: Sync + Send + DynClone
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum;
     fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum;
     fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum;
+
+    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    {
+        (self.map(z, c), self.dynamical_derivative(z, c))
+    }
+
     fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
     {
         (
@@ -253,7 +261,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     {
         let orbit = CycleDetectedOrbit::new(
             |z, c| self.map(z, c),
-            |z, c| self.dynamical_derivative(z, c),
+            |z, c| self.map_and_multiplier(z, c),
             |i, z| self.stop_condition(i, z),
             |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
             |z, c| self.early_bailout(z, c),
@@ -276,10 +284,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
 
         let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
 
-        let mut iter_counts = Array2::from_elem(
-            (self.point_grid().res_x, self.point_grid().res_y),
-            PointInfo::Bounded,
-        );
+        let mut iter_counts = Array2::from_elem(self.point_grid().shape(), PointInfo::Bounded);
         iter_counts
             .axis_chunks_iter_mut(Axis(1), chunk_size)
             .enumerate()
@@ -296,7 +301,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
                         .get_or(|| {
                             RefCell::new(CycleDetectedOrbit::new(
                                 |z, c| self.map(z, c),
-                                |z, c| self.dynamical_derivative(z, c),
+                                |z, c| self.map_and_multiplier(z, c),
                                 |i, z| self.stop_condition(i, z),
                                 |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
                                 |z, c| self.early_bailout(z, c),
@@ -331,6 +336,15 @@ pub trait ParameterPlane: Sync + Send + DynClone
 
     #[inline]
     fn set_param(&mut self, _value: ComplexNum) {}
+
+    #[inline]
+    fn critical_points(&self, param: ComplexNum) -> ComplexVec {
+        vec![self.start_point(param)]
+    }
+
+    fn cycles(&self, _param: ComplexNum, _period: Period) -> ComplexVec {
+        vec![]
+    }
 
     fn external_angle(&self, point: ComplexNum) -> Option<RealNum>
     {
@@ -402,7 +416,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         for k in 0..depth
         {
             let us = (0..sharpness)
-                .map(|j| escape_radius.ln() * TWO.powf((-f64::from(j)) / f64::from(sharpness)));
+                .map(|j| escape_radius.ln() * ((-f64::from(j)) / f64::from(sharpness)).exp2());
             let v = ComplexNum::new(0., theta * TWO.powi(k as i32));
             let targets = us.map(|u| (u + v).exp());
 
@@ -610,7 +624,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let start = self.start_point(param);
         let orbit = CycleDetectedOrbit::new(
             |z, c| self.map(z, c),
-            |z, c| self.dynamical_derivative(z, c),
+            |z, c| self.map_and_multiplier(z, c),
             |i, z| self.stop_condition(i, z),
             |i, z0, z1, c| self.check_periodicity(i, z0, z1, c),
             |z, c| self.early_bailout(z, c),

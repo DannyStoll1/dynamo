@@ -6,9 +6,11 @@ use crate::point_grid::{Bounds, PointGrid};
 use crate::profiles::QuadRatPer2;
 use crate::types::{ComplexNum, ComplexVec, OrbitInfo, RealNum};
 
+use super::marked_points::MarkingMode;
+
 use eframe::egui::{Color32, Pos2, Rect, Stroke, Ui};
 use egui_extras::RetainedImage;
-use epaint::PathShape;
+use epaint::{CircleShape, PathShape};
 
 pub type ColoredPoint = (ComplexNum, Color32);
 pub type ColoredPoints = Vec<ColoredPoint>;
@@ -62,15 +64,6 @@ pub(super) trait Pane
         curves.push((zs, color));
     }
 
-    fn get_marked_points(&self) -> &ColoredPoints;
-    fn get_marked_points_mut(&mut self) -> &mut ColoredPoints;
-
-    fn mark_point(&mut self, z: ComplexNum, color: Color32)
-    {
-        let points = self.get_marked_points_mut();
-        points.push((z, color));
-    }
-
     fn clear_marked_curves(&mut self)
     {
         let curves = self.get_marked_curves_mut();
@@ -94,6 +87,34 @@ pub(super) trait Pane
             let stroke = Stroke::new(1.0, *color);
             let path = PathShape::line(points, stroke);
             painter.add(path);
+        }
+    }
+
+    fn get_marked_points(&self) -> &ColoredPoints;
+    fn get_marked_points_mut(&mut self) -> &mut ColoredPoints;
+
+    fn mark_point(&mut self, z: ComplexNum, color: Color32)
+    {
+        let points = self.get_marked_points_mut();
+        points.push((z, color));
+    }
+
+    fn clear_marked_points(&mut self)
+    {
+        let points = self.get_marked_points_mut();
+        *points = vec![];
+    }
+
+    fn put_marked_points(&self, ui: &mut Ui)
+    {
+        let frame = self.get_frame();
+        let grid = self.plane().point_grid();
+        let painter = ui.painter().with_clip_rect(frame.region);
+        for (z, color) in self.get_marked_points().iter()
+        {
+            let point = frame.to_global_coords(grid.locate_point(*z).to_vec2());
+            let patch = CircleShape::filled(point, 4., *color);
+            painter.add(patch);
         }
     }
 
@@ -429,6 +450,7 @@ pub(super) struct Child
     marked_curves: Vec<ColoredCurve>,
     marked_points: ColoredPoints,
     marked_info: Option<OrbitInfo>,
+    pub marking_mode: MarkingMode,
 }
 impl Child
 {
@@ -466,6 +488,7 @@ impl Child
             marked_curves,
             marked_points,
             marked_info: None,
+            marking_mode: MarkingMode::default(),
         }
     }
 }
@@ -595,10 +618,19 @@ impl Pane for Child
         self.schedule_recompute();
     }
     #[inline]
+    fn redraw(&mut self)
+    {
+        self.marked_points = self.marking_mode.compute(self.plane());
+        let image = self.get_iter_plane().render(self.get_coloring());
+        let image_frame = self.get_frame_mut();
+        image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
+    }
+    #[inline]
     fn recompute(&mut self)
     {
         self.iter_plane = self.plane.compute();
     }
+
     fn name(&self) -> String
     {
         format!("{}: c = {}", self.plane.name(), self.plane.get_param())

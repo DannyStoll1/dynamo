@@ -1,6 +1,6 @@
 use super::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::{ComplexNum, EscapeState, Period, PointInfo};
+use crate::types::{ComplexNum, ComplexVec, EscapeState, Period, PointInfo};
 
 #[derive(Clone)]
 pub struct CoveringMap<C>
@@ -150,6 +150,16 @@ where
     fn default_coloring(&self) -> crate::coloring::Coloring
     {
         self.base_curve.default_coloring()
+    }
+
+    fn critical_points(&self, param: ComplexNum) -> ComplexVec
+    {
+        self.base_curve.critical_points(param)
+    }
+
+    fn cycles(&self, param: ComplexNum, period: Period) -> ComplexVec
+    {
+        self.base_curve.cycles(param, period)
     }
 
     fn default_julia_bounds(&self, param: ComplexNum) -> Bounds

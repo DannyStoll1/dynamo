@@ -10,7 +10,7 @@ use fractal_derive::FractalProfile;
     df_dz = {
         let x = z.re;
         let _y = z.im;
-        let v = 1.+x*x;
+        let v = x.mul_add(x, 1.);
         ComplexNum::new(
             -2.*c.re*x/(v*v),
             -c.im
@@ -21,8 +21,8 @@ use fractal_derive::FractalProfile;
         let x = z.re;
         let y = z.im;
         ComplexNum::new(
-            c.re/(1.+x*x) + y,
-            y - c.im*(x+1.)
+            c.re/x.mul_add(x, 1.) + y,
+            c.im.mul_add(-x - 1., y)
         )
     },
     plane_methods =

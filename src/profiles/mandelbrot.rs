@@ -17,8 +17,8 @@ use fractal_derive::FractalProfile;
             let four_c = 4. * param;
             let y2 = four_c.im * four_c.im;
             let temp = four_c.re - 1.;
-            let mu_norm2 = temp * temp + y2;
-            let a = mu_norm2 * (mu_norm2 * 0.25 + temp);
+            let mu_norm2 = temp.mul_add(temp, y2);
+            let a = mu_norm2 * mu_norm2.mul_add(0.25, temp);
 
             if a < y2
             {
@@ -57,9 +57,30 @@ use fractal_derive::FractalProfile;
         }
 
         #[inline]
+        fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+        {
+            vec![ComplexNum::new(0., 0.)]
+        }
+
+        #[inline]
         fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
         {
             Bounds::centered_square(2.2)
+        }
+
+        fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
+        {
+            match period {
+                1 => {
+                    let u = (1. - 4. * c).sqrt();
+                    vec![0.5 * (1. + u), 0.5 * (1. - u)]
+                },
+                2 => {
+                    let u = (-3. - 4. * c).sqrt();
+                    vec![0.5 * (-1. + u), -0.5 * (1. + u)]
+                },
+                _ => vec![],
+            }
         }
 )]
 pub struct Mandelbrot

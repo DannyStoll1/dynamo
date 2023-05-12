@@ -18,7 +18,7 @@ where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
     S: Fn(Period, ComplexNum) -> EscapeState,
 {
-    pub fn new(f: F, stop_condition: S, z: ComplexNum, param: ComplexNum) -> Self
+    pub const fn new(f: F, stop_condition: S, z: ComplexNum, param: ComplexNum) -> Self
     {
         Self {
             f,
@@ -63,7 +63,7 @@ where
             return Some((self.z, self.state));
         }
 
-        if let EscapeState::NotYetEscaped = self.state
+        if matches!(self.state, EscapeState::NotYetEscaped)
         {
             self.z = self.apply_map(self.z);
             self.iter += 1;
@@ -80,13 +80,13 @@ where
 pub struct CycleDetectedOrbit<F, G, S, C, B>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
-    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> (ComplexNum, ComplexNum),
     S: Fn(Period, ComplexNum) -> EscapeState,
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
     B: Fn(ComplexNum, ComplexNum) -> EscapeState,
 {
     f: F,
-    df_dz: G,
+    map_and_multiplier: G,
     stop_condition: S,
     check_periodicity: C,
     early_bailout: B,
@@ -101,14 +101,14 @@ where
 impl<F, G, S, C, B> CycleDetectedOrbit<F, G, S, C, B>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
-    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> (ComplexNum, ComplexNum),
     S: Fn(Period, ComplexNum) -> EscapeState,
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
     B: Fn(ComplexNum, ComplexNum) -> EscapeState,
 {
     pub fn new(
         f: F,
-        df_dz: G,
+        map_and_multiplier: G,
         stop_condition: S,
         check_periodicity: C,
         early_bailout: B,
@@ -118,7 +118,7 @@ where
     {
         Self {
             f,
-            df_dz,
+            map_and_multiplier,
             stop_condition,
             check_periodicity,
             early_bailout,
@@ -136,9 +136,17 @@ where
         (self.f)(z, self.param)
     }
 
+    fn apply_map_and_update_multiplier(&mut self)
+    {
+
+        let (z_new, deriv) = (self.map_and_multiplier)(self.z_fast, self.param);
+        self.multiplier *= deriv;
+        self.z_fast = z_new;
+    }
+
     fn derivative(&self, z: ComplexNum) -> ComplexNum
     {
-        (self.df_dz)(z, self.param)
+        (self.map_and_multiplier)(z, self.param).1
     }
 
     fn check_early_bailout(&mut self)
@@ -160,20 +168,18 @@ where
     {
         self.check_early_bailout();
 
-        while let EscapeState::NotYetEscaped = self.state
+        while matches!(self.state, EscapeState::NotYetEscaped)
         {
             self.iter += 1;
             if self.iter % 2 == 1
             {
                 self.z_slow = self.apply_map(self.z_slow);
-                self.z_fast = self.apply_map(self.z_fast);
-                self.multiplier *= self.derivative(self.z_fast);
+                self.apply_map_and_update_multiplier();
                 self.state = (self.stop_condition)(self.iter, self.z_fast);
             }
             else
             {
-                self.z_fast = self.apply_map(self.z_fast);
-                self.multiplier *= self.derivative(self.z_fast);
+                self.apply_map_and_update_multiplier();
                 self.state =
                     (self.check_periodicity)(self.iter, self.z_slow, self.z_fast, self.param);
             }
@@ -198,7 +204,7 @@ where
 impl<F, G, S, C, B> Iterator for CycleDetectedOrbit<F, G, S, C, B>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
-    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> (ComplexNum, ComplexNum),
     S: Fn(Period, ComplexNum) -> EscapeState,
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
     B: Fn(ComplexNum, ComplexNum) -> EscapeState,
@@ -207,21 +213,19 @@ where
 
     fn next(&mut self) -> Option<Self::Item>
     {
-        if let EscapeState::NotYetEscaped = self.state
+        if matches!(self.state, EscapeState::NotYetEscaped)
         {
             let retval = self.z_fast;
             self.iter += 1;
             if self.iter % 2 == 1
             {
                 self.z_slow = self.apply_map(self.z_slow);
-                self.z_fast = self.apply_map(self.z_fast);
-                self.multiplier *= self.derivative(self.z_fast);
+                self.apply_map_and_update_multiplier();
                 self.state = (self.stop_condition)(self.iter, self.z_fast);
             }
             else
             {
-                self.z_fast = self.apply_map(self.z_fast);
-                self.multiplier *= self.derivative(self.z_fast);
+                self.apply_map_and_update_multiplier();
                 self.state =
                     (self.check_periodicity)(self.iter, self.z_slow, self.z_fast, self.param);
             }
@@ -237,12 +241,12 @@ where
 pub struct CycleDetectedOrbitBrent<F, G, C, B>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
-    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> (ComplexNum, ComplexNum),
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
     B: Fn(ComplexNum, ComplexNum) -> EscapeState,
 {
     f: F,
-    df_dz: G,
+    map_and_multiplier: G,
     check_periodicity: C,
     early_bailout: B,
     param: ComplexNum,
@@ -258,13 +262,13 @@ where
 impl<F, G, C, B> CycleDetectedOrbitBrent<F, G, C, B>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
-    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> (ComplexNum, ComplexNum),
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
     B: Fn(ComplexNum, ComplexNum) -> EscapeState,
 {
     pub fn new(
         f: F,
-        df_dz: G,
+        map_and_multiplier: G,
         check_periodicity: C,
         early_bailout: B,
         z: ComplexNum,
@@ -272,10 +276,10 @@ where
     ) -> Self
     {
         let z_fast = f(z, param);
-        let multiplier = df_dz(z_fast, param);
+        let multiplier = ComplexNum::new(1., 0.); 
         Self {
             f,
-            df_dz,
+            map_and_multiplier,
             check_periodicity,
             early_bailout,
             param,
@@ -294,6 +298,14 @@ where
         (self.f)(z, self.param)
     }
 
+    fn apply_map_and_update_multiplier(&mut self)
+    {
+
+        let (z_new, deriv) = (self.map_and_multiplier)(self.z_fast, self.param);
+        self.multiplier *= deriv;
+        self.z_fast = z_new;
+    }
+
     fn check_early_bailout(&mut self)
     {
         self.state = (self.early_bailout)(self.z_slow, self.param);
@@ -301,7 +313,7 @@ where
 
     fn derivative(&self, z: ComplexNum) -> ComplexNum
     {
-        (self.df_dz)(z, self.param)
+        (self.map_and_multiplier)(z, self.param).1
     }
 
     pub fn reset(&mut self, param: ComplexNum, start_point: ComplexNum)
@@ -320,7 +332,7 @@ where
     {
         self.check_early_bailout();
 
-        while let EscapeState::NotYetEscaped = self.state
+        while matches!(self.state, EscapeState::NotYetEscaped)
         {
             if self.period_limit == self.period
             {
@@ -343,7 +355,7 @@ where
 impl<F, G, C, B> Iterator for CycleDetectedOrbitBrent<F, G, C, B>
 where
     F: Fn(ComplexNum, ComplexNum) -> ComplexNum,
-    G: Fn(ComplexNum, ComplexNum) -> ComplexNum,
+    G: Fn(ComplexNum, ComplexNum) -> (ComplexNum, ComplexNum),
     C: Fn(Period, ComplexNum, ComplexNum, ComplexNum) -> EscapeState,
     B: Fn(ComplexNum, ComplexNum) -> EscapeState,
 {
@@ -351,7 +363,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item>
     {
-        if let EscapeState::NotYetEscaped = self.state
+        if matches!(self.state, EscapeState::NotYetEscaped)
         {
             let retval = self.z_fast;
             if self.period_limit == self.period
@@ -360,8 +372,7 @@ where
                 self.period_limit *= 2;
                 self.period = 0;
             }
-            self.z_fast = self.apply_map(self.z_fast);
-            self.multiplier *= self.derivative(self.z_fast);
+            self.apply_map_and_update_multiplier();
 
             self.period += 1;
             self.iter += 1;

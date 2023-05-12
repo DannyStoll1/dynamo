@@ -110,7 +110,7 @@ impl Default for Bounds
 {
     fn default() -> Self
     {
-        Bounds {
+        Self {
             min_x: -1.,
             max_x: 1.,
             min_y: -1.,
@@ -130,7 +130,7 @@ pub struct PointGrid
 impl PointGrid
 {
     #[must_use]
-    pub const fn new(res_x: usize, res_y: usize, bounds: Bounds) -> PointGrid
+    pub const fn new(res_x: usize, res_y: usize, bounds: Bounds) -> Self
     {
         Self {
             res_x,
@@ -183,14 +183,14 @@ impl PointGrid
 
     #[inline]
     #[must_use]
-    pub fn with_same_height(&self, bounds: Bounds) -> Self
+    pub const fn with_same_height(&self, bounds: Bounds) -> Self
     {
         Self::with_res_y(self.res_y, bounds)
     }
 
     #[inline]
     #[must_use]
-    pub fn with_same_width(&self, bounds: Bounds) -> Self
+    pub const fn with_same_width(&self, bounds: Bounds) -> Self
     {
         Self::with_res_x(self.res_x, bounds)
     }
@@ -212,16 +212,16 @@ impl PointGrid
     #[must_use]
     pub fn map_pixel(&self, pixel_x: usize, pixel_y: usize) -> ComplexNum
     {
-        let re = self.bounds.min_x + (pixel_x as RealNum) * self.pixel_width();
-        let im = self.bounds.min_y + (pixel_y as RealNum) * self.pixel_height();
+        let re = (pixel_x as RealNum).mul_add(self.pixel_width(), self.bounds.min_x);
+        let im = (pixel_y as RealNum).mul_add(self.pixel_height(), self.bounds.min_y);
         ComplexNum::new(re, im)
     }
 
     #[must_use]
     pub fn map_vec2(&self, pos: Vec2) -> ComplexNum
     {
-        let re = self.bounds.min_x + f64::from(pos.x) * self.pixel_width();
-        let im = self.bounds.max_y - f64::from(pos.y) * self.pixel_height();
+        let re = f64::from(pos.x).mul_add(self.pixel_width(), self.bounds.min_x);
+        let im = f64::from(pos.y).mul_add(-self.pixel_height(), self.bounds.max_y);
         ComplexNum::new(re, im)
     }
 
@@ -241,7 +241,7 @@ impl PointGrid
 
     #[inline]
     #[must_use]
-    pub fn shape(&self) -> (usize, usize)
+    pub const fn shape(&self) -> (usize, usize)
     {
         (self.res_x, self.res_y)
     }
@@ -314,8 +314,8 @@ impl PointGrid
         let pixel_width = self.pixel_width();
         let pixel_height = self.pixel_height();
         points.indexed_iter_mut().for_each(|((i, j), value)| {
-            let re = self.bounds.min_x + (i as RealNum) * pixel_width;
-            let im = self.bounds.min_y + (j as RealNum) * pixel_height;
+            let re = (i as RealNum).mul_add(pixel_width, self.bounds.min_x);
+            let im = (j as RealNum).mul_add(pixel_height, self.bounds.min_y);
             *value = ComplexNum::new(re, im);
         });
         points
@@ -421,8 +421,8 @@ impl Iterator for PointGridIterator
         self.idx_x %= self.res_x;
 
         let z = ComplexNum::new(
-            self.idx_x as RealNum * self.step_x + self.min_x,
-            self.idx_y as RealNum * self.step_y + self.min_y,
+            (self.idx_x as RealNum).mul_add(self.step_x, self.min_x),
+            (self.idx_y as RealNum).mul_add(self.step_y, self.min_y),
         );
 
         Some(((self.idx_x, self.idx_y), z))

@@ -1,18 +1,84 @@
 #![allow(dead_code)]
 #![feature(const_fn_floating_point_arithmetic)]
 
-pub mod math_utils;
-pub mod point_grid;
-pub mod types;
-pub mod profiles;
+pub mod coloring;
 pub mod dynamics;
 pub mod gui;
-pub mod macros;
 pub mod iter_plane;
-pub mod coloring;
+pub mod macros;
+pub mod math_utils;
+pub mod point_grid;
+pub mod profiles;
+pub mod types;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>>
+{
     gui::run_app()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests
+{
+    use crate::dynamics::ParameterPlane;
+    use crate::point_grid::Bounds;
+    use crate::profiles::*;
+
+    #[test]
+    fn compute_biquadratic()
+    {
+        let plane = Biquadratic::new_default(512, 2048, (-0.3).into());
+        plane.compute();
+    }
+
+    #[test]
+    fn compute_per2()
+    {
+        let plane = QuadRatPer2::new_default(512, 2048);
+        plane.compute();
+    }
+
+    #[test]
+    fn compute_per3()
+    {
+        let plane = QuadRatPer3::new_default(512, 2048);
+        plane.compute();
+    }
+
+    #[test]
+    fn compute_per4()
+    {
+        let plane = QuadRatPer4::new_default(512, 2048);
+        plane.compute();
+    }
+
+    #[test]
+    fn compute_preper21()
+    {
+        let plane = QuadRatPreper21::new_default(512, 2048);
+        plane.compute();
+    }
+
+    #[test]
+    fn compute_symmetry_locus()
+    {
+        let plane = QuadRatSymmetryLocus::new_default(512, 2048);
+        plane.compute();
+    }
+
+    #[test]
+    fn compute_rulkov()
+    {
+        let mut plane = Rulkov::new_default(256, 2048);
+        let bounds = Bounds {
+            min_x: -9.859092283464022,
+            max_x: 11.712293384188932,
+            min_y: -11.185367984659074,
+            max_y: 10.011947411300476,
+        };
+
+        plane.point_grid_mut().change_bounds(bounds);
+        plane.compute();
+    }
 }

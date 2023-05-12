@@ -4,6 +4,7 @@ use crate::profiles::*;
 use crate::types::{ComplexNum, Period};
 
 type DefaultProfile = Mandelbrot;
+// type DefaultProfile = Rulkov;
 
 use eframe::egui;
 use egui::{Color32, InputState, Key};
@@ -11,6 +12,7 @@ use egui_extras::{Column, TableBuilder};
 use input_macro::input;
 
 pub mod image_frame;
+pub mod marked_points;
 pub mod pane;
 use image_frame::ImageFrame;
 use pane::{Child, Pane, PaneID, Parent};
@@ -99,6 +101,24 @@ impl FractalApp
             self.set_palette(white_palette);
         }
 
+        if ctx.input(|i| i.key_pressed(Key::P))
+        {
+            self.child.marking_mode.toggle_critical();
+            self.child.schedule_redraw();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Y))
+        {
+            self.child.marking_mode.toggle_cycles(1);
+            self.child.schedule_redraw();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::U))
+        {
+            self.child.marking_mode.toggle_cycles(2);
+            self.child.schedule_redraw();
+        }
+
         if ctx.input(|i| i.key_pressed(Key::ArrowUp))
         {
             let pane = self.get_active_pane_mut();
@@ -184,6 +204,7 @@ impl FractalApp
         {
             let pane = self.get_active_pane_mut();
             pane.clear_marked_curves();
+            pane.clear_marked_points();
         }
 
         if ctx.input(|i| i.key_pressed(Key::L))
@@ -697,8 +718,7 @@ impl Default for FractalApp
         // let parameter_plane = QuadRatPer2::new_default(height, 2048).marked_cycle_curve(5);
         let parameter_plane = DefaultProfile::new_default(height, 2048);
 
-        let dynamical_plane =
-            JuliaSet::new(parameter_plane.clone(), (2_f64.sqrt()).into(), 1024);
+        let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (2_f64.sqrt()).into(), 1024);
 
         let parent = Parent::from(parameter_plane);
         let child = Child::from(dynamical_plane);
@@ -739,10 +759,12 @@ impl eframe::App for FractalApp
                         row.col(|ui| {
                             self.parent.image_frame.put(ui);
                             self.parent.put_marked_curves(ui);
+                            self.parent.put_marked_points(ui);
                         });
                         row.col(|ui| {
                             self.child.image_frame.put(ui);
                             self.child.put_marked_curves(ui);
+                            self.child.put_marked_points(ui);
                         });
                     });
                     body.row(80., |mut row| {

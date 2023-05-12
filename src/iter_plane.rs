@@ -1,7 +1,7 @@
 use crate::coloring::Coloring;
 use crate::point_grid::PointGrid;
 
-use crate::types::{PointInfo};
+use crate::types::PointInfo;
 use eframe::egui::{Color32, ColorImage};
 use image::ImageBuffer;
 use ndarray::Array2;
@@ -35,8 +35,7 @@ impl FractalImage for IterPlane
         self.iter_counts
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
-                img.pixels[x + (height - y - 1) * width] =
-                    coloring.map_color32(*point_info);
+                img.pixels[x + (height - y - 1) * width] = coloring.map_color32(*point_info);
             });
         img
     }
