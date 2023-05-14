@@ -11,7 +11,7 @@ where
     pub point_grid: PointGrid,
     pub max_iter: Period,
     pub parent: T,
-    pub param: ComplexNum,
+    pub param: T::Param,
 }
 
 impl<T> JuliaSet<T>
@@ -19,7 +19,7 @@ where
     T: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(parent: T, param: ComplexNum, max_iter: Period) -> Self
+    pub fn new(parent: T, param: T::Param, max_iter: Period) -> Self
     {
         let point_grid = parent
             .point_grid()
@@ -39,7 +39,7 @@ where
 {
     fn from(parent: T) -> Self
     {
-        let param = ComplexNum::new(0., 0.);
+        let param = T::Param::default();
         let point_grid = parent
             .point_grid()
             .with_same_height(parent.default_julia_bounds(param));
@@ -56,28 +56,37 @@ impl<T> ParameterPlane for JuliaSet<T>
 where
     T: ParameterPlane + Clone,
 {
+    type Var = T::Var;
+    type Param = T::Param;
+    type Deriv = T::Deriv;
+
     #[inline]
-    fn map(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        self.parent.map(z, self.param)
+        self.parent.map(z, c)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        self.parent.dynamical_derivative(z, self.param)
+        self.parent.dynamical_derivative(z, c)
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        self.parent.parameter_derivative(z, self.param)
+        self.parent.parameter_derivative(z, c)
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv) {
+        self.parent.map_and_multiplier(z, c)
+    }
+
+    #[inline]
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        self.parent.gradient(z, self.param)
+        self.parent.gradient(z, c)
     }
 
     #[inline]
@@ -105,15 +114,15 @@ where
     }
 
     #[inline]
-    fn param_map(&self, z: ComplexNum) -> ComplexNum
+    fn param_map(&self, z: ComplexNum) -> Self::Param
     {
-        z
+        self.param
     }
 
     #[inline]
-    fn start_point(&self, z: ComplexNum) -> ComplexNum
+    fn start_point(&self, point: ComplexNum, param: Self::Param) -> Self::Var
     {
-        z
+        point.into()
     }
 
     #[inline]
@@ -122,19 +131,23 @@ where
         self.max_iter = new_max_iter;
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> PointInfo
+    fn encode_escape_result(
+        &self,
+        state: EscapeState<Self::Var, Self::Deriv>,
+        base_param: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         self.parent.encode_escape_result(state, base_param)
     }
 
     #[inline]
-    fn set_param(&mut self, value: ComplexNum)
+    fn set_param(&mut self, value: Self::Param)
     {
         self.param = value;
     }
 
     #[inline]
-    fn get_param(&self) -> ComplexNum
+    fn get_param(&self) -> Self::Param
     {
         self.param
     }
@@ -146,19 +159,20 @@ where
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _param: Self::Param) -> Bounds
     {
         self.point_grid.bounds.clone()
     }
 
     #[inline]
-    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         self.parent.critical_points(self.param)
     }
 
     #[inline]
-    fn cycles(&self, _param: ComplexNum, period: Period) -> ComplexVec {
+    fn cycles(&self, _param: Self::Param, period: Period) -> Vec<Self::Var>
+    {
         self.parent.cycles(self.param, period)
     }
 

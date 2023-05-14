@@ -1,6 +1,32 @@
 use crate::macros::profile_imports;
 profile_imports!();
 
+#[inline]
+fn map(z: ComplexNum, c: ComplexNum) -> ComplexNum
+{
+    (z * z + c) / (z * z - 1.)
+}
+#[inline]
+fn map_and_multiplier(z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+{
+    let z2 = z * z;
+    let u = z2 - 1.;
+    ((c + z2) / u, -TWO * z * (c + 1.) / (u * u))
+}
+
+#[inline]
+fn dynamical_derivative(z: ComplexNum, c: ComplexNum) -> ComplexNum
+{
+    let u = 1. / (z * z - 1.);
+    -TWO * (c + 1.) * z * u * u
+}
+
+#[inline]
+fn parameter_derivative(z: ComplexNum, _c: ComplexNum) -> ComplexNum
+{
+    1. / (z * z - 1.)
+}
+
 #[derive(Clone, Debug)]
 pub struct QuadRatPer2
 {
@@ -29,7 +55,7 @@ impl ParameterPlane for QuadRatPer2
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -50,11 +76,9 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        (z * z + c) / (z * z - 1.)
-        // c / (z*z + 2.*z)
-        // c / z + 1. / (z * z)
+        map(z, c)
     }
 
     // fn start_point(&self, c: ComplexNum) -> ComplexNum {
@@ -62,31 +86,22 @@ impl ParameterPlane for QuadRatPer2
     //     (-1.).into()
     // }
 
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        let u = z2 - 1.;
-        ((c + z2) / u, -TWO * z * (c + 1.) / (u * u))
+        map_and_multiplier(z, c)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        let u = 1. / (z * z - 1.);
-        -TWO * (c + 1.) * z * u * u
+        dynamical_derivative(z, c)
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        1. / (z * z - 1.)
-    }
-
-    #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
-    {
-        let u = 1. / (z * z - 1.);
-        (-TWO * (c + 1.) * z * u * u, u)
+        parameter_derivative(z, c)
     }
 
     #[inline]

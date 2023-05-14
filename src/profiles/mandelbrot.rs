@@ -1,92 +1,130 @@
-use crate::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
-use fractal_derive::FractalProfile;
+use crate::macros::*;
 
-#[derive(Clone, Debug, FractalProfile)]
-#[fractal_params(
-    map = z * z + c,
-    min_x = -2.1,
-    max_x = 0.55,
-    min_y = -1.25,
-    max_y = 1.25,
-    df_dz = z+z,
-    df_dc = ONE_COMPLEX,
-    plane_methods =
-        fn early_bailout(&self, _start: ComplexNum, param: ComplexNum) -> EscapeState
-        {
-            // Main cardioid
-            let four_c = 4. * param;
-            let y2 = four_c.im * four_c.im;
-            let temp = four_c.re - 1.;
-            let mu_norm2 = temp.mul_add(temp, y2);
-            let a = mu_norm2 * mu_norm2.mul_add(0.25, temp);
+profile_imports!();
 
-            if a < y2
-            {
-                let multiplier = 1. - (1. - four_c).sqrt();
-                let decay_rate = multiplier.norm();
-                let fixed_point = 0.5 * multiplier;
-                let init_dist = (param - fixed_point).norm_sqr();
-                let potential = init_dist.log(decay_rate);
-                let preperiod = potential as Period;
-                return EscapeState::Periodic {
-                    period: 1,
-                    preperiod,
-                    multiplier,
-                    final_error: (1e-6).into(),
-                };
-            }
+fn f(z: ComplexNum, c: ComplexNum) -> ComplexNum
+{
+    z * z + c
+}
+fn df_dz(z: ComplexNum, c: ComplexNum) -> ComplexNum
+{
+    z + z
+}
+fn df_dc(z: ComplexNum, c: ComplexNum) -> ComplexNum
+{
+    ONE_COMPLEX
+}
 
-            // Basilica bulb
-            let mu2 = four_c + 4.;
-            if mu2.norm_sqr() < 1.
-            {
-                let decay_rate = mu2.norm();
-                let fixed_point = -0.5 - 0.5 * (-four_c - 3.).sqrt();
-                let init_dist = (param - fixed_point).norm_sqr();
-                let potential = 2. * init_dist.log(decay_rate);
-                let preperiod = potential as Period;
-                return EscapeState::Periodic {
-                    period: 2,
-                    preperiod,
-                    multiplier: mu2,
-                    final_error: (1e-6).into(),
-                };
-            }
-
-            EscapeState::NotYetEscaped
-        }
-
-        #[inline]
-        fn critical_points(&self, _param: ComplexNum) -> ComplexVec
-        {
-            vec![ComplexNum::new(0., 0.)]
-        }
-
-        #[inline]
-        fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
-        {
-            Bounds::centered_square(2.2)
-        }
-
-        fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
-        {
-            match period {
-                1 => {
-                    let u = (1. - 4. * c).sqrt();
-                    vec![0.5 * (1. + u), 0.5 * (1. - u)]
-                },
-                2 => {
-                    let u = (-3. - 4. * c).sqrt();
-                    vec![0.5 * (-1. + u), -0.5 * (1. + u)]
-                },
-                _ => vec![],
-            }
-        }
-)]
+#[derive(Clone, Debug)]
 pub struct Mandelbrot
 {
     point_grid: PointGrid,
     max_iter: Period,
+}
+
+impl Mandelbrot
+{
+    fractal_impl!(-2.1, 0.55, -1.25, 1.25);
+}
+
+impl ParameterPlane for Mandelbrot
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    {
+        f(z, c)
+    }
+
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    {
+        df_dz(z, c)
+    }
+
+    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    {
+        df_dc(z, c)
+    }
+
+    fn early_bailout(
+        &self,
+        _start: ComplexNum,
+        param: ComplexNum,
+    ) -> EscapeState<ComplexNum, ComplexNum>
+    {
+        // Main cardioid
+        let four_c = 4. * param;
+        let y2 = four_c.im * four_c.im;
+        let temp = four_c.re - 1.;
+        let mu_norm2 = temp.mul_add(temp, y2);
+        let a = mu_norm2 * mu_norm2.mul_add(0.25, temp);
+
+        if a < y2
+        {
+            let multiplier = 1. - (1. - four_c).sqrt();
+            let decay_rate = multiplier.norm();
+            let fixed_point = 0.5 * multiplier;
+            let init_dist = (param - fixed_point).norm_sqr();
+            let potential = init_dist.log(decay_rate);
+            let preperiod = potential as Period;
+            return EscapeState::Periodic {
+                period: 1,
+                preperiod,
+                multiplier,
+                final_error: (1e-6).into(),
+            };
+        }
+
+        // Basilica bulb
+        let mu2 = four_c + 4.;
+        if mu2.norm_sqr() < 1.
+        {
+            let decay_rate = mu2.norm();
+            let fixed_point = -0.5 - 0.5 * (-four_c - 3.).sqrt();
+            let init_dist = (param - fixed_point).norm_sqr();
+            let potential = 2. * init_dist.log(decay_rate);
+            let preperiod = potential as Period;
+            return EscapeState::Periodic {
+                period: 2,
+                preperiod,
+                multiplier: mu2,
+                final_error: (1e-6).into(),
+            };
+        }
+
+        EscapeState::NotYetEscaped
+    }
+
+    #[inline]
+    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    {
+        vec![ComplexNum::new(0., 0.)]
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+
+    fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
+    {
+        match period
+        {
+            1 =>
+            {
+                let u = (1. - 4. * c).sqrt();
+                vec![0.5 * (1. + u), 0.5 * (1. - u)]
+            }
+            2 =>
+            {
+                let u = (-3. - 4. * c).sqrt();
+                vec![0.5 * (-1. + u), -0.5 * (1. + u)]
+            }
+            _ => vec![],
+        }
+    }
 }
 
 impl HasDynamicalCovers for Mandelbrot

@@ -162,7 +162,7 @@ impl ParameterPlane for QuadRatPer3
     parameter_plane_impl!();
     default_name!();
 
-    fn start_point(&self, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
         0.0.into()
     }
@@ -172,7 +172,7 @@ impl ParameterPlane for QuadRatPer3
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -194,7 +194,7 @@ impl ParameterPlane for QuadRatPer3
     {
         let z2 = z * z;
         let c2 = c * c;
-        let u = 1. / (z2 - c2);
+        let u = (z2 - c2).inv();
         let v = c + 1.;
         ((z2 + c2 * c - v) * u, TWO * (1. - c) * v * v * z * u * u)
     }
@@ -222,15 +222,19 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let r = c * c - z * z;
-        let u = 1. / r;
+        let z2 = z * z;
+        let c2 = c * c;
+        let r = c2 - z2;
+        let u = r.inv();
         let u2 = u * u;
         let v = c + 1.;
+
+        let f = u * (z2 + c2 * c - v);
         let df_dz = TWO * (1. - c) * v * v * z * u2;
         let df_dc = v * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)));
-        (df_dz, df_dc)
+        (f, df_dz, df_dc)
     }
 
     #[inline]
@@ -360,7 +364,12 @@ impl ParameterPlane for QuadRatPer4
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escaping_point(&self, iters: Period, z: ComplexNum, c: ComplexNum) -> PointInfo
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        c: ComplexNum,
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         {
             if z.is_nan()
@@ -398,7 +407,7 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, c: ComplexNum) -> ComplexNum
     {
         (c + c) * (c + c - 1.) / (c * (c + 1.) - 1.)
     }
@@ -414,7 +423,7 @@ impl ParameterPlane for QuadRatPer4
     {
         let c2 = c * c;
         let c_minus_1 = c - 1.;
-        let u = 1. / (c_minus_1 * z * z);
+        let u = (c_minus_1 * z * z).inv();
         let two_c = c + c;
 
         (
@@ -438,14 +447,17 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let v = c - 1.;
         let c2 = c * c;
         let z2 = z * z;
+        let u = (v * z2).inv();
+        let two_c = c + c;
         (
-            (4. * c2 - (c2 + v) * z - c - c) / (v * z * z2),
-            (c + c - c2) * (z - 2.) / (v * v * z2),
+            (z - c) * (c * z - z - two_c + 1.) * u,
+            (4. * c2 - (c2 + v) * z - two_c) * u / z,
+            (two_c - c2) * (z - 2.) * u / v,
         )
     }
 
@@ -567,7 +579,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -597,7 +609,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
         (c * (z + u), c * (1. - u * u))
     }
 
-    fn start_point(&self, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, _c: Self::Param) -> Self::Var
     {
         (1.).into()
     }
@@ -655,7 +667,7 @@ impl ParameterPlane for QuadRatPreper21
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -685,7 +697,7 @@ impl ParameterPlane for QuadRatPreper21
         (c * (z + 2. + u), c * (1. - u * u))
     }
 
-    fn start_point(&self, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
         (1.).into()
     }
@@ -810,7 +822,7 @@ impl ParameterPlane for CubicPer1_1
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -833,7 +845,7 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
-    fn start_point(&self, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, point: ComplexNum, param: ComplexNum) -> ComplexNum
     {
         let mut u = (param * param - 3.).sqrt();
         if param.re < 0.
@@ -897,7 +909,7 @@ impl ParameterPlane for OddCubic
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -920,7 +932,7 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn start_point(&self, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, point: ComplexNum, param: ComplexNum) -> ComplexNum
     {
         param.powf(0.5)
     }
@@ -980,7 +992,7 @@ impl ParameterPlane for CubicPer2CritMarked
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1003,7 +1015,7 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
-    fn start_point(&self, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, point: ComplexNum, param: ComplexNum) -> ComplexNum
     {
         2. / 3. * (param + 1. / param)
     }
@@ -1059,7 +1071,7 @@ impl ParameterPlane for CubicMarked2Cycle
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1091,7 +1103,7 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, point: ComplexNum, c: ComplexNum) -> ComplexNum
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
@@ -1220,7 +1232,7 @@ impl ParameterPlane for Biquadratic
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1243,7 +1255,7 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn start_point(&self, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, point: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
         ComplexNum::new(0., 0.)
     }
@@ -1275,10 +1287,12 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
     {
-        let w = z * z + c;
-        (4. * z * w, w + w)
+        let z2 = z * z;
+        let w = z2 + c;
+        let w2 = w * w;
+        (w2 + self.param, 4. * z2, w + w)
     }
 }
 
@@ -1375,7 +1389,7 @@ impl ParameterPlane for BiquadraticMult
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1398,7 +1412,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, c: ComplexNum) -> ComplexNum
     {
         -0.5 * c
     }
@@ -1433,10 +1447,18 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let w = z * z + c;
-        (4. * z * w, w + w)
+        let a = self.param / c;
+        let x0 = c + z;
+        let w = z * x0;
+        let x2 = w + a;
+        let x2z = x2 * z;
+        (
+            w * x2,
+            x0 * x2 + w * (c + z + z) + x2z,
+            w * (z - a * a) + x2z,
+        )
     }
 }
 
@@ -1469,7 +1491,7 @@ impl ParameterPlane for BurningShip
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1505,9 +1527,9 @@ impl ParameterPlane for BurningShip
     }
 
     #[inline]
-    fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
     {
-        (ONE_COMPLEX, ONE_COMPLEX) //TODO
+        (ONE_COMPLEX, ONE_COMPLEX, ONE_COMPLEX) //TODO
     }
 
     #[inline]
@@ -1603,7 +1625,7 @@ impl ParameterPlane for Sailboat
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1639,9 +1661,9 @@ impl ParameterPlane for Sailboat
     }
 
     #[inline]
-    fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        (ONE_COMPLEX, ONE_COMPLEX) //TODO
+        (ONE_COMPLEX, ONE_COMPLEX, ONE_COMPLEX) //TODO
     }
 
     #[inline]
@@ -1693,7 +1715,7 @@ impl ParameterPlane for Exponential
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1731,6 +1753,13 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        let u = z.exp();
+        (u, u + c)
+    }
+
+    #[inline]
     fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
         z.exp()
@@ -1743,9 +1772,10 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
     {
-        (z.exp(), ONE_COMPLEX)
+        let u = z.exp();
+        (u + c, u, ONE_COMPLEX)
     }
 
     #[inline]

@@ -1,7 +1,7 @@
 use crate::coloring::Coloring;
 use crate::point_grid::PointGrid;
 
-use crate::types::PointInfo;
+use crate::types::*;
 use eframe::egui::{Color32, ColorImage};
 use image::ImageBuffer;
 use ndarray::Array2;
@@ -14,13 +14,16 @@ pub trait FractalImage
 }
 
 #[derive(Clone)]
-pub struct IterPlane
+pub struct IterPlane<V, D>
 {
-    pub iter_counts: Array2<PointInfo>,
+    pub iter_counts: Array2<PointInfo<V, D>>,
     pub point_grid: PointGrid,
 }
 
-impl FractalImage for IterPlane
+impl<V, D> FractalImage for IterPlane<V, D>
+where
+    V: Norm<RealNum>,
+    D: Norm<RealNum>,
 {
     fn point_grid(&self) -> &PointGrid
     {

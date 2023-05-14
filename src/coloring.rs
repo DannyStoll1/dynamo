@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::types::PointInfo;
+use crate::types::*;
 pub mod color_types;
 pub mod coloring_algorithm;
 pub mod palette;
@@ -19,7 +19,11 @@ pub struct Coloring
 }
 impl Coloring
 {
-    #[must_use] pub fn map_color32(&self, point_info: PointInfo) -> Color32
+    #[must_use]
+    pub fn map_color32<V, D>(&self, point_info: PointInfo<V, D>) -> Color32
+    where
+        V: Norm<RealNum>,
+        D: Norm<RealNum>,
     {
         use PointInfo::{Bounded, Escaping, Periodic};
         match point_info
@@ -30,14 +34,22 @@ impl Coloring
                 preperiod,
                 multiplier,
                 final_error,
-            } => self
-                .algorithm
-                .color_periodic(self.palette, period, preperiod, multiplier, final_error),
+            } => self.algorithm.color_periodic(
+                self.palette,
+                period,
+                preperiod,
+                multiplier,
+                final_error,
+            ),
             Bounded => self.palette.in_color,
         }
     }
 
-    #[must_use] pub fn map_rgb(&self, point_info: PointInfo) -> Rgb<u8>
+    #[must_use]
+    pub fn map_rgb<V, D>(&self, point_info: PointInfo<V, D>) -> Rgb<u8>
+    where
+        V: Norm<RealNum>,
+        D: Norm<RealNum>,
     {
         use PointInfo::{Bounded, Escaping, Periodic};
         match point_info
@@ -64,7 +76,8 @@ impl Coloring
     {
         self.palette = palette;
     }
-    #[must_use] pub const fn get_algorithm(&self) -> &ColoringAlgorithm
+    #[must_use]
+    pub const fn get_algorithm(&self) -> &ColoringAlgorithm
     {
         &self.algorithm
     }

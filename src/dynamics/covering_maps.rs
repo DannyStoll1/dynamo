@@ -52,6 +52,10 @@ impl<C> ParameterPlane for CoveringMap<C>
 where
     C: ParameterPlane + Clone,
 {
+    type Var = C::Var;
+    type Param = C::Param;
+    type Deriv = C::Deriv;
+
     fn point_grid(&self) -> &PointGrid
     {
         &self.point_grid
@@ -62,12 +66,7 @@ where
         &mut self.point_grid
     }
 
-    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState
-    {
-        self.base_curve.stop_condition(iter, z)
-    }
-
-    fn early_bailout(&self, start: ComplexNum, param: ComplexNum) -> EscapeState
+    fn early_bailout(&self, start: Self::Var, param: Self::Param) -> EscapeState<Self::Var, Self::Deriv>
     {
         self.base_curve.early_bailout(start, param)
     }
@@ -87,57 +86,54 @@ where
         self.base_curve.set_max_iter(new_max_iter);
     }
 
-    fn check_periodicity(
-        &self,
-        iter: Period,
-        z0: ComplexNum,
-        z1: ComplexNum,
-        base_param: ComplexNum,
-    ) -> EscapeState
-    {
-        self.base_curve.check_periodicity(iter, z0, z1, base_param)
-    }
-
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    fn param_map(&self, c: ComplexNum) -> C::Param
     {
         if self.compose_parameterizations
         {
-            let f = self.covering_map;
-            let u = f(c);
+            let u = (self.covering_map)(c);
             self.base_curve.param_map(u)
         }
         else
         {
-            (self.covering_map)(c)
+            (self.covering_map)(c).into()
         }
     }
 
-    fn start_point(&self, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, p: ComplexNum, c: C::Param) -> C::Var
     {
-        self.base_curve.start_point(c)
+        self.base_curve.start_point(p, c)
     }
 
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         self.base_curve.map(z, c)
     }
 
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        self.base_curve.map_and_multiplier(z, c)
+    }
+
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
         self.base_curve.dynamical_derivative(z, c)
     }
 
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
         self.base_curve.parameter_derivative(z, c)
     }
 
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         self.base_curve.gradient(z, c)
     }
 
-    fn encode_escape_result(&self, state: EscapeState, base_param: ComplexNum) -> PointInfo
+    fn encode_escape_result(
+        &self,
+        state: EscapeState<C::Var, C::Deriv>,
+        base_param: C::Param,
+    ) -> PointInfo<C::Var, C::Deriv>
     {
         self.base_curve.encode_escape_result(state, base_param)
     }
@@ -152,17 +148,17 @@ where
         self.base_curve.default_coloring()
     }
 
-    fn critical_points(&self, param: ComplexNum) -> ComplexVec
+    fn critical_points(&self, param: C::Param) -> Vec<Self::Var>
     {
         self.base_curve.critical_points(param)
     }
 
-    fn cycles(&self, param: ComplexNum, period: Period) -> ComplexVec
+    fn cycles(&self, param: C::Param, period: Period) -> Vec<Self::Var>
     {
         self.base_curve.cycles(param, period)
     }
 
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, param: C::Param) -> Bounds
     {
         self.base_curve.default_julia_bounds(param)
     }

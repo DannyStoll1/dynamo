@@ -23,3 +23,4 @@ thread_local = "1.1.7"
 num_cpus = "1.15.0"
 fractal_derive = { path = "../fractal_derive" }
 criterion = "0.4.0"
+derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }

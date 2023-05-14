@@ -1,6 +1,6 @@
 use super::color_types::Hsv;
 use super::palette::ColorPalette;
-use crate::types::{ComplexNum, IterCount, Period, TAU};
+use crate::types::*;
 use epaint::Color32;
 
 #[derive(Clone, Copy, Debug)]
@@ -19,9 +19,9 @@ pub enum ColoringAlgorithm
 }
 impl ColoringAlgorithm
 {
-    fn multiplier_coloring_rate(multiplier: ComplexNum, fill_rate: f64) -> f64
+    fn multiplier_coloring_rate(mult_norm: RealNum, fill_rate: RealNum) -> f64
     {
-        let scaling_rate = multiplier.norm();
+        let scaling_rate = mult_norm;
 
         if scaling_rate > 1e-10
         {
@@ -33,14 +33,18 @@ impl ColoringAlgorithm
         }
     }
 
-    #[must_use] pub fn color_periodic(
+    #[must_use]
+    pub fn color_periodic<V, D>(
         &self,
         palette: ColorPalette,
         period: Period,
         preperiod: Period,
-        multiplier: ComplexNum,
-        final_error: ComplexNum,
+        multiplier: D,
+        final_error: V,
     ) -> Color32
+    where
+        V: Norm<RealNum>,
+        D: Norm<RealNum>,
     {
         match self
         {
@@ -82,8 +86,7 @@ impl ColoringAlgorithm
                 if mult_norm <= 1e-10
                 {
                     let w = 2.
-                        * (final_error.norm_sqr().log(*periodicity_tolerance)).log2()
-                            as IterCount;
+                        * (final_error.norm_sqr().log(*periodicity_tolerance)).log2() as IterCount;
                     let v = hue.mul_add(-w, IterCount::from(preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
@@ -96,10 +99,10 @@ impl ColoringAlgorithm
                 }
                 else
                 {
-                    let coloring_rate = Self::multiplier_coloring_rate(multiplier, *fill_rate);
+                    let coloring_rate = Self::multiplier_coloring_rate(mult_norm, *fill_rate);
 
-                    let mut w = -(final_error.norm_sqr() / periodicity_tolerance)
-                        .log(multiplier.norm()) as IterCount;
+                    let mut w = -(final_error.norm_sqr() / periodicity_tolerance).log(mult_norm)
+                        as IterCount;
                     if w.is_infinite() || w.is_nan()
                     {
                         w = -0.2;

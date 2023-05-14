@@ -1,11 +1,11 @@
 use super::pane::ColoredPoints;
+use crate::coloring::palette::DiscretePalette;
 use crate::dynamics::ParameterPlane;
 use crate::types::*;
 use eframe::egui::Color32;
-use crate::coloring::palette::DiscretePalette;
 
 #[derive(Clone, Debug, Default)]
-pub(super) struct MarkingMode
+pub struct MarkingMode
 {
     pub critical: bool,
     pub cycles: Vec<bool>,
@@ -14,14 +14,16 @@ pub(super) struct MarkingMode
 
 impl MarkingMode
 {
-    pub fn compute(&self, plane: &dyn ParameterPlane) -> ColoredPoints
+    pub fn compute<P>(&self, plane: &P) -> ColoredPoints
+    where
+        P: ParameterPlane + 'static,
     {
         let mut points = vec![];
         if self.critical
         {
             let crit_pts = plane.critical_points(plane.get_param());
             let color = Color32::RED;
-            points.extend(crit_pts.iter().map(|z| (*z, color)));
+            points.extend(crit_pts.iter().map(|z| ((*z).into(), color)));
         }
 
         self.cycles
@@ -32,7 +34,7 @@ impl MarkingMode
                 {
                     let per_pts = plane.cycles(plane.get_param(), 1 + period as Period);
                     let color = self.palette.map_color32(period as f32, 1.);
-                    points.extend(per_pts.iter().map(|z| (*z, color)));
+                    points.extend(per_pts.iter().map(|z| ((*z).into(), color)));
                 }
             });
 

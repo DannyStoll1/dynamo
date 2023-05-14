@@ -1,14 +1,15 @@
 use super::ImageFrame;
 use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalette, Coloring};
+use crate::dynamics::julia::JuliaSet;
 use crate::dynamics::ParameterPlane;
 use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::profiles::QuadRatPer2;
-use crate::types::{ComplexNum, ComplexVec, OrbitInfo, RealNum};
+use crate::types::*;
 
 use super::marked_points::MarkingMode;
 
-use eframe::egui::{Color32, Pos2, Rect, Stroke, Ui};
+use eframe::egui::{Color32, Context, CursorIcon, InputState, Pos2, Rect, Stroke, Ui};
 use egui_extras::RetainedImage;
 use epaint::{CircleShape, PathShape};
 
@@ -17,25 +18,22 @@ pub type ColoredPoints = Vec<ColoredPoint>;
 pub type ColoredCurve = (Vec<ComplexNum>, Color32);
 
 #[derive(Clone, Copy, Debug)]
-pub(super) enum RedrawMessage
+pub enum RedrawMessage
 {
     DoNothing,
     Redraw,
     Recompute,
 }
 
-pub(super) enum PaneID
+pub enum PaneID
 {
     Parent,
     Child,
 }
 
-pub(super) trait Pane
+pub trait Pane
 {
-    fn plane(&self) -> &dyn ParameterPlane;
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>;
-
-    fn get_task(&self) -> RedrawMessage;
+    fn get_task(&self) -> &RedrawMessage;
     fn set_task(&mut self, new_task: RedrawMessage);
 
     fn get_frame(&self) -> &ImageFrame;
@@ -44,19 +42,14 @@ pub(super) trait Pane
     fn get_coloring(&self) -> &Coloring;
     fn get_coloring_mut(&mut self) -> &mut Coloring;
 
-    fn get_iter_plane(&self) -> &IterPlane;
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane;
-
     fn select_point(&mut self, point: ComplexNum);
     fn get_selection(&self) -> ComplexNum;
 
     fn get_marked_curves(&self) -> &Vec<ColoredCurve>;
     fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>;
 
-    fn get_marked_info(&self) -> &Option<OrbitInfo>;
-    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo>;
-    fn set_marked_info(&mut self, info: OrbitInfo);
-    fn del_marked_info(&mut self);
+    fn get_image_frame(&self) -> &ImageFrame;
+    fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
 
     fn mark_curve(&mut self, zs: ComplexVec, color: Color32)
     {
@@ -73,7 +66,7 @@ pub(super) trait Pane
     fn put_marked_curves(&self, ui: &mut Ui)
     {
         let frame = self.get_frame();
-        let grid = self.plane().point_grid();
+        let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
         for (zs, color) in self.get_marked_curves().iter()
         {
@@ -108,7 +101,7 @@ pub(super) trait Pane
     fn put_marked_points(&self, ui: &mut Ui)
     {
         let frame = self.get_frame();
-        let grid = self.plane().point_grid();
+        let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
         for (z, color) in self.get_marked_points().iter()
         {
@@ -118,20 +111,11 @@ pub(super) trait Pane
         }
     }
 
-    fn name(&self) -> String
-    {
-        self.plane().name()
-    }
+    fn name(&self) -> String;
 
-    fn grid(&self) -> &PointGrid
-    {
-        self.plane().point_grid()
-    }
+    fn grid(&self) -> &PointGrid;
 
-    fn grid_mut(&mut self) -> &mut PointGrid
-    {
-        self.plane_mut().point_grid_mut()
-    }
+    fn grid_mut(&mut self) -> &mut PointGrid;
 
     fn rescale(&mut self, new_bounds: Bounds)
     {
@@ -190,12 +174,12 @@ pub(super) trait Pane
 
     fn recompute(&mut self);
 
-    fn redraw(&mut self)
-    {
-        let image = self.get_iter_plane().render(self.get_coloring());
-        let image_frame = self.get_frame_mut();
-        image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
-    }
+    fn redraw(&mut self);
+    // {
+    //     let image = self.get_iter_plane().render(self.get_coloring());
+    //     let image_frame = self.get_frame_mut();
+    //     image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
+    // }
 
     fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
     {
@@ -252,209 +236,41 @@ pub(super) trait Pane
         }
     }
 
+    fn select_preperiod_smooth_coloring(&mut self);
+
+    fn marking_mode(&self) -> &MarkingMode;
+    fn marking_mode_mut(&mut self) -> &mut MarkingMode;
+
+    fn increase_max_iter(&mut self);
+    fn decrease_max_iter(&mut self);
+
     // TODO: remove unnecessry mutation
-    fn save_image(&mut self, img_width: usize, filename: &str)
-    {
-        let orig_width = self.grid().res_x;
-        self.grid_mut().resize_x(img_width);
-        let iter_plane = self.plane().compute();
-        let filepath = format!("images/{filename}");
-        iter_plane.save(self.get_coloring(), filepath);
-        self.grid_mut().resize_x(orig_width);
-    }
+    fn save_image(&mut self, img_width: usize, filename: &str);
+
+    fn mark_orbit_and_info(&mut self, pointer_value: ComplexNum);
+    fn describe_marked_info(&self) -> String;
 }
 
-pub(super) struct Parent
-{
-    pub plane: Box<dyn ParameterPlane>,
-    pub coloring: Coloring,
-    iter_plane: IterPlane,
-    pub image_frame: ImageFrame,
-    task: RedrawMessage,
-    selection: ComplexNum,
-    marked_curves: Vec<ColoredCurve>,
-    marked_points: ColoredPoints,
-    marked_info: Option<OrbitInfo>,
-}
-impl Parent
-{
-    #[must_use]
-    pub fn new(plane: Box<dyn ParameterPlane>, coloring: Coloring) -> Self
-    {
-        let iter_plane = plane.compute();
-        let task = RedrawMessage::Redraw;
-        let selection = ComplexNum::new(-1., 0.);
-
-        let image =
-            RetainedImage::from_color_image("parameter plane", iter_plane.render(&coloring));
-        let frame = ImageFrame {
-            image,
-            region: Rect::NOTHING,
-        };
-        let marked_curves = vec![];
-        let marked_points = vec![];
-        Self {
-            plane,
-            coloring,
-            iter_plane,
-            image_frame: frame,
-            task,
-            selection,
-            marked_curves,
-            marked_points,
-            marked_info: None,
-        }
-    }
-}
-
-impl<P> From<P> for Parent
+pub(super) struct WindowPane<P>
 where
     P: ParameterPlane + 'static,
 {
-    fn from(plane: P) -> Self
-    {
-        let coloring = plane.default_coloring();
-        Self::new(Box::new(plane), coloring)
-    }
-}
-
-impl Pane for Parent
-{
-    #[inline]
-    fn plane(&self) -> &dyn ParameterPlane
-    {
-        &*self.plane
-    }
-    #[inline]
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>
-    {
-        &mut self.plane
-    }
-    #[inline]
-    fn get_task(&self) -> RedrawMessage
-    {
-        self.task
-    }
-    #[inline]
-    fn set_task(&mut self, new_task: RedrawMessage)
-    {
-        self.task = new_task;
-    }
-    #[inline]
-    fn get_frame(&self) -> &ImageFrame
-    {
-        &self.image_frame
-    }
-    #[inline]
-    fn get_frame_mut(&mut self) -> &mut ImageFrame
-    {
-        &mut self.image_frame
-    }
-    #[inline]
-    fn get_iter_plane(&self) -> &IterPlane
-    {
-        &self.iter_plane
-    }
-    #[inline]
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane
-    {
-        &mut self.iter_plane
-    }
-    #[inline]
-    fn get_marked_curves(&self) -> &Vec<ColoredCurve>
-    {
-        &self.marked_curves
-    }
-    #[inline]
-    fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>
-    {
-        &mut self.marked_curves
-    }
-    #[inline]
-    fn get_marked_points(&self) -> &ColoredPoints
-    {
-        &self.marked_points
-    }
-    #[inline]
-    fn get_marked_points_mut(&mut self) -> &mut ColoredPoints
-    {
-        &mut self.marked_points
-    }
-    #[inline]
-    fn get_marked_info(&self) -> &Option<OrbitInfo>
-    {
-        &self.marked_info
-    }
-    #[inline]
-    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo>
-    {
-        &mut self.marked_info
-    }
-    #[inline]
-    fn set_marked_info(&mut self, info: OrbitInfo)
-    {
-        self.marked_info = Some(info);
-    }
-    #[inline]
-    fn del_marked_info(&mut self)
-    {
-        self.marked_info = None;
-    }
-    #[inline]
-    fn get_coloring(&self) -> &Coloring
-    {
-        &self.coloring
-    }
-    #[inline]
-    fn get_coloring_mut(&mut self) -> &mut Coloring
-    {
-        &mut self.coloring
-    }
-    #[inline]
-    fn get_selection(&self) -> ComplexNum
-    {
-        self.selection
-    }
-    #[inline]
-    fn select_point(&mut self, point: ComplexNum)
-    {
-        self.selection = point;
-    }
-    #[inline]
-    fn recompute(&mut self)
-    {
-        self.iter_plane = self.plane.compute();
-    }
-}
-
-impl Default for Parent
-{
-    fn default() -> Self
-    {
-        // let plane = Box::new(QuadRatPer2::new_default(1024, 1024).misiurewicz_curve(2,1));
-        let plane = Box::new(QuadRatPer2::new_default(1024, 1024));
-        let coloring = Coloring::default();
-
-        Self::new(plane, coloring)
-    }
-}
-
-pub(super) struct Child
-{
-    pub plane: Box<dyn ParameterPlane>,
+    pub plane: P,
     pub coloring: Coloring,
-    iter_plane: IterPlane,
+    iter_plane: IterPlane<P::Var, P::Deriv>,
     pub image_frame: ImageFrame,
     task: RedrawMessage,
     selection: ComplexNum,
     marked_curves: Vec<ColoredCurve>,
     marked_points: ColoredPoints,
-    marked_info: Option<OrbitInfo>,
+    marked_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
     pub marking_mode: MarkingMode,
 }
-impl Child
+impl<P> WindowPane<P>
+where
+    P: ParameterPlane + 'static,
 {
-    pub fn set_param(&mut self, new_param: ComplexNum)
+    pub fn set_param(&mut self, new_param: P::Param)
     {
         self.plane.set_param(new_param);
         self.schedule_recompute();
@@ -462,7 +278,7 @@ impl Child
     }
 
     #[must_use]
-    pub fn new(plane: Box<dyn ParameterPlane>, coloring: Coloring) -> Self
+    pub fn new(plane: P, coloring: Coloring) -> Self
     {
         let iter_plane = plane.compute();
         let task = RedrawMessage::Redraw;
@@ -491,35 +307,59 @@ impl Child
             marking_mode: MarkingMode::default(),
         }
     }
+
+    #[inline]
+    fn plane(&self) -> &P
+    {
+        &self.plane
+    }
+    #[inline]
+    fn plane_mut(&mut self) -> &mut P
+    {
+        &mut self.plane
+    }
+
+    #[inline]
+    fn get_marked_info(&self) -> &Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    {
+        &self.marked_info
+    }
+    #[inline]
+    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    {
+        &mut self.marked_info
+    }
+    #[inline]
+    fn set_marked_info(&mut self, info: OrbitInfo<P::Var, P::Param, P::Deriv>)
+    {
+        self.marked_info = Some(info);
+    }
+    #[inline]
+    fn del_marked_info(&mut self)
+    {
+        self.marked_info = None;
+    }
 }
 
-impl<P> From<P> for Child
+impl<P> From<P> for WindowPane<P>
 where
     P: ParameterPlane + 'static,
 {
     fn from(plane: P) -> Self
     {
         let coloring = plane.default_coloring();
-        Self::new(Box::new(plane), coloring)
+        Self::new(plane, coloring)
     }
 }
 
-impl Pane for Child
+impl<P> Pane for WindowPane<P>
+where
+    P: ParameterPlane + 'static,
 {
     #[inline]
-    fn plane(&self) -> &dyn ParameterPlane
+    fn get_task(&self) -> &RedrawMessage
     {
-        &*self.plane
-    }
-    #[inline]
-    fn plane_mut(&mut self) -> &mut Box<dyn ParameterPlane>
-    {
-        &mut self.plane
-    }
-    #[inline]
-    fn get_task(&self) -> RedrawMessage
-    {
-        self.task
+        &self.task
     }
     #[inline]
     fn set_task(&mut self, new_task: RedrawMessage)
@@ -547,16 +387,6 @@ impl Pane for Child
         &mut self.image_frame
     }
     #[inline]
-    fn get_iter_plane(&self) -> &IterPlane
-    {
-        &self.iter_plane
-    }
-    #[inline]
-    fn get_iter_plane_mut(&mut self) -> &mut IterPlane
-    {
-        &mut self.iter_plane
-    }
-    #[inline]
     fn get_marked_curves(&self) -> &Vec<ColoredCurve>
     {
         &self.marked_curves
@@ -577,26 +407,6 @@ impl Pane for Child
         &mut self.marked_points
     }
     #[inline]
-    fn get_marked_info(&self) -> &Option<OrbitInfo>
-    {
-        &self.marked_info
-    }
-    #[inline]
-    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo>
-    {
-        &mut self.marked_info
-    }
-    #[inline]
-    fn set_marked_info(&mut self, info: OrbitInfo)
-    {
-        self.marked_info = Some(info);
-    }
-    #[inline]
-    fn del_marked_info(&mut self)
-    {
-        self.marked_info = None;
-    }
-    #[inline]
     fn get_coloring(&self) -> &Coloring
     {
         &self.coloring
@@ -607,9 +417,29 @@ impl Pane for Child
         &mut self.coloring
     }
     #[inline]
+    fn get_image_frame(&self) -> &ImageFrame
+    {
+        &self.image_frame
+    }
+    #[inline]
+    fn get_image_frame_mut(&mut self) -> &mut ImageFrame
+    {
+        &mut self.image_frame
+    }
+    #[inline]
     fn get_selection(&self) -> ComplexNum
     {
         self.selection
+    }
+    #[inline]
+    fn marking_mode(&self) -> &MarkingMode
+    {
+        &self.marking_mode
+    }
+    #[inline]
+    fn marking_mode_mut(&mut self) -> &mut MarkingMode
+    {
+        &mut self.marking_mode
     }
     #[inline]
     fn select_point(&mut self, point: ComplexNum)
@@ -617,11 +447,23 @@ impl Pane for Child
         self.selection = point;
         self.schedule_recompute();
     }
+    fn increase_max_iter(&mut self)
+    {
+        let iters = self.plane.max_iter_mut();
+        *iters /= 2;
+        self.schedule_recompute();
+    }
+    fn decrease_max_iter(&mut self)
+    {
+        let iters = self.plane.max_iter_mut();
+        *iters /= 2;
+        self.schedule_recompute();
+    }
     #[inline]
     fn redraw(&mut self)
     {
         self.marked_points = self.marking_mode.compute(self.plane());
-        let image = self.get_iter_plane().render(self.get_coloring());
+        let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     }
@@ -631,8 +473,163 @@ impl Pane for Child
         self.iter_plane = self.plane.compute();
     }
 
+    fn select_preperiod_smooth_coloring(&mut self)
+    {
+        let coloring_algorithm = self.plane.preperiod_smooth_coloring();
+        self.set_coloring_algorithm(coloring_algorithm);
+    }
+
+    fn save_image(&mut self, img_width: usize, filename: &str)
+    {
+        let orig_width = self.grid().res_x;
+        self.grid_mut().resize_x(img_width);
+        let iter_plane = self.plane().compute();
+        let filepath = format!("images/{filename}");
+        iter_plane.save(self.get_coloring(), filepath);
+        self.grid_mut().resize_x(orig_width);
+    }
+
+    fn mark_orbit_and_info(&mut self, pointer_value: ComplexNum)
+    {
+        let (orbit, info) = self.plane.get_orbit_and_info(pointer_value);
+        let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
+        self.mark_curve(orbit_pts, Color32::GREEN);
+        self.set_marked_info(info);
+    }
+
+    fn describe_marked_info(&self) -> String
+    {
+        self.get_marked_info()
+            .map_or_else(String::new, |orbit_info| orbit_info.to_string())
+    }
+
     fn name(&self) -> String
     {
         format!("{}: c = {}", self.plane.name(), self.plane.get_param())
+    }
+}
+
+pub trait PanePair
+{
+    fn parent(&self) -> &dyn Pane;
+    fn parent_mut(&mut self) -> &mut dyn Pane;
+    fn child(&self) -> &dyn Pane;
+    fn child_mut(&mut self) -> &mut dyn Pane;
+    fn handle_mouse(&mut self, ctx: &Context);
+    fn toggle_live_mode(&mut self);
+}
+
+pub struct WindowPanePair<P, J>
+where
+    P: ParameterPlane + 'static,
+    J: ParameterPlane<Param = P::Param> + 'static,
+{
+    parent: WindowPane<P>,
+    child: WindowPane<J>,
+    active_pane: PaneID,
+    live_mode: bool,
+}
+
+impl<P, J> WindowPanePair<P, J>
+where
+    P: ParameterPlane,
+    J: ParameterPlane<Param = P::Param> + 'static,
+{
+    pub fn new(parent: P, child: J) -> Self
+    {
+        Self {
+            parent: parent.into(),
+            child: child.into(),
+            active_pane: PaneID::Parent,
+            live_mode: false,
+        }
+    }
+
+    fn set_child_param(&mut self, new_param: P::Param)
+    {
+        let old_bounds = &self.child.grid().bounds;
+        let mut new_bounds = self.parent.plane.default_julia_bounds(new_param);
+        let zoom_factor = old_bounds.range_x() / new_bounds.range_x();
+        new_bounds.zoom(zoom_factor, new_bounds.center());
+        self.child.grid_mut().change_bounds(new_bounds);
+        self.child.set_param(new_param);
+    }
+}
+
+impl<P, J> PanePair for WindowPanePair<P, J>
+where
+    P: ParameterPlane,
+    J: ParameterPlane<Param = P::Param> + 'static,
+{
+    fn parent(&self) -> &dyn Pane
+    {
+        &self.parent
+    }
+    fn parent_mut(&mut self) -> &mut dyn Pane
+    {
+        &mut self.parent
+    }
+    fn child(&self) -> &dyn Pane
+    {
+        &self.child
+    }
+    fn child_mut(&mut self) -> &mut dyn Pane
+    {
+        &mut self.child
+    }
+
+    fn handle_mouse(&mut self, ctx: &Context)
+    {
+        let clicked = ctx.input(|i| i.pointer.any_click());
+        let zoom_factor = ctx.input(InputState::zoom_delta);
+
+        if let Some(pointer_pos) = ctx.pointer_latest_pos()
+        {
+            if self.parent().frame_contains_pixel(pointer_pos)
+            {
+                ctx.set_cursor_icon(CursorIcon::Crosshair);
+                self.active_pane = PaneID::Parent;
+                let reselect_point = self.live_mode || clicked;
+                let pointer_value = self.parent().map_pixel(pointer_pos);
+                self.parent_mut()
+                    .process_mouse_input(pointer_value, zoom_factor, reselect_point);
+                if reselect_point
+                {
+                    let child_param = self.parent.plane.param_map(pointer_value);
+                    self.set_child_param(child_param);
+                }
+
+                if clicked
+                {
+                    // self.consume_click();
+                    self.parent_mut().clear_marked_curves();
+                    self.parent_mut().mark_orbit_and_info(pointer_value);
+                }
+            }
+            else if self.child().frame_contains_pixel(pointer_pos)
+            {
+                ctx.set_cursor_icon(CursorIcon::Crosshair);
+                self.active_pane = PaneID::Child;
+                let pointer_value = self.child().map_pixel(pointer_pos);
+                self.child_mut()
+                    .process_mouse_input(pointer_value, zoom_factor, false);
+
+                if clicked
+                {
+                    // self.consume_click();
+                    self.child_mut().clear_marked_curves();
+                    self.child_mut().mark_orbit_and_info(pointer_value);
+                }
+            }
+            else
+            {
+                ctx.set_cursor_icon(CursorIcon::Default);
+            }
+        }
+    }
+
+    fn toggle_live_mode(&mut self)
+    {
+        self.live_mode ^= true;
     }
 }

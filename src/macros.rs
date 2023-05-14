@@ -40,6 +40,15 @@ macro_rules! fractal_impl {
             Self::with_res_y(res_y, max_iter, bounds)
         }
     };
+    ($min_x: expr, $max_x: expr, $min_y: expr, $max_y: expr) => {
+        const DEFAULT_BOUNDS: Bounds = Bounds {
+            min_x: $min_x,
+            max_x: $max_x,
+            min_y: $min_y,
+            max_y: $max_y,
+        };
+        fractal_impl!();
+    };
 }
 
 macro_rules! point_grid_getters {
@@ -60,6 +69,10 @@ macro_rules! point_grid_getters {
 
 macro_rules! parameter_plane_impl {
     () => {
+        type Var = ComplexNum;
+        type Param = ComplexNum;
+        type Deriv = ComplexNum;
+
         crate::macros::point_grid_getters!();
 
         #[inline]
@@ -135,16 +148,17 @@ macro_rules! min {
 
 macro_rules! profile_imports {
     () => {
-        use crate::macros::{fractal_impl, parameter_plane_impl, default_name};
-        use crate::point_grid::{PointGrid, Bounds};
-        use crate::types::*;
+        use crate::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
         use crate::dynamics::ParameterPlane;
-        use crate::dynamics::covering_maps::{HasDynamicalCovers, CoveringMap};
+        use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
+        use crate::point_grid::{Bounds, PointGrid};
+        use crate::types::*;
         use std::any::type_name;
-    }
+    };
 }
 
-
-pub(crate) use {default_name, fractal_impl, parameter_plane_impl, point_grid_getters, profile_imports};
+pub(crate) use {
+    default_name, fractal_impl, parameter_plane_impl, point_grid_getters, profile_imports,
+};
 
 pub(crate) use {max, min};
