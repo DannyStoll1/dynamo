@@ -9,12 +9,11 @@ type DefaultProfile = QuadRatPer2;
 
 use eframe::egui;
 use egui::Key;
-use egui_extras::{Column, TableBuilder};
-use input_macro::input;
 
 pub mod image_frame;
 pub mod marked_points;
 pub mod pane;
+pub mod keyboard_shortcuts;
 use image_frame::ImageFrame;
 use pane::*;
 
@@ -40,205 +39,6 @@ pub struct FractalApp
 
 impl FractalApp
 {
-    pub fn parent(&self) -> &dyn Pane
-    {
-        self.pane_pair.parent()
-    }
-    pub fn parent_mut(&mut self) -> &mut dyn Pane
-    {
-        self.pane_pair.parent_mut()
-    }
-    pub fn child(&self) -> &dyn Pane
-    {
-        self.pane_pair.child()
-    }
-    pub fn child_mut(&mut self) -> &mut dyn Pane
-    {
-        self.pane_pair.child_mut()
-    }
-    pub fn randomize_palette(&mut self)
-    {
-        let palette = ColorPalette::new_random(0.45, 0.38);
-        self.parent_mut().change_palette(palette);
-        self.child_mut().change_palette(palette);
-    }
-
-    pub fn set_palette(&mut self, palette: ColorPalette)
-    {
-        self.parent_mut().change_palette(palette);
-        self.child_mut().change_palette(palette);
-    }
-
-    pub fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
-    {
-        self.parent_mut().set_coloring_algorithm(coloring_algorithm);
-        self.child_mut().set_coloring_algorithm(coloring_algorithm);
-    }
-
-    fn process_tasks(&mut self)
-    {
-        self.parent_mut().process_task();
-        self.child_mut().process_task();
-    }
-
-    fn handle_input(&mut self, ctx: &egui::Context)
-    {
-        if ctx.input(|i| i.key_pressed(Key::R))
-        {
-            self.randomize_palette();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::B))
-        {
-            let black_palette = ColorPalette::black(32.);
-            self.set_palette(black_palette);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::W))
-        {
-            let white_palette = ColorPalette::white(32.);
-            self.set_palette(white_palette);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::P))
-        {
-            self.child_mut().marking_mode_mut().toggle_critical();
-            self.child_mut().schedule_redraw();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Y))
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(1);
-            self.child_mut().schedule_redraw();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::U))
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(2);
-            self.child_mut().schedule_redraw();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::ArrowUp))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.scale_palette(1.25);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::ArrowDown))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.scale_palette(0.8);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::ArrowLeft))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.shift_palette(-0.02);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::ArrowRight))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.shift_palette(0.02);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Z))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.zoom(0.8, pane.get_selection());
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::V))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.zoom(1.25, pane.get_selection());
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::PlusEquals))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            let selection = pane.get_selection();
-            pane.grid_mut().recenter(selection);
-            pane.schedule_recompute();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Num0))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Num1))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Period);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Num2))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Num3))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Num4))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::Num5))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.select_preperiod_smooth_coloring();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::C))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.clear_marked_curves();
-            pane.clear_marked_points();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::L))
-        {
-            self.pane_pair.toggle_live_mode();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::S))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            let filename = input!("Enter image filename to save: ");
-            match input!("Enter width of image: ").parse::<usize>()
-            {
-                Ok(width) =>
-                {
-                    pane.save_image(width, &filename);
-                    println!("Image saved to images/{}", &filename);
-                }
-                Err(e) => println!("Error parsing width: {e:?}"),
-            }
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::N))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.increase_max_iter();
-        }
-
-        if ctx.input(|i| i.key_pressed(Key::M))
-        {
-            let pane = self.pane_pair.get_active_pane_mut();
-            pane.decrease_max_iter();
-        }
-        self.pane_pair.handle_mouse(ctx);
-    }
-
     fn consume_click(&mut self)
     {
         self.click_used = true;
@@ -258,17 +58,7 @@ impl FractalApp
         ui.menu_button("File", |ui| {
             if ui.button("Save").clicked()
             {
-                let pane = self.pane_pair.get_active_pane_mut();
-                let filename = input!("Enter image filename to save: ");
-                match input!("Enter width of image: ").parse::<usize>()
-                {
-                    Ok(width) =>
-                    {
-                        pane.save_image(width, &filename);
-                        println!("Image saved to images/{}", &filename);
-                    }
-                    Err(e) => println!("Error parsing width: {:?}", e),
-                }
+                self.pane_pair.save_active_pane();
                 self.consume_click();
             }
         });
@@ -289,16 +79,16 @@ impl FractalApp
                 if ui.button("Black").clicked()
                 {
                     let black_palette = ColorPalette::black(32.);
-                    self.set_palette(black_palette);
+                    self.pane_pair.set_palette(black_palette);
                 }
                 else if ui.button("White").clicked()
                 {
                     let white_palette = ColorPalette::white(32.);
-                    self.set_palette(white_palette);
+                    self.pane_pair.set_palette(white_palette);
                 }
                 else if ui.button("Random").clicked()
                 {
-                    self.randomize_palette();
+                    self.pane_pair.randomize_palette();
                 }
                 else
                 {
@@ -310,28 +100,28 @@ impl FractalApp
             ui.menu_button("Algorithm", |ui| {
                 if ui.button("Solid").clicked()
                 {
-                    self.set_coloring_algorithm(ColoringAlgorithm::Solid);
+                    self.pane_pair.set_coloring_algorithm(ColoringAlgorithm::Solid);
                 }
                 else if ui.button("Period").clicked()
                 {
-                    self.set_coloring_algorithm(ColoringAlgorithm::Period);
+                    self.pane_pair.set_coloring_algorithm(ColoringAlgorithm::Period);
                 }
                 else if ui.button("Period and Multiplier").clicked()
                 {
-                    self.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+                    self.pane_pair.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
                 }
                 else if ui.button("Multiplier").clicked()
                 {
-                    self.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+                    self.pane_pair.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
                 }
                 else if ui.button("Preperiod").clicked()
                 {
-                    self.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+                    self.pane_pair.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
                 }
                 else if ui.button("Preperiod (smooth)").clicked()
                 {
-                    self.parent_mut().select_preperiod_smooth_coloring();
-                    self.child_mut().select_preperiod_smooth_coloring();
+                    self.pane_pair.parent_mut().select_preperiod_smooth_coloring();
+                    self.pane_pair.child_mut().select_preperiod_smooth_coloring();
                 }
                 else
                 {
@@ -594,7 +384,7 @@ impl FractalApp
     where
         T: ParameterPlane + Clone + 'static,
     {
-        let res_y = self.parent().grid().res_y;
+        let res_y = self.pane_pair.parent().grid().res_y;
         let max_iters = 2048;
 
         let parent_plane = create_plane(res_y, max_iters);
@@ -606,13 +396,6 @@ impl FractalApp
         );
 
         self.pane_pair = Box::new(WindowPanePair::new(parent_plane, child_plane));
-
-        self.parent_mut().select_point(selected_point);
-        self.parent_mut().clear_marked_curves();
-        self.child_mut().clear_marked_curves();
-
-        self.parent_mut().schedule_recompute();
-        self.child_mut().schedule_recompute();
     }
 }
 
@@ -625,7 +408,7 @@ impl Default for FractalApp
         let parameter_plane = DefaultProfile::new_default(height, 2048);
         // let parameter_plane = BiquadraticMult::new_default(height, 2048, (0.5).into());
 
-        let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (2_f64.sqrt()).into(), 1024);
+        let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (0.).into(), 1024);
         // let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (1.,0.).into(), 1024);
 
         let parent = parameter_plane;
@@ -646,52 +429,9 @@ impl eframe::App for FractalApp
     {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.show_menu(ui);
-            self.handle_input(ctx);
-            self.process_tasks();
-
-            TableBuilder::new(ui)
-                .column(Column::auto().resizable(true))
-                .column(Column::remainder())
-                .vscroll(false)
-                .header(20.0, |mut header| {
-                    header.col(|ui| {
-                        ui.heading(self.parent().name());
-                    });
-                    header.col(|ui| {
-                        ui.heading(self.child().name());
-                    });
-                })
-                .body(|mut body| {
-                    body.row(
-                        self.parent().get_image_frame().height() as f32,
-                        |mut row| {
-                            row.col(|ui| {
-                                self.parent_mut().get_image_frame_mut().put(ui);
-                                self.parent_mut().put_marked_curves(ui);
-                                self.parent_mut().put_marked_points(ui);
-                            });
-                            row.col(|ui| {
-                                self.child_mut().get_image_frame_mut().put(ui);
-                                self.child_mut().put_marked_curves(ui);
-                                self.child_mut().put_marked_points(ui);
-                            });
-                        },
-                    );
-                    body.row(80., |mut row| {
-                        row.col(|ui| {
-                            let orbit_desc = self
-                                .parent()
-                                .describe_marked_info();
-                            ui.label(orbit_desc);
-                        });
-                        row.col(|ui| {
-                            let orbit_desc = self
-                                .child()
-                                .describe_marked_info();
-                            ui.label(orbit_desc);
-                        });
-                    });
-                });
+            self.pane_pair.handle_input(ctx);
+            self.pane_pair.process_tasks();
+            self.pane_pair.show(ui);
         });
         self.click_used = false;
     }

@@ -1037,11 +1037,19 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
+    fn critical_points(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        let u = c + c.inv();
+        vec![(0.).into(), TWO_THIRDS * u]
+    }
+
+    #[inline]
     fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
     {
         Bounds::square(2.2, param / 2.)
     }
 }
+
 // Cubic polynomials with 2-cycle 0 <-> 1
 #[derive(Clone, Debug)]
 pub struct CubicMarked2Cycle

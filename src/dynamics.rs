@@ -150,11 +150,17 @@ pub trait ParameterPlane: Sync + Send + DynClone
 
     fn compute_escape_times(&self) -> Array2<PointInfo<Self::Var, Self::Deriv>>
     {
+        let mut iter_counts = Array2::from_elem(self.point_grid().shape(), PointInfo::Bounded);
+        self.compute_escape_times_into(&mut iter_counts);
+        iter_counts
+    }
+
+    fn compute_escape_times_into(&self, iter_counts: &mut Array2<PointInfo<Self::Var, Self::Deriv>>)
+    {
         let orbits = ThreadLocal::new();
 
         let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
 
-        let mut iter_counts = Array2::from_elem(self.point_grid().shape(), PointInfo::Bounded);
         iter_counts
             .axis_chunks_iter_mut(Axis(1), chunk_size)
             .enumerate()
@@ -186,7 +192,6 @@ pub trait ParameterPlane: Sync + Send + DynClone
                     *count = self.encode_escape_result(result, param);
                 });
             });
-        iter_counts
     }
 
     fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>
@@ -196,6 +201,11 @@ pub trait ParameterPlane: Sync + Send + DynClone
             iter_counts,
             point_grid: self.point_grid().clone(),
         }
+    }
+
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Var, Self::Deriv>)
+    {
+        self.compute_escape_times_into(&mut iter_plane.iter_counts);
     }
 
     #[inline]

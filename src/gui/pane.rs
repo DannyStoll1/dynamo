@@ -6,11 +6,13 @@ use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::profiles::QuadRatPer2;
 use crate::types::*;
+use input_macro::input;
 
 use super::marked_points::MarkingMode;
+use super::keyboard_shortcuts::*;
 
-use eframe::egui::{Color32, Context, CursorIcon, InputState, Pos2, Rect, Stroke, Ui};
-use egui_extras::RetainedImage;
+use eframe::egui::{Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, Stroke, Ui};
+use egui_extras::{RetainedImage, Column, TableBuilder};
 use epaint::{CircleShape, PathShape};
 
 pub type ColoredPoint = (ComplexNum, Color32);
@@ -23,6 +25,7 @@ pub enum RedrawMessage
     DoNothing,
     Redraw,
     Recompute,
+    Compute,
 }
 
 pub enum PaneID
@@ -120,12 +123,20 @@ pub trait Pane
     fn rescale(&mut self, new_bounds: Bounds)
     {
         self.grid_mut().change_bounds(new_bounds);
-        self.schedule_recompute();
+        self.schedule_compute();
+    }
+
+    fn schedule_compute(&mut self)
+    {
+        self.set_task(RedrawMessage::Compute);
     }
 
     fn schedule_recompute(&mut self)
     {
-        self.set_task(RedrawMessage::Recompute);
+        if !matches!(self.get_task(), RedrawMessage::Compute)
+        {
+            self.set_task(RedrawMessage::Recompute);
+        }
     }
 
     fn schedule_redraw(&mut self)
@@ -139,13 +150,13 @@ pub trait Pane
     fn resize_x(&mut self, width: usize)
     {
         self.grid_mut().resize_x(width);
-        self.schedule_recompute();
+        self.schedule_compute();
     }
 
     fn resize_y(&mut self, height: usize)
     {
         self.grid_mut().resize_y(height);
-        self.schedule_recompute();
+        self.schedule_compute();
     }
 
     fn change_palette(&mut self, palette: ColorPalette)
@@ -171,6 +182,8 @@ pub trait Pane
         self.get_coloring_mut().adjust_phase(shift);
         self.schedule_redraw();
     }
+
+    fn compute(&mut self);
 
     fn recompute(&mut self);
 
@@ -203,6 +216,10 @@ pub trait Pane
             }
             RedrawMessage::DoNothing =>
             {}
+            RedrawMessage::Compute =>
+            {
+                self.compute();
+            }
         }
         self.set_task(RedrawMessage::DoNothing);
     }
@@ -282,7 +299,7 @@ where
     {
         let iter_plane = plane.compute();
         let task = RedrawMessage::Redraw;
-        let selection = ComplexNum::new(0., 0.);
+        let selection = plane.default_selection();
 
         let image =
             RetainedImage::from_color_image("parameter plane", iter_plane.render(&coloring));
@@ -445,7 +462,6 @@ where
     fn select_point(&mut self, point: ComplexNum)
     {
         self.selection = point;
-        self.schedule_recompute();
     }
     fn increase_max_iter(&mut self)
     {
@@ -467,10 +483,17 @@ where
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     }
+
+    #[inline]
+    fn compute(&mut self)
+    {
+        self.iter_plane = self.plane.compute();
+    }
+
     #[inline]
     fn recompute(&mut self)
     {
-        self.iter_plane = self.plane.compute();
+        self.plane.compute_into(&mut self.iter_plane);
     }
 
     fn select_preperiod_smooth_coloring(&mut self)
@@ -515,11 +538,20 @@ pub trait PanePair
     fn parent_mut(&mut self) -> &mut dyn Pane;
     fn child(&self) -> &dyn Pane;
     fn child_mut(&mut self) -> &mut dyn Pane;
+    fn randomize_palette(&mut self);
+    fn set_palette(&mut self, palette: ColorPalette);
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm);
+
     fn handle_mouse(&mut self, ctx: &Context);
+    fn handle_input(&mut self, ctx: &Context);
+
     fn toggle_live_mode(&mut self);
     fn set_active_pane(&mut self, pane_id: PaneID);
     fn get_active_pane(&self) -> &dyn Pane;
     fn get_active_pane_mut(&mut self) -> &mut dyn Pane;
+    fn process_tasks(&mut self);
+    fn save_active_pane(&mut self);
+    fn show(&mut self, ui: &mut Ui);
 }
 
 pub struct WindowPanePair<P, J>
@@ -556,6 +588,7 @@ where
         new_bounds.zoom(zoom_factor, new_bounds.center());
         self.child.grid_mut().change_bounds(new_bounds);
         self.child.set_param(new_param);
+        self.child.schedule_recompute();
     }
 }
 
@@ -579,6 +612,12 @@ where
     fn child_mut(&mut self) -> &mut dyn Pane
     {
         &mut self.child
+    }
+    fn randomize_palette(&mut self)
+    {
+        let palette = ColorPalette::new_random(0.45, 0.38);
+        self.parent.change_palette(palette);
+        self.child.change_palette(palette);
     }
 
     fn handle_mouse(&mut self, ctx: &Context)
@@ -656,5 +695,235 @@ where
             PaneID::Parent => self.parent_mut(),
             PaneID::Child => self.child_mut(),
         }
+    }
+    fn process_tasks(&mut self)
+    {
+        self.parent.process_task();
+        self.child.process_task();
+    }
+
+    fn set_palette(&mut self, palette: ColorPalette)
+    {
+        self.parent.change_palette(palette);
+        self.child.change_palette(palette);
+    }
+
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    {
+        self.parent_mut().set_coloring_algorithm(coloring_algorithm);
+        self.child_mut().set_coloring_algorithm(coloring_algorithm);
+    }
+
+    fn save_active_pane(&mut self)
+    {
+        let pane = self.get_active_pane_mut();
+        let filename = input!("Enter image filename to save: ");
+        match input!("Enter width of image: ").parse::<usize>()
+        {
+            Ok(width) =>
+            {
+                pane.save_image(width, &filename);
+                println!("Image saved to images/{}", &filename);
+            }
+            Err(e) => println!("Error parsing width: {:?}", e),
+        }
+    }
+
+    fn handle_input(&mut self, ctx: &Context)
+    {
+        if ctx.input(|i| i.key_pressed(Key::R))
+        {
+            self.randomize_palette();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::B))
+        {
+            let black_palette = ColorPalette::black(32.);
+            self.set_palette(black_palette);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::W))
+        {
+            let white_palette = ColorPalette::white(32.);
+            self.set_palette(white_palette);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::P))
+        {
+            self.child_mut().marking_mode_mut().toggle_critical();
+            self.child_mut().schedule_redraw();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Y))
+        {
+            self.child_mut().marking_mode_mut().toggle_cycles(1);
+            self.child_mut().schedule_redraw();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::U))
+        {
+            self.child_mut().marking_mode_mut().toggle_cycles(2);
+            self.child_mut().schedule_redraw();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowUp))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.scale_palette(1.25);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowDown))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.scale_palette(0.8);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowLeft))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.shift_palette(-0.02);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::ArrowRight))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.shift_palette(0.02);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Z))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.zoom(0.8, pane.get_selection());
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::V))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.zoom(1.25, pane.get_selection());
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Space))
+        {
+            let pane = self.get_active_pane_mut();
+            let selection = pane.get_selection();
+            pane.grid_mut().recenter(selection);
+            pane.schedule_recompute();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num0))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num1))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Period);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num2))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num3))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num4))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Num5))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.select_preperiod_smooth_coloring();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::C))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.clear_marked_curves();
+            pane.clear_marked_points();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::L))
+        {
+            self.toggle_live_mode();
+        }
+
+        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_S))
+        {
+            let pane = self.get_active_pane_mut();
+            let filename = input!("Enter image filename to save: ");
+            match input!("Enter width of image: ").parse::<usize>()
+            {
+                Ok(width) =>
+                {
+                    pane.save_image(width, &filename);
+                    println!("Image saved to images/{}", &filename);
+                }
+                Err(e) => println!("Error parsing width: {e:?}"),
+            }
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::PlusEquals))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.increase_max_iter();
+        }
+
+        if ctx.input(|i| i.key_pressed(Key::Minus))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.decrease_max_iter();
+        }
+        self.handle_mouse(ctx);
+    }
+
+    fn show(&mut self, ui: &mut Ui)
+    {
+        TableBuilder::new(ui)
+            .column(Column::auto().resizable(true))
+            .column(Column::remainder())
+            .vscroll(false)
+            .header(20.0, |mut header| {
+                header.col(|ui| {
+                    ui.heading(self.parent.name());
+                });
+                header.col(|ui| {
+                    ui.heading(self.child.name());
+                });
+            })
+            .body(|mut body| {
+                body.row(self.parent.get_image_frame().height() as f32, |mut row| {
+                    row.col(|ui| {
+                        self.parent.get_image_frame_mut().put(ui);
+                        self.parent.put_marked_curves(ui);
+                        self.parent.put_marked_points(ui);
+                    });
+                    row.col(|ui| {
+                        self.child.get_image_frame_mut().put(ui);
+                        self.child.put_marked_curves(ui);
+                        self.child.put_marked_points(ui);
+                    });
+                });
+                body.row(80., |mut row| {
+                    row.col(|ui| {
+                        let orbit_desc = self.parent.describe_marked_info();
+                        ui.label(orbit_desc);
+                    });
+                    row.col(|ui| {
+                        let orbit_desc = self.child.describe_marked_info();
+                        ui.label(orbit_desc);
+                    });
+                });
+            });
     }
 }

@@ -18,6 +18,7 @@ pub const TAUI: ComplexNum = ComplexNum::new(0., 2. * PI);
 pub const OMEGA: ComplexNum = ComplexNum::new(-0.5, 0.866025403784439);
 pub const OMEGA_BAR: ComplexNum = ComplexNum::new(-0.5, -0.866025403784439);
 pub const ONE_THIRD: f64 = 1. / 3.;
+pub const TWO_THIRDS: f64 = 2. / 3.;
 
 #[derive(Clone, Copy, Debug)]
 pub enum EscapeState<V, D>

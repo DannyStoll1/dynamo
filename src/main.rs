@@ -45,13 +45,12 @@ mod tests
     #[test]
     fn compute_per2_julia()
     {
-        let plane = QuadRatPer2::new_default(512, 2048);
-        let mut julia = JuliaSet::from(plane);
-        for i in 0..10
+        let plane = QuadRatPer2::new_default(1024, 2048);
+        let julia = JuliaSet::from(plane);
+        let mut iter_plane = julia.compute();
+        for _ in 0..9
         {
-            let param = ComplexNum::new(0.1 * (i as f64), 0.);
-            julia.set_param(param);
-            julia.compute();
+            julia.compute_into(&mut iter_plane);
         }
     }
 
@@ -74,6 +73,21 @@ mod tests
     {
         let plane = QuadRatPreper21::new_default(512, 2048);
         plane.compute();
+    }
+
+    #[test]
+    fn gui_speedtest()
+    {
+        use crate::gui::pane::{PanePair, WindowPanePair};
+        let parameter_plane = QuadRatPer2::new_default(1024, 2048);
+
+        let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (0.).into(), 1024);
+
+        let mut pane_pair = Box::new(WindowPanePair::new(parameter_plane, dynamical_plane));
+        for _ in 0..10
+        {
+            pane_pair.child_mut().recompute();
+        }
     }
 
     #[test]
