@@ -14,22 +14,22 @@ impl Norm<RealNum> for ComplexNum
     #[inline]
     fn norm(&self) -> RealNum
     {
-        <ComplexNum>::norm(*self)
+        <Self>::norm(*self)
     }
     #[inline]
     fn norm_sqr(&self) -> RealNum
     {
-        <ComplexNum>::norm_sqr(self)
+        <Self>::norm_sqr(self)
     }
     #[inline]
     fn arg(&self) -> RealNum
     {
-        <ComplexNum>::arg(*self)
+        <Self>::arg(*self)
     }
     #[inline]
     fn is_nan(&self) -> bool
     {
-        <ComplexNum>::is_nan(*self)
+        <Self>::is_nan(*self)
     }
 }
 
@@ -42,7 +42,7 @@ impl Norm<RealNum> for Point
 
     fn norm_sqr(&self) -> RealNum
     {
-        self.x * self.x + self.y * self.y
+        self.x.mul_add(self.x, self.y * self.y)
     }
 
     fn arg(&self) -> RealNum
@@ -64,9 +64,9 @@ pub struct Point
 }
 impl Point
 {
-    fn dot(&self, other: &Point) -> RealNum
+    fn dot(&self, other: &Self) -> RealNum
     {
-        self.x * other.x + self.y * other.y
+        self.x.mul_add(other.x, self.y * other.y)
     }
 }
 impl From<ComplexNum> for Point
@@ -97,14 +97,14 @@ pub struct Matrix2x2
 impl Matrix2x2
 {
     #[must_use]
-    pub fn new(v00: RealNum, v01: RealNum, v10: RealNum, v11: RealNum) -> Matrix2x2
+    pub fn new(v00: RealNum, v01: RealNum, v10: RealNum, v11: RealNum) -> Self
     {
         let v0 = Point { x: v00, y: v01 };
         let v1 = Point { x: v10, y: v11 };
         Self { v0, v1 }
     }
     #[must_use]
-    pub fn diag(v00: RealNum, v11: RealNum) -> Matrix2x2
+    pub fn diag(v00: RealNum, v11: RealNum) -> Self
     {
         let v0 = Point { x: v00, y: 0. };
         let v1 = Point { x: 0., y: v11 };
@@ -112,7 +112,7 @@ impl Matrix2x2
     }
     fn det(&self) -> RealNum
     {
-        self.v0.x * self.v1.y - self.v0.y * self.v1.x
+        self.v0.x.mul_add(self.v1.y, -self.v0.y * self.v1.x)
     }
     fn trace(&self) -> RealNum
     {
@@ -123,7 +123,7 @@ impl From<Matrix2x2> for ComplexNum
 {
     fn from(value: Matrix2x2) -> Self
     {
-        ComplexNum::new(value.v0.x * value.v1.y, value.v0.y * value.v1.x)
+        Self::new(value.v0.x * value.v1.y, value.v0.y * value.v1.x)
     }
 }
 impl From<RealNum> for Matrix2x2
@@ -137,10 +137,10 @@ impl std::ops::MulAssign for Matrix2x2
 {
     fn mul_assign(&mut self, rhs: Self)
     {
-        self.v0.x = self.v0.x * rhs.v0.x + self.v1.x * rhs.v0.y;
-        self.v0.y = self.v0.y * rhs.v0.x + self.v1.y * rhs.v0.y;
-        self.v1.x = self.v0.x * rhs.v1.x + self.v1.x * rhs.v1.y;
-        self.v1.y = self.v0.y * rhs.v1.x + self.v1.y * rhs.v1.y;
+        self.v0.x = self.v0.x.mul_add(rhs.v0.x, self.v1.x * rhs.v0.y);
+        self.v0.y = self.v0.y.mul_add(rhs.v0.x, self.v1.y * rhs.v0.y);
+        self.v1.x = self.v0.x.mul_add(rhs.v1.x, self.v1.x * rhs.v1.y);
+        self.v1.y = self.v0.y.mul_add(rhs.v1.x, self.v1.y * rhs.v1.y);
     }
 }
 impl Norm<RealNum> for Matrix2x2

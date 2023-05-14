@@ -295,7 +295,7 @@ where
     fn compute_period(
         &self,
         z0: V,
-        c: P,
+        _c: P,
         tolerance: RealNum,
         patience: usize,
     ) -> Option<(Period, D)>

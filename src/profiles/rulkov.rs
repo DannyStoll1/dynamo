@@ -26,9 +26,9 @@ fn df_dz(z: Point, c: Point) -> Matrix2x2
     // }
 }
 
-fn df_dc(z: Point, c: Point) -> Matrix2x2
+fn df_dc(z: Point, _c: Point) -> Matrix2x2
 {
-    Matrix2x2::diag(1. / (z.x * z.x + 1.), -z.x - 1.)
+    Matrix2x2::diag(1. / z.x.mul_add(z.x, 1.), -z.x - 1.)
 }
 
 fn f(z: Point, c: Point) -> Point

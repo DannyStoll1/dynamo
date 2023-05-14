@@ -238,7 +238,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn critical_points(&self, param: ComplexNum) -> ComplexVec
+    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![(0.).into()]
     }
@@ -845,7 +845,7 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
     {
         let mut u = (param * param - 3.).sqrt();
         if param.re < 0.
@@ -932,7 +932,7 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
     {
         param.powf(0.5)
     }
@@ -1015,7 +1015,7 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
     {
         2. / 3. * (param + 1. / param)
     }
@@ -1103,7 +1103,7 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, c: ComplexNum) -> ComplexNum
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
@@ -1255,7 +1255,7 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
         ComplexNum::new(0., 0.)
     }
@@ -1420,7 +1420,7 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
     {
-        let w = z * z + c * z;
+        let w = z * (z + c);
         w * (w + self.param / c)
     }
 
@@ -1436,7 +1436,7 @@ impl ParameterPlane for BiquadraticMult
     fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
     {
         let a = self.param / c;
-        let w = z * z + c * z;
+        let w = z * (z + c);
         (c + z + z) * (a + w + w)
     }
 
@@ -1661,7 +1661,7 @@ impl ParameterPlane for Sailboat
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, _z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ONE_COMPLEX, ONE_COMPLEX, ONE_COMPLEX) //TODO
     }

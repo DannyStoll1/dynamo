@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(unused_imports)]
 #![feature(const_fn_floating_point_arithmetic)]
 
 pub mod coloring;
@@ -21,9 +22,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
 #[cfg(test)]
 mod tests
 {
+    use crate::dynamics::julia::JuliaSet;
     use crate::dynamics::ParameterPlane;
     use crate::point_grid::Bounds;
     use crate::profiles::*;
+    use crate::types::ComplexNum;
 
     #[test]
     fn compute_biquadratic()
@@ -37,6 +40,19 @@ mod tests
     {
         let plane = QuadRatPer2::new_default(512, 2048);
         plane.compute();
+    }
+
+    #[test]
+    fn compute_per2_julia()
+    {
+        let plane = QuadRatPer2::new_default(512, 2048);
+        let mut julia = JuliaSet::from(plane);
+        for i in 0..10
+        {
+            let param = ComplexNum::new(0.1 * (i as f64), 0.);
+            julia.set_param(param);
+            julia.compute();
+        }
     }
 
     #[test]

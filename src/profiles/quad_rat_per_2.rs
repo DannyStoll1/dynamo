@@ -127,7 +127,7 @@ impl ParameterPlane for QuadRatPer2
             }
             2 =>
             {
-                vec![(0.).into()]
+                vec![(1.).into()]
             }
             _ => vec![],
         }

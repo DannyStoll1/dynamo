@@ -114,13 +114,13 @@ where
     }
 
     #[inline]
-    fn param_map(&self, z: ComplexNum) -> Self::Param
+    fn param_map(&self, _z: ComplexNum) -> Self::Param
     {
         self.param
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, param: Self::Param) -> Self::Var
+    fn start_point(&self, point: ComplexNum, _param: Self::Param) -> Self::Var
     {
         point.into()
     }

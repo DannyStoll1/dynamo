@@ -6,11 +6,11 @@ fn f(z: ComplexNum, c: ComplexNum) -> ComplexNum
 {
     z * z + c
 }
-fn df_dz(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn df_dz(z: ComplexNum, _c: ComplexNum) -> ComplexNum
 {
     z + z
 }
-fn df_dc(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn df_dc(_z: ComplexNum, _c: ComplexNum) -> ComplexNum
 {
     ONE_COMPLEX
 }

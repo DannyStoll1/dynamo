@@ -78,7 +78,8 @@ pub trait ParameterPlane: Sync + Send + DynClone
         1e-14
     }
 
-    fn start_point(&self, point: ComplexNum, param: Self::Param) -> Self::Var {
+    fn start_point(&self, _point: ComplexNum, param: Self::Param) -> Self::Var
+    {
         param.into()
     }
 
@@ -159,8 +160,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             .enumerate()
             .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
-                for ((x, local_y), count) in chunk.indexed_iter_mut()
-                {
+                chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
                     let y = chunk_idx * chunk_size + local_y;
                     let point = self.point_grid().map_pixel(x, y);
                     let param = self.param_map(point);
@@ -184,7 +184,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
                     orbit.reset(param, start);
                     let result = orbit.run_until_complete();
                     *count = self.encode_escape_result(result, param);
-                }
+                });
             });
         iter_counts
     }
@@ -208,7 +208,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     fn set_param(&mut self, _value: Self::Param) {}
 
     #[inline]
-    fn critical_points(&self, param: Self::Param) -> Vec<Self::Var>
+    fn critical_points(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         vec![]
     }

@@ -309,7 +309,7 @@ where
     }
 
     #[inline]
-    fn plane(&self) -> &P
+    const fn plane(&self) -> &P
     {
         &self.plane
     }
@@ -320,7 +320,7 @@ where
     }
 
     #[inline]
-    fn get_marked_info(&self) -> &Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    const fn get_marked_info(&self) -> &Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
     {
         &self.marked_info
     }
@@ -450,7 +450,7 @@ where
     fn increase_max_iter(&mut self)
     {
         let iters = self.plane.max_iter_mut();
-        *iters /= 2;
+        *iters *= 2;
         self.schedule_recompute();
     }
     fn decrease_max_iter(&mut self)
@@ -517,6 +517,9 @@ pub trait PanePair
     fn child_mut(&mut self) -> &mut dyn Pane;
     fn handle_mouse(&mut self, ctx: &Context);
     fn toggle_live_mode(&mut self);
+    fn set_active_pane(&mut self, pane_id: PaneID);
+    fn get_active_pane(&self) -> &dyn Pane;
+    fn get_active_pane_mut(&mut self) -> &mut dyn Pane;
 }
 
 pub struct WindowPanePair<P, J>
@@ -588,7 +591,7 @@ where
             if self.parent().frame_contains_pixel(pointer_pos)
             {
                 ctx.set_cursor_icon(CursorIcon::Crosshair);
-                self.active_pane = PaneID::Parent;
+                self.set_active_pane(PaneID::Parent);
                 let reselect_point = self.live_mode || clicked;
                 let pointer_value = self.parent().map_pixel(pointer_pos);
                 self.parent_mut()
@@ -609,7 +612,7 @@ where
             else if self.child().frame_contains_pixel(pointer_pos)
             {
                 ctx.set_cursor_icon(CursorIcon::Crosshair);
-                self.active_pane = PaneID::Child;
+                self.set_active_pane(PaneID::Child);
                 let pointer_value = self.child().map_pixel(pointer_pos);
                 self.child_mut()
                     .process_mouse_input(pointer_value, zoom_factor, false);
@@ -631,5 +634,27 @@ where
     fn toggle_live_mode(&mut self)
     {
         self.live_mode ^= true;
+    }
+
+    fn set_active_pane(&mut self, pane_id: PaneID)
+    {
+        self.active_pane = pane_id;
+    }
+
+    fn get_active_pane(&self) -> &dyn Pane
+    {
+        match self.active_pane
+        {
+            PaneID::Parent => self.parent(),
+            PaneID::Child => self.child(),
+        }
+    }
+    fn get_active_pane_mut(&mut self) -> &mut dyn Pane
+    {
+        match self.active_pane
+        {
+            PaneID::Parent => self.parent_mut(),
+            PaneID::Child => self.child_mut(),
+        }
     }
 }
