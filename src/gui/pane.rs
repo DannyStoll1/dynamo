@@ -219,6 +219,7 @@ pub trait Pane
             RedrawMessage::Compute =>
             {
                 self.compute();
+                self.redraw();
             }
         }
         self.set_task(RedrawMessage::DoNothing);
@@ -264,6 +265,8 @@ pub trait Pane
 
     // TODO: remove unnecessry mutation
     fn save_image(&mut self, img_width: usize, filename: &str);
+
+    fn change_height(&mut self, new_height: usize);
 
     fn mark_orbit_and_info(&mut self, pointer_value: ComplexNum);
     fn describe_marked_info(&self) -> String;
@@ -488,6 +491,11 @@ where
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     }
 
+    fn change_height(&mut self, new_height: usize) {
+        self.plane.point_grid_mut().resize_y(new_height);
+        self.schedule_compute();
+    }
+
     #[inline]
     fn compute(&mut self)
     {
@@ -562,6 +570,8 @@ pub trait PanePair
 
     fn handle_mouse(&mut self, ctx: &Context);
     fn handle_input(&mut self, ctx: &Context);
+
+    fn change_height(&mut self, new_height: usize);
 
     fn toggle_live_mode(&mut self);
     fn set_active_pane(&mut self, pane_id: PaneID);
@@ -718,6 +728,12 @@ where
         self.child.process_task();
     }
 
+    fn change_height(&mut self, new_height: usize) {
+        self.parent.change_height(new_height);
+        self.child.change_height(new_height);
+    }
+
+
     fn set_palette(&mut self, palette: ColorPalette)
     {
         self.parent.change_palette(palette);
@@ -780,6 +796,18 @@ where
         {
             self.child_mut().marking_mode_mut().toggle_cycles(2);
             self.child_mut().schedule_redraw();
+        }
+
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_H))
+        {
+            match input!("Enter new image height: ").parse::<usize>()
+            {
+                Ok(new_height) =>
+                {
+                    self.change_height(new_height);
+                }
+                Err(e) => println!("Error parsing height: {e:?}"),
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_UP))

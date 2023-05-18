@@ -304,7 +304,7 @@ impl PointGrid
     pub fn resize_y(&mut self, res_y: usize)
     {
         self.res_y = res_y;
-        self.res_y = Self::infer_width(res_y, &self.bounds);
+        self.res_x = Self::infer_width(res_y, &self.bounds);
     }
 
     #[must_use]
