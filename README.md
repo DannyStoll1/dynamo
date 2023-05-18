@@ -11,6 +11,7 @@ Hotkeys:
 - Ctrl-Z: zoom in far
 - V: zoom out from selection
 - Ctrl-V: zoom out far
+- Ctrl-S: save image (prompt in command line; currently does not include marked points/curves)
 - R: Randomize palette
 - W: White palette
 - B: Black palette
