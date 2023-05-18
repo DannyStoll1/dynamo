@@ -1,7 +1,7 @@
 use super::{ComplexNum, RealNum};
 use derive_more::{Add, Display, From, Sub};
 
-pub trait Norm<R> : Copy
+pub trait Norm<R>: Copy
 {
     fn norm(&self) -> R;
     fn norm_sqr(&self) -> R;
@@ -161,5 +161,25 @@ impl Norm<RealNum> for Matrix2x2
     fn is_nan(&self) -> bool
     {
         self.v0.is_nan() || self.v1.is_nan()
+    }
+}
+
+pub trait Dist<R>
+{
+    fn dist(&self, other: Self) -> R;
+    fn dist_sqr(&self, other: Self) -> R;
+}
+
+impl<R, T> Dist<R> for T
+where
+    T: Norm<R> + std::ops::Sub<Output = T>,
+{
+    fn dist(&self, other: Self) -> R
+    {
+        (*self - other).norm()
+    }
+    fn dist_sqr(&self, other: Self) -> R
+    {
+        (*self - other).norm_sqr()
     }
 }

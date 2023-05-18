@@ -14,15 +14,14 @@ pub trait FractalImage
 }
 
 #[derive(Clone)]
-pub struct IterPlane<V, D>
+pub struct IterPlane<D>
 {
-    pub iter_counts: Array2<PointInfo<V, D>>,
+    pub iter_counts: Array2<PointInfo<D>>,
     pub point_grid: PointGrid,
 }
 
-impl<V, D> FractalImage for IterPlane<V, D>
+impl<D> FractalImage for IterPlane<D>
 where
-    V: Norm<RealNum>,
     D: Norm<RealNum>,
 {
     fn point_grid(&self) -> &PointGrid

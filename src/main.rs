@@ -111,4 +111,20 @@ mod tests
         plane.point_grid_mut().change_bounds(bounds);
         plane.compute();
     }
+
+    #[test]
+    fn test_horner() {
+        use crate::macros::horner;
+        let x = 2;
+        let res = horner!(x, 2, -3, 5);
+        assert_eq!(res, 16);
+    }
+
+    #[test]
+    fn test_horner_monic() {
+        use crate::macros::horner_monic;
+        let x = 2;
+        let res = horner_monic!(x, 2, -3, 5);
+        assert_eq!(res, 24);
+    }
 }

@@ -1,5 +1,5 @@
 use super::ImageFrame;
-use crate::coloring::{coloring_algorithm::ColoringAlgorithm, palette::ColorPalette, Coloring};
+use crate::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use crate::dynamics::julia::JuliaSet;
 use crate::dynamics::ParameterPlane;
 use crate::iter_plane::{FractalImage, IterPlane};
@@ -8,11 +8,11 @@ use crate::profiles::QuadRatPer2;
 use crate::types::*;
 use input_macro::input;
 
-use super::marked_points::MarkingMode;
 use super::keyboard_shortcuts::*;
+use super::marked_points::MarkingMode;
 
 use eframe::egui::{Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, Stroke, Ui};
-use egui_extras::{RetainedImage, Column, TableBuilder};
+use egui_extras::{Column, RetainedImage, TableBuilder};
 use epaint::{CircleShape, PathShape};
 
 pub type ColoredPoint = (ComplexNum, Color32);
@@ -194,11 +194,11 @@ pub trait Pane
     //     image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     // }
 
-    fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
-    {
-        self.grid_mut().zoom(scale, base_point);
-        self.schedule_recompute();
-    }
+    fn zoom(&mut self, scale: RealNum, base_point: ComplexNum);
+    // {
+    //     self.grid_mut().zoom(scale, base_point);
+    //     self.schedule_recompute();
+    // }
 
     fn process_task(&mut self)
     {
@@ -254,6 +254,7 @@ pub trait Pane
     }
 
     fn select_preperiod_smooth_coloring(&mut self);
+    fn select_preperiod_period_smooth_coloring(&mut self);
 
     fn marking_mode(&self) -> &MarkingMode;
     fn marking_mode_mut(&mut self) -> &mut MarkingMode;
@@ -274,7 +275,7 @@ where
 {
     pub plane: P,
     pub coloring: Coloring,
-    iter_plane: IterPlane<P::Var, P::Deriv>,
+    iter_plane: IterPlane<P::Deriv>,
     pub image_frame: ImageFrame,
     task: RedrawMessage,
     selection: ComplexNum,
@@ -282,6 +283,7 @@ where
     marked_points: ColoredPoints,
     marked_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
     pub marking_mode: MarkingMode,
+    pub zoom_factor: RealNum,
 }
 impl<P> WindowPane<P>
 where
@@ -322,6 +324,7 @@ where
             marked_points,
             marked_info: None,
             marking_mode: MarkingMode::default(),
+            zoom_factor: 1.,
         }
     }
 
@@ -462,6 +465,7 @@ where
     fn select_point(&mut self, point: ComplexNum)
     {
         self.selection = point;
+        dbg!(self.selection);
     }
     fn increase_max_iter(&mut self)
     {
@@ -496,7 +500,21 @@ where
         self.plane.compute_into(&mut self.iter_plane);
     }
 
+    #[inline]
+    fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
+    {
+        self.zoom_factor *= scale;
+        self.grid_mut().zoom(scale, base_point);
+        self.schedule_recompute();
+    }
+
     fn select_preperiod_smooth_coloring(&mut self)
+    {
+        let coloring_algorithm = self.plane.preperiod_smooth_coloring();
+        self.set_coloring_algorithm(coloring_algorithm);
+    }
+
+    fn select_preperiod_period_smooth_coloring(&mut self)
     {
         let coloring_algorithm = self.plane.preperiod_smooth_coloring();
         self.set_coloring_algorithm(coloring_algorithm);
@@ -580,12 +598,10 @@ where
         }
     }
 
-    fn set_child_param(&mut self, new_param: P::Param)
+    fn set_child_param(&mut self, point: ComplexNum, new_param: P::Param)
     {
-        let old_bounds = &self.child.grid().bounds;
-        let mut new_bounds = self.parent.plane.default_julia_bounds(new_param);
-        let zoom_factor = old_bounds.range_x() / new_bounds.range_x();
-        new_bounds.zoom(zoom_factor, new_bounds.center());
+        let mut new_bounds = self.parent.plane.default_julia_bounds(point, new_param);
+        new_bounds.zoom(self.child.zoom_factor, new_bounds.center());
         self.child.grid_mut().change_bounds(new_bounds);
         self.child.set_param(new_param);
         self.child.schedule_recompute();
@@ -638,7 +654,7 @@ where
                 if reselect_point
                 {
                     let child_param = self.parent.plane.param_map(pointer_value);
-                    self.set_child_param(child_param);
+                    self.set_child_param(pointer_value, child_param);
                 }
 
                 if clicked
@@ -654,7 +670,7 @@ where
                 self.set_active_pane(PaneID::Child);
                 let pointer_value = self.child().map_pixel(pointer_pos);
                 self.child_mut()
-                    .process_mouse_input(pointer_value, zoom_factor, false);
+                    .process_mouse_input(pointer_value, zoom_factor, clicked);
 
                 if clicked
                 {
@@ -731,78 +747,90 @@ where
 
     fn handle_input(&mut self, ctx: &Context)
     {
-        if ctx.input(|i| i.key_pressed(Key::R))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_R))
         {
             self.randomize_palette();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::B))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_B))
         {
             let black_palette = ColorPalette::black(32.);
             self.set_palette(black_palette);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::W))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_W))
         {
             let white_palette = ColorPalette::white(32.);
             self.set_palette(white_palette);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::P))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_P))
         {
             self.child_mut().marking_mode_mut().toggle_critical();
             self.child_mut().schedule_redraw();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Y))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_Y))
         {
             self.child_mut().marking_mode_mut().toggle_cycles(1);
             self.child_mut().schedule_redraw();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::U))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_U))
         {
             self.child_mut().marking_mode_mut().toggle_cycles(2);
             self.child_mut().schedule_redraw();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::ArrowUp))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_UP))
         {
             let pane = self.get_active_pane_mut();
             pane.scale_palette(1.25);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::ArrowDown))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_DOWN))
         {
             let pane = self.get_active_pane_mut();
             pane.scale_palette(0.8);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::ArrowLeft))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_LEFT))
         {
             let pane = self.get_active_pane_mut();
             pane.shift_palette(-0.02);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::ArrowRight))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_RIGHT))
         {
             let pane = self.get_active_pane_mut();
             pane.shift_palette(0.02);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Z))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_Z))
         {
             let pane = self.get_active_pane_mut();
             pane.zoom(0.8, pane.get_selection());
         }
 
-        if ctx.input(|i| i.key_pressed(Key::V))
+        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_Z))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.zoom(0.125, pane.get_selection());
+        }
+
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_V))
         {
             let pane = self.get_active_pane_mut();
             pane.zoom(1.25, pane.get_selection());
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Space))
+        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_V))
+        {
+            let pane = self.get_active_pane_mut();
+            pane.zoom(8., pane.get_selection());
+        }
+
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_SPACE))
         {
             let pane = self.get_active_pane_mut();
             let selection = pane.get_selection();
@@ -810,50 +838,50 @@ where
             pane.schedule_recompute();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Num0))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_0))
         {
             let pane = self.get_active_pane_mut();
             pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Num1))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_1))
         {
             let pane = self.get_active_pane_mut();
             pane.set_coloring_algorithm(ColoringAlgorithm::Period);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Num2))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_2))
         {
             let pane = self.get_active_pane_mut();
             pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Num3))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_3))
         {
             let pane = self.get_active_pane_mut();
             pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Num4))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_4))
         {
             let pane = self.get_active_pane_mut();
             pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Num5))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_5))
         {
             let pane = self.get_active_pane_mut();
             pane.select_preperiod_smooth_coloring();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::C))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_C))
         {
             let pane = self.get_active_pane_mut();
             pane.clear_marked_curves();
-            pane.clear_marked_points();
+            // pane.clear_marked_points();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::L))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_L))
         {
             self.toggle_live_mode();
         }
@@ -873,13 +901,13 @@ where
             }
         }
 
-        if ctx.input(|i| i.key_pressed(Key::PlusEquals))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_EQUALS))
         {
             let pane = self.get_active_pane_mut();
             pane.increase_max_iter();
         }
 
-        if ctx.input(|i| i.key_pressed(Key::Minus))
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_MINUS))
         {
             let pane = self.get_active_pane_mut();
             pane.decrease_max_iter();

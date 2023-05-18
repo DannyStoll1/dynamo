@@ -13,6 +13,14 @@ pub use mandelbrot::Mandelbrot;
 
 pub mod quad_rat_per_2;
 pub use quad_rat_per_2::QuadRatPer2;
+pub mod quad_rat_per_5;
+pub use quad_rat_per_5::QuadRatPer5;
+
+pub mod cubic_per_1_lambda;
+pub use cubic_per_1_lambda::{CubicPer1Lambda, CubicPer1LambdaParam};
+
+pub mod biquadratic;
+pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam};
 
 pub mod rulkov;
 pub use rulkov::Rulkov;
@@ -133,7 +141,7 @@ use std::any::type_name;
 //     }
 //
 //     #[inline]
-//     fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+//     fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
 //     {
 //         Bounds::centered_square(2.2)
 //     }
@@ -172,7 +180,7 @@ impl ParameterPlane for QuadRatPer3
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -218,7 +226,7 @@ impl ParameterPlane for QuadRatPer3
     {
         let r = c * c - z * z;
         let u2 = 1. / (r * r);
-        (c + 1.) * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)))
+        (c + 1.) * u2 * (r - c * (r + TWO * (ONE - z * z)))
     }
 
     #[inline]
@@ -233,7 +241,7 @@ impl ParameterPlane for QuadRatPer3
 
         let f = u * (z2 + c2 * c - v);
         let df_dz = TWO * (1. - c) * v * v * z * u2;
-        let df_dc = v * u2 * (r - c * (r + TWO * (ONE_COMPLEX - z * z)));
+        let df_dc = v * u2 * (r - c * (r + TWO * (ONE - z * z)));
         (f, df_dz, df_dc)
     }
 
@@ -270,7 +278,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -369,7 +377,7 @@ impl ParameterPlane for QuadRatPer4
         iters: Period,
         z: ComplexNum,
         c: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         {
             if z.is_nan()
@@ -496,7 +504,7 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::square(4., (2.).into())
     }
@@ -579,7 +587,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -633,7 +641,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -667,7 +675,7 @@ impl ParameterPlane for QuadRatPreper21
         iters: Period,
         z: ComplexNum,
         base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -721,7 +729,7 @@ impl ParameterPlane for QuadRatPreper21
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -822,7 +830,7 @@ impl ParameterPlane for CubicPer1_1
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -875,7 +883,7 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -909,7 +917,7 @@ impl ParameterPlane for OddCubic
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -957,7 +965,7 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -992,7 +1000,7 @@ impl ParameterPlane for CubicPer2CritMarked
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1044,7 +1052,7 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, param: ComplexNum) -> Bounds
     {
         Bounds::square(2.2, param / 2.)
     }
@@ -1079,7 +1087,7 @@ impl ParameterPlane for CubicMarked2Cycle
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1141,334 +1149,12 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn default_julia_bounds(&self, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, param: ComplexNum) -> Bounds
     {
         Bounds::square(2.2, -param / 3.)
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Biquadratic
-{
-    point_grid: PointGrid,
-    max_iter: Period,
-    param: ComplexNum,
-}
-
-impl Biquadratic
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -1.6,
-        max_x: 1.25,
-        min_y: -1.25,
-        max_y: 1.25,
-    };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
-
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period, param: ComplexNum) -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, param, bounds)
-    }
-}
-
-impl ParameterPlane for Biquadratic
-{
-    parameter_plane_impl!();
-
-    #[inline]
-    fn name(&self) -> String
-    {
-        let param = self.param;
-        format!("Biquadratic({param})")
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
-
-    #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
-    {
-        c
-    }
-
-    #[inline]
-    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> ComplexNum
-    {
-        ComplexNum::new(0., 0.)
-    }
-
-    #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        let u = z * z + c;
-        u * u + self.param
-    }
-
-    #[inline]
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
-    {
-        let u = z * z + c;
-        (u * u + self.param, 4. * u * z)
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        4. * z * (z * z + c)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        2. * (z * z + c)
-    }
-
-    #[inline]
-    fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
-    {
-        let z2 = z * z;
-        let w = z2 + c;
-        let w2 = w * w;
-        (w2 + self.param, 4. * z2, w + w)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct BiquadraticMult
-{
-    point_grid: PointGrid,
-    max_iter: Period,
-    param: ComplexNum,
-}
-
-impl BiquadraticMult
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.6,
-        max_x: 3.25,
-        min_y: -2.25,
-        max_y: 2.25,
-    };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
-
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period, param: ComplexNum) -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, param, bounds)
-    }
-}
-
-impl ParameterPlane for BiquadraticMult
-{
-    parameter_plane_impl!();
-
-    #[inline]
-    fn name(&self) -> String
-    {
-        let param = self.param;
-        format!("BiquadraticMult({param})")
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
-
-    #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
-    {
-        c
-    }
-
-    #[inline]
-    fn start_point(&self, _point: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        -0.5 * c
-    }
-
-    #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        let w = z * (z + c);
-        w * (w + self.param / c)
-    }
-
-    #[inline]
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
-    {
-        let a = self.param / c;
-        let w = z * (z + c);
-        (w * (w + a), (c + z + z) * (a + w + w))
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        let a = self.param / c;
-        let w = z * (z + c);
-        (c + z + z) * (a + w + w)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        2. * (z * z + c)
-    }
-
-    #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        let a = self.param / c;
-        let x0 = c + z;
-        let w = z * x0;
-        let x2 = w + a;
-        let x2z = x2 * z;
-        (
-            w * x2,
-            x0 * x2 + w * (c + z + z) + x2z,
-            w * (z - a * a) + x2z,
-        )
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct BurningShip
@@ -1499,7 +1185,7 @@ impl ParameterPlane for BurningShip
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1525,19 +1211,19 @@ impl ParameterPlane for BurningShip
     #[inline]
     fn dynamical_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
-        ONE_COMPLEX //TODO
+        ONE //TODO
     }
 
     #[inline]
     fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
-        ONE_COMPLEX //TODO
+        ONE //TODO
     }
 
     #[inline]
     fn gradient(&self, _z: ComplexNum, _c: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
     {
-        (ONE_COMPLEX, ONE_COMPLEX, ONE_COMPLEX) //TODO
+        (ONE, ONE, ONE) //TODO
     }
 
     #[inline]
@@ -1633,7 +1319,7 @@ impl ParameterPlane for Sailboat
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1659,19 +1345,19 @@ impl ParameterPlane for Sailboat
     #[inline]
     fn dynamical_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
-        ONE_COMPLEX //TODO
+        ONE //TODO
     }
 
     #[inline]
     fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
-        ONE_COMPLEX //TODO
+        ONE //TODO
     }
 
     #[inline]
     fn gradient(&self, _z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        (ONE_COMPLEX, ONE_COMPLEX, ONE_COMPLEX) //TODO
+        (ONE, ONE, ONE) //TODO
     }
 
     #[inline]
@@ -1723,7 +1409,7 @@ impl ParameterPlane for Exponential
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1776,14 +1462,14 @@ impl ParameterPlane for Exponential
     #[inline]
     fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
     {
-        ONE_COMPLEX
+        ONE
     }
 
     #[inline]
     fn gradient(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
     {
         let u = z.exp();
-        (u + c, u, ONE_COMPLEX)
+        (u + c, u, ONE)
     }
 
     #[inline]

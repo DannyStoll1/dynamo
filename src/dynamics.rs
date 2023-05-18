@@ -1,10 +1,9 @@
 use crate::{
-    coloring::{coloring_algorithm::ColoringAlgorithm, Coloring},
+    coloring::{algorithms::ColoringAlgorithm, Coloring},
     iter_plane::IterPlane,
     point_grid::{Bounds, PointGrid},
     types::*,
 };
-use dyn_clone::DynClone;
 use ndarray::{Array2, Axis};
 use num_cpus;
 use rayon::iter::{ParallelBridge, ParallelIterator};
@@ -23,24 +22,16 @@ use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
 use std::ops::{MulAssign, Sub};
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
-pub trait ParameterPlane: Sync + Send + DynClone
+pub trait ParameterPlane: Sync + Send
 {
     type Var: Norm<RealNum>
+        + Dist<RealNum>
         + Send
         + Default
         + From<ComplexNum>
         + Into<ComplexNum>
-        + Sub<Output = Self::Var>
         + Display;
-    type Param: Norm<RealNum>
-        + Into<Self::Var>
-        + From<ComplexNum>
-        + Clone
-        + Copy
-        + Send
-        + Sync
-        + Default
-        + Display;
+    type Param: Into<Self::Var> + From<ComplexNum> + Clone + Copy + Send + Sync + Default + Display;
     type Deriv: Norm<RealNum> + Send + Default + From<f64> + MulAssign + Display;
 
     fn point_grid(&self) -> &PointGrid;
@@ -103,7 +94,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
         base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         match state
         {
@@ -131,7 +122,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -148,14 +139,14 @@ pub trait ParameterPlane: Sync + Send + DynClone
         }
     }
 
-    fn compute_escape_times(&self) -> Array2<PointInfo<Self::Var, Self::Deriv>>
+    fn compute_escape_times(&self) -> Array2<PointInfo<Self::Deriv>>
     {
         let mut iter_counts = Array2::from_elem(self.point_grid().shape(), PointInfo::Bounded);
         self.compute_escape_times_into(&mut iter_counts);
         iter_counts
     }
 
-    fn compute_escape_times_into(&self, iter_counts: &mut Array2<PointInfo<Self::Var, Self::Deriv>>)
+    fn compute_escape_times_into(&self, iter_counts: &mut Array2<PointInfo<Self::Deriv>>)
     {
         let orbits = ThreadLocal::new();
 
@@ -194,7 +185,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
             });
     }
 
-    fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>
+    fn compute(&self) -> IterPlane<Self::Deriv>
     {
         let iter_counts = self.compute_escape_times();
         IterPlane {
@@ -203,7 +194,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         }
     }
 
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Var, Self::Deriv>)
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
     {
         self.compute_escape_times_into(&mut iter_plane.iter_counts);
     }
@@ -280,7 +271,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
     //     None
     // }
 
-    fn run_point(&self, start: Self::Var, param: Self::Param) -> PointInfo<Self::Var, Self::Deriv>
+    fn run_point(&self, start: Self::Var, param: Self::Param) -> PointInfo<Self::Deriv>
     {
         let orbit = CycleDetectedOrbitFloyd::new(
             |z, c| self.map(z, c),
@@ -322,7 +313,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let start = self.start_point(point, param);
         let result = self.run_point(start, param);
         OrbitInfo {
-            point,
+            start,
             param,
             result,
         }
@@ -359,14 +350,14 @@ pub trait ParameterPlane: Sync + Send + DynClone
         (
             trajectory,
             OrbitInfo {
-                point: start.into(),
+                start,
                 param,
                 result,
             },
         )
     }
 
-    fn default_julia_bounds(&self, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -383,7 +374,7 @@ pub trait ParameterPlane: Sync + Send + DynClone
         let param = self.param_map(point);
         let point_grid = self
             .point_grid()
-            .with_same_height(self.default_julia_bounds(param));
+            .with_same_height(self.default_julia_bounds(point, param));
 
         Some(JuliaSet {
             point_grid,
@@ -403,6 +394,13 @@ pub trait ParameterPlane: Sync + Send + DynClone
     fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
     {
         ColoringAlgorithm::PreperiodSmooth {
+            periodicity_tolerance: self.periodicity_tolerance(),
+        }
+    }
+
+    fn preperiod_period_smooth_coloring(&self) -> ColoringAlgorithm
+    {
+        ColoringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.04,
         }

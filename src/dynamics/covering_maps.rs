@@ -133,7 +133,7 @@ where
         &self,
         state: EscapeState<C::Var, C::Deriv>,
         base_param: C::Param,
-    ) -> PointInfo<C::Var, C::Deriv>
+    ) -> PointInfo<C::Deriv>
     {
         self.base_curve.encode_escape_result(state, base_param)
     }
@@ -158,9 +158,9 @@ where
         self.base_curve.cycles(param, period)
     }
 
-    fn default_julia_bounds(&self, param: C::Param) -> Bounds
+    fn default_julia_bounds(&self, point: ComplexNum, param: C::Param) -> Bounds
     {
-        self.base_curve.default_julia_bounds(param)
+        self.base_curve.default_julia_bounds(point, param)
     }
 }
 

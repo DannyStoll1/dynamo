@@ -67,12 +67,8 @@ macro_rules! point_grid_getters {
     };
 }
 
-macro_rules! parameter_plane_impl {
+macro_rules! basic_plane_impl {
     () => {
-        type Var = ComplexNum;
-        type Param = ComplexNum;
-        type Deriv = ComplexNum;
-
         crate::macros::point_grid_getters!();
 
         #[inline]
@@ -95,6 +91,16 @@ macro_rules! parameter_plane_impl {
     };
 }
 
+macro_rules! parameter_plane_impl {
+    () => {
+        type Var = ComplexNum;
+        type Param = ComplexNum;
+        type Deriv = ComplexNum;
+
+        crate::macros::basic_plane_impl!();
+    };
+}
+
 macro_rules! default_name {
     () => {
         fn name(&self) -> String
@@ -109,6 +115,31 @@ macro_rules! default_name {
             {
                 "Unknown".to_owned()
             }
+        }
+    };
+}
+
+macro_rules! basic_escape_encoding {
+    ($degree: expr, $period: expr) => {
+        fn encode_escaping_point(
+            &self,
+            iters: Period,
+            z: ComplexNum,
+            _base_param: ComplexNum,
+        ) -> PointInfo<Self::Deriv>
+        {
+            if z.is_nan()
+            {
+                return PointInfo::Escaping {
+                    potential: f64::from(iters) - 1.,
+                };
+            }
+
+            let u = self.escape_radius().log2();
+            let v = z.norm_sqr().log2();
+            let residual = (v / u).log($degree);
+            let potential = f64::from(iters) - $period * (residual as IterCount);
+            PointInfo::Escaping { potential }
         }
     };
 }
@@ -146,11 +177,28 @@ macro_rules! min {
     };
 }
 
+macro_rules! horner {
+    ($c: expr) => ( $c );
+    ($var: expr, $c: expr ) => ( $c );
+    ($var: expr, $c: expr, $($cs:expr),+) => {
+        $c + $var * horner!($var, $($cs),+)
+    };
+}
+
+macro_rules! horner_monic {
+    () => ( 1. );
+    ($c: expr) => ( $c );
+    ($var: expr, $c: expr ) => ( $c + $var );
+    ($var: expr, $c: expr, $($cs:expr),+) => {
+        $c + $var * horner_monic!($var, $($cs),+)
+    };
+}
+
 macro_rules! profile_imports {
     () => {
         use crate::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
         use crate::dynamics::ParameterPlane;
-        use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
+        use crate::macros::{basic_plane_impl, default_name, fractal_impl, parameter_plane_impl};
         use crate::point_grid::{Bounds, PointGrid};
         use crate::types::*;
         use std::any::type_name;
@@ -158,7 +206,8 @@ macro_rules! profile_imports {
 }
 
 pub(crate) use {
-    default_name, fractal_impl, parameter_plane_impl, point_grid_getters, profile_imports,
+    basic_escape_encoding, basic_plane_impl, default_name, fractal_impl, horner, horner_monic,
+    parameter_plane_impl, point_grid_getters, profile_imports,
 };
 
 pub(crate) use {max, min};

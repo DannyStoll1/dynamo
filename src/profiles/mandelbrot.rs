@@ -6,13 +6,13 @@ fn f(z: ComplexNum, c: ComplexNum) -> ComplexNum
 {
     z * z + c
 }
-fn df_dz(z: ComplexNum, _c: ComplexNum) -> ComplexNum
+fn df_dz(z: ComplexNum, c: ComplexNum) -> ComplexNum
 {
     z + z
 }
-fn df_dc(_z: ComplexNum, _c: ComplexNum) -> ComplexNum
+fn df_dc(z: ComplexNum, c: ComplexNum) -> ComplexNum
 {
-    ONE_COMPLEX
+    ONE
 }
 
 #[derive(Clone, Debug)]
@@ -103,7 +103,7 @@ impl ParameterPlane for Mandelbrot
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(2.2)
     }

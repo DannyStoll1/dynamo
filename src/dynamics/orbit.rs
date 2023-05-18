@@ -106,7 +106,7 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<RealNum> + std::ops::Sub<Output = V>,
+    V: Norm<RealNum> + Dist<RealNum>,
     D: Norm<RealNum> + std::ops::MulAssign + From<f64>,
 {
     f: F,
@@ -129,7 +129,7 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<RealNum> + std::ops::Sub<Output = V>,
+    V: Norm<RealNum> + Dist<RealNum>,
     D: Norm<RealNum> + std::ops::MulAssign + From<f64>,
 {
     pub fn new(
@@ -265,7 +265,7 @@ where
                 final_value: z_fast,
             }
         }
-        else if (z_fast - z_slow).norm_sqr() < self.periodicity_tolerance
+        else if z_fast.dist_sqr(z_slow) < self.periodicity_tolerance
         {
             if let Some((period, multiplier)) = self.compute_period(
                 z_fast,
@@ -278,7 +278,7 @@ where
                     preperiod: iter,
                     period,
                     multiplier,
-                    final_error: z_slow - z_fast,
+                    final_error: z_fast.dist_sqr(z_slow),
                 }
             }
             else
@@ -307,7 +307,7 @@ where
         {
             (z, dz) = self.get_map_value_and_derivative(z);
             mult *= dz;
-            if (z - z0).norm_sqr() <= tolerance
+            if z.dist_sqr(z0) <= tolerance
             {
                 if let Ok(period) = Period::try_from(i)
                 {
@@ -326,7 +326,7 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<RealNum> + std::ops::Sub<Output = V>,
+    V: Norm<RealNum> + Dist<RealNum>,
     D: Norm<RealNum> + std::ops::MulAssign + From<f64>,
 {
     type Item = (V, EscapeState<V, D>);
@@ -346,6 +346,7 @@ where
             else
             {
                 self.apply_map_and_update_multiplier();
+                // dbg!(self.z_fast.dist_sqr(self.z_slow));
                 self.state =
                     self.check_periodicity(self.iter, self.z_slow, self.z_fast, self.param);
             }

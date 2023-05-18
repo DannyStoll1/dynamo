@@ -1,5 +1,5 @@
-use super::color_types::Hsv;
 use super::palette::ColorPalette;
+use super::types::Hsv;
 use crate::types::*;
 use epaint::Color32;
 
@@ -12,9 +12,14 @@ pub enum ColoringAlgorithm
     PreperiodSmooth
     {
         periodicity_tolerance: f64,
-        fill_rate: f64,
     },
     Preperiod,
+    PreperiodPeriodSmooth
+    {
+        periodicity_tolerance: f64,
+        fill_rate: f64,
+    },
+    PreperiodPeriod,
     Multiplier,
 }
 impl ColoringAlgorithm
@@ -34,16 +39,15 @@ impl ColoringAlgorithm
     }
 
     #[must_use]
-    pub fn color_periodic<V, D>(
+    pub fn color_periodic<D>(
         &self,
         palette: ColorPalette,
         period: Period,
         preperiod: Period,
         multiplier: D,
-        final_error: V,
+        final_error: RealNum,
     ) -> Color32
     where
-        V: Norm<RealNum>,
         D: Norm<RealNum>,
     {
         match self
@@ -63,16 +67,58 @@ impl ColoringAlgorithm
             Self::Preperiod =>
             {
                 let coloring_rate = 0.02;
+                let per = IterCount::from(period);
+                let val = IterCount::from(preperiod);
+
+                palette.map_color32(val * val / per)
+            }
+            Self::PreperiodPeriod =>
+            {
+                let coloring_rate = 0.02;
 
                 let per = IterCount::from(period);
+                let val = IterCount::from(preperiod);
 
-                let v = IterCount::from(preperiod);
-                let potential = (v * coloring_rate / per).tanh();
+                let potential = (val * coloring_rate / per).tanh();
                 palette
                     .period_coloring
                     .map_color32(per as f32, potential as f32)
             }
             Self::PreperiodSmooth {
+                periodicity_tolerance,
+            } =>
+            {
+                let per = IterCount::from(period);
+                let val: IterCount;
+
+                let mult_norm = multiplier.norm();
+
+                // Superattracting case
+                if mult_norm <= 1e-10
+                {
+                    let potential =
+                        2. * (final_error.log(*periodicity_tolerance)).log2() as IterCount;
+                    val = per.mul_add(-potential, IterCount::from(preperiod));
+                }
+                // Parabolic case
+                else if 1. - mult_norm <= 1e-5
+                {
+                    let potential = final_error / periodicity_tolerance;
+                    val = per.mul_add(-potential, IterCount::from(preperiod));
+                }
+                else
+                {
+                    let mut potential =
+                        -(final_error / periodicity_tolerance).log(mult_norm) as IterCount;
+                    if potential.is_infinite() || potential.is_nan()
+                    {
+                        potential = -0.2;
+                    }
+                    val = per.mul_add(potential, f64::from(preperiod));
+                }
+                palette.map_color32(val * val / per)
+            }
+            Self::PreperiodPeriodSmooth {
                 periodicity_tolerance,
                 fill_rate,
             } =>
@@ -85,15 +131,14 @@ impl ColoringAlgorithm
                 // Superattracting case
                 if mult_norm <= 1e-10
                 {
-                    let w = 2.
-                        * (final_error.norm_sqr().log(*periodicity_tolerance)).log2() as IterCount;
+                    let w = 2. * (final_error.log(*periodicity_tolerance)).log2() as IterCount;
                     let v = hue.mul_add(-w, IterCount::from(preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
                 // Parabolic case
                 else if 1. - mult_norm <= 1e-5
                 {
-                    let w = final_error.norm_sqr() / periodicity_tolerance;
+                    let w = final_error / periodicity_tolerance;
                     let v = hue.mul_add(-w, IterCount::from(preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
@@ -101,8 +146,7 @@ impl ColoringAlgorithm
                 {
                     let coloring_rate = Self::multiplier_coloring_rate(mult_norm, *fill_rate);
 
-                    let mut w = -(final_error.norm_sqr() / periodicity_tolerance).log(mult_norm)
-                        as IterCount;
+                    let mut w = -(final_error / periodicity_tolerance).log(mult_norm) as IterCount;
                     if w.is_infinite() || w.is_nan()
                     {
                         w = -0.2;

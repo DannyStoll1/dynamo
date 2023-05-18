@@ -1,4 +1,4 @@
-use crate::coloring::{coloring_algorithm::ColoringAlgorithm, Coloring};
+use crate::coloring::{algorithms::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::types::{ComplexNum, ComplexVec, EscapeState, Period, PointInfo, RealNum};
@@ -19,11 +19,12 @@ where
     T: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(parent: T, param: T::Param, max_iter: Period) -> Self
+    pub fn new(parent: T, point: ComplexNum, max_iter: Period) -> Self
     {
+        let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(param));
+            .with_same_height(parent.default_julia_bounds(point, param));
         Self {
             point_grid,
             max_iter,
@@ -39,10 +40,11 @@ where
 {
     fn from(parent: T) -> Self
     {
-        let param = T::Param::default();
+        let point = parent.default_selection();
+        let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(param));
+            .with_same_height(parent.default_julia_bounds(point, param));
         Self {
             point_grid,
             parent: parent.clone(),
@@ -135,7 +137,7 @@ where
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
         base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         self.parent.encode_escape_result(state, base_param)
     }
@@ -159,7 +161,7 @@ where
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
     {
         self.point_grid.bounds.clone()
     }
@@ -199,6 +201,13 @@ where
     fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
     {
         ColoringAlgorithm::PreperiodSmooth {
+            periodicity_tolerance: self.periodicity_tolerance(),
+        }
+    }
+
+    fn preperiod_period_smooth_coloring(&self) -> ColoringAlgorithm
+    {
+        ColoringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.015,
         }

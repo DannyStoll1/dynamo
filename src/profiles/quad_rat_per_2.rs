@@ -55,7 +55,7 @@ impl ParameterPlane for QuadRatPer2
         iters: Period,
         z: ComplexNum,
         _base_param: ComplexNum,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -134,7 +134,7 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
     {
         Bounds::centered_square(4.)
     }

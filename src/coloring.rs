@@ -1,12 +1,12 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::types::*;
-pub mod color_types;
-pub mod coloring_algorithm;
+pub mod types;
+pub mod algorithms;
 pub mod palette;
 
-use color_types::Hsv;
-use coloring_algorithm::ColoringAlgorithm;
+use types::Hsv;
+use algorithms::ColoringAlgorithm;
 use epaint::Color32;
 use image::Rgb;
 use palette::ColorPalette;
@@ -20,9 +20,8 @@ pub struct Coloring
 impl Coloring
 {
     #[must_use]
-    pub fn map_color32<V, D>(&self, point_info: PointInfo<V, D>) -> Color32
+    pub fn map_color32<D>(&self, point_info: PointInfo<D>) -> Color32
     where
-        V: Norm<RealNum>,
         D: Norm<RealNum>,
     {
         use PointInfo::{Bounded, Escaping, Periodic};
@@ -46,9 +45,8 @@ impl Coloring
     }
 
     #[must_use]
-    pub fn map_rgb<V, D>(&self, point_info: PointInfo<V, D>) -> Rgb<u8>
+    pub fn map_rgb<D>(&self, point_info: PointInfo<D>) -> Rgb<u8>
     where
-        V: Norm<RealNum>,
         D: Norm<RealNum>,
     {
         use PointInfo::{Bounded, Escaping, Periodic};
