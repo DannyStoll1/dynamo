@@ -442,7 +442,7 @@ impl Default for FractalApp
 {
     fn default() -> Self
     {
-        let height = 1024;
+        let height = 768;
         // let parent_plane = QuadRatPer2::new_default(height, 2048).marked_cycle_curve(5);
         // let parent_plane = DefaultProfile::new_default(height, 2048);
         // let parent_plane = BiquadraticMult::new_default(height, 2048, (0.5).into());
