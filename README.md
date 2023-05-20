@@ -1,12 +1,10 @@
-# Installation
+## Installation
 
 To install and run, just clone the repository and run `cargo +nightly run -r`.
 
 You may need to first [install Rust](https://rustup.rs/). At present, the nightly toolchain is required; you can install this with `rustup install nightly`.
 
-# Usage
-
-## Hotkeys
+## Usage
 
 - Z: zoom in to selection
 - Ctrl-Z: zoom in far
@@ -33,7 +31,7 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Up/Down: Change coloring rate
 - Right/Left: Change coloring phase
 
-# Planned Features
+## Planned Features
 - [x] Live Julia sets
 - [x] Mark orbits
 - [x] Marked points
