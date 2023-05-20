@@ -15,11 +15,15 @@ use eframe::egui::{Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, St
 use egui_extras::{Column, RetainedImage, TableBuilder};
 use epaint::{CircleShape, PathShape};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub type ColoredPoint = (ComplexNum, Color32);
 pub type ColoredPoints = Vec<ColoredPoint>;
 pub type ColoredCurve = (Vec<ComplexNum>, Color32);
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RedrawMessage
 {
     DoNothing,
@@ -28,6 +32,8 @@ pub enum RedrawMessage
     Compute,
 }
 
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PaneID
 {
     Parent,
@@ -491,7 +497,8 @@ where
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
     }
 
-    fn change_height(&mut self, new_height: usize) {
+    fn change_height(&mut self, new_height: usize)
+    {
         self.plane.point_grid_mut().resize_y(new_height);
         self.schedule_compute();
     }
@@ -524,7 +531,7 @@ where
 
     fn select_preperiod_period_smooth_coloring(&mut self)
     {
-        let coloring_algorithm = self.plane.preperiod_smooth_coloring();
+        let coloring_algorithm = self.plane.preperiod_period_smooth_coloring();
         self.set_coloring_algorithm(coloring_algorithm);
     }
 
@@ -728,11 +735,11 @@ where
         self.child.process_task();
     }
 
-    fn change_height(&mut self, new_height: usize) {
+    fn change_height(&mut self, new_height: usize)
+    {
         self.parent.change_height(new_height);
         self.child.change_height(new_height);
     }
-
 
     fn set_palette(&mut self, palette: ColorPalette)
     {

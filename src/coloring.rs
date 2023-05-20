@@ -11,7 +11,11 @@ use epaint::Color32;
 use image::Rgb;
 use palette::ColorPalette;
 
-#[derive(Clone, Copy)]
+#[cfg(feature="serde")]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, Default)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct Coloring
 {
     algorithm: ColoringAlgorithm,
@@ -86,17 +90,6 @@ impl Coloring
     pub fn set_algorithm(&mut self, algorithm: ColoringAlgorithm)
     {
         self.algorithm = algorithm;
-    }
-}
-
-impl Default for Coloring
-{
-    fn default() -> Self
-    {
-        Self {
-            palette: ColorPalette::black(32.),
-            algorithm: ColoringAlgorithm::PeriodMultiplier,
-        }
     }
 }
 

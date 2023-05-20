@@ -83,7 +83,7 @@ impl From<ComplexNum> for Param
 
         // E0 = 2*a^5 + 8*a^4*b + 13*a^3*b^2 + 11*a^2*b^3 + 5*a*b^4 + b^5 + 11*a^4 + 35*a^3*b + 42*a^2*b^2 + 23*a*b^3 + 5*b^4 + 21*a^3 + 53*a^2*b + 44*a*b^2 + 12*b^3 + 18*a^2 + 33*a*b + 15*b^2 + 7*a + 7*b + 1
 
-        Param::from((a, b))
+        Self::from((a, b))
     }
 }
 
@@ -136,7 +136,7 @@ impl ParameterPlane for QuadRatPer5
         -(c.a * z + c.b + c.b) / (z2 * z)
     }
     #[inline]
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
         ONE
     }

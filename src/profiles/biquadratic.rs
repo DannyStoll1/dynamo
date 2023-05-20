@@ -2,7 +2,11 @@ use crate::macros::*;
 profile_imports!();
 use derive_more::{Add, Display, From, Sub};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Copy, Clone, Debug, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Bicomplex
 {
     #[display(fmt = "PlaneA({})", _0)]
@@ -15,8 +19,8 @@ impl From<ComplexNum> for Bicomplex
 {
     fn from(value: ComplexNum) -> Self
     {
-        // Bicomplex::PlaneA(value)
-        Bicomplex::PlaneB(value)
+        Self::PlaneA(value)
+        // Self::PlaneB(value)
     }
 }
 impl From<Bicomplex> for ComplexNum
@@ -36,32 +40,32 @@ impl Norm<RealNum> for Bicomplex
     {
         match self
         {
-            Bicomplex::PlaneA(z) => z.norm(),
-            Bicomplex::PlaneB(z) => z.norm(),
+            Self::PlaneA(z) => z.norm(),
+            Self::PlaneB(z) => z.norm(),
         }
     }
     fn norm_sqr(&self) -> RealNum
     {
         match self
         {
-            Bicomplex::PlaneA(z) => z.norm_sqr(),
-            Bicomplex::PlaneB(z) => z.norm_sqr(),
+            Self::PlaneA(z) => z.norm_sqr(),
+            Self::PlaneB(z) => z.norm_sqr(),
         }
     }
     fn arg(&self) -> RealNum
     {
         match self
         {
-            Bicomplex::PlaneA(z) => z.arg(),
-            Bicomplex::PlaneB(z) => z.arg(),
+            Self::PlaneA(z) => z.arg(),
+            Self::PlaneB(z) => z.arg(),
         }
     }
     fn is_nan(&self) -> bool
     {
         match self
         {
-            Bicomplex::PlaneA(z) => z.is_nan(),
-            Bicomplex::PlaneB(z) => z.is_nan(),
+            Self::PlaneA(z) => z.is_nan(),
+            Self::PlaneB(z) => z.is_nan(),
         }
     }
 }
@@ -70,7 +74,7 @@ impl Default for Bicomplex
 {
     fn default() -> Self
     {
-        Bicomplex::PlaneA(ZERO)
+        Self::PlaneA(ZERO)
     }
 }
 
@@ -80,15 +84,15 @@ impl Dist<RealNum> for Bicomplex
     {
         match self
         {
-            Bicomplex::PlaneA(z) => match rhs
+            Self::PlaneA(z) => match rhs
             {
-                Bicomplex::PlaneA(w) => (z - w).norm(),
-                Bicomplex::PlaneB(_) => RealNum::INFINITY,
+                Self::PlaneA(w) => (z - w).norm(),
+                Self::PlaneB(_) => RealNum::INFINITY,
             },
-            Bicomplex::PlaneB(z) => match rhs
+            Self::PlaneB(z) => match rhs
             {
-                Bicomplex::PlaneA(_) => RealNum::INFINITY,
-                Bicomplex::PlaneB(w) => (z - w).norm(),
+                Self::PlaneA(_) => RealNum::INFINITY,
+                Self::PlaneB(w) => (z - w).norm(),
             },
         }
     }
@@ -96,21 +100,22 @@ impl Dist<RealNum> for Bicomplex
     {
         match self
         {
-            Bicomplex::PlaneA(z) => match rhs
+            Self::PlaneA(z) => match rhs
             {
-                Bicomplex::PlaneA(w) => (z - w).norm_sqr(),
-                Bicomplex::PlaneB(_) => RealNum::INFINITY,
+                Self::PlaneA(w) => (z - w).norm_sqr(),
+                Self::PlaneB(_) => RealNum::INFINITY,
             },
-            Bicomplex::PlaneB(z) => match rhs
+            Self::PlaneB(z) => match rhs
             {
-                Bicomplex::PlaneA(_) => RealNum::INFINITY,
-                Bicomplex::PlaneB(w) => (z - w).norm_sqr(),
+                Self::PlaneA(_) => RealNum::INFINITY,
+                Self::PlaneB(w) => (z - w).norm_sqr(),
             },
         }
     }
 }
 
 #[derive(Default, Clone, Copy, Add, From, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct Param
 {
@@ -122,7 +127,7 @@ impl From<ComplexNum> for Param
 {
     fn from(z: ComplexNum) -> Self
     {
-        Param::from((z, ONE))
+        Self::from((z, ONE))
     }
 }
 impl From<Param> for ComplexNum
@@ -136,11 +141,12 @@ impl From<Param> for Bicomplex
 {
     fn from(value: Param) -> Self
     {
-        Bicomplex::PlaneA(-0.5 * value.a)
+        Self::PlaneA(-0.5 * value.a)
     }
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Biquadratic
 {
     point_grid: PointGrid,
@@ -285,14 +291,14 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, zw: Self::Var, _c: ComplexNum) -> ComplexNum
     {
         let u: ComplexNum = zw.into();
         u + u
     }
 
     #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, zw: Self::Var, _c: ComplexNum) -> ComplexNum
     {
         match zw
         {
@@ -303,6 +309,7 @@ impl ParameterPlane for Biquadratic
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMult
 {
     point_grid: PointGrid,
@@ -313,10 +320,10 @@ pub struct BiquadraticMult
 impl BiquadraticMult
 {
     const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.5,
-        max_x: 2.5,
-        min_y: -2.25,
-        max_y: 2.25,
+        min_x: -2.8,
+        max_x: 2.8,
+        min_y: -2.55,
+        max_y: 2.55,
     };
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 
@@ -474,19 +481,19 @@ impl ParameterPlane for BiquadraticMult
     fn critical_points(&self, c: Self::Param) -> Vec<Self::Var>
     {
         // vec![Bicomplex::PlaneA(-0.5 * c.a), Bicomplex::PlaneB(-0.5 * c.b)]
-        //
-        // let disc = (c.a * c.a - c.b - c.b).sqrt();
-        // vec![
-        //     Bicomplex::PlaneA(-0.5 * c.a),
-        //     Bicomplex::PlaneA(-0.5 * (c.a + disc)),
-        //     Bicomplex::PlaneA(-0.5 * (c.a - disc)),
-        // ]
-        let disc = (c.b * c.b - c.a - c.a).sqrt();
+
+        let disc = (c.a * c.a - c.b - c.b).sqrt();
         vec![
-            Bicomplex::PlaneB(-0.5 * c.b),
-            Bicomplex::PlaneB(-0.5 * (c.b + disc)),
-            Bicomplex::PlaneB(-0.5 * (c.b - disc)),
+            Bicomplex::PlaneA(-0.5 * c.a),
+            Bicomplex::PlaneA(-0.5 * (c.a + disc)),
+            Bicomplex::PlaneA(-0.5 * (c.a - disc)),
         ]
+        // let disc = (c.b * c.b - c.a - c.a).sqrt();
+        // vec![
+        //     Bicomplex::PlaneB(-0.5 * c.b),
+        //     Bicomplex::PlaneB(-0.5 * (c.b + disc)),
+        //     Bicomplex::PlaneB(-0.5 * (c.b - disc)),
+        // ]
     }
 
     fn periodicity_tolerance(&self) -> RealNum
@@ -499,8 +506,9 @@ impl ParameterPlane for BiquadraticMult
         ComplexNum::new(1.0626588, 0.)
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, c: Self::Param) -> Bounds {
-        Bounds::square(2.5, -0.5*c.a)
+    fn default_julia_bounds(&self, _point: ComplexNum, c: Self::Param) -> Bounds
+    {
+        Bounds::square(2.5, -0.5 * c.a)
     }
 
     fn set_param(&mut self, value: Self::Param)
@@ -510,6 +518,7 @@ impl ParameterPlane for BiquadraticMult
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMultParam
 {
     point_grid: PointGrid,
@@ -639,14 +648,15 @@ impl From<BiquadraticMultParam> for BiquadraticMult
 }
 
 #[derive(Clone, Debug)]
-pub struct BiquadraticMult_second_iterate
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct BiquadraticMultSecondIterate
 {
     point_grid: PointGrid,
     max_iter: Period,
     multiplier: ComplexNum,
 }
 
-impl BiquadraticMult_second_iterate
+impl BiquadraticMultSecondIterate
 {
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -2.6,
@@ -715,7 +725,7 @@ impl BiquadraticMult_second_iterate
     }
 }
 
-impl ParameterPlane for BiquadraticMult_second_iterate
+impl ParameterPlane for BiquadraticMultSecondIterate
 {
     parameter_plane_impl!();
 

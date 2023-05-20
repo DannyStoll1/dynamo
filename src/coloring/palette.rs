@@ -1,12 +1,16 @@
 use super::Hsv;
 use crate::types::IterCount;
-use eframe::egui::Color32;
+use epaint::Color32;
 use image::Rgb;
 use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution};
 use std::f64::consts::PI;
 
+#[cfg(feature="serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct Sinusoid
 {
     period: f64,
@@ -81,7 +85,8 @@ impl Default for Sinusoid
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct ColorPalette
 {
     pub color_map_r: Sinusoid,
@@ -251,11 +256,13 @@ impl Default for ColorPalette
 {
     fn default() -> Self
     {
-        Self::new_with_contrast(3.0, 8.0, 5.0, 0.45, 0.38)
+        // Self::new_with_contrast(3.0, 8.0, 5.0, 0.45, 0.38)
+        Self::black(32.)
     }
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct DiscretePalette
 {
     pub num_colors: f32,

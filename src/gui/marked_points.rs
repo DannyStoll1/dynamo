@@ -5,6 +5,7 @@ use crate::types::*;
 use eframe::egui::Color32;
 
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MarkingMode
 {
     pub critical: bool,

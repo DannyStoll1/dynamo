@@ -1,6 +1,9 @@
 use num_complex::Complex;
 use std::f64::consts::PI;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub type IterCount = f64;
 pub type RealNum = f64;
 pub type ComplexNum = Complex<RealNum>;
@@ -23,6 +26,7 @@ pub const SQRT_3: f64 = 1.73205080756888;
 pub const NAN: ComplexNum = ComplexNum::new(f64::NAN, 0.);
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EscapeState<V, D>
 {
     Escaped
@@ -42,6 +46,7 @@ pub enum EscapeState<V, D>
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PointInfo<D>
 {
     Escaping
@@ -61,6 +66,7 @@ pub enum PointInfo<D>
 use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitInfo<V, P, D>
 {
     pub start: V,

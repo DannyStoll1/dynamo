@@ -1,11 +1,12 @@
 # Installation
 
-To install, just clone the repository and run
-    cargo run -r
+To install and run, just clone the repository and run `cargo +nightly run -r`.
+
+You may need to first [install Rust](https://rustup.rs/). At present, the nightly toolchain is required; you can install this with `rustup install nightly`.
 
 # Usage
 
-Hotkeys:
+## Hotkeys
 
 - Z: zoom in to selection
 - Ctrl-Z: zoom in far
@@ -31,3 +32,21 @@ Hotkeys:
 - 5: Internal coloration: Potential of linearizing coordinate
 - Up/Down: Change coloring rate
 - Right/Left: Change coloring phase
+
+# Planned Features
+[x] Live Julia sets
+[x] Mark orbits
+[x] Marked points
+[ ] Save palettes
+[x] Save images
+[ ] Marked points/curves in saved images
+[ ] Save program state
+[ ] User-friendly save dialog
+[ ] Buttons for all actions
+[ ] Command-line integration
+[x] Internal coloration
+[ ] Drag to pan/zoom
+[ ] Descend to child for multi-parameter systems
+[ ] Solve for critical points and $n$-cycles automatically
+[ ] User-friendly scripting interface
+[ ] Remove nightly requirement

@@ -138,7 +138,8 @@ macro_rules! basic_escape_encoding {
             let u = self.escape_radius().log2();
             let v = z.norm_sqr().log2();
             let residual = (v / u).log($degree);
-            let potential = f64::from(iters) - $period * (residual as IterCount);
+            let potential =
+                ($period as IterCount).mul_add(IterCount::from(residual), IterCount::from(iters));
             PointInfo::Escaping { potential }
         }
     };

@@ -3,8 +3,11 @@ use eframe::egui::{Pos2, Vec2};
 use std::ops::{Deref, DerefMut};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
+#[cfg(feature="serde")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct Bounds
 {
     pub min_x: RealNum,
@@ -120,6 +123,7 @@ impl Default for Bounds
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct PointGrid
 {
     pub res_x: usize,
@@ -339,8 +343,8 @@ impl Default for PointGrid
     fn default() -> Self
     {
         Self {
-            res_x: 1,
-            res_y: 1,
+            res_x: 256,
+            res_y: 256,
             bounds: Bounds::default(),
         }
     }

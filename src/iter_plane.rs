@@ -43,14 +43,13 @@ where
     }
     fn save(&self, coloring: &Coloring, filename: String)
     {
-        let mut image = ImageBuffer::new(
-            self.point_grid().res_x as u32,
-            self.point_grid().res_y as u32,
-        );
+        let res_x = self.point_grid().res_x as u32;
+        let res_y = self.point_grid().res_y as u32;
+        let mut image = ImageBuffer::new(res_x, res_y);
 
         for (x, y, pixel) in image.enumerate_pixels_mut()
         {
-            let iter_count = self.iter_counts[(x as usize, y as usize)];
+            let iter_count = self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map_rgb(iter_count);
         }
         if let Err(e) = image.save(filename)

@@ -1424,7 +1424,7 @@ impl ParameterPlane for Exponential
                 period: 1,
                 preperiod: iters,
                 multiplier: (0.).into(),
-                final_error: (1e-8).into(),
+                final_error: 1e-8,
             };
         }
         if z.is_infinite()

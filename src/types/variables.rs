@@ -56,6 +56,7 @@ impl Norm<RealNum> for Point
     }
 }
 #[derive(Default, Clone, Copy, Debug, Add, Sub, Display, From, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[display(fmt = "({}, {})", x, y)]
 pub struct Point
 {
@@ -97,14 +98,14 @@ pub struct Matrix2x2
 impl Matrix2x2
 {
     #[must_use]
-    pub fn new(v00: RealNum, v01: RealNum, v10: RealNum, v11: RealNum) -> Self
+    pub const fn new(v00: RealNum, v01: RealNum, v10: RealNum, v11: RealNum) -> Self
     {
         let v0 = Point { x: v00, y: v01 };
         let v1 = Point { x: v10, y: v11 };
         Self { v0, v1 }
     }
     #[must_use]
-    pub fn diag(v00: RealNum, v11: RealNum) -> Self
+    pub const fn diag(v00: RealNum, v11: RealNum) -> Self
     {
         let v0 = Point { x: v00, y: 0. };
         let v1 = Point { x: 0., y: v11 };

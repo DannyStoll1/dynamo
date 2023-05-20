@@ -6,11 +6,11 @@ fn f(z: ComplexNum, c: ComplexNum) -> ComplexNum
 {
     z * z + c
 }
-fn df_dz(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn df_dz(z: ComplexNum, _c: ComplexNum) -> ComplexNum
 {
     z + z
 }
-fn df_dc(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn df_dc(_z: ComplexNum, _c: ComplexNum) -> ComplexNum
 {
     ONE
 }
@@ -72,7 +72,7 @@ impl ParameterPlane for Mandelbrot
                 period: 1,
                 preperiod,
                 multiplier,
-                final_error: (1e-6).into(),
+                final_error: (1e-6),
             };
         }
 
@@ -89,7 +89,7 @@ impl ParameterPlane for Mandelbrot
                 period: 2,
                 preperiod,
                 multiplier: mu2,
-                final_error: (1e-6).into(),
+                final_error: (1e-6),
             };
         }
 

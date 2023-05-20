@@ -3,7 +3,11 @@ use super::types::Hsv;
 use crate::types::*;
 use epaint::Color32;
 
+#[cfg(feature="serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub enum ColoringAlgorithm
 {
     PeriodMultiplier,
@@ -66,7 +70,7 @@ impl ColoringAlgorithm
             }
             Self::Preperiod =>
             {
-                let coloring_rate = 0.02;
+                let _coloring_rate = 0.02;
                 let per = IterCount::from(period);
                 let val = IterCount::from(preperiod);
 
@@ -244,4 +248,10 @@ impl ColoringAlgorithm
     //     }
     //     -(hue + 0.9999 * luminosity)
     // }
+}
+
+impl Default for ColoringAlgorithm {
+    fn default() -> Self {
+        Self::PeriodMultiplier
+    }
 }

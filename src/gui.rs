@@ -122,7 +122,7 @@ impl FractalApp
                     self.pane_pair
                         .set_coloring_algorithm(ColoringAlgorithm::Preperiod);
                 }
-                else if ui.button("Preperiod (smooth)").clicked()
+                else if ui.button("Internal potential").clicked()
                 {
                     self.pane_pair
                         .parent_mut()
@@ -130,6 +130,20 @@ impl FractalApp
                     self.pane_pair
                         .child_mut()
                         .select_preperiod_smooth_coloring();
+                }
+                else if ui.button("Preperiod and Period").clicked()
+                {
+                    self.pane_pair
+                        .set_coloring_algorithm(ColoringAlgorithm::PreperiodPeriod);
+                }
+                else if ui.button("Internal potential and Period").clicked()
+                {
+                    self.pane_pair
+                        .parent_mut()
+                        .select_preperiod_period_smooth_coloring();
+                    self.pane_pair
+                        .child_mut()
+                        .select_preperiod_period_smooth_coloring();
                 }
                 else
                 {
