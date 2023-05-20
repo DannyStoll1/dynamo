@@ -34,19 +34,19 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Right/Left: Change coloring phase
 
 # Planned Features
-[x] Live Julia sets
-[x] Mark orbits
-[x] Marked points
-[ ] Save palettes
-[x] Save images
-[ ] Marked points/curves in saved images
-[ ] Save program state
-[ ] User-friendly save dialog
-[ ] Buttons for all actions
-[ ] Command-line integration
-[x] Internal coloration
-[ ] Drag to pan/zoom
-[ ] Descend to child for multi-parameter systems
-[ ] Solve for critical points and $n$-cycles automatically
-[ ] User-friendly scripting interface
-[ ] Remove nightly requirement
+- [x] Live Julia sets
+- [x] Mark orbits
+- [x] Marked points
+- [ ] Save palettes
+- [x] Save images
+- [ ] Marked points/curves in saved images
+- [ ] Save program state
+- [ ] User-friendly save dialog
+- [ ] Buttons for all actions
+- [ ] Command-line integration
+- [x] Internal coloration
+- [ ] Drag to pan/zoom
+- [ ] Descend to child for multi-parameter systems
+- [ ] Solve for critical points and $n$-cycles automatically
+- [ ] User-friendly scripting interface
+- [ ] Remove nightly requirement
