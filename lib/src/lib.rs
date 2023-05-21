@@ -12,13 +12,6 @@ pub mod point_grid;
 pub mod profiles;
 pub mod types;
 
-fn main() -> Result<(), Box<dyn std::error::Error>>
-{
-    gui::run_app()?;
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests
 {

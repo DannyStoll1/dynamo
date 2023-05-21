@@ -6,29 +6,34 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 
 ## Usage
 
+### Navigation
 - Z: zoom in to selection
 - Ctrl-Z: zoom in far
 - V: zoom out from selection
 - Ctrl-V: zoom out far
+
+### Computation
+- +: Increase max iters
+- -: Decrease max iters
 - Ctrl-S: save image (prompt in command line; currently does not include marked points/curves)
 - H: Resize images
 - L: Toggle live mode
-- R: Randomize palette
-- W: White palette
-- B: Black palette
 - Y: Toggle fixed points
 - U: Toggle 2-cycles
 - P: Toggle critical points
-- +: Increase max iters
-- -: Decrease max iters
 - C: Clear marked curves
+
+### Coloring
+- R: Randomize palette
+- W: White palette
+- B: Black palette
 - 0: Internal coloration: Solid
 - 1: Internal coloration: Period
 - 2: Internal coloration: Period and Multiplier
 - 3: Internal coloration: Multiplier
 - 4: Internal coloration: Preperiod
 - 5: Internal coloration: Potential of linearizing coordinate
-- Up/Down: Change coloring rate
+- Up/Down: Change coloring period
 - Right/Left: Change coloring phase
 
 ## Planned Features
@@ -48,3 +53,6 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - [ ] Solve for critical points and $n$-cycles automatically
 - [ ] User-friendly scripting interface
 - [ ] Remove nightly requirement
+- [x] Implement web interface
+- - [ ] Fix broken clicking in web UI
+- - [ ] Fix slow initial rendering in web UI

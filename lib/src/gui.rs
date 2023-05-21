@@ -16,15 +16,16 @@ pub mod pane;
 use image_frame::ImageFrame;
 use pane::*;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
 {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(300.0, 900.0)),
+        initial_window_size: Some(egui::vec2(1280.0, 720.0)),
         ..Default::default()
     };
 
     eframe::run_native(
-        "Show an image with eframe/egui",
+        "Run complex dynamics simulations",
         options,
         Box::new(|_cc| Box::<FractalApp>::default()),
     )
