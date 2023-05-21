@@ -1,4 +1,4 @@
-use eframe::{web::AppRunnerRef, WebOptions};
+use eframe::{WebOptions, start_web};
 use fractal_lib::gui::FractalApp;
 use wasm_bindgen::{prelude::*, JsValue};
 
@@ -6,9 +6,9 @@ use wasm_bindgen::{prelude::*, JsValue};
 pub async fn run_app(canvas_id: &str) -> Result<(), JsValue>
 {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    let web_options = eframe::WebOptions::default();
+    let web_options = WebOptions::default();
 
-    eframe::start_web(
+    start_web(
         canvas_id,
         web_options,
         Box::new(|_cc| Box::new(FractalApp::default())),

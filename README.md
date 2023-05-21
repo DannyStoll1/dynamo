@@ -41,7 +41,7 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - [x] Mark orbits
 - [x] Marked points
 - Saving improvements
-- - [ ] Save palettes
+  - [ ] Save palettes
   - [x] Save images
     - [ ] Marked points/curves in saved images
   - [ ] Save program state
