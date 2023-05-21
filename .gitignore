@@ -1,4 +1,8 @@
-*/target
+bin/target
+lib/target
+docs/target
+bin/Cargo.lock
+lib/Cargo.lock
+docs/Cargo.lock
 bin/images
 images
-*/Cargo.lock

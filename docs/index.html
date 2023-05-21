@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fractal Explorer</title>
+    <script type="module">
+        import init, { run_app } from './fractal_wasm.js';
+
+        async function main() {
+            await init(); 
+            const canvas_id = "fractal_app";
+            run_app(canvas_id);
+        }
+        main();
+    </script>
+</head>
+<body>
+    <canvas id="fractal_app"></canvas>
+</body>
+</html>
