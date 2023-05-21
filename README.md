@@ -40,11 +40,12 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - [x] Live Julia sets
 - [x] Mark orbits
 - [x] Marked points
-- [ ] Save palettes
-- [x] Save images
-- [ ] Marked points/curves in saved images
-- [ ] Save program state
-- [ ] User-friendly save dialog
+- Saving improvements
+- - [ ] Save palettes
+  - [x] Save images
+    - [ ] Marked points/curves in saved images
+  - [ ] Save program state
+  - [ ] User-friendly save dialog
 - [ ] Buttons for all actions
 - [ ] Command-line integration
 - [x] Internal coloration
@@ -54,5 +55,5 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - [ ] User-friendly scripting interface
 - [ ] Remove nightly requirement
 - [x] Implement web interface
-- - [ ] Fix broken clicking in web UI
-- - [ ] Fix slow initial rendering in web UI
+  - [ ] Fix broken clicking in web UI
+  - [ ] Fix slow initial rendering in web UI
