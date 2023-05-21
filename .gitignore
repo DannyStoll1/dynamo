@@ -1,8 +1,5 @@
-bin/target
-lib/target
-docs/target
-bin/Cargo.lock
-lib/Cargo.lock
-docs/Cargo.lock
+*/target
+*/Cargo.lock
 bin/images
 images
+wasm/Cargo.lock

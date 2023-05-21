@@ -1,4 +1,5 @@
 use crate::macros::*;
+use crate::math_utils::solve_cubic;
 profile_imports!();
 use derive_more::{Add, Display, From, Sub};
 
@@ -494,6 +495,24 @@ impl ParameterPlane for BiquadraticMult
         //     Bicomplex::PlaneB(-0.5 * (c.b + disc)),
         //     Bicomplex::PlaneB(-0.5 * (c.b - disc)),
         // ]
+    }
+
+    fn cycles(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            2 =>
+            {
+                let (r0, r1, r2) = solve_cubic(c.a * c.b - 1., c.a * c.a + c.b, c.a + c.a);
+                vec![
+                    Bicomplex::PlaneA(ZERO),
+                    Bicomplex::PlaneA(r0),
+                    Bicomplex::PlaneA(r1),
+                    Bicomplex::PlaneA(r2),
+                ]
+            }
+            _ => vec![],
+        }
     }
 
     fn periodicity_tolerance(&self) -> RealNum

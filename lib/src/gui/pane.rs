@@ -474,6 +474,8 @@ where
     fn select_point(&mut self, point: ComplexNum)
     {
         self.selection = point;
+
+        #[cfg(not(target_arch = "wasm32"))]
         dbg!(self.selection);
     }
     fn increase_max_iter(&mut self)

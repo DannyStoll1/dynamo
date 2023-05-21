@@ -208,7 +208,7 @@ macro_rules! profile_imports {
 
 pub(crate) use {
     basic_escape_encoding, basic_plane_impl, default_name, fractal_impl, horner, horner_monic,
-    parameter_plane_impl, point_grid_getters, profile_imports,
+    parameter_plane_impl, point_grid_getters, profile_imports
 };
 
 pub(crate) use {max, min};
