@@ -11,8 +11,11 @@ use input_macro::input;
 use super::keyboard_shortcuts::*;
 use super::marked_points::MarkingMode;
 
-use eframe::egui::{Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, Stroke, Ui};
+use eframe::egui::{
+    Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, SidePanel, Slider, Stroke, Ui,
+};
 use egui_extras::{Column, RetainedImage, TableBuilder};
+use egui_file::FileDialog;
 use epaint::{CircleShape, PathShape};
 
 #[cfg(feature = "serde")]
@@ -474,9 +477,9 @@ where
     fn select_point(&mut self, point: ComplexNum)
     {
         self.selection = point;
-
-        #[cfg(not(target_arch = "wasm32"))]
-        dbg!(self.selection);
+        //
+        // #[cfg(not(target_arch = "wasm32"))]
+        // dbg!(self.selection);
     }
     fn increase_max_iter(&mut self)
     {
@@ -542,8 +545,7 @@ where
         let orig_width = self.grid().res_x;
         self.grid_mut().resize_x(img_width);
         let iter_plane = self.plane().compute();
-        let filepath = format!("images/{filename}");
-        iter_plane.save(self.get_coloring(), filepath);
+        iter_plane.save(self.get_coloring(), filename.to_owned());
         self.grid_mut().resize_x(orig_width);
     }
 
@@ -577,43 +579,62 @@ pub trait PanePair
     fn set_palette(&mut self, palette: ColorPalette);
     fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm);
 
+    fn get_pane(&self, pane_id: PaneID) -> &dyn Pane;
+    fn get_pane_mut(&mut self, pane_id: PaneID) -> &mut dyn Pane;
+    fn set_active_pane(&mut self, pane_id: Option<PaneID>);
+    fn get_active_pane(&self) -> Option<&dyn Pane>;
+    fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>;
+    fn save_active_pane(&mut self);
+    fn save_pane(&mut self, pane_id: PaneID);
+    fn change_height(&mut self, new_height: usize);
+}
+
+pub trait Interactive
+{
     fn handle_mouse(&mut self, ctx: &Context);
     fn handle_input(&mut self, ctx: &Context);
 
-    fn change_height(&mut self, new_height: usize);
-
     fn toggle_live_mode(&mut self);
-    fn set_active_pane(&mut self, pane_id: PaneID);
-    fn get_active_pane(&self) -> &dyn Pane;
-    fn get_active_pane_mut(&mut self) -> &mut dyn Pane;
+    fn show_save_dialog(&mut self, ctx: &Context);
     fn process_tasks(&mut self);
-    fn save_active_pane(&mut self);
     fn show(&mut self, ui: &mut Ui);
+    fn consume_click(&mut self);
+    fn reset_click(&mut self);
 }
 
-pub struct WindowPanePair<P, J>
+pub struct MainInterface<P, J>
 where
     P: ParameterPlane + 'static,
     J: ParameterPlane<Param = P::Param> + 'static,
 {
     parent: WindowPane<P>,
     child: WindowPane<J>,
-    active_pane: PaneID,
+    active_pane: Option<PaneID>,
     live_mode: bool,
+    save_dialog: FileDialog,
+    pane_to_save: PaneID,
+    click_used: bool,
 }
 
-impl<P, J> WindowPanePair<P, J>
+impl<P, J> MainInterface<P, J>
 where
     P: ParameterPlane,
     J: ParameterPlane<Param = P::Param> + 'static,
 {
     pub fn new(parent: P, child: J) -> Self
     {
+        let dialog = FileDialog::save_file(None)
+            .default_filename(format!("{}.png", parent.name()))
+            .show_rename(false)
+            .show_new_folder(true);
         Self {
             parent: parent.into(),
             child: child.into(),
-            active_pane: PaneID::Parent,
+            active_pane: Some(PaneID::Parent),
             live_mode: false,
+            save_dialog: dialog,
+            pane_to_save: PaneID::Parent,
+            click_used: false,
         }
     }
 
@@ -627,7 +648,7 @@ where
     }
 }
 
-impl<P, J> PanePair for WindowPanePair<P, J>
+impl<P, J> PanePair for MainInterface<P, J>
 where
     P: ParameterPlane,
     J: ParameterPlane<Param = P::Param> + 'static,
@@ -655,6 +676,91 @@ where
         self.child.change_palette(palette);
     }
 
+    fn save_pane(&mut self, pane_id: PaneID)
+    {
+        // let name = self.get_pane(pane_id).name();
+        self.pane_to_save = pane_id;
+        // self.save_dialog = self.save_dialog.default_filename(name);
+        self.save_dialog.open();
+    }
+
+    fn save_active_pane(&mut self)
+    {
+        if let Some(pane_id) = self.active_pane
+        {
+            self.save_pane(pane_id);
+        }
+    }
+
+    // fn save_active_pane(&mut self)
+    // {
+    //     if let Some(pane) = self.get_active_pane_mut() {
+    //     // Open a save file dialog if it's not already open
+    //     if self.save_dialog.is_none()
+    //     {
+    //         let dialog = FileDialog::save_file(None)
+    //             .default_filename("fractal.png")
+    //             .show_new_folder(true); // if you want to allow creating new folders
+    //         self.save_dialog = Some(dialog);
+    //     }
+    //
+    // }
+    fn set_active_pane(&mut self, pane_id: Option<PaneID>)
+    {
+        self.active_pane = pane_id;
+    }
+
+    fn get_pane(&self, pane_id: PaneID) -> &dyn Pane
+    {
+        match pane_id
+        {
+            PaneID::Parent => self.parent(),
+            PaneID::Child => self.child(),
+        }
+    }
+    fn get_pane_mut(&mut self, pane_id: PaneID) -> &mut dyn Pane
+    {
+        match pane_id
+        {
+            PaneID::Parent => self.parent_mut(),
+            PaneID::Child => self.child_mut(),
+        }
+    }
+
+    fn get_active_pane(&self) -> Option<&dyn Pane>
+    {
+        Some(self.get_pane(self.active_pane?))
+    }
+
+    fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>
+    {
+        Some(self.get_pane_mut(self.active_pane?))
+    }
+
+    fn set_palette(&mut self, palette: ColorPalette)
+    {
+        self.parent.change_palette(palette);
+        self.child.change_palette(palette);
+    }
+
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    {
+        self.parent_mut().set_coloring_algorithm(coloring_algorithm);
+        self.child_mut().set_coloring_algorithm(coloring_algorithm);
+    }
+
+    fn change_height(&mut self, new_height: usize)
+    {
+        self.parent.change_height(new_height);
+        self.child.change_height(new_height);
+    }
+}
+
+impl<P, J> Interactive for MainInterface<P, J>
+where
+    P: ParameterPlane,
+    J: ParameterPlane<Param = P::Param> + 'static,
+{
     fn handle_mouse(&mut self, ctx: &Context)
     {
         let clicked = ctx.input(|i| i.pointer.any_click());
@@ -665,7 +771,7 @@ where
             if self.parent().frame_contains_pixel(pointer_pos)
             {
                 ctx.set_cursor_icon(CursorIcon::Crosshair);
-                self.set_active_pane(PaneID::Parent);
+                self.set_active_pane(Some(PaneID::Parent));
                 let reselect_point = self.live_mode || clicked;
                 let pointer_value = self.parent().map_pixel(pointer_pos);
                 self.parent_mut()
@@ -678,7 +784,7 @@ where
 
                 if clicked
                 {
-                    // self.consume_click();
+                    self.consume_click();
                     self.parent_mut().clear_marked_curves();
                     self.parent_mut().mark_orbit_and_info(pointer_value);
                 }
@@ -686,14 +792,14 @@ where
             else if self.child().frame_contains_pixel(pointer_pos)
             {
                 ctx.set_cursor_icon(CursorIcon::Crosshair);
-                self.set_active_pane(PaneID::Child);
+                self.set_active_pane(Some(PaneID::Child));
                 let pointer_value = self.child().map_pixel(pointer_pos);
                 self.child_mut()
                     .process_mouse_input(pointer_value, zoom_factor, clicked);
 
                 if clicked
                 {
-                    // self.consume_click();
+                    self.consume_click();
                     self.child_mut().clear_marked_curves();
                     self.child_mut().mark_orbit_and_info(pointer_value);
                 }
@@ -710,68 +816,46 @@ where
         self.live_mode ^= true;
     }
 
-    fn set_active_pane(&mut self, pane_id: PaneID)
-    {
-        self.active_pane = pane_id;
-    }
-
-    fn get_active_pane(&self) -> &dyn Pane
-    {
-        match self.active_pane
-        {
-            PaneID::Parent => self.parent(),
-            PaneID::Child => self.child(),
-        }
-    }
-    fn get_active_pane_mut(&mut self) -> &mut dyn Pane
-    {
-        match self.active_pane
-        {
-            PaneID::Parent => self.parent_mut(),
-            PaneID::Child => self.child_mut(),
-        }
-    }
     fn process_tasks(&mut self)
     {
         self.parent.process_task();
         self.child.process_task();
     }
 
-    fn change_height(&mut self, new_height: usize)
+    fn show_save_dialog(&mut self, ctx: &Context)
     {
-        self.parent.change_height(new_height);
-        self.child.change_height(new_height);
-    }
+        self.save_dialog.show(ctx); // show the dialog
 
-    fn set_palette(&mut self, palette: ColorPalette)
-    {
-        self.parent.change_palette(palette);
-        self.child.change_palette(palette);
-    }
-
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
-    {
-        self.parent_mut().set_coloring_algorithm(coloring_algorithm);
-        self.child_mut().set_coloring_algorithm(coloring_algorithm);
-    }
-
-    fn save_active_pane(&mut self)
-    {
-        let pane = self.get_active_pane_mut();
-        let filename = input!("Enter image filename to save: ");
-        match input!("Enter width of image: ").parse::<usize>()
+        // Check if a file has been selected
+        if self.save_dialog.selected()
         {
-            Ok(width) =>
+            self.set_active_pane(None);
+            if let Some(path) = self.save_dialog.path()
             {
-                pane.save_image(width, &filename);
-                println!("Image saved to images/{}", &filename);
+                let filename = path.to_string_lossy().into_owned();
+
+                let mut image_width: usize = 4096;
+
+                // Use a slider for image width input
+                SidePanel::left("side_panel").show(ctx, |ui| {
+                    ui.heading("Enter image width:");
+                    ui.add(Slider::new(&mut image_width, 1..=1000));
+                });
+
+                let pane = self.get_pane_mut(self.pane_to_save);
+                pane.save_image(image_width, &filename);
             }
-            Err(e) => println!("Error parsing width: {:?}", e),
         }
     }
 
     fn handle_input(&mut self, ctx: &Context)
     {
+        if self.save_dialog.visible()
+        {
+            ctx.set_cursor_icon(CursorIcon::Default);
+            return;
+        }
+
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_R))
         {
             self.randomize_palette();
@@ -821,100 +905,132 @@ where
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_UP))
         {
-            let pane = self.get_active_pane_mut();
-            pane.scale_palette(1.25);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.scale_palette(1.25);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_DOWN))
         {
-            let pane = self.get_active_pane_mut();
-            pane.scale_palette(0.8);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.scale_palette(0.8);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_LEFT))
         {
-            let pane = self.get_active_pane_mut();
-            pane.shift_palette(-0.02);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.shift_palette(-0.02);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_RIGHT))
         {
-            let pane = self.get_active_pane_mut();
-            pane.shift_palette(0.02);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.shift_palette(0.02);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_Z))
         {
-            let pane = self.get_active_pane_mut();
-            pane.zoom(0.8, pane.get_selection());
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.zoom(0.8, pane.get_selection());
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&CTRL_Z))
         {
-            let pane = self.get_active_pane_mut();
-            pane.zoom(0.125, pane.get_selection());
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.zoom(0.125, pane.get_selection());
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_V))
         {
-            let pane = self.get_active_pane_mut();
-            pane.zoom(1.25, pane.get_selection());
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.zoom(1.25, pane.get_selection());
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&CTRL_V))
         {
-            let pane = self.get_active_pane_mut();
-            pane.zoom(8., pane.get_selection());
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.zoom(8., pane.get_selection());
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_SPACE))
         {
-            let pane = self.get_active_pane_mut();
-            let selection = pane.get_selection();
-            pane.grid_mut().recenter(selection);
-            pane.schedule_recompute();
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                let selection = pane.get_selection();
+                pane.grid_mut().recenter(selection);
+                pane.schedule_recompute();
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_0))
         {
-            let pane = self.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_1))
         {
-            let pane = self.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Period);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.set_coloring_algorithm(ColoringAlgorithm::Period);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_2))
         {
-            let pane = self.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_3))
         {
-            let pane = self.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_4))
         {
-            let pane = self.get_active_pane_mut();
-            pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_5))
         {
-            let pane = self.get_active_pane_mut();
-            pane.select_preperiod_smooth_coloring();
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.select_preperiod_smooth_coloring();
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_C))
         {
-            let pane = self.get_active_pane_mut();
-            pane.clear_marked_curves();
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.clear_marked_curves();
+            }
             // pane.clear_marked_points();
         }
 
@@ -925,29 +1041,34 @@ where
 
         if ctx.input_mut(|i| i.consume_shortcut(&CTRL_S))
         {
-            let pane = self.get_active_pane_mut();
-            let filename = input!("Enter image filename to save: ");
-            match input!("Enter width of image: ").parse::<usize>()
-            {
-                Ok(width) =>
-                {
-                    pane.save_image(width, &filename);
-                    println!("Image saved to images/{}", &filename);
-                }
-                Err(e) => println!("Error parsing width: {e:?}"),
-            }
+            self.save_active_pane();
+            // if let Some(pane) = self.get_active_pane_mut() {
+            // let filename = input!("Enter image filename to save: ");
+            // match input!("Enter width of image: ").parse::<usize>()
+            // {
+            //     Ok(width) =>
+            //     {
+            //         pane.save_image(width, &filename);
+            //         println!("Image saved to images/{}", &filename);
+            //     }
+            //     Err(e) => println!("Error parsing width: {e:?}"),
+            // }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_EQUALS))
         {
-            let pane = self.get_active_pane_mut();
-            pane.increase_max_iter();
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.increase_max_iter();
+            }
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_MINUS))
         {
-            let pane = self.get_active_pane_mut();
-            pane.decrease_max_iter();
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.decrease_max_iter();
+            }
         }
         self.handle_mouse(ctx);
     }
@@ -991,4 +1112,18 @@ where
                 });
             });
     }
+
+    fn consume_click(&mut self)
+    {
+        self.click_used = true;
+    }
+
+    fn reset_click(&mut self)
+    {
+        self.click_used = false;
+    }
 }
+
+pub trait Interface: PanePair + Interactive {}
+
+impl<T> Interface for T where T: PanePair + Interactive {}

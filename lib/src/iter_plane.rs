@@ -52,9 +52,12 @@ where
             let iter_count = self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map_rgb(iter_count);
         }
-        if let Err(e) = image.save(filename)
+        if let Err(e) = image.save(filename.clone())
         {
             println!("Error encountered saving file: {e:?}")
+        }
+        else {
+            println!("Image saved to {}", filename);
         }
     }
 }

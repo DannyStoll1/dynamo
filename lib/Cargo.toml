@@ -22,6 +22,7 @@ serde = { version = "1.0.163", features = ["derive"], optional = true }
 wasm-bindgen = { version = ">=0.2.84", optional = true }
 wasm-bindgen-futures = { version = ">=0.4.30", optional = true }
 web-sys = { version = ">=0.3.50", features = ["console"] }
+egui_file = "0.8.2"
 
 [features]
 serde = ["dep:serde", "eframe/serde", "epaint/serde", "num-complex/serde"]

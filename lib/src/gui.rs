@@ -33,17 +33,11 @@ pub fn run_app() -> Result<(), eframe::Error>
 
 pub struct FractalApp
 {
-    pane_pair: Box<dyn PanePair>,
-    click_used: bool,
+    interface: Box<dyn Interface>,
 }
 
 impl FractalApp
 {
-    fn consume_click(&mut self)
-    {
-        self.click_used = true;
-    }
-
     fn show_menu(&mut self, ui: &mut egui::Ui)
     {
         egui::menu::bar(ui, |ui| {
@@ -56,10 +50,17 @@ impl FractalApp
     fn file_menu(&mut self, ui: &mut egui::Ui)
     {
         ui.menu_button("File", |ui| {
-            if ui.button("Save").clicked()
+            if ui.button("Save Parent").clicked()
             {
-                self.pane_pair.save_active_pane();
-                self.consume_click();
+                self.interface.save_pane(PaneID::Parent);
+                self.interface.consume_click();
+                ui.close_menu();
+            }
+            else if ui.button("Save Child").clicked()
+            {
+                self.interface.save_pane(PaneID::Child);
+                self.interface.consume_click();
+                ui.close_menu();
             }
         });
     }
@@ -79,70 +80,70 @@ impl FractalApp
                 if ui.button("Black").clicked()
                 {
                     let black_palette = ColorPalette::black(32.);
-                    self.pane_pair.set_palette(black_palette);
+                    self.interface.set_palette(black_palette);
                 }
                 else if ui.button("White").clicked()
                 {
                     let white_palette = ColorPalette::white(32.);
-                    self.pane_pair.set_palette(white_palette);
+                    self.interface.set_palette(white_palette);
                 }
                 else if ui.button("Random").clicked()
                 {
-                    self.pane_pair.randomize_palette();
+                    self.interface.randomize_palette();
                 }
                 else
                 {
                     return;
                 }
-                self.consume_click();
+                self.interface.consume_click();
                 ui.close_menu();
             });
             ui.menu_button("Algorithm", |ui| {
                 if ui.button("Solid").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .set_coloring_algorithm(ColoringAlgorithm::Solid);
                 }
                 else if ui.button("Period").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .set_coloring_algorithm(ColoringAlgorithm::Period);
                 }
                 else if ui.button("Period and Multiplier").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
                 }
                 else if ui.button("Multiplier").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .set_coloring_algorithm(ColoringAlgorithm::Multiplier);
                 }
                 else if ui.button("Preperiod").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .set_coloring_algorithm(ColoringAlgorithm::Preperiod);
                 }
                 else if ui.button("Internal potential").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .parent_mut()
                         .select_preperiod_smooth_coloring();
-                    self.pane_pair
+                    self.interface
                         .child_mut()
                         .select_preperiod_smooth_coloring();
                 }
                 else if ui.button("Preperiod and Period").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .set_coloring_algorithm(ColoringAlgorithm::PreperiodPeriod);
                 }
                 else if ui.button("Internal potential and Period").clicked()
                 {
-                    self.pane_pair
+                    self.interface
                         .parent_mut()
                         .select_preperiod_period_smooth_coloring();
-                    self.pane_pair
+                    self.interface
                         .child_mut()
                         .select_preperiod_period_smooth_coloring();
                 }
@@ -150,7 +151,7 @@ impl FractalApp
                 {
                     return;
                 }
-                self.consume_click();
+                self.interface.consume_click();
                 ui.close_menu();
             });
         });
@@ -190,7 +191,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
                 ui.menu_button("Marked Periodic Point", |ui| {
@@ -212,7 +213,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
@@ -234,7 +235,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
             });
@@ -258,7 +259,7 @@ impl FractalApp
             {
                 return;
             }
-            self.consume_click();
+            self.interface.consume_click();
             ui.close_menu();
         });
     }
@@ -269,7 +270,7 @@ impl FractalApp
                 if ui.button("Base Curve").clicked()
                 {
                     self.change_fractal(QuadRatPer2::new_default, JuliaSet::from);
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 }
                 ui.menu_button("Marked Cycle", |ui| {
@@ -298,7 +299,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
                 ui.menu_button("Marked Periodic Point", |ui| {
@@ -313,7 +314,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
@@ -335,7 +336,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
             });
@@ -343,7 +344,7 @@ impl FractalApp
                 if ui.button("Base Curve").clicked()
                 {
                     self.change_fractal(QuadRatPer3::new_default, JuliaSet::from);
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 }
                 ui.menu_button("Marked Cycle curves", |ui| {
@@ -365,7 +366,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
             });
@@ -373,7 +374,7 @@ impl FractalApp
                 if ui.button("Base Curve").clicked()
                 {
                     self.change_fractal(QuadRatPer4::new_default, JuliaSet::from);
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 }
                 ui.menu_button("Marked Cycle curves", |ui| {
@@ -388,21 +389,21 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
             });
             if ui.button("QuadRat Per(5)").clicked()
             {
                 self.change_fractal(QuadRatPer5::new_default, JuliaSet::from);
-                self.consume_click();
+                self.interface.consume_click();
                 ui.close_menu();
             }
             ui.menu_button("QuadRat Preper(2, 1)", |ui| {
                 if ui.button("Base Curve").clicked()
                 {
                     self.change_fractal(QuadRatPreper21::new_default, JuliaSet::from);
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 }
                 ui.menu_button("Marked Cycle", |ui| {
@@ -428,7 +429,7 @@ impl FractalApp
                     {
                         return;
                     }
-                    self.consume_click();
+                    self.interface.consume_click();
                     ui.close_menu();
                 });
             });
@@ -443,13 +444,13 @@ impl FractalApp
         T: ParameterPlane + Clone + 'static,
         S: ParameterPlane<Param = T::Param> + Clone + 'static,
     {
-        let res_y = self.pane_pair.parent().grid().res_y;
+        let res_y = self.interface.parent().grid().res_y;
         let max_iters = 2048;
 
         let parent_plane = create_plane(res_y, max_iters);
         let child_plane = create_child(parent_plane.clone());
 
-        self.pane_pair = Box::new(WindowPanePair::new(parent_plane, child_plane));
+        self.interface = Box::new(MainInterface::new(parent_plane, child_plane));
     }
 }
 
@@ -473,11 +474,10 @@ impl Default for FractalApp
         // let parent_plane = CubicPer1Lambda::new_default(height, 1024);
         // let child_plane = JuliaSet::from(parent_plane.clone());
 
-        let pane_pair = Box::new(WindowPanePair::new(parent_plane, child_plane));
+        let interface = Box::new(MainInterface::new(parent_plane, child_plane));
 
         Self {
-            pane_pair,
-            click_used: false,
+            interface,
         }
     }
 }
@@ -488,10 +488,10 @@ impl eframe::App for FractalApp
     {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.show_menu(ui);
-            self.pane_pair.handle_input(ctx);
-            self.pane_pair.process_tasks();
-            self.pane_pair.show(ui);
+            self.interface.handle_input(ctx);
+            self.interface.show_save_dialog(ctx);
+            self.interface.process_tasks();
+            self.interface.show(ui);
         });
-        self.click_used = false;
     }
 }

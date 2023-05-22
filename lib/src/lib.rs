@@ -71,12 +71,12 @@ mod tests
     #[test]
     fn gui_speedtest()
     {
-        use crate::gui::pane::{PanePair, WindowPanePair};
+        use crate::gui::pane::{PanePair, MainInterface};
         let parameter_plane = QuadRatPer2::new_default(1024, 2048);
 
         let dynamical_plane = JuliaSet::new(parameter_plane.clone(), (0.).into(), 1024);
 
-        let mut pane_pair = Box::new(WindowPanePair::new(parameter_plane, dynamical_plane));
+        let mut pane_pair = Box::new(MainInterface::new(parameter_plane, dynamical_plane));
         for _ in 0..10
         {
             pane_pair.child_mut().recompute();
