@@ -22,7 +22,7 @@ use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
 use std::ops::{MulAssign, Sub};
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
-pub trait ParameterPlane: Sync + Send
+pub trait ParameterPlane: Sync + Send + Clone
 {
     type Var: Norm<RealNum>
         + Dist<RealNum>
@@ -32,7 +32,9 @@ pub trait ParameterPlane: Sync + Send
         + Into<ComplexNum>
         + Display;
     type Param: Into<Self::Var> + From<ComplexNum> + Clone + Copy + Send + Sync + Default + Display;
+    type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Display;
     type Deriv: Norm<RealNum> + Send + Default + From<f64> + MulAssign + Display;
+    type Child: ParameterPlane + From<Self>;
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
@@ -48,6 +50,12 @@ pub trait ParameterPlane: Sync + Send
     ) -> EscapeState<Self::Var, Self::Deriv>
     {
         EscapeState::NotYetEscaped
+    }
+
+    // Minimum iterations before cycle detection is allowed
+    fn min_iter(&self) -> Period
+    {
+        0
     }
 
     fn max_iter(&self) -> Period;
@@ -172,6 +180,7 @@ pub trait ParameterPlane: Sync + Send
                                 start,
                                 param,
                                 self.max_iter(),
+                                self.min_iter(),
                                 self.periodicity_tolerance(),
                                 self.escape_radius(),
                             ))
@@ -200,21 +209,41 @@ pub trait ParameterPlane: Sync + Send
     }
 
     #[inline]
-    fn get_param(&self) -> Self::Param
+    fn get_param(&self) -> Self::MetaParam
     {
-        Self::Param::default()
+        Self::MetaParam::default()
     }
 
     #[inline]
-    fn set_param(&mut self, _value: Self::Param) {}
+    fn get_local_param(&self) -> <Self::MetaParam as ParamList>::Param
+    {
+        <Self::MetaParam as ParamList>::Param::default()
+    }
 
     #[inline]
-    fn critical_points(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn set_meta_param(&mut self, _value: Self::MetaParam) {}
+
+    #[inline]
+    fn set_param(&mut self, _value: <Self::MetaParam as ParamList>::Param) {}
+
+    #[inline]
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         vec![]
     }
 
-    fn cycles(&self, _param: Self::Param, _period: Period) -> Vec<Self::Var>
+    #[inline]
+    fn critical_points(&self) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    fn cycles_child(&self, _param: Self::Param, _period: Period) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
@@ -280,6 +309,7 @@ pub trait ParameterPlane: Sync + Send
             start,
             param,
             self.max_iter(),
+            self.min_iter(),
             self.periodicity_tolerance(),
             self.escape_radius(),
         );
@@ -336,6 +366,7 @@ pub trait ParameterPlane: Sync + Send
             start,
             param,
             self.max_iter(),
+            self.min_iter(),
             self.periodicity_tolerance(),
             self.escape_radius(),
         );
@@ -357,6 +388,11 @@ pub trait ParameterPlane: Sync + Send
         )
     }
 
+    fn default_bounds(&self) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+
     fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
@@ -367,22 +403,23 @@ pub trait ParameterPlane: Sync + Send
         ComplexNum::default()
     }
 
-    fn julia_set(&self, point: ComplexNum) -> Option<JuliaSet<Self>>
-    where
-        Self: Clone,
-    {
-        let param = self.param_map(point);
-        let point_grid = self
-            .point_grid()
-            .with_same_height(self.default_julia_bounds(point, param));
-
-        Some(JuliaSet {
-            point_grid,
-            max_iter: self.max_iter(),
-            parent: self.clone(),
-            param,
-        })
-    }
+    // fn julia_set(&self, point: ComplexNum) -> Option<Self::Child>
+    // where
+    //     Self: Clone,
+    // {
+    //     let param = self.param_map(point);
+    //     let point_grid = self
+    //         .point_grid()
+    //         .with_same_height(self.default_julia_bounds(point, param));
+    //
+    //     Some(JuliaSet {
+    //         point_grid,
+    //         max_iter: self.max_iter(),
+    //         min_iter: self.min_iter(),
+    //         parent: self.clone(),
+    //         param: (self.get_param(), param),
+    //     })
+    // }
 
     fn default_coloring(&self) -> Coloring
     {
@@ -393,7 +430,7 @@ pub trait ParameterPlane: Sync + Send
 
     fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
     {
-        ColoringAlgorithm::PreperiodSmooth {
+        ColoringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
         }
     }
@@ -403,6 +440,50 @@ pub trait ParameterPlane: Sync + Send
         ColoringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.04,
+        }
+    }
+
+    fn internal_potential(&self, point_info: PointInfo<Self::Deriv>) -> IterCount
+    {
+        match point_info
+        {
+            PointInfo::Bounded => 0.,
+            PointInfo::Escaping { potential } => potential,
+            PointInfo::Periodic {
+                preperiod,
+                period,
+                multiplier,
+                final_error,
+            } =>
+            {
+                let per = IterCount::from(period);
+
+                let mult_norm = multiplier.norm();
+
+                // Superattracting case
+                if mult_norm <= 1e-10
+                {
+                    let potential =
+                        2. * (final_error.log(self.periodicity_tolerance())).log2() as IterCount;
+                    per.mul_add(-potential, IterCount::from(preperiod))
+                }
+                // Parabolic case
+                else if 1. - mult_norm <= 1e-5
+                {
+                    let potential = final_error / self.periodicity_tolerance();
+                    per.mul_add(-potential, IterCount::from(preperiod))
+                }
+                else
+                {
+                    let mut potential =
+                        -(final_error / self.periodicity_tolerance()).log(mult_norm) as IterCount;
+                    if potential.is_infinite() || potential.is_nan()
+                    {
+                        potential = -0.2;
+                    }
+                    per.mul_add(potential, f64::from(preperiod))
+                }
+            }
         }
     }
 }

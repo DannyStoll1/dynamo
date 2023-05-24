@@ -115,32 +115,32 @@ impl Dist<RealNum> for Bicomplex
     }
 }
 
-#[derive(Default, Clone, Copy, Add, From, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
-pub struct Param
+pub struct ComplexPair
 {
     pub a: ComplexNum,
     pub b: ComplexNum,
 }
 
-impl From<ComplexNum> for Param
+impl From<ComplexNum> for ComplexPair
 {
     fn from(z: ComplexNum) -> Self
     {
         Self::from((z, ONE))
     }
 }
-impl From<Param> for ComplexNum
+impl From<ComplexPair> for ComplexNum
 {
-    fn from(value: Param) -> Self
+    fn from(value: ComplexPair) -> Self
     {
-        -0.5 * value.a
+        value.a * value.b
     }
 }
-impl From<Param> for Bicomplex
+impl From<ComplexPair> for Bicomplex
 {
-    fn from(value: Param) -> Self
+    fn from(value: ComplexPair) -> Self
     {
         Self::PlaneA(-0.5 * value.a)
     }
@@ -229,6 +229,8 @@ impl ParameterPlane for Biquadratic
     type Var = Bicomplex;
     type Param = ComplexNum;
     type Deriv = ComplexNum;
+    type MetaParam = ComplexNum;
+    type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
     #[inline]
@@ -390,8 +392,10 @@ impl BiquadraticMult
 impl ParameterPlane for BiquadraticMult
 {
     type Var = Bicomplex;
-    type Param = Param;
+    type Param = ComplexPair;
     type Deriv = ComplexNum;
+    type MetaParam = ComplexNum;
+    type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
     #[inline]
@@ -479,7 +483,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn critical_points(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         // vec![Bicomplex::PlaneA(-0.5 * c.a), Bicomplex::PlaneB(-0.5 * c.b)]
 
@@ -497,13 +501,13 @@ impl ParameterPlane for BiquadraticMult
         // ]
     }
 
-    fn cycles(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, ComplexPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period
         {
             2 =>
             {
-                let (r0, r1, r2) = solve_cubic(c.a * c.b - 1., c.a * c.a + c.b, c.a + c.a);
+                let (r0, r1, r2) = solve_cubic(a * b - 1., a * a + b, a + a);
                 vec![
                     Bicomplex::PlaneA(ZERO),
                     Bicomplex::PlaneA(r0),
@@ -530,9 +534,24 @@ impl ParameterPlane for BiquadraticMult
         Bounds::square(2.5, -0.5 * c.a)
     }
 
-    fn set_param(&mut self, value: Self::Param)
+    fn set_meta_param(&mut self, meta_param: Self::MetaParam)
     {
-        self.multiplier = value.a * value.b;
+        self.multiplier = meta_param;
+    }
+
+    fn set_param(&mut self, multiplier: ComplexNum)
+    {
+        self.multiplier = multiplier;
+    }
+
+    fn get_param(&self) -> Self::MetaParam
+    {
+        self.multiplier
+    }
+
+    fn get_local_param(&self) -> <Self::MetaParam as ParamList>::Param
+    {
+        self.multiplier
     }
 }
 
@@ -551,9 +570,11 @@ impl BiquadraticMultParam
 
 impl ParameterPlane for BiquadraticMultParam
 {
-    type Param = Param;
+    type Param = ComplexPair;
     type Var = Bicomplex;
     type Deriv = ComplexNum;
+    type MetaParam = NoParam;
+    type Child = BiquadraticMult;
     basic_plane_impl!();
 
     fn encode_escaping_point(
@@ -746,7 +767,12 @@ impl BiquadraticMultSecondIterate
 
 impl ParameterPlane for BiquadraticMultSecondIterate
 {
-    parameter_plane_impl!();
+    type Var = ComplexNum;
+    type Param = ComplexNum;
+    type Deriv = ComplexNum;
+    type MetaParam = ComplexNum;
+    type Child = JuliaSet<Self>;
+    basic_plane_impl!();
 
     #[inline]
     fn name(&self) -> String
@@ -832,7 +858,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         )
     }
 
-    fn set_param(&mut self, value: Self::Param)
+    fn set_meta_param(&mut self, value: Self::Param)
     {
         self.multiplier = value;
     }

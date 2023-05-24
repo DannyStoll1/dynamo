@@ -22,7 +22,7 @@ impl MarkingMode
         let mut points = vec![];
         if self.critical
         {
-            let crit_pts = plane.critical_points(plane.get_param());
+            let crit_pts = plane.critical_points();
             let color = Color32::RED;
             points.extend(crit_pts.iter().map(|z| ((*z).into(), color)));
         }
@@ -33,7 +33,7 @@ impl MarkingMode
             .for_each(|(period, enabled)| {
                 if *enabled
                 {
-                    let per_pts = plane.cycles(plane.get_param(), 1 + period as Period);
+                    let per_pts = plane.cycles(1 + period as Period);
                     let color = self.palette.map_color32(period as f32, 1.);
                     points.extend(per_pts.iter().map(|z| ((*z).into(), color)));
                 }

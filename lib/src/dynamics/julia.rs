@@ -1,7 +1,7 @@
 use crate::coloring::{algorithms::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::{ComplexNum, ComplexVec, EscapeState, Period, PointInfo, RealNum};
+use crate::types::*;
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
@@ -10,8 +10,11 @@ where
 {
     pub point_grid: PointGrid,
     pub max_iter: Period,
+    pub min_iter: Period,
     pub parent: T,
-    pub param: T::Param,
+    pub meta_params: T::MetaParam,
+    pub local_param: T::Param,
+    pub parent_selection: ComplexNum,
 }
 
 impl<T> JuliaSet<T>
@@ -19,17 +22,20 @@ where
     T: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(parent: T, point: ComplexNum, max_iter: Period) -> Self
+    pub fn new(parent: T, parent_selection: ComplexNum, max_iter: Period) -> Self
     {
-        let param = parent.param_map(point);
+        let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(point, param));
+            .with_same_height(parent.default_julia_bounds(parent_selection, local_param));
         Self {
             point_grid,
-            max_iter,
-            parent,
-            param,
+            parent: parent.clone(),
+            max_iter: parent.max_iter(),
+            min_iter: parent.min_iter(),
+            meta_params: parent.get_param(),
+            local_param,
+            parent_selection,
         }
     }
 }
@@ -40,27 +46,32 @@ where
 {
     fn from(parent: T) -> Self
     {
-        let point = parent.default_selection();
-        let param = parent.param_map(point);
+        let parent_selection = parent.default_selection();
+        let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(point, param));
+            .with_same_height(parent.default_julia_bounds(parent_selection, local_param));
         Self {
             point_grid,
             parent: parent.clone(),
             max_iter: parent.max_iter(),
-            param,
+            min_iter: parent.min_iter(),
+            meta_params: parent.get_param(),
+            local_param,
+            parent_selection,
         }
     }
 }
 
 impl<T> ParameterPlane for JuliaSet<T>
 where
-    T: ParameterPlane + Clone,
+    T: ParameterPlane,
 {
     type Var = T::Var;
     type Param = T::Param;
+    type MetaParam = ParamStack<T::MetaParam, T::Param>;
     type Deriv = T::Deriv;
+    type Child = Self;
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -81,7 +92,8 @@ where
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv) {
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
         self.parent.map_and_multiplier(z, c)
     }
 
@@ -104,6 +116,12 @@ where
     }
 
     #[inline]
+    fn min_iter(&self) -> Period
+    {
+        self.min_iter
+    }
+
+    #[inline]
     fn max_iter(&self) -> Period
     {
         self.max_iter
@@ -118,7 +136,7 @@ where
     #[inline]
     fn param_map(&self, _z: ComplexNum) -> Self::Param
     {
-        self.param
+        self.local_param
     }
 
     #[inline]
@@ -143,21 +161,50 @@ where
     }
 
     #[inline]
-    fn set_param(&mut self, value: Self::Param)
+    fn set_meta_param(
+        &mut self,
+        ParamStack {
+            meta_params,
+            local_param,
+        }: Self::MetaParam,
+    )
     {
-        self.param = value;
+        self.meta_params = meta_params;
+        self.local_param = local_param;
     }
 
     #[inline]
-    fn get_param(&self) -> Self::Param
+    fn set_param(&mut self, local_param: Self::Param)
     {
-        self.param
+        self.local_param = local_param;
     }
 
     #[inline]
-    fn julia_set(&self, _param: ComplexNum) -> Option<JuliaSet<Self>>
+    fn get_param(&self) -> Self::MetaParam
     {
-        None
+        ParamStack {
+            local_param: self.local_param,
+            meta_params: self.meta_params,
+        }
+    }
+
+    #[inline]
+    fn get_local_param(&self) -> Self::Param
+    {
+        self.local_param
+    }
+
+    // #[inline]
+    // fn julia_set(&self, _param: ComplexNum) -> Option<JuliaSet<Self>>
+    // {
+    //     None
+    // }
+    //
+    #[inline]
+    fn default_bounds(&self) -> Bounds
+    {
+        self.parent
+            .default_julia_bounds(self.parent_selection, self.local_param)
     }
 
     #[inline]
@@ -167,15 +214,27 @@ where
     }
 
     #[inline]
-    fn critical_points(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
-        self.parent.critical_points(self.param)
+        self.parent.critical_points_child(self.local_param)
     }
 
     #[inline]
-    fn cycles(&self, _param: Self::Param, period: Period) -> Vec<Self::Var>
+    fn critical_points(&self) -> Vec<Self::Var>
     {
-        self.parent.cycles(self.param, period)
+        self.parent.critical_points_child(self.local_param)
+    }
+
+    #[inline]
+    fn cycles_child(&self, _param: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        self.parent.cycles_child(self.local_param, period)
+    }
+
+    #[inline]
+    fn cycles(&self, period: Period) -> Vec<Self::Var>
+    {
+        self.parent.cycles_child(self.local_param, period)
     }
 
     #[inline]
@@ -200,7 +259,7 @@ where
 
     fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
     {
-        ColoringAlgorithm::PreperiodSmooth {
+        ColoringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
         }
     }

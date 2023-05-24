@@ -97,7 +97,7 @@ impl ParameterPlane for Mandelbrot
     }
 
     #[inline]
-    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![ComplexNum::new(0., 0.)]
     }
@@ -108,7 +108,7 @@ impl ParameterPlane for Mandelbrot
         Bounds::centered_square(2.2)
     }
 
-    fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
     {
         match period
         {

@@ -27,12 +27,20 @@ pub type ColoredCurve = (Vec<ComplexNum>, Color32);
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum RedrawMessage
+pub enum ComputeTask
 {
     DoNothing,
     Redraw,
     Recompute,
     Compute,
+}
+
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ResizeTask
+{
+    DoNothing,
+    ShowDialog,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -45,8 +53,8 @@ pub enum PaneID
 
 pub trait Pane
 {
-    fn get_task(&self) -> &RedrawMessage;
-    fn set_task(&mut self, new_task: RedrawMessage);
+    fn get_task(&self) -> &ComputeTask;
+    fn set_task(&mut self, new_task: ComputeTask);
 
     fn get_frame(&self) -> &ImageFrame;
     fn get_frame_mut(&mut self) -> &mut ImageFrame;
@@ -137,22 +145,22 @@ pub trait Pane
 
     fn schedule_compute(&mut self)
     {
-        self.set_task(RedrawMessage::Compute);
+        self.set_task(ComputeTask::Compute);
     }
 
     fn schedule_recompute(&mut self)
     {
-        if !matches!(self.get_task(), RedrawMessage::Compute)
+        if !matches!(self.get_task(), ComputeTask::Compute)
         {
-            self.set_task(RedrawMessage::Recompute);
+            self.set_task(ComputeTask::Recompute);
         }
     }
 
     fn schedule_redraw(&mut self)
     {
-        if matches!(self.get_task(), RedrawMessage::DoNothing)
+        if matches!(self.get_task(), ComputeTask::DoNothing)
         {
-            self.set_task(RedrawMessage::Redraw);
+            self.set_task(ComputeTask::Redraw);
         }
     }
 
@@ -214,24 +222,24 @@ pub trait Pane
         let task = self.get_task();
         match task
         {
-            RedrawMessage::Recompute =>
+            ComputeTask::Recompute =>
             {
                 self.recompute();
                 self.redraw();
             }
-            RedrawMessage::Redraw =>
+            ComputeTask::Redraw =>
             {
                 self.redraw();
             }
-            RedrawMessage::DoNothing =>
+            ComputeTask::DoNothing =>
             {}
-            RedrawMessage::Compute =>
+            ComputeTask::Compute =>
             {
                 self.compute();
                 self.redraw();
             }
         }
-        self.set_task(RedrawMessage::DoNothing);
+        self.set_task(ComputeTask::DoNothing);
     }
 
     fn frame_contains_pixel(&self, pointer_pos: Pos2) -> bool
@@ -289,7 +297,7 @@ where
     pub coloring: Coloring,
     iter_plane: IterPlane<P::Deriv>,
     pub image_frame: ImageFrame,
-    task: RedrawMessage,
+    task: ComputeTask,
     selection: ComplexNum,
     marked_curves: Vec<ColoredCurve>,
     marked_points: ColoredPoints,
@@ -301,7 +309,7 @@ impl<P> WindowPane<P>
 where
     P: ParameterPlane + 'static,
 {
-    pub fn set_param(&mut self, new_param: P::Param)
+    pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param)
     {
         self.plane.set_param(new_param);
         self.schedule_recompute();
@@ -312,7 +320,7 @@ where
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
         let iter_plane = plane.compute();
-        let task = RedrawMessage::Redraw;
+        let task = ComputeTask::Redraw;
         let selection = plane.default_selection();
 
         let image =
@@ -389,12 +397,12 @@ where
     P: ParameterPlane + 'static,
 {
     #[inline]
-    fn get_task(&self) -> &RedrawMessage
+    fn get_task(&self) -> &ComputeTask
     {
         &self.task
     }
     #[inline]
-    fn set_task(&mut self, new_task: RedrawMessage)
+    fn set_task(&mut self, new_task: ComputeTask)
     {
         self.task = new_task;
     }
@@ -565,7 +573,11 @@ where
 
     fn name(&self) -> String
     {
-        format!("{}: c = {}", self.plane.name(), self.plane.get_param())
+        format!(
+            "{}: c = {}",
+            self.plane.name(),
+            self.plane.get_local_param()
+        )
     }
 }
 
@@ -587,6 +599,8 @@ pub trait PanePair
     fn save_active_pane(&mut self);
     fn save_pane(&mut self, pane_id: PaneID);
     fn change_height(&mut self, new_height: usize);
+
+    // fn descend(self) -> Box<dyn PanePair>;
 }
 
 pub trait Interactive
@@ -604,8 +618,8 @@ pub trait Interactive
 
 pub struct MainInterface<P, J>
 where
-    P: ParameterPlane + 'static,
-    J: ParameterPlane<Param = P::Param> + 'static,
+    P: ParameterPlane + Clone + 'static,
+    J: ParameterPlane + Clone + 'static,
 {
     parent: WindowPane<P>,
     child: WindowPane<J>,
@@ -616,10 +630,13 @@ where
     click_used: bool,
 }
 
-impl<P, J> MainInterface<P, J>
+impl<P, J, C, M, T> MainInterface<P, J>
 where
-    P: ParameterPlane,
-    J: ParameterPlane<Param = P::Param> + 'static,
+    P: ParameterPlane + Clone + 'static,
+    J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+    C: ParameterPlane + From<J>,
+    M: ParamList<Param = T>,
+    T: From<P::Param> + std::fmt::Display,
 {
     pub fn new(parent: P, child: J) -> Self
     {
@@ -641,17 +658,48 @@ where
     fn set_child_param(&mut self, point: ComplexNum, new_param: P::Param)
     {
         let mut new_bounds = self.parent.plane.default_julia_bounds(point, new_param);
-        new_bounds.zoom(self.child.zoom_factor, new_bounds.center());
+
+        // Set the new center to equal the old center plus whatever deviation the user has created
+        let old_center = self.child.grid().center();
+        let old_default_center = self
+            .child
+            .plane
+            .default_bounds()
+            .center();
+        let offset = new_bounds.center() - old_default_center;
+        let new_center = old_center + offset;
+
+        new_bounds.zoom(self.child.zoom_factor, new_center);
+        new_bounds.recenter(new_center);
+
         self.child.grid_mut().change_bounds(new_bounds);
-        self.child.set_param(new_param);
-        self.child.schedule_recompute();
+        self.child.set_param(T::from(new_param));
     }
+
+    // fn to_child(self) -> MainInterface<J, C> {
+    //     let new_parent = self.child.plane;
+    //     let new_child = C::from(new_parent.clone());
+    //     MainInterface::new(new_parent, new_child)
+    // }
 }
 
-impl<P, J> PanePair for MainInterface<P, J>
+// fn make_interface<P, J, M, T>(parent_plane: P, child_plane: J) -> MainInterface<P, J>
+// where
+//     P: ParameterPlane + Clone,
+//     J: ParameterPlane<MetaParam = M> + Clone + 'static,
+//     M: ParamStack<Param = T>,
+//     T: From<P::Param>,
+// {
+//     MainInterface::new(parent_plane, child_plane)
+// }
+
+impl<P, J, C, M, T> PanePair for MainInterface<P, J>
 where
-    P: ParameterPlane,
-    J: ParameterPlane<Param = P::Param> + 'static,
+    P: ParameterPlane + Clone,
+    J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+    C: ParameterPlane + From<J>,
+    M: ParamList<Param = T>,
+    T: From<P::Param> + std::fmt::Display,
 {
     fn parent(&self) -> &dyn Pane
     {
@@ -754,12 +802,23 @@ where
         self.parent.change_height(new_height);
         self.child.change_height(new_height);
     }
+
+    // fn descend(self) -> Box<dyn PanePair>
+    // {
+    //     let new_parent = self.child.plane;
+    //     let new_child = C::from(new_parent.clone());
+    //     Box::new(make_interface(new_parent, new_child))
+    //     // Box::from(MainInterface::new(new_parent, new_child))
+    // }
 }
 
-impl<P, J> Interactive for MainInterface<P, J>
+impl<P, J, C, M, T> Interactive for MainInterface<P, J>
 where
-    P: ParameterPlane,
-    J: ParameterPlane<Param = P::Param> + 'static,
+    P: ParameterPlane + Clone,
+    J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+    C: ParameterPlane + From<J>,
+    M: ParamList<Param = T>,
+    T: From<P::Param> + std::fmt::Display,
 {
     fn handle_mouse(&mut self, ctx: &Context)
     {

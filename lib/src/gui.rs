@@ -1,7 +1,7 @@
 use crate::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette};
 use crate::dynamics::{covering_maps::HasDynamicalCovers, julia::JuliaSet, ParameterPlane};
 use crate::profiles::*;
-use crate::types::Period;
+use crate::types::{ParamList, Period};
 
 type DefaultProfile = QuadRatPer5;
 // type DefaultProfile = CubicMarked2Cycle;
@@ -251,6 +251,10 @@ impl FractalApp
             {
                 self.change_fractal(CubicPer1_1::new_default, JuliaSet::from);
             }
+            else if ui.button("Cubic Per(1, lambda)").clicked()
+            {
+                self.change_fractal(CubicPer1LambdaParam::new_default, CubicPer1Lambda::from);
+            }
             else if ui.button("Biquadratic").clicked()
             {
                 self.change_fractal(BiquadraticMultParam::new_default, BiquadraticMult::from);
@@ -436,13 +440,16 @@ impl FractalApp
         });
     }
 
-    fn change_fractal<T, S>(
+    fn change_fractal<P, J, C, M, T>(
         &mut self,
-        create_plane: fn(usize, Period) -> T,
-        create_child: fn(T) -> S,
+        create_plane: fn(usize, Period) -> P,
+        create_child: fn(P) -> J,
     ) where
-        T: ParameterPlane + Clone + 'static,
-        S: ParameterPlane<Param = T::Param> + Clone + 'static,
+        P: ParameterPlane + Clone + 'static,
+        J: ParameterPlane<Param = P::Param, MetaParam = M, Child = C> + Clone + 'static,
+        C: ParameterPlane<Param = P::Param> + From<J>,
+        M: ParamList<Param = T>,
+        T: From<P::Param> + std::fmt::Display,
     {
         let res_y = self.interface.parent().grid().res_y;
         let max_iters = 2048;
@@ -460,25 +467,24 @@ impl Default for FractalApp
     {
         let height = 768;
         // let parent_plane = QuadRatPer2::new_default(height, 2048).marked_cycle_curve(5);
-        // let parent_plane = DefaultProfile::new_default(height, 2048);
+        let parent_plane = DefaultProfile::new_default(height, 2048);
+        let child_plane = <DefaultProfile as ParameterPlane>::Child::from(parent_plane.clone());
         // let parent_plane = BiquadraticMult::new_default(height, 2048, (0.5).into());
 
-        // let parent_plane = BiquadraticMultParam::new_default(height, 1024);
-        // let child_plane = BiquadraticMult::from(parent_plane.clone());
+        // let parent_plane = CubicPer2LambdaParam::new_default(height, 1024);
+        // let child_plane = CubicPer2Lambda::from(parent_plane.clone());
 
-        use crate::types::ComplexNum;
-        let multiplier = ComplexNum::new(0.3, 0.0);
-        let parent_plane = BiquadraticMult::new_default(height, 1024, multiplier);
-        let child_plane = JuliaSet::from(parent_plane.clone());
+        // use crate::types::ComplexNum;
+        // let multiplier = ComplexNum::new(0.3, 0.0);
+        // let parent_plane = BiquadraticMult::new_default(height, 1024, multiplier);
+        // let child_plane = JuliaSet::from(parent_plane.clone());
 
-        // let parent_plane = CubicPer1Lambda::new_default(height, 1024);
+        // let parent_plane = CubicPer1_1::new_default(height, 1024);
         // let child_plane = JuliaSet::from(parent_plane.clone());
 
         let interface = Box::new(MainInterface::new(parent_plane, child_plane));
 
-        Self {
-            interface,
-        }
+        Self { interface }
     }
 }
 

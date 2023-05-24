@@ -43,7 +43,7 @@ fn top_coeff(a: ComplexNum, b: ComplexNum) -> ComplexNum
     n0 * n1 / denom
 }
 
-#[derive(Default, Clone, Copy, Add, From, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, Display)]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct Param
 {
@@ -111,6 +111,8 @@ impl ParameterPlane for QuadRatPer5
     type Var = ComplexNum;
     type Param = Param;
     type Deriv = ComplexNum;
+    type MetaParam = NoParam;
+    type Child = JuliaSet<Self>;
 
     basic_plane_impl!();
     default_name!();
@@ -169,7 +171,7 @@ impl ParameterPlane for QuadRatPer5
         1e24
     }
 
-    fn critical_points(&self, param: Self::Param) -> Vec<Self::Var> {
+    fn critical_points_child(&self, param: Self::Param) -> Vec<Self::Var> {
         vec![self.start_point(ONE, param)]
     }
 

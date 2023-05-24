@@ -1,12 +1,6 @@
-use crate::dynamics::{
-    covering_maps::{CoveringMap, HasDynamicalCovers},
-    ParameterPlane,
-};
+use crate::macros::*;
 use crate::math_utils::{slog, weierstrass_p};
-use crate::point_grid::{Bounds, PointGrid};
-use crate::types::*;
-
-use crate::macros::{default_name, fractal_impl, parameter_plane_impl};
+profile_imports!();
 
 pub mod mandelbrot;
 pub use mandelbrot::Mandelbrot;
@@ -17,15 +11,15 @@ pub mod quad_rat_per_5;
 pub use quad_rat_per_5::QuadRatPer5;
 
 pub mod cubic_per_1_lambda;
-pub use cubic_per_1_lambda::{CubicPer1Lambda, CubicPer1LambdaParam};
+pub use cubic_per_1_lambda::{CubicPer1Lambda, CubicPer1LambdaParam, CubicPer1_1};
+pub mod cubic_per_2_lambda;
+pub use cubic_per_2_lambda::{CubicPer2Lambda, CubicPer2LambdaParam};
 
 pub mod biquadratic;
 pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam};
 
 pub mod rulkov;
 pub use rulkov::Rulkov;
-
-use std::any::type_name;
 
 // #[derive(Clone, Debug)]
 // pub struct Mandelbrot
@@ -246,12 +240,12 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![(0.).into()]
     }
 
-    fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
     {
         match period
         {
@@ -469,7 +463,7 @@ impl ParameterPlane for QuadRatPer4
         )
     }
 
-    fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
     {
         match period
         {
@@ -635,7 +629,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
     }
 
     #[inline]
-    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![(-1.).into(), (1.).into()]
     }
@@ -723,7 +717,7 @@ impl ParameterPlane for QuadRatPreper21
     }
 
     #[inline]
-    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![(-1.).into(), (1.).into()]
     }
@@ -799,97 +793,6 @@ impl HasDynamicalCovers for QuadRatPreper21
 }
 
 #[derive(Clone, Debug)]
-pub struct CubicPer1_1
-{
-    point_grid: PointGrid,
-    max_iter: Period,
-}
-
-impl CubicPer1_1
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.5,
-        max_x: 2.5,
-        min_y: -2.2,
-        max_y: 2.2,
-    };
-    fractal_impl!();
-}
-
-impl ParameterPlane for CubicPer1_1
-{
-    parameter_plane_impl!();
-    default_name!();
-
-    fn periodicity_tolerance(&self) -> RealNum
-    {
-        1e-6
-    }
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
-    ) -> PointInfo<Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
-
-    #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        z * (z * (z + c) + 1.)
-    }
-
-    #[inline]
-    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
-    {
-        let mut u = (param * param - 3.).sqrt();
-        if param.re < 0.
-        {
-            u = -u
-        }
-        -(param + u) / 3.
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
-    {
-        z * (2. * c + 3. * z) + 1.
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
-    {
-        z * z
-    }
-
-    #[inline]
-    fn critical_points(&self, param: ComplexNum) -> ComplexVec
-    {
-        let u = (param * param - 3.).sqrt();
-        vec![-(param + u) / 3., (u - param) / 3.]
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
-    {
-        Bounds::centered_square(2.2)
-    }
-}
-
-#[derive(Clone, Debug)]
 pub struct OddCubic
 {
     point_grid: PointGrid,
@@ -958,7 +861,7 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn critical_points(&self, param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, param: ComplexNum) -> ComplexVec
     {
         let sqrt_c = param.sqrt();
         vec![-sqrt_c, sqrt_c]
@@ -1045,7 +948,7 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
-    fn critical_points(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         let u = c + c.inv();
         vec![(0.).into(), TWO_THIRDS * u]
@@ -1127,7 +1030,7 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn critical_points(&self, c: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, c: ComplexNum) -> ComplexVec
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;

@@ -105,12 +105,12 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn critical_points(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![(0.).into()]
     }
 
-    fn cycles(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
     {
         match period
         {

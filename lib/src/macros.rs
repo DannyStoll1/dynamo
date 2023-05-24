@@ -95,7 +95,36 @@ macro_rules! parameter_plane_impl {
     () => {
         type Var = ComplexNum;
         type Param = ComplexNum;
+        type MetaParam = NoParam;
         type Deriv = ComplexNum;
+        type Child = JuliaSet<Self>;
+
+        crate::macros::basic_plane_impl!();
+    };
+    ($child: ty) => {
+        type Var = ComplexNum;
+        type Param = ComplexNum;
+        type MetaParam = NoParam;
+        type Deriv = ComplexNum;
+        type Child = $child;
+
+        crate::macros::basic_plane_impl!();
+    };
+    ($var: ty, $param: ty, $deriv: ty, $meta_param: ty) => {
+        type Var = $var;
+        type Param = $param;
+        type MetaParam = $meta_param;
+        type Deriv = $deriv;
+        type Child = JuliaSet<Self>;
+
+        crate::macros::basic_plane_impl!();
+    };
+    ($var: ty, $param: ty, $deriv: ty, $meta_param: ty, $child: ty) => {
+        type Var = $var;
+        type Param = $param;
+        type MetaParam = $meta_param;
+        type Deriv = $deriv;
+        type Child = $child;
 
         crate::macros::basic_plane_impl!();
     };
@@ -125,7 +154,7 @@ macro_rules! basic_escape_encoding {
             &self,
             iters: Period,
             z: ComplexNum,
-            _base_param: ComplexNum,
+            _base_param: Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
             if z.is_nan()
@@ -139,7 +168,7 @@ macro_rules! basic_escape_encoding {
             let v = z.norm_sqr().log2();
             let residual = (v / u).log($degree);
             let potential =
-                ($period as IterCount).mul_add(IterCount::from(residual), IterCount::from(iters));
+                ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
             PointInfo::Escaping { potential }
         }
     };
@@ -198,6 +227,7 @@ macro_rules! horner_monic {
 macro_rules! profile_imports {
     () => {
         use crate::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
+        use crate::dynamics::julia::JuliaSet;
         use crate::dynamics::ParameterPlane;
         use crate::macros::{basic_plane_impl, default_name, fractal_impl, parameter_plane_impl};
         use crate::point_grid::{Bounds, PointGrid};
@@ -208,7 +238,7 @@ macro_rules! profile_imports {
 
 pub(crate) use {
     basic_escape_encoding, basic_plane_impl, default_name, fractal_impl, horner, horner_monic,
-    parameter_plane_impl, point_grid_getters, profile_imports
+    parameter_plane_impl, point_grid_getters, profile_imports,
 };
 
 pub(crate) use {max, min};

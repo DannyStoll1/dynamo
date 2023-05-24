@@ -13,7 +13,7 @@ pub enum ColoringAlgorithm
     PeriodMultiplier,
     Period,
     Solid,
-    PreperiodSmooth
+    InternalPotential
     {
         periodicity_tolerance: f64,
     },
@@ -88,7 +88,7 @@ impl ColoringAlgorithm
                     .period_coloring
                     .map_color32(per as f32, potential as f32)
             }
-            Self::PreperiodSmooth {
+            Self::InternalPotential {
                 periodicity_tolerance,
             } =>
             {

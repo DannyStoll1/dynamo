@@ -1,4 +1,5 @@
 use super::ParameterPlane;
+use super::julia::JuliaSet;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::types::{ComplexNum, ComplexVec, EscapeState, Period, PointInfo};
 
@@ -54,7 +55,9 @@ where
 {
     type Var = C::Var;
     type Param = C::Param;
+    type MetaParam = C::MetaParam;
     type Deriv = C::Deriv;
+    type Child = JuliaSet<Self>;
 
     fn point_grid(&self) -> &PointGrid
     {
@@ -66,9 +69,18 @@ where
         &mut self.point_grid
     }
 
-    fn early_bailout(&self, start: Self::Var, param: Self::Param) -> EscapeState<Self::Var, Self::Deriv>
+    fn early_bailout(
+        &self,
+        start: Self::Var,
+        param: Self::Param,
+    ) -> EscapeState<Self::Var, Self::Deriv>
     {
         self.base_curve.early_bailout(start, param)
+    }
+
+    fn min_iter(&self) -> Period
+    {
+        self.base_curve.min_iter()
     }
 
     fn max_iter(&self) -> Period
@@ -129,6 +141,16 @@ where
         self.base_curve.gradient(z, c)
     }
 
+    fn get_param(&self) -> Self::MetaParam
+    {
+        self.base_curve.get_param()
+    }
+
+    fn set_meta_param(&mut self, value: Self::MetaParam)
+    {
+        self.base_curve.set_meta_param(value)
+    }
+
     fn encode_escape_result(
         &self,
         state: EscapeState<C::Var, C::Deriv>,
@@ -148,14 +170,14 @@ where
         self.base_curve.default_coloring()
     }
 
-    fn critical_points(&self, param: C::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, param: C::Param) -> Vec<Self::Var>
     {
-        self.base_curve.critical_points(param)
+        self.base_curve.critical_points_child(param)
     }
 
-    fn cycles(&self, param: C::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, param: C::Param, period: Period) -> Vec<Self::Var>
     {
-        self.base_curve.cycles(param, period)
+        self.base_curve.cycles_child(param, period)
     }
 
     fn default_julia_bounds(&self, point: ComplexNum, param: C::Param) -> Bounds

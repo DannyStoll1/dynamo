@@ -114,6 +114,7 @@ where
     early_bailout: B,
     param: P,
     max_iter: Period,
+    min_iter: Period,
     periodicity_tolerance: RealNum,
     escape_radius: RealNum,
     pub z_slow: V,
@@ -139,6 +140,7 @@ where
         z: V,
         param: P,
         max_iter: Period,
+        min_iter: Period,
         periodicity_tolerance: RealNum,
         escape_radius: RealNum,
     ) -> Self
@@ -154,6 +156,7 @@ where
             iter: 0,
             state: EscapeState::NotYetEscaped,
             max_iter,
+            min_iter,
             escape_radius,
             periodicity_tolerance,
         }
@@ -238,6 +241,10 @@ where
         {
             return EscapeState::Bounded;
         }
+        if iter < self.min_iter
+        {
+            return EscapeState::NotYetEscaped;
+        }
 
         let r = z.norm_sqr();
         if r > self.escape_radius || z.is_nan()
@@ -255,6 +262,10 @@ where
         if iter > self.max_iter
         {
             return EscapeState::Bounded;
+        }
+        if iter < self.min_iter
+        {
+            return EscapeState::NotYetEscaped;
         }
 
         let r = z_fast.norm_sqr();

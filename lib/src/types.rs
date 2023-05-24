@@ -11,7 +11,9 @@ pub type Period = u32;
 pub type ComplexVec = Vec<ComplexNum>;
 
 pub mod variables;
-pub use variables::{Norm, Dist};
+pub use variables::{Dist, Norm};
+pub mod param_stack;
+pub use param_stack::{ParamList, ParamStack, NoParam};
 
 pub const TAU: RealNum = 2. * PI;
 pub const TWO: RealNum = 2.;

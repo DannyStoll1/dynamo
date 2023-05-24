@@ -1,6 +1,6 @@
 ## Installation
 
-To install and run, just clone the repository and run `cargo +nightly run -r`.
+To install and run, just clone the repository, navigate to `bin`, and run `cargo +nightly run -r`.
 
 You may need to first [install Rust](https://rustup.rs/). At present, the nightly toolchain is required; you can install this with `rustup install nightly`.
 
@@ -41,7 +41,7 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - [x] Mark orbits
 - [x] Marked points
 - Saving improvements
-  - [ ] Save palettes
+  - [ ] Save/load palettes
   - [x] Save images
     - [ ] Marked points/curves in saved images
   - [ ] Save program state
@@ -55,5 +55,5 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - [ ] User-friendly scripting interface
 - [ ] Remove nightly requirement
 - [x] Implement web interface
-  - [ ] Fix broken clicking in web UI
-  - [ ] Fix slow initial rendering in web UI
+  - [x] Fix broken clicking in web UI
+  - [x] Fix slow initial rendering in web UI
