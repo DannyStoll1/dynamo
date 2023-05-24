@@ -2,6 +2,10 @@
 name = "fractal_wasm"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["Danny Stoll"]
+repository = "https://github.com/dannystoll1/fractal-explorer"
+description = "A tool for studying discrete time dynamical systems - Web UI"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

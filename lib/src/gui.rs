@@ -468,19 +468,12 @@ impl Default for FractalApp
         let height = 768;
         // let parent_plane = QuadRatPer2::new_default(height, 2048).marked_cycle_curve(5);
         let parent_plane = DefaultProfile::new_default(height, 2048);
-        let child_plane = <DefaultProfile as ParameterPlane>::Child::from(parent_plane.clone());
-        // let parent_plane = BiquadraticMult::new_default(height, 2048, (0.5).into());
 
-        // let parent_plane = CubicPer2LambdaParam::new_default(height, 1024);
-        // let child_plane = CubicPer2Lambda::from(parent_plane.clone());
 
         // use crate::types::ComplexNum;
         // let multiplier = ComplexNum::new(0.3, 0.0);
         // let parent_plane = BiquadraticMult::new_default(height, 1024, multiplier);
-        // let child_plane = JuliaSet::from(parent_plane.clone());
-
-        // let parent_plane = CubicPer1_1::new_default(height, 1024);
-        // let child_plane = JuliaSet::from(parent_plane.clone());
+        let child_plane = <DefaultProfile as ParameterPlane>::Child::from(parent_plane.clone());
 
         let interface = Box::new(MainInterface::new(parent_plane, child_plane));
 

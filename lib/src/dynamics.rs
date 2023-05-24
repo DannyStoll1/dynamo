@@ -243,7 +243,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         vec![]
     }
 
-    fn cycles(&self, period: Period) -> Vec<Self::Var>
+    fn cycles(&self, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }

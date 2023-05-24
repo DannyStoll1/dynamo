@@ -142,7 +142,7 @@ impl ParameterPlane for CubicPer2Lambda
     }
 
     #[inline]
-    fn start_point(&self, m: ComplexNum, ComplexPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _m: ComplexNum, ComplexPair { a, b }: Self::Param) -> Self::Var
     {
         let disc = (3. * a * (a + 1.) + b * b).sqrt();
         (b + disc) / (3. * a)

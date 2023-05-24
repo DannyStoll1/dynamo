@@ -62,7 +62,7 @@ impl ParameterPlane for Rulkov
     type Param = Point;
     type Deriv = Matrix2x2;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Rulkov>;
+    type Child = JuliaSet<Self>;
 
     point_grid_getters!();
     default_name!();

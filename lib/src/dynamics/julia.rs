@@ -22,7 +22,7 @@ where
     T: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(parent: T, parent_selection: ComplexNum, max_iter: Period) -> Self
+    pub fn new(parent: T, parent_selection: ComplexNum, _max_iter: Period) -> Self
     {
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent

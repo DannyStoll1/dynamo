@@ -30,10 +30,10 @@ where
 
 impl ParamList for ComplexNum
 {
-    type Param = ComplexNum;
+    type Param = Self;
     fn local_param(&self) -> Self::Param
     {
-        self.clone()
+        *self
     }
     fn into_local_param(self) -> Self::Param
     {
@@ -43,14 +43,14 @@ impl ParamList for ComplexNum
 
 impl ParamList for NoParam
 {
-    type Param = NoParam;
+    type Param = Self;
     fn local_param(&self) -> Self::Param
     {
-        NoParam {}
+        Self {}
     }
     fn into_local_param(self) -> Self::Param
     {
-        NoParam {}
+        Self {}
     }
 }
 

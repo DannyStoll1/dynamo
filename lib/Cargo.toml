@@ -2,6 +2,10 @@
 name = "fractal_lib"
 version = "0.2.0"
 edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["Danny Stoll"]
+repository = "https://github.com/dannystoll1/fractal-explorer"
+description = "A tool for studying discrete time dynamical systems - Core Files"
 
 [dependencies]
 num-complex = ">=0.4.3"
