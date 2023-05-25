@@ -4,6 +4,7 @@ profile_imports!();
 
 #[derive(Default, Clone, Copy, Debug, Add, From, Display)]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ComplexPair
 {
     a: ComplexNum,
@@ -27,6 +28,7 @@ impl From<ComplexPair> for ComplexNum
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer2Lambda
 {
     point_grid: PointGrid,
@@ -37,75 +39,11 @@ pub struct CubicPer2Lambda
 impl CubicPer2Lambda
 {
     const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);
-
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        bounds: Bounds,
-        param: ComplexNum,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        bounds: Bounds,
-        param: ComplexNum,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        bounds: Bounds,
-        param: ComplexNum,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period) -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, bounds, ZERO)
-    }
 }
 
 impl Default for CubicPer2Lambda
 {
-    fn default() -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        let max_iter = 1024;
-        Self::with_res_y(1024, max_iter, bounds, ZERO)
-    }
+    fractal_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for CubicPer2Lambda
@@ -188,6 +126,7 @@ impl ParameterPlane for CubicPer2Lambda
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer2LambdaParam
 {
     point_grid: PointGrid,
@@ -275,7 +214,7 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),

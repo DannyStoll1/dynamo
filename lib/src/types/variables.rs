@@ -1,5 +1,7 @@
-use super::{ComplexNum, RealNum};
+use super::{ComplexNum, RealNum, ZERO};
 use derive_more::{Add, Display, From, Sub};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 pub trait Norm<R>: Copy
 {
@@ -56,8 +58,8 @@ impl Norm<RealNum> for Point
     }
 }
 #[derive(Default, Clone, Copy, Debug, Add, Sub, Display, From, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[display(fmt = "({}, {})", x, y)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point
 {
     pub x: RealNum,
@@ -90,6 +92,7 @@ impl From<Point> for ComplexNum
 
 #[derive(Default, Debug, Clone, Copy, Add, Sub, Display, From, PartialEq)]
 #[display(fmt = "[{}, {}]", v0, v1)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Matrix2x2
 {
     pub v0: Point,
@@ -182,5 +185,132 @@ where
     fn dist_sqr(&self, other: Self) -> R
     {
         (*self - other).norm_sqr()
+    }
+}
+
+#[derive(Copy, Clone, Debug, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum PlaneID
+{
+    #[display(fmt = "w-plane")]
+    ZPlane,
+    #[display(fmt = "z-plane")]
+    WPlane,
+}
+impl PlaneID {
+    pub fn swap(&self) -> Self {
+        match self {
+            Self::ZPlane => Self::WPlane,
+            Self::WPlane => Self::ZPlane,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum Bicomplex
+{
+    #[display(fmt = "PlaneA({})", _0)]
+    PlaneA(ComplexNum),
+    #[display(fmt = "PlaneB({})", _0)]
+    PlaneB(ComplexNum),
+}
+
+impl From<ComplexNum> for Bicomplex
+{
+    fn from(value: ComplexNum) -> Self
+    {
+        Self::PlaneA(value)
+        // Self::PlaneB(value)
+    }
+}
+impl From<Bicomplex> for ComplexNum
+{
+    fn from(value: Bicomplex) -> Self
+    {
+        match value
+        {
+            Bicomplex::PlaneA(z) => z,
+            Bicomplex::PlaneB(z) => z,
+        }
+    }
+}
+impl Norm<RealNum> for Bicomplex
+{
+    fn norm(&self) -> RealNum
+    {
+        match self
+        {
+            Self::PlaneA(z) => z.norm(),
+            Self::PlaneB(z) => z.norm(),
+        }
+    }
+    fn norm_sqr(&self) -> RealNum
+    {
+        match self
+        {
+            Self::PlaneA(z) => z.norm_sqr(),
+            Self::PlaneB(z) => z.norm_sqr(),
+        }
+    }
+    fn arg(&self) -> RealNum
+    {
+        match self
+        {
+            Self::PlaneA(z) => z.arg(),
+            Self::PlaneB(z) => z.arg(),
+        }
+    }
+    fn is_nan(&self) -> bool
+    {
+        match self
+        {
+            Self::PlaneA(z) => z.is_nan(),
+            Self::PlaneB(z) => z.is_nan(),
+        }
+    }
+}
+
+impl Default for Bicomplex
+{
+    fn default() -> Self
+    {
+        Self::PlaneA(ZERO)
+    }
+}
+
+impl Dist<RealNum> for Bicomplex
+{
+    fn dist(&self, rhs: Self) -> RealNum
+    {
+        match self
+        {
+            Self::PlaneA(z) => match rhs
+            {
+                Self::PlaneA(w) => (z - w).norm(),
+                Self::PlaneB(_) => RealNum::INFINITY,
+            },
+            Self::PlaneB(z) => match rhs
+            {
+                Self::PlaneA(_) => RealNum::INFINITY,
+                Self::PlaneB(w) => (z - w).norm(),
+            },
+        }
+    }
+    fn dist_sqr(&self, rhs: Self) -> RealNum
+    {
+        match self
+        {
+            Self::PlaneA(z) => match rhs
+            {
+                Self::PlaneA(w) => (z - w).norm_sqr(),
+                Self::PlaneB(_) => RealNum::INFINITY,
+            },
+            Self::PlaneB(z) => match rhs
+            {
+                Self::PlaneA(_) => RealNum::INFINITY,
+                Self::PlaneB(w) => (z - w).norm_sqr(),
+            },
+        }
     }
 }

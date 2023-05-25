@@ -1,119 +1,8 @@
 use crate::macros::*;
 use crate::math_utils::solve_cubic;
+use crate::types::variables::{Bicomplex, PlaneID};
 profile_imports!();
 use derive_more::{Add, Display, From, Sub};
-
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-#[derive(Copy, Clone, Debug, Display)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Bicomplex
-{
-    #[display(fmt = "PlaneA({})", _0)]
-    PlaneA(ComplexNum),
-    #[display(fmt = "PlaneB({})", _0)]
-    PlaneB(ComplexNum),
-}
-
-impl From<ComplexNum> for Bicomplex
-{
-    fn from(value: ComplexNum) -> Self
-    {
-        Self::PlaneA(value)
-        // Self::PlaneB(value)
-    }
-}
-impl From<Bicomplex> for ComplexNum
-{
-    fn from(value: Bicomplex) -> Self
-    {
-        match value
-        {
-            Bicomplex::PlaneA(z) => z,
-            Bicomplex::PlaneB(z) => z,
-        }
-    }
-}
-impl Norm<RealNum> for Bicomplex
-{
-    fn norm(&self) -> RealNum
-    {
-        match self
-        {
-            Self::PlaneA(z) => z.norm(),
-            Self::PlaneB(z) => z.norm(),
-        }
-    }
-    fn norm_sqr(&self) -> RealNum
-    {
-        match self
-        {
-            Self::PlaneA(z) => z.norm_sqr(),
-            Self::PlaneB(z) => z.norm_sqr(),
-        }
-    }
-    fn arg(&self) -> RealNum
-    {
-        match self
-        {
-            Self::PlaneA(z) => z.arg(),
-            Self::PlaneB(z) => z.arg(),
-        }
-    }
-    fn is_nan(&self) -> bool
-    {
-        match self
-        {
-            Self::PlaneA(z) => z.is_nan(),
-            Self::PlaneB(z) => z.is_nan(),
-        }
-    }
-}
-
-impl Default for Bicomplex
-{
-    fn default() -> Self
-    {
-        Self::PlaneA(ZERO)
-    }
-}
-
-impl Dist<RealNum> for Bicomplex
-{
-    fn dist(&self, rhs: Self) -> RealNum
-    {
-        match self
-        {
-            Self::PlaneA(z) => match rhs
-            {
-                Self::PlaneA(w) => (z - w).norm(),
-                Self::PlaneB(_) => RealNum::INFINITY,
-            },
-            Self::PlaneB(z) => match rhs
-            {
-                Self::PlaneA(_) => RealNum::INFINITY,
-                Self::PlaneB(w) => (z - w).norm(),
-            },
-        }
-    }
-    fn dist_sqr(&self, rhs: Self) -> RealNum
-    {
-        match self
-        {
-            Self::PlaneA(z) => match rhs
-            {
-                Self::PlaneA(w) => (z - w).norm_sqr(),
-                Self::PlaneB(_) => RealNum::INFINITY,
-            },
-            Self::PlaneB(z) => match rhs
-            {
-                Self::PlaneA(_) => RealNum::INFINITY,
-                Self::PlaneB(w) => (z - w).norm_sqr(),
-            },
-        }
-    }
-}
 
 #[derive(Default, Clone, Copy, Debug, Add, From, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -152,7 +41,7 @@ pub struct Biquadratic
 {
     point_grid: PointGrid,
     max_iter: Period,
-    param: ComplexNum,
+    multiplier: ComplexNum,
 }
 
 impl Biquadratic
@@ -164,64 +53,10 @@ impl Biquadratic
         max_y: 1.25,
     };
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
+}
 
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-        Self {
-            point_grid,
-            max_iter,
-            param,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period, param: ComplexNum) -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, param, bounds)
-    }
+impl Default for Biquadratic {
+    fractal_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for Biquadratic
@@ -236,7 +71,7 @@ impl ParameterPlane for Biquadratic
     #[inline]
     fn name(&self) -> String
     {
-        let param = self.param;
+        let param = self.multiplier;
         format!("Biquadratic({param})")
     }
 
@@ -279,7 +114,7 @@ impl ParameterPlane for Biquadratic
         match zw
         {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * z + c),
-            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * w + self.param),
+            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * w + self.multiplier),
         }
     }
 
@@ -289,7 +124,7 @@ impl ParameterPlane for Biquadratic
         match zw
         {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * z + c), z + z),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * w + self.param), w + w),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * w + self.multiplier), w + w),
         }
     }
 
@@ -318,6 +153,7 @@ pub struct BiquadraticMult
     point_grid: PointGrid,
     max_iter: Period,
     multiplier: ComplexNum,
+    starting_plane: PlaneID,
 }
 
 impl BiquadraticMult
@@ -329,63 +165,20 @@ impl BiquadraticMult
         max_y: 2.55,
     };
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
+}
 
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        multiplier: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-        Self {
-            point_grid,
-            max_iter,
-            multiplier,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period, multiplier: ComplexNum) -> Self
+impl Default for BiquadraticMult
+{
+    fn default() -> Self
     {
         let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, multiplier, bounds)
+        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            multiplier: 0.5.into(),
+            starting_plane: PlaneID::ZPlane,
+        }
     }
 }
 
@@ -438,8 +231,11 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
     {
-        Bicomplex::PlaneA(-0.5 * c.a)
-        // Bicomplex::PlaneB(-0.5*c.b)
+        match self.starting_plane
+        {
+            PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c.a),
+            PlaneID::WPlane => Bicomplex::PlaneB(-0.5 * c.b),
+        }
     }
 
     #[inline]
@@ -482,6 +278,25 @@ impl ParameterPlane for BiquadraticMult
         }
     }
 
+    fn critical_points(&self) -> Vec<Self::Var>
+    {
+        let l = self.multiplier;
+        let d0 = ((l - 8.) * l + 32.).sqrt();
+        let q0 = (2. * (l - 4. + d0)).powf(ONE_THIRD);
+        let q1 = (2. * (l - 4. - d0)).powf(ONE_THIRD);
+        [
+            q0,
+            q1,
+            q0 * OMEGA,
+            q1 * OMEGA,
+            q0 * OMEGA_BAR,
+            q1 * OMEGA_BAR,
+        ]
+        .iter()
+        .map(|x| Bicomplex::PlaneA(*x))
+        .collect()
+    }
+
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
@@ -517,6 +332,11 @@ impl ParameterPlane for BiquadraticMult
             }
             _ => vec![],
         }
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_plane = self.starting_plane.swap();
     }
 
     fn periodicity_tolerance(&self) -> RealNum
@@ -561,11 +381,30 @@ pub struct BiquadraticMultParam
 {
     point_grid: PointGrid,
     max_iter: Period,
+    starting_plane: PlaneID,
 }
 
 impl BiquadraticMultParam
 {
-    fractal_impl!(-2.2, 4.2, -2.5, 2.5);
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.2,
+        max_x: 4.2,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
+impl Default for BiquadraticMultParam
+{
+    fn default() -> Self
+    {
+        let bounds = Self::DEFAULT_BOUNDS;
+        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            starting_plane: PlaneID::ZPlane,
+        }
+    }
 }
 
 impl ParameterPlane for BiquadraticMultParam
@@ -649,8 +488,16 @@ impl ParameterPlane for BiquadraticMultParam
     #[inline]
     fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
     {
-        Bicomplex::PlaneA(-0.5 * c.a)
-        // Bicomplex::PlaneB(-0.5 * c.a)
+        match self.starting_plane
+        {
+            PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c.a),
+            PlaneID::WPlane => Bicomplex::PlaneB(-0.5 * c.b),
+        }
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_plane = self.starting_plane.swap();
     }
 
     fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
@@ -678,11 +525,12 @@ impl From<BiquadraticMultParam> for BiquadraticMult
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),
             multiplier: param.a * param.b,
+            starting_plane: parent.starting_plane,
         }
     }
 }
@@ -705,64 +553,10 @@ impl BiquadraticMultSecondIterate
         max_y: 2.25,
     };
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
-
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        param: ComplexNum,
-        bounds: Bounds,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-        Self {
-            point_grid,
-            max_iter,
-            multiplier: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period, param: ComplexNum) -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, param, bounds)
-    }
+}
+impl Default for BiquadraticMultSecondIterate
+{
+    fractal_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for BiquadraticMultSecondIterate

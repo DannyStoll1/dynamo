@@ -22,7 +22,7 @@ pub struct Mandelbrot
     max_iter: Period,
 }
 
-impl Mandelbrot
+impl Default for Mandelbrot
 {
     fractal_impl!(-2.1, 0.55, -1.25, 1.25);
 }
@@ -181,7 +181,7 @@ impl HasDynamicalCovers for Mandelbrot
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.with_same_height(bounds);
+        let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
     }
 
@@ -223,7 +223,7 @@ impl HasDynamicalCovers for Mandelbrot
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.with_same_height(bounds);
+        let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
@@ -265,7 +265,7 @@ impl HasDynamicalCovers for Mandelbrot
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.with_same_height(bounds);
+        let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
     }
 }

@@ -53,6 +53,9 @@ impl Rulkov
         min_y: -5.,
         max_y: 5.,
     };
+}
+impl Default for Rulkov
+{
     fractal_impl!();
 }
 
@@ -64,7 +67,7 @@ impl ParameterPlane for Rulkov
     type MetaParam = NoParam;
     type Child = JuliaSet<Self>;
 
-    point_grid_getters!();
+    basic_plane_impl!();
     default_name!();
 
     fn param_map(&self, point: ComplexNum) -> Self::Param
@@ -102,20 +105,5 @@ impl ParameterPlane for Rulkov
             z = f(z, param);
         }
         z
-    }
-
-    fn set_max_iter(&mut self, new_max_iter: Period)
-    {
-        self.max_iter = new_max_iter;
-    }
-
-    fn max_iter(&self) -> Period
-    {
-        self.max_iter
-    }
-
-    fn max_iter_mut(&mut self) -> &mut Period
-    {
-        &mut self.max_iter
     }
 }

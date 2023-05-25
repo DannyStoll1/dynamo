@@ -28,21 +28,16 @@ fn parameter_derivative(z: ComplexNum, _c: ComplexNum) -> ComplexNum
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer2
 {
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl QuadRatPer2
+impl Default for QuadRatPer2
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.8,
-        max_x: 3.2,
-        min_y: -2.8,
-        max_y: 2.8,
-    };
-    fractal_impl!();
+    fractal_impl!(-2.8, 3.2, -2.8, 2.8);
 }
 
 impl ParameterPlane for QuadRatPer2
@@ -216,7 +211,7 @@ impl HasDynamicalCovers for QuadRatPer2
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.with_same_height(bounds);
+        let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
     }
 
@@ -263,7 +258,7 @@ impl HasDynamicalCovers for QuadRatPer2
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.with_same_height(bounds);
+        let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
     }
 }

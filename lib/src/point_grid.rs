@@ -6,7 +6,7 @@ use rayon::iter::{IterBridge, ParallelBridge};
 #[cfg(feature="serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct Bounds
 {
@@ -122,7 +122,7 @@ impl Default for Bounds
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 pub struct PointGrid
 {
@@ -170,7 +170,7 @@ impl PointGrid
     }
 
     #[must_use]
-    pub const fn with_res_x(res_x: usize, bounds: Bounds) -> Self
+    pub const fn new_by_res_x(res_x: usize, bounds: Bounds) -> Self
     {
         let res_y = Self::infer_height(res_x, &bounds);
 
@@ -178,39 +178,51 @@ impl PointGrid
     }
 
     #[must_use]
-    pub const fn with_res_y(res_y: usize, bounds: Bounds) -> Self
+    pub const fn new_by_res_y(res_y: usize, bounds: Bounds) -> Self
     {
         let res_x = Self::infer_width(res_y, &bounds);
 
         Self::new(res_x, res_y, bounds)
     }
 
-    #[inline]
     #[must_use]
-    pub const fn with_same_height(&self, bounds: Bounds) -> Self
+    pub const fn new_with_same_height(&self, bounds: Bounds) -> Self
     {
-        Self::with_res_y(self.res_y, bounds)
+        Self::new_by_res_y(self.res_y, bounds)
+    }
+
+    #[must_use]
+    pub const fn new_with_same_width(&self, bounds: Bounds) -> Self
+    {
+        Self::new_by_res_x(self.res_x, bounds)
     }
 
     #[inline]
     #[must_use]
-    pub const fn with_same_width(&self, bounds: Bounds) -> Self
+    pub const fn with_same_height(self, bounds: Bounds) -> Self
     {
-        Self::with_res_x(self.res_x, bounds)
+        Self::new_by_res_y(self.res_y, bounds)
     }
 
     #[inline]
     #[must_use]
-    pub fn with_new_width(&self, res_x: usize) -> Self
+    pub const fn with_same_width(self, bounds: Bounds) -> Self
     {
-        Self::with_res_x(res_x, self.bounds.clone())
+        Self::new_by_res_x(self.res_x, bounds)
     }
 
     #[inline]
     #[must_use]
-    pub fn with_new_height(&self, res_y: usize) -> Self
+    pub fn with_width(self, res_x: usize) -> Self
     {
-        Self::with_res_y(res_y, self.bounds.clone())
+        Self::new_by_res_x(res_x, self.bounds)
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn with_height(self, res_y: usize) -> Self
+    {
+        Self::new_by_res_y(res_y, self.bounds)
     }
 
     #[must_use]

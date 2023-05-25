@@ -96,12 +96,13 @@ impl From<Param> for ComplexNum
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer5
 {
     point_grid: PointGrid,
     max_iter: Period,
 }
-impl QuadRatPer5
+impl Default for QuadRatPer5
 {
     fractal_impl!(-2.5, 2.5, -2.5, 2.5);
 }

@@ -1,7 +1,7 @@
 use crate::{
     coloring::{algorithms::ColoringAlgorithm, Coloring},
     iter_plane::IterPlane,
-    point_grid::{Bounds, PointGrid},
+    point_grid::{self, Bounds, PointGrid},
     types::*,
 };
 use ndarray::{Array2, Axis};
@@ -38,6 +38,23 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
+    fn with_point_grid(self, point_grid: PointGrid) -> Self;
+    fn with_bounds(self, bounds: Bounds) -> Self
+    {
+        let point_grid = self.point_grid().new_with_same_height(bounds);
+        self.with_point_grid(point_grid)
+    }
+    fn with_res_y(mut self, res_y: usize) -> Self
+    {
+        self.point_grid_mut().resize_y(res_y);
+        self
+    }
+
+    fn max_iter(&self) -> Period;
+    fn max_iter_mut(&mut self) -> &mut Period;
+    fn set_max_iter(&mut self, new_max_iter: Period);
+    fn with_max_iter(self, max_iter: Period) -> Self;
+
     fn name(&self) -> String;
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var;
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
@@ -57,12 +74,6 @@ pub trait ParameterPlane: Sync + Send + Clone
     {
         0
     }
-
-    fn max_iter(&self) -> Period;
-
-    fn max_iter_mut(&mut self) -> &mut Period;
-
-    fn set_max_iter(&mut self, new_max_iter: Period);
 
     #[inline]
     fn escape_radius(&self) -> RealNum
@@ -225,6 +236,13 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     #[inline]
     fn set_param(&mut self, _value: <Self::MetaParam as ParamList>::Param) {}
+
+    #[inline]
+    fn with_param(mut self, param: <Self::MetaParam as ParamList>::Param) -> Self
+    {
+        self.set_param(param);
+        self
+    }
 
     #[inline]
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
@@ -402,6 +420,8 @@ pub trait ParameterPlane: Sync + Send + Clone
     {
         ComplexNum::default()
     }
+
+    fn cycle_active_plane(&mut self) {}
 
     // fn julia_set(&self, point: ComplexNum) -> Option<Self::Child>
     // where

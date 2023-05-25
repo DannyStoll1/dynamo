@@ -1,53 +1,52 @@
 macro_rules! fractal_impl {
     () => {
-        #[must_use]
-        pub const fn new(res_x: usize, res_y: usize, max_iter: Period, bounds: Bounds) -> Self
-        {
-            let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-            Self {
-                point_grid,
-                max_iter,
-            }
-        }
-
-        #[must_use]
-        pub const fn with_res_x(res_x: usize, max_iter: Period, bounds: Bounds) -> Self
-        {
-            let point_grid = PointGrid::with_res_x(res_x, bounds);
-
-            Self {
-                point_grid,
-                max_iter,
-            }
-        }
-
-        #[must_use]
-        pub const fn with_res_y(res_y: usize, max_iter: Period, bounds: Bounds) -> Self
-        {
-            let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-            Self {
-                point_grid,
-                max_iter,
-            }
-        }
-
-        #[must_use]
-        pub const fn new_default(res_y: usize, max_iter: Period) -> Self
+        fn default() -> Self
         {
             let bounds = Self::DEFAULT_BOUNDS;
-            Self::with_res_y(res_y, max_iter, bounds)
+            let point_grid = PointGrid::new_by_res_y(1024, bounds);
+            Self {
+                point_grid,
+                max_iter: 1024,
+            }
+        }
+    };
+    ($bounds: expr) => {
+        fn default() -> Self
+        {
+            let point_grid = PointGrid::new_by_res_y(1024, $bounds);
+            Self {
+                point_grid,
+                max_iter: 1024,
+            }
+        }
+    };
+    ($param_name: ident, $param_value: expr) => {
+        fn default() -> Self
+        {
+            let bounds = Self::DEFAULT_BOUNDS;
+            let point_grid = PointGrid::new_by_res_y(1024, bounds);
+            Self {
+                point_grid,
+                max_iter: 1024,
+                $param_name: $param_value,
+            }
         }
     };
     ($min_x: expr, $max_x: expr, $min_y: expr, $max_y: expr) => {
-        const DEFAULT_BOUNDS: Bounds = Bounds {
-            min_x: $min_x,
-            max_x: $max_x,
-            min_y: $min_y,
-            max_y: $max_y,
-        };
-        fractal_impl!();
+        fn default() -> Self
+        {
+            let bounds = Bounds {
+                min_x: $min_x,
+                max_x: $max_x,
+                min_y: $min_y,
+                max_y: $max_y,
+            };
+            let point_grid = PointGrid::new_by_res_y(1024, bounds);
+            Self {
+                point_grid,
+                max_iter: 1024,
+            }
+        }
     };
 }
 
@@ -63,6 +62,13 @@ macro_rules! point_grid_getters {
         fn point_grid_mut(&mut self) -> &mut PointGrid
         {
             &mut self.point_grid
+        }
+
+        #[inline]
+        fn with_point_grid(mut self, point_grid: PointGrid) -> Self
+        {
+            self.point_grid = point_grid;
+            self
         }
     };
 }
@@ -87,6 +93,13 @@ macro_rules! basic_plane_impl {
         fn set_max_iter(&mut self, new_max_iter: Period)
         {
             self.max_iter = new_max_iter
+        }
+
+        #[inline]
+        fn with_max_iter(mut self, max_iter: Period) -> Self
+        {
+            self.max_iter = max_iter;
+            self
         }
     };
 }
@@ -174,25 +187,6 @@ macro_rules! basic_escape_encoding {
     };
 }
 
-// macro_rules! covers_menu_marked_cycles {
-//     ($x: expr) => {
-//         ui.menu_button("Marked Periodic Point", |ui| {
-//             if ui.button("Period 1").clicked()
-//             {
-//                 self.change_fractal(|res, iter| {
-//                     QuadRatPer2::new_default(res, iter).marked_cycle_curve(1)
-//                 });
-//             }
-//             else
-//             {
-//                 return;
-//             }
-//             self.consume_click();
-//             ui.close_menu();
-//         });
-//     };
-// }
-
 macro_rules! max {
     ($x:expr) => ( $x );
     ($x:expr, $($xs:expr),+) => {
@@ -233,6 +227,9 @@ macro_rules! profile_imports {
         use crate::point_grid::{Bounds, PointGrid};
         use crate::types::*;
         use std::any::type_name;
+
+        #[cfg(feature = "serde")]
+        use serde::{Deserialize, Serialize};
     };
 }
 

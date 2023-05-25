@@ -277,6 +277,8 @@ pub trait Pane
     fn marking_mode(&self) -> &MarkingMode;
     fn marking_mode_mut(&mut self) -> &mut MarkingMode;
 
+    fn cycle_active_plane(&mut self);
+
     fn increase_max_iter(&mut self);
     fn decrease_max_iter(&mut self);
 
@@ -489,6 +491,13 @@ where
         // #[cfg(not(target_arch = "wasm32"))]
         // dbg!(self.selection);
     }
+
+    #[inline]
+    fn cycle_active_plane(&mut self) {
+        self.plane.cycle_active_plane();
+        self.schedule_recompute();
+    }
+
     fn increase_max_iter(&mut self)
     {
         let iters = self.plane.max_iter_mut();
@@ -598,6 +607,7 @@ pub trait PanePair
     fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>;
     fn save_active_pane(&mut self);
     fn save_pane(&mut self, pane_id: PaneID);
+    fn get_image_height(&self) -> usize;
     fn change_height(&mut self, new_height: usize);
 
     // fn descend(self) -> Box<dyn PanePair>;
@@ -623,6 +633,7 @@ where
 {
     parent: WindowPane<P>,
     child: WindowPane<J>,
+    image_height: usize,
     active_pane: Option<PaneID>,
     live_mode: bool,
     save_dialog: FileDialog,
@@ -638,7 +649,7 @@ where
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
-    pub fn new(parent: P, child: J) -> Self
+    pub fn new(parent: P, child: J, image_height: usize) -> Self
     {
         let dialog = FileDialog::save_file(None)
             .default_filename(format!("{}.png", parent.name()))
@@ -647,6 +658,7 @@ where
         Self {
             parent: parent.into(),
             child: child.into(),
+            image_height,
             active_pane: Some(PaneID::Parent),
             live_mode: false,
             save_dialog: dialog,
@@ -797,8 +809,13 @@ where
         self.child_mut().set_coloring_algorithm(coloring_algorithm);
     }
 
+    fn get_image_height(&self) -> usize {
+        self.image_height
+    }
+
     fn change_height(&mut self, new_height: usize)
     {
+        self.image_height = new_height;
         self.parent.change_height(new_height);
         self.child.change_height(new_height);
     }
@@ -932,10 +949,21 @@ where
             self.set_palette(white_palette);
         }
 
+        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_P)) {
+            self.parent_mut().cycle_active_plane();
+            self.child_mut().cycle_active_plane();
+        }
+
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_P))
         {
             self.child_mut().marking_mode_mut().toggle_critical();
             self.child_mut().schedule_redraw();
+        }
+
+        if ctx.input_mut(|i| i.consume_shortcut(&KEY_O))
+        {
+            self.parent_mut().marking_mode_mut().toggle_critical();
+            self.parent_mut().schedule_redraw();
         }
 
         if ctx.input_mut(|i| i.consume_shortcut(&KEY_Y))

@@ -1,4 +1,5 @@
 use crate::macros::*;
+use crate::types::variables::PlaneID;
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -6,71 +7,13 @@ pub struct CubicPer1Lambda
 {
     point_grid: PointGrid,
     max_iter: Period,
-    lambda: ComplexNum,
+    multiplier: ComplexNum,
+    starting_crit: PlaneID,
 }
 
 impl CubicPer1Lambda
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);
-
-    #[must_use]
-    pub const fn new(
-        res_x: usize,
-        res_y: usize,
-        max_iter: Period,
-        bounds: Bounds,
-        param: ComplexNum,
-    ) -> Self
-    {
-        let point_grid = PointGrid::new(res_x, res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            lambda: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_x(
-        res_x: usize,
-        max_iter: Period,
-        bounds: Bounds,
-        param: ComplexNum,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_x(res_x, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            lambda: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn with_res_y(
-        res_y: usize,
-        max_iter: Period,
-        bounds: Bounds,
-        param: ComplexNum,
-    ) -> Self
-    {
-        let point_grid = PointGrid::with_res_y(res_y, bounds);
-
-        Self {
-            point_grid,
-            max_iter,
-            lambda: param,
-        }
-    }
-
-    #[must_use]
-    pub const fn new_default(res_y: usize, max_iter: Period) -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        Self::with_res_y(res_y, max_iter, bounds, ZERO)
-    }
+    const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(6.5);
 }
 
 impl Default for CubicPer1Lambda
@@ -78,8 +21,13 @@ impl Default for CubicPer1Lambda
     fn default() -> Self
     {
         let bounds = Self::DEFAULT_BOUNDS;
-        let max_iter = 1024;
-        Self::with_res_y(1024, max_iter, bounds, ZERO)
+        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            multiplier: ZERO,
+            starting_crit: PlaneID::ZPlane,
+        }
     }
 }
 
@@ -91,14 +39,14 @@ impl ParameterPlane for CubicPer1Lambda
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        z * horner_monic!(z, self.lambda, c)
+        z * horner_monic!(z, self.multiplier, c)
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z2 = z * z;
-        let u = z2 + c * z + self.lambda;
+        let u = z2 + c * z + self.multiplier;
         (z * u, u + z * (c + z + z))
     }
 
@@ -106,7 +54,7 @@ impl ParameterPlane for CubicPer1Lambda
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
         let z2 = z * z;
-        let u = z2 + c * z + self.lambda;
+        let u = z2 + c * z + self.multiplier;
         u + z * (c + z + z)
     }
 
@@ -119,46 +67,68 @@ impl ParameterPlane for CubicPer1Lambda
     #[inline]
     fn start_point(&self, m: ComplexNum, _c: Self::Param) -> Self::Var
     {
-        0.5 * self.lambda * m
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => 0.5 * self.multiplier * m,
+            PlaneID::WPlane => TWO_THIRDS / m,
+        }
+    }
+
+    fn critical_points(&self) -> Vec<Self::Var>
+    {
+        let l = self.multiplier;
+        let d0 = l.sqrt();
+        let d1 = (l - 2.).sqrt();
+        let u = 2. / l;
+        let r0 = u * d0;
+        let r1 = u * d1;
+        vec![r0, -r0, r1, -r1, u, -u]
     }
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        let disc = (self.lambda * self.lambda - 3. * c).sqrt();
-        vec![
-            -ONE_THIRD * (self.lambda + disc),
-            -ONE_THIRD * (self.lambda - disc),
-        ]
+        let disc = (c * c - 3. * self.multiplier).sqrt();
+        vec![-ONE_THIRD * (c + disc), -ONE_THIRD * (c - disc)]
     }
 
     fn get_param(&self) -> Self::Param
     {
-        self.lambda
+        self.multiplier
     }
 
     fn get_local_param(&self) -> Self::Param
     {
-        self.lambda
+        self.multiplier
     }
 
     fn set_meta_param(&mut self, value: Self::Param)
     {
-        self.lambda = value
+        self.multiplier = value
     }
 
     fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
     {
-        self.lambda = value
+        self.multiplier = value
     }
 
     fn param_map(&self, m: ComplexNum) -> Self::Param
     {
-        -m.inv() - 0.75 * self.lambda * m
+        -m.inv() - 0.75 * self.multiplier * m
     }
 
     fn name(&self) -> String
     {
-        format!("Cubic Per(1, {})", self.lambda)
+        format!("Cubic Per(1, {}) {}", self.multiplier, self.starting_crit)
+    }
+
+    fn default_bounds(&self) -> Bounds
+    {
+        let r = 4. / (self.multiplier.norm() + 0.01);
+        Bounds::centered_square(r)
+    }
+
+    fn cycle_active_plane(&mut self) {
+        self.starting_crit = self.starting_crit.swap();
     }
 }
 
@@ -167,17 +137,34 @@ pub struct CubicPer1LambdaParam
 {
     point_grid: PointGrid,
     max_iter: Period,
+    starting_crit: PlaneID,
 }
 
 impl CubicPer1LambdaParam
 {
-    fractal_impl!(-2.2, 4.2, -2.5, 2.5);
-
     const BASE_POINT: ComplexNum = ComplexNum::new(1e-4, 0.);
 
     fn base_param(lambda: ComplexNum) -> ComplexNum
     {
         -Self::BASE_POINT.inv() - 0.75 * lambda * Self::BASE_POINT
+    }
+}
+impl Default for CubicPer1LambdaParam
+{
+    fn default() -> Self
+    {
+        let bounds = Bounds {
+            min_x: -2.2,
+            max_x: 4.2,
+            min_y: -2.5,
+            max_y: 2.5,
+        };
+        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            starting_crit: PlaneID::ZPlane,
+        }
     }
 }
 
@@ -220,7 +207,11 @@ impl ParameterPlane for CubicPer1LambdaParam
     #[inline]
     fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
     {
-        0.5 * c * Self::BASE_POINT
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => 0.5 * c * Self::BASE_POINT,
+            PlaneID::WPlane => TWO_THIRDS / Self::BASE_POINT,
+        }
     }
 
     #[inline]
@@ -246,8 +237,12 @@ impl ParameterPlane for CubicPer1LambdaParam
 
     fn default_julia_bounds(&self, point: ComplexNum, _param: Self::Param) -> Bounds
     {
-        let r = 3.5 / (point.norm() + 0.01);
+        let r = 4. / (point.norm() + 0.01);
         Bounds::centered_square(r)
+    }
+
+    fn cycle_active_plane(&mut self) {
+        self.starting_crit = self.starting_crit.swap();
     }
 }
 
@@ -259,11 +254,12 @@ impl From<CubicPer1LambdaParam> for CubicPer1Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),
-            lambda: param,
+            multiplier: param,
+            starting_crit: parent.starting_crit,
         }
     }
 }
@@ -283,17 +279,11 @@ impl CubicPer1_1
         min_y: -2.2,
         max_y: 2.2,
     };
-    fractal_impl!();
 }
 
 impl Default for CubicPer1_1
 {
-    fn default() -> Self
-    {
-        let bounds = Self::DEFAULT_BOUNDS;
-        let max_iter = 3164;
-        Self::with_res_y(1024, max_iter, bounds)
-    }
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer1_1

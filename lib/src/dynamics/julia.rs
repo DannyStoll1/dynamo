@@ -1,5 +1,6 @@
 use crate::coloring::{algorithms::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
+use crate::macros::basic_plane_impl;
 use crate::point_grid::{Bounds, PointGrid};
 use crate::types::*;
 
@@ -27,7 +28,7 @@ where
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(parent_selection, local_param));
+            .new_with_same_height(parent.default_julia_bounds(parent_selection, local_param));
         Self {
             point_grid,
             parent: parent.clone(),
@@ -50,7 +51,7 @@ where
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
-            .with_same_height(parent.default_julia_bounds(parent_selection, local_param));
+            .new_with_same_height(parent.default_julia_bounds(parent_selection, local_param));
         Self {
             point_grid,
             parent: parent.clone(),
@@ -72,6 +73,7 @@ where
     type MetaParam = ParamStack<T::MetaParam, T::Param>;
     type Deriv = T::Deriv;
     type Child = Self;
+    basic_plane_impl!();
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -104,33 +106,9 @@ where
     }
 
     #[inline]
-    fn point_grid(&self) -> &PointGrid
-    {
-        &self.point_grid
-    }
-
-    #[inline]
-    fn point_grid_mut(&mut self) -> &mut PointGrid
-    {
-        &mut self.point_grid
-    }
-
-    #[inline]
     fn min_iter(&self) -> Period
     {
         self.min_iter
-    }
-
-    #[inline]
-    fn max_iter(&self) -> Period
-    {
-        self.max_iter
-    }
-
-    #[inline]
-    fn max_iter_mut(&mut self) -> &mut Period
-    {
-        &mut self.max_iter
     }
 
     #[inline]
@@ -143,12 +121,6 @@ where
     fn start_point(&self, point: ComplexNum, _param: Self::Param) -> Self::Var
     {
         point.into()
-    }
-
-    #[inline]
-    fn set_max_iter(&mut self, new_max_iter: Period)
-    {
-        self.max_iter = new_max_iter;
     }
 
     fn encode_escape_result(

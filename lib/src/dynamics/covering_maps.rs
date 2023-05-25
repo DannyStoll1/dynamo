@@ -69,6 +69,11 @@ where
         &mut self.point_grid
     }
 
+    fn with_point_grid(mut self, point_grid: PointGrid) -> Self {
+        self.point_grid = point_grid;
+        self
+    }
+
     fn early_bailout(
         &self,
         start: Self::Var,
@@ -96,6 +101,11 @@ where
     fn set_max_iter(&mut self, new_max_iter: Period)
     {
         self.base_curve.set_max_iter(new_max_iter);
+    }
+
+    fn with_max_iter(mut self, max_iter: Period) -> Self {
+        self.set_max_iter(max_iter);
+        self
     }
 
     fn param_map(&self, c: ComplexNum) -> C::Param
