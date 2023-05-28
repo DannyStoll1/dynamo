@@ -1,7 +1,7 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
 use crate::types::*;
-use epaint::Color32;
+use egui::Color32;
 
 #[cfg(feature="serde")]
 use serde::{Deserialize, Serialize};

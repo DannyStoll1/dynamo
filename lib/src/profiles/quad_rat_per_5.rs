@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::{macros::*, types::param_stack::Summarize};
 use crate::math_utils::weierstrass_p;
 use derive_more::{Add, Display, From};
 profile_imports!();
@@ -50,6 +50,8 @@ pub struct Param
     pub a: ComplexNum,
     pub b: ComplexNum,
 }
+
+impl Summarize for Param {}
 
 impl From<ComplexNum> for Param
 {

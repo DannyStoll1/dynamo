@@ -2,7 +2,7 @@ use super::pane::ColoredPoints;
 use crate::coloring::palette::DiscretePalette;
 use crate::dynamics::ParameterPlane;
 use crate::types::*;
-use eframe::egui::Color32;
+use egui::Color32;
 
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

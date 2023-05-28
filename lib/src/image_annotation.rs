@@ -1,6 +1,6 @@
 use crate::point_grid::*;
 use crate::primitive_types::*;
-use eframe::egui::{Color32, ColorImage};
+use egui::{Color32, ColorImage};
 
 #[derive(Clone)]
 pub struct ImageAnnotation {

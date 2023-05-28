@@ -1,4 +1,4 @@
-use eframe::egui::{Pos2, Rect, Ui, Vec2};
+use egui::{Pos2, Rect, Ui, Vec2};
 use egui_extras::RetainedImage;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

@@ -1,4 +1,4 @@
-use eframe::egui::{Key, KeyboardShortcut, Modifiers};
+use egui::{Key, KeyboardShortcut, Modifiers};
 
 macro_rules! key_press {
     ($key: expr) => {

@@ -1,6 +1,6 @@
 use super::Hsv;
 use crate::types::IterCount;
-use epaint::Color32;
+use egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution};

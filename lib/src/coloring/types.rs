@@ -1,4 +1,4 @@
-use epaint::Color32;
+use egui::Color32;
 use image::Rgb;
 use crate::macros::{max, min};
 

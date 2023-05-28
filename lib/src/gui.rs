@@ -5,14 +5,17 @@ use crate::types::{ParamList, Period};
 
 type DefaultProfile = CubicPer3_0;
 
-use eframe::egui;
+use eframe::App;
+use egui_dock::{egui, DockArea, NodeIndex, Style, Tree};
 
+pub mod fractal_tab;
 pub mod image_frame;
 pub mod keyboard_shortcuts;
 pub mod marked_points;
 pub mod pane;
-use image_frame::ImageFrame;
-use pane::*;
+use fractal_tab::FractalTab;
+
+use self::pane::MainInterface;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
@@ -29,454 +32,72 @@ pub fn run_app() -> Result<(), eframe::Error>
     )
 }
 
-pub struct FractalApp
+struct TabViewer<'a>
 {
-    interface: Box<dyn Interface>,
+    added_nodes: &'a mut Vec<FractalTab>,
 }
 
-impl FractalApp
+impl egui_dock::TabViewer for TabViewer<'_>
 {
-    fn show_menu(&mut self, ui: &mut egui::Ui)
+    type Tab = FractalTab;
+
+    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab)
     {
-        egui::menu::bar(ui, |ui| {
-            self.file_menu(ui);
-            self.fractal_menu(ui);
-            self.coloring_menu(ui);
-        });
+        ui.label(tab.interface.name());
+        tab.show_menu(ui);
+        tab.interface.handle_input(ui.ctx());
+        tab.interface.process_tasks();
+        tab.interface.show(ui);
     }
 
-    fn file_menu(&mut self, ui: &mut egui::Ui)
+    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText
     {
-        ui.menu_button("File", |ui| {
-            if ui.button("Save Parent").clicked()
-            {
-                self.interface.save_pane(PaneID::Parent);
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("Save Child").clicked()
-            {
-                self.interface.save_pane(PaneID::Child);
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-        });
+        format!("Tab {}", tab.interface.name()).into()
     }
 
-    fn fractal_menu(&mut self, ui: &mut egui::Ui)
+    fn on_add(&mut self, node: NodeIndex)
     {
-        ui.menu_button("Fractal", |ui| {
-            self.polynomials_menu(ui);
-            self.quadratic_rational_maps_menu(ui);
-        });
+        let tab = FractalTab::default().with_node_index(node);
+        self.added_nodes.push(tab);
     }
 
-    fn coloring_menu(&mut self, ui: &mut egui::Ui)
-    {
-        ui.menu_button("Coloring", |ui| {
-            ui.menu_button("Palette", |ui| {
-                if ui.button("Black").clicked()
-                {
-                    let black_palette = ColorPalette::black(32.);
-                    self.interface.set_palette(black_palette);
-                }
-                else if ui.button("White").clicked()
-                {
-                    let white_palette = ColorPalette::white(32.);
-                    self.interface.set_palette(white_palette);
-                }
-                else if ui.button("Random").clicked()
-                {
-                    self.interface.randomize_palette();
-                }
-                else
-                {
-                    return;
-                }
-                self.interface.consume_click();
-                ui.close_menu();
-            });
-            ui.menu_button("Algorithm", |ui| {
-                if ui.button("Solid").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Solid);
-                }
-                else if ui.button("Period").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Period);
-                }
-                else if ui.button("Period and Multiplier").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
-                }
-                else if ui.button("Multiplier").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Multiplier);
-                }
-                else if ui.button("Preperiod").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Preperiod);
-                }
-                else if ui.button("Internal potential").clicked()
-                {
-                    self.interface
-                        .parent_mut()
-                        .select_preperiod_smooth_coloring();
-                    self.interface
-                        .child_mut()
-                        .select_preperiod_smooth_coloring();
-                }
-                else if ui.button("Preperiod and Period").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::PreperiodPeriod);
-                }
-                else if ui.button("Internal potential and Period").clicked()
-                {
-                    self.interface
-                        .parent_mut()
-                        .select_preperiod_period_smooth_coloring();
-                    self.interface
-                        .child_mut()
-                        .select_preperiod_period_smooth_coloring();
-                }
-                else
-                {
-                    return;
-                }
-                self.interface.consume_click();
-                ui.close_menu();
-            });
-        });
-    }
+    // fn add_popup(&mut self, ui: &mut egui::Ui, node: NodeIndex) {
+    //     ui.set_min_width(120.0);
+    //     ui.style_mut().visuals.button_frame = false;
+    //
+    //     if ui.button("Mandelbrot").clicked() {
+    //         let tab = FractalTab::default().with_node_index(node);
+    //         self.added_nodes.push(tab);
+    //     }
+    //
+    //     if ui.button("QuadRatPer2").clicked() {
+    //         let tab = FractalTab::default().with_node_index(node);
+    //         self.added_nodes.push(tab);
+    //     }
+    // }
+}
 
-    fn polynomials_menu(&mut self, ui: &mut egui::Ui)
-    {
-        ui.menu_button("Polynomials", |ui| {
-            ui.menu_button("Quadratic Family", |ui| {
-                if ui.button("Base Curve").clicked()
-                {
-                    self.change_fractal(Mandelbrot::default, JuliaSet::from);
-                }
-                ui.menu_button("Marked Cycle", |ui| {
-                    if ui.button("Marked 1-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().marked_cycle_curve(1),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Marked 3-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().marked_cycle_curve(3),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Marked 4-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().marked_cycle_curve(4),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-                ui.menu_button("Marked Periodic Point", |ui| {
-                    if ui.button("Period 1").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().marked_cycle_curve(1),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Period 3").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().dynatomic_curve(3),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-                ui.menu_button("Marked Preperiodic Point", |ui| {
-                    if ui.button("Preperiod 2, Period 1").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().misiurewicz_curve(2, 1),
-                            JuliaSet::from,
-                        );
-                    }
-                    if ui.button("Preperiod 2, Period 2").clicked()
-                    {
-                        self.change_fractal(
-                            || Mandelbrot::default().misiurewicz_curve(2, 2),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-            });
-            if ui.button("Odd Cubics").clicked()
-            {
-                self.change_fractal(OddCubic::default, JuliaSet::from);
-            }
-            else if ui.button("Cubic Per(1, 1)").clicked()
-            {
-                self.change_fractal(CubicPer1_1::default, JuliaSet::from);
-            }
-            else if ui.button("Cubic Per(2, 0)").clicked()
-            {
-                self.change_fractal(CubicPer2CritMarked::default, JuliaSet::from);
-            }
-            else if ui.button("Cubic Per(3, 0)").clicked()
-            {
-                self.change_fractal(CubicPer3_0::default, JuliaSet::from);
-            }
-            else if ui.button("Cubic Per(1, lambda)").clicked()
-            {
-                self.change_fractal(CubicPer1LambdaParam::default, CubicPer1Lambda::from);
-            }
-            else if ui.button("Biquadratic").clicked()
-            {
-                self.change_fractal(BiquadraticMultParam::default, BiquadraticMult::from);
-            }
-            else
-            {
-                return;
-            }
-            self.interface.consume_click();
-            ui.close_menu();
-        });
-    }
-    fn quadratic_rational_maps_menu(&mut self, ui: &mut egui::Ui)
-    {
-        ui.menu_button("Quadratic Rational Maps", |ui| {
-            ui.menu_button("QuadRat Per(2)", |ui| {
-                if ui.button("Base Curve").clicked()
-                {
-                    self.change_fractal(QuadRatPer2::default, JuliaSet::from);
-                    self.interface.consume_click();
-                    ui.close_menu();
-                }
-                ui.menu_button("Marked Cycle", |ui| {
-                    if ui.button("Marked 1-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer2::default().marked_cycle_curve(1),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Marked 4-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer2::default().marked_cycle_curve(4),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Marked 5-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer2::default().marked_cycle_curve(5),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-                ui.menu_button("Marked Periodic Point", |ui| {
-                    if ui.button("Period 1").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer2::default().marked_cycle_curve(1),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-                ui.menu_button("Marked Preperiodic Point", |ui| {
-                    if ui.button("Preperiod 2, Period 1").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer2::default().misiurewicz_curve(2, 1),
-                            JuliaSet::from,
-                        );
-                    }
-                    if ui.button("Preperiod 2, Period 2").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer2::default().misiurewicz_curve(2, 2),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-            });
-            ui.menu_button("QuadRat Per(3)", |ui| {
-                if ui.button("Base Curve").clicked()
-                {
-                    self.change_fractal(QuadRatPer3::default, JuliaSet::from);
-                    self.interface.consume_click();
-                    ui.close_menu();
-                }
-                ui.menu_button("Marked Cycle curves", |ui| {
-                    if ui.button("Marked 1-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer3::default().marked_cycle_curve(1),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Marked 4-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer3::default().marked_cycle_curve(4),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-            });
-            ui.menu_button("QuadRat Per(4)", |ui| {
-                if ui.button("Base Curve").clicked()
-                {
-                    self.change_fractal(QuadRatPer4::default, JuliaSet::from);
-                    self.interface.consume_click();
-                    ui.close_menu();
-                }
-                ui.menu_button("Marked Cycle curves", |ui| {
-                    if ui.button("Marked 3-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPer4::default().marked_cycle_curve(3),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-            });
-            if ui.button("QuadRat Per(5)").clicked()
-            {
-                self.change_fractal(QuadRatPer5::default, JuliaSet::from);
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            ui.menu_button("QuadRat Preper(2, 1)", |ui| {
-                if ui.button("Base Curve").clicked()
-                {
-                    self.change_fractal(QuadRatPreper21::default, JuliaSet::from);
-                    self.interface.consume_click();
-                    ui.close_menu();
-                }
-                ui.menu_button("Marked Cycle", |ui| {
-                    if ui.button("Marked 3-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPreper21::default().marked_cycle_curve(3),
-                            JuliaSet::from,
-                        );
-                    }
-                    else if ui.button("Marked 4-cycle").clicked()
-                    {
-                        self.change_fractal(
-                            || QuadRatPreper21::default().marked_cycle_curve(4),
-                            JuliaSet::from,
-                        );
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    self.interface.consume_click();
-                    ui.close_menu();
-                });
-            });
-        });
-    }
-
-    fn change_fractal<P, J, C, M, T>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
-    where
-        P: ParameterPlane + Clone + 'static,
-        J: ParameterPlane<Param = P::Param, MetaParam = M, Child = C> + Clone + 'static,
-        C: ParameterPlane<Param = P::Param> + From<J>,
-        M: ParamList<Param = T>,
-        T: From<P::Param> + std::fmt::Display,
-    {
-        let image_height = self.interface.get_image_height();
-        let max_iters = 2048;
-
-        let parent_plane = create_plane().with_max_iter(max_iters);
-        let child_plane = create_child(parent_plane.clone());
-
-        self.interface = Box::new(MainInterface::new(parent_plane, child_plane, image_height));
-    }
+pub struct FractalApp
+{
+    tree: Tree<FractalTab>,
+    counter: usize,
+    // interface: Box<dyn Interface>,
 }
 
 impl Default for FractalApp
 {
     fn default() -> Self
     {
-        let height = 768;
-        // let parent_plane = QuadRatPer2::default(height, 2048).marked_cycle_curve(5);
-        // let parent_plane = DefaultProfile::default(height, 2048);
+        let tab0 = FractalTab::default();
 
-        use crate::types::ComplexNum;
-        type Profile = DefaultProfile;
-        // let multiplier = ComplexNum::new(0.0, 0.99);
-        let parent_plane = Profile::default()
-            .with_res_y(height)
-            .with_max_iter(1024);
-        let child_plane = <Profile as ParameterPlane>::Child::from(parent_plane.clone());
+        let tree = Tree::new(vec![tab0]);
 
-        // let child_plane = <DefaultProfile as ParameterPlane>::Child::from(parent_plane.clone());
+        // You can modify the tree before constructing the dock
+        // let [_, _] = tree.split_right(NodeIndex::root(), 0.5, vec![1]);
+        // let [_, _] = tree.split_below(a, 0.7, vec![4]);
+        // let [_, _] = tree.split_below(b, 0.5, vec![5]);
 
-        let interface = Box::new(MainInterface::new(parent_plane, child_plane, height));
-
-        Self { interface }
+        Self { tree, counter: 1 }
     }
 }
 
@@ -484,12 +105,28 @@ impl eframe::App for FractalApp
 {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            self.show_menu(ui);
-            self.interface.handle_input(ctx);
-            self.interface.show_save_dialog(ctx);
-            self.interface.process_tasks();
-            self.interface.show(ui);
+        let mut added_nodes = Vec::new();
+        DockArea::new(&mut self.tree)
+            .show_add_buttons(true)
+            .style({
+                let mut style = Style::from_egui(ctx.style().as_ref());
+                style.tabs.fill_tab_bar = true;
+                style
+            })
+            .show(
+                ctx,
+                &mut TabViewer {
+                    added_nodes: &mut added_nodes,
+                },
+            );
+        added_nodes.drain(..).for_each(|tab| {
+            self.tree.set_focused_node(tab.node);
+            // self.tree.push_to_focused_leaf(FractalTab {
+            //     interface: tab.interface,
+            //     node: NodeIndex(self.counter),
+            // });
+            self.tree.push_to_focused_leaf(FractalTab::default());
+            self.counter += 1;
         });
     }
 }

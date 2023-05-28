@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::{macros::*, types::param_stack::Summarize};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
@@ -10,6 +10,8 @@ pub struct ComplexPair
     a: ComplexNum,
     b: ComplexNum,
 }
+impl Summarize for ComplexPair {}
+
 // Unused
 impl From<ComplexNum> for ComplexPair
 {

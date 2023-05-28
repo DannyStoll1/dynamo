@@ -1,4 +1,4 @@
-use super::{ComplexNum, RealNum, ZERO};
+use super::{ComplexNum, RealNum, ZERO, param_stack::Summarize};
 use derive_more::{Add, Display, From, Sub};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -65,6 +65,8 @@ pub struct Point
     pub x: RealNum,
     pub y: RealNum,
 }
+impl Summarize for Point {}
+
 impl Point
 {
     fn dot(&self, other: &Self) -> RealNum

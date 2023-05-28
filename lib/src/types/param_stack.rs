@@ -5,17 +5,40 @@ use derive_more::Display;
 #[display(fmt = "")]
 pub struct NoParam {}
 
+pub trait Summarize : std::fmt::Display
+{
+    fn summarize(&self) -> Option<String> {
+        Some(format!("{}", self))
+    }
+}
+
+impl Summarize for NoParam
+{
+    fn summarize(&self) -> Option<String>
+    {
+        None
+    }
+}
+
+impl Summarize for ComplexNum
+{
+    fn summarize(&self) -> Option<String>
+    {
+        Some(format!("c = {self}"))
+    }
+}
+
 pub trait ParamList: Clone
 {
-    type Param: Default + Clone + Copy + std::fmt::Display;
+    type Param: Default + Clone + Copy + Summarize;
     fn local_param(&self) -> Self::Param;
     fn into_local_param(self) -> Self::Param;
 }
 
 impl<M, P> ParamList for (M, P)
 where
-    M: Clone + Default + std::fmt::Display,
-    P: Clone + Copy + Default + std::fmt::Display,
+    M: Clone + Default + Summarize,
+    P: Clone + Copy + Default + Summarize,
 {
     type Param = P;
     fn local_param(&self) -> Self::Param
@@ -58,17 +81,42 @@ impl ParamList for NoParam
 #[display(fmt = "[{}, {}]", meta_params, local_param)]
 pub struct ParamStack<T, H>
 where
-    T: Clone + Default + std::fmt::Display,
-    H: Clone + Default + std::fmt::Display,
+    T: Clone + Default + Summarize,
+    H: Clone + Default + Summarize,
 {
     pub meta_params: T,
     pub local_param: H,
 }
 
+impl<T, H> Summarize for ParamStack<T, H>
+where
+    T: Clone + Default + Summarize,
+    H: Clone + Default + Summarize,
+{
+    fn summarize(&self) -> Option<String>
+    {
+        if let Some(meta) = self.meta_params.summarize()
+        {
+            if let Some(local) = self.local_param.summarize()
+            {
+                Some(format!("[{}, {}]", meta, local))
+            }
+            else
+            {
+                Some(meta)
+            }
+        }
+        else
+        {
+            self.local_param.summarize()
+        }
+    }
+}
+
 impl<T, H> ParamStack<T, H>
 where
-    T: Clone + Default + std::fmt::Display,
-    H: Clone + Default + std::fmt::Display,
+    T: Clone + Default + Summarize,
+    H: Clone + Default + Summarize,
 {
     pub fn new(meta_params: T, local_param: H) -> Self
     {
@@ -81,8 +129,8 @@ where
 
 impl<T, H> ParamList for ParamStack<T, H>
 where
-    H: Clone + Copy + Default + std::fmt::Display,
-    T: Clone + Default + std::fmt::Display,
+    H: Clone + Copy + Default + Summarize,
+    T: Clone + Default + Summarize,
 {
     type Param = H;
 

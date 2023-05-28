@@ -1,5 +1,6 @@
 use crate::macros::*;
 use crate::math_utils::solve_cubic;
+use crate::types::param_stack::Summarize;
 use crate::types::variables::{Bicomplex, PlaneID};
 profile_imports!();
 use derive_more::{Add, Display, From, Sub};
@@ -12,6 +13,8 @@ pub struct ComplexPair
     pub a: ComplexNum,
     pub b: ComplexNum,
 }
+
+impl Summarize for ComplexPair {}
 
 impl From<ComplexNum> for ComplexPair
 {

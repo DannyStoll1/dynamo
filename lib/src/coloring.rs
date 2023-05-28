@@ -7,7 +7,7 @@ pub mod palette;
 
 use types::Hsv;
 use algorithms::ColoringAlgorithm;
-use epaint::Color32;
+use egui::Color32;
 use image::Rgb;
 use palette::ColorPalette;
 

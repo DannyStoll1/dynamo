@@ -1,4 +1,4 @@
-use super::ImageFrame;
+use super::image_frame::ImageFrame;
 use crate::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use crate::dynamics::julia::JuliaSet;
 use crate::dynamics::ParameterPlane;
@@ -6,12 +6,13 @@ use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::profiles::QuadRatPer2;
 use crate::types::*;
+use crate::types::param_stack::Summarize;
 use input_macro::input;
 
 use super::keyboard_shortcuts::*;
 use super::marked_points::MarkingMode;
 
-use eframe::egui::{
+use egui::{
     Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, SidePanel, Slider, Stroke, Ui,
 };
 use egui_extras::{Column, RetainedImage, TableBuilder};
@@ -493,7 +494,8 @@ where
     }
 
     #[inline]
-    fn cycle_active_plane(&mut self) {
+    fn cycle_active_plane(&mut self)
+    {
         self.plane.cycle_active_plane();
         self.schedule_recompute();
     }
@@ -582,11 +584,14 @@ where
 
     fn name(&self) -> String
     {
-        format!(
-            "{}: c = {}",
-            self.plane.name(),
-            self.plane.get_local_param()
-        )
+        if let Some(local) = self.plane.get_local_param().summarize()
+        {
+            format!("{}: {}", self.plane.name(), local)
+        }
+        else
+        {
+            self.plane.name()
+        }
     }
 }
 
@@ -624,6 +629,7 @@ pub trait Interactive
     fn show(&mut self, ui: &mut Ui);
     fn consume_click(&mut self);
     fn reset_click(&mut self);
+    fn name(&self) -> String;
 }
 
 pub struct MainInterface<P, J>
@@ -673,11 +679,7 @@ where
 
         // Set the new center to equal the old center plus whatever deviation the user has created
         let old_center = self.child.grid().center();
-        let old_default_center = self
-            .child
-            .plane
-            .default_bounds()
-            .center();
+        let old_default_center = self.child.plane.default_bounds().center();
         let offset = new_bounds.center() - old_default_center;
         let new_center = old_center + offset;
 
@@ -809,7 +811,8 @@ where
         self.child_mut().set_coloring_algorithm(coloring_algorithm);
     }
 
-    fn get_image_height(&self) -> usize {
+    fn get_image_height(&self) -> usize
+    {
         self.image_height
     }
 
@@ -949,7 +952,8 @@ where
             self.set_palette(white_palette);
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_P)) {
+        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_P))
+        {
             self.parent_mut().cycle_active_plane();
             self.child_mut().cycle_active_plane();
         }
@@ -1208,6 +1212,11 @@ where
     fn reset_click(&mut self)
     {
         self.click_used = false;
+    }
+
+    fn name(&self) -> String
+    {
+        self.parent.name()
     }
 }
 

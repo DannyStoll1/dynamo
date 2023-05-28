@@ -1,5 +1,5 @@
 use crate::types::{ComplexNum, RealNum};
-use eframe::egui::{Pos2, Vec2};
+use egui::{Pos2, Vec2};
 use std::ops::{Deref, DerefMut};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
