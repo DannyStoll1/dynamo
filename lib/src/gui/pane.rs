@@ -867,8 +867,10 @@ where
                 if clicked
                 {
                     self.consume_click();
-                    self.parent_mut().clear_marked_curves();
-                    self.parent_mut().mark_orbit_and_info(pointer_value);
+                    self.child_mut().clear_marked_curves();
+                    let param = self.parent.plane.param_map(pointer_value);
+                    let start = self.parent.plane.start_point(pointer_value, param);
+                    self.child_mut().mark_orbit_and_info(start.into());
                 }
             }
             else if self.child().frame_contains_pixel(pointer_pos)

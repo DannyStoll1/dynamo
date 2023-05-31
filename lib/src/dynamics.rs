@@ -2,8 +2,8 @@ use crate::{
     coloring::{algorithms::ColoringAlgorithm, Coloring},
     iter_plane::IterPlane,
     point_grid::{self, Bounds, PointGrid},
-    types::*,
     types::param_stack::Summarize,
+    types::*,
 };
 use ndarray::{Array2, Axis};
 use num_cpus;
@@ -32,7 +32,15 @@ pub trait ParameterPlane: Sync + Send + Clone
         + From<ComplexNum>
         + Into<ComplexNum>
         + Display;
-    type Param: Into<Self::Var> + From<ComplexNum> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize;
+    type Param: Into<Self::Var>
+        + From<ComplexNum>
+        + Clone
+        + Copy
+        + Send
+        + Sync
+        + Default
+        + PartialEq
+        + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
     type Deriv: Norm<RealNum> + Send + Default + From<f64> + MulAssign + Display;
     type Child: ParameterPlane + From<Self>;

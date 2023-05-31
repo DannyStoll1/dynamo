@@ -22,8 +22,12 @@ pub use cubic_per_3_0::CubicPer3_0;
 pub mod biquadratic;
 pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam};
 
+pub mod zeta;
+pub use zeta::RiemannXi;
+
 pub mod rulkov;
 pub use rulkov::Rulkov;
+
 
 #[derive(Clone, Debug)]
 pub struct QuadRatPer4
@@ -856,8 +860,7 @@ impl Sailboat
     };
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(5.);
 }
-impl Default for Sailboat
-{
+impl Default for Sailboat {
     fractal_impl!(shift, ZERO);
 }
 
