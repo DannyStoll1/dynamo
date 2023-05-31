@@ -3,10 +3,9 @@ use crate::dynamics::{covering_maps::HasDynamicalCovers, julia::JuliaSet, Parame
 use crate::profiles::*;
 use crate::types::{ParamList, Period};
 
-type DefaultProfile = CubicPer3_0;
-
 use eframe::App;
-use egui_dock::{egui, DockArea, NodeIndex, Style, Tree};
+use egui;
+use egui_dock::{DockArea, NodeIndex, Style, Tree};
 
 pub mod fractal_tab;
 pub mod image_frame;
@@ -81,7 +80,6 @@ pub struct FractalApp
 {
     tree: Tree<FractalTab>,
     counter: usize,
-    // interface: Box<dyn Interface>,
 }
 
 impl Default for FractalApp

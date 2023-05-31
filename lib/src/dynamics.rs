@@ -32,7 +32,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         + From<ComplexNum>
         + Into<ComplexNum>
         + Display;
-    type Param: Into<Self::Var> + From<ComplexNum> + Clone + Copy + Send + Sync + Default + Summarize;
+    type Param: Into<Self::Var> + From<ComplexNum> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
     type Deriv: Norm<RealNum> + Send + Default + From<f64> + MulAssign + Display;
     type Child: ParameterPlane + From<Self>;

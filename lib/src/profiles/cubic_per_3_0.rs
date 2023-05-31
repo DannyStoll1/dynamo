@@ -2,7 +2,7 @@ use crate::{macros::*, math_utils::solve_cubic, types::param_stack::Summarize};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
-#[derive(Default, Clone, Copy, Debug, Add, From, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct ComplexPair
 {

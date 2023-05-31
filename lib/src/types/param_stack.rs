@@ -1,7 +1,7 @@
 use super::ComplexNum;
 use derive_more::Display;
 
-#[derive(Clone, Copy, Debug, Default, Display)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
 #[display(fmt = "")]
 pub struct NoParam {}
 
@@ -30,7 +30,7 @@ impl Summarize for ComplexNum
 
 pub trait ParamList: Clone
 {
-    type Param: Default + Clone + Copy + Summarize;
+    type Param: Default + Clone + Copy + PartialEq + Summarize;
     fn local_param(&self) -> Self::Param;
     fn into_local_param(self) -> Self::Param;
 }
@@ -38,7 +38,7 @@ pub trait ParamList: Clone
 impl<M, P> ParamList for (M, P)
 where
     M: Clone + Default + Summarize,
-    P: Clone + Copy + Default + Summarize,
+    P: Clone + Copy + Default + PartialEq + Summarize,
 {
     type Param = P;
     fn local_param(&self) -> Self::Param
@@ -82,7 +82,7 @@ impl ParamList for NoParam
 pub struct ParamStack<T, H>
 where
     T: Clone + Default + Summarize,
-    H: Clone + Default + Summarize,
+    H: Clone + Default + PartialEq + Summarize,
 {
     pub meta_params: T,
     pub local_param: H,
@@ -91,7 +91,7 @@ where
 impl<T, H> Summarize for ParamStack<T, H>
 where
     T: Clone + Default + Summarize,
-    H: Clone + Default + Summarize,
+    H: Clone + Default + PartialEq + Summarize,
 {
     fn summarize(&self) -> Option<String>
     {
@@ -116,7 +116,7 @@ where
 impl<T, H> ParamStack<T, H>
 where
     T: Clone + Default + Summarize,
-    H: Clone + Default + Summarize,
+    H: Clone + Default + PartialEq + Summarize,
 {
     pub fn new(meta_params: T, local_param: H) -> Self
     {
@@ -129,8 +129,8 @@ where
 
 impl<T, H> ParamList for ParamStack<T, H>
 where
-    H: Clone + Copy + Default + Summarize,
     T: Clone + Default + Summarize,
+    H: Clone + Copy + Default + PartialEq + Summarize,
 {
     type Param = H;
 

@@ -43,7 +43,7 @@ fn top_coeff(a: ComplexNum, b: ComplexNum) -> ComplexNum
     n0 * n1 / denom
 }
 
-#[derive(Default, Clone, Copy, Debug, Add, From, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct Param
 {

@@ -5,7 +5,7 @@ use crate::types::variables::{Bicomplex, PlaneID};
 profile_imports!();
 use derive_more::{Add, Display, From, Sub};
 
-#[derive(Default, Clone, Copy, Debug, Add, From, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct ComplexPair

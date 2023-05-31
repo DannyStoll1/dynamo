@@ -314,8 +314,11 @@ where
 {
     pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param)
     {
-        self.plane.set_param(new_param);
-        self.schedule_recompute();
+        let old_param = self.plane.get_local_param();
+        if old_param != new_param {
+            self.plane.set_param(new_param);
+            self.schedule_recompute();
+        }
         self.clear_marked_curves();
     }
 
@@ -1170,6 +1173,7 @@ where
             .column(Column::auto().resizable(true))
             .column(Column::remainder())
             .vscroll(false)
+            .stick_to_bottom(true)
             .header(20.0, |mut header| {
                 header.col(|ui| {
                     ui.heading(self.parent.name());

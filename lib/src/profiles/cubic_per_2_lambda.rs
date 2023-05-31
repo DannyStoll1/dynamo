@@ -2,7 +2,7 @@ use crate::{macros::*, types::param_stack::Summarize};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
-#[derive(Default, Clone, Copy, Debug, Add, From, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ComplexPair
