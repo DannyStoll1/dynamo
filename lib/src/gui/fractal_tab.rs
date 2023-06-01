@@ -1,10 +1,10 @@
-use crate::types::*;
-use crate::profiles::*;
-use crate::dynamics::ParameterPlane;
+use crate::coloring::{algorithms::*, palette::*};
 use crate::dynamics::covering_maps::*;
 use crate::dynamics::julia::JuliaSet;
+use crate::dynamics::ParameterPlane;
 use crate::gui::pane::*;
-use crate::coloring::{algorithms::*, palette::*};
+use crate::profiles::*;
+use crate::types::*;
 use egui_dock::NodeIndex;
 
 pub struct FractalTab
@@ -16,7 +16,8 @@ pub struct FractalTab
 // {{{impl FractalTab
 impl FractalTab
 {
-    pub fn with_node_index(mut self, node: NodeIndex) -> Self {
+    pub fn with_node_index(mut self, node: NodeIndex) -> Self
+    {
         self.node = node;
         self
     }
@@ -434,7 +435,9 @@ impl FractalTab
         let image_height = self.interface.get_image_height();
         let max_iters = 2048;
 
-        let parent_plane = create_plane().with_max_iter(max_iters);
+        let parent_plane = create_plane()
+            .with_max_iter(max_iters)
+            .with_res_y(image_height);
         let child_plane = create_child(parent_plane.clone());
 
         self.interface = Box::new(MainInterface::new(parent_plane, child_plane, image_height));
@@ -454,7 +457,10 @@ impl Default for FractalTab
 
         let interface = Box::new(MainInterface::new(parent_plane, child_plane, height));
 
-        Self { interface, node: NodeIndex(0) }
+        Self {
+            interface,
+            node: NodeIndex(0),
+        }
     }
 }
 

@@ -14,8 +14,6 @@ pub mod marked_points;
 pub mod pane;
 use fractal_tab::FractalTab;
 
-use self::pane::MainInterface;
-
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
 {
