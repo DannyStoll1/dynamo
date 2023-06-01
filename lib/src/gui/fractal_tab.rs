@@ -28,6 +28,7 @@ impl FractalTab
             self.file_menu(ui);
             self.fractal_menu(ui);
             self.coloring_menu(ui);
+            self.image_menu(ui);
         });
     }
 
@@ -130,6 +131,40 @@ impl FractalTab
                     self.interface
                         .child_mut()
                         .select_preperiod_period_smooth_coloring();
+                }
+                else
+                {
+                    return;
+                }
+                self.interface.consume_click();
+                ui.close_menu();
+            });
+        });
+    }
+
+    fn image_menu(&mut self, ui: &mut egui::Ui)
+    {
+        ui.menu_button("Image", |ui| {
+            ui.menu_button("Set height", |ui| {
+                if ui.button("256").clicked()
+                {
+                    self.interface.change_height(256);
+                }
+                if ui.button("512").clicked()
+                {
+                    self.interface.change_height(512);
+                }
+                if ui.button("768").clicked()
+                {
+                    self.interface.change_height(768);
+                }
+                if ui.button("1024").clicked()
+                {
+                    self.interface.change_height(1024);
+                }
+                if ui.button("1536").clicked()
+                {
+                    self.interface.change_height(1536);
                 }
                 else
                 {
