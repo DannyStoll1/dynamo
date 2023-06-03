@@ -155,10 +155,10 @@ mod tests
     fn zeta()
     {
         use crate::math_utils::riemann_zeta_d;
-        let s = ComplexNum::new(0.5, 14.1347251417346937904572519835);
+        let s = ComplexNum::new(0.5, 14.134_725_141_734_695);
         let (val, dval) = riemann_zeta_d(s);
         let err = val.norm();
-        let dval_true = ComplexNum::new(0.7832965118670309286, 0.1246998297481710894);
+        let dval_true = ComplexNum::new(0.783_296_511_867_031, 0.124_699_829_748_171_09);
         let derr = (dval - dval_true).norm();
         dbg!(err, derr);
         assert!(err < 1e-11);
@@ -168,11 +168,12 @@ mod tests
     #[test]
     fn xi()
     {
+        use std::f64::consts::FRAC_PI_6;
         use crate::math_utils::riemann_xi_d;
         let s = ComplexNum::new(2., 0.);
         let (val, dval) = riemann_xi_d(s);
-        let val_true = ComplexNum::new(0.5235987755982989266812, 0.);
-        let dval_true = ComplexNum::new(0.0361629942642969215427, 0.);
+        let val_true = ComplexNum::from(FRAC_PI_6);
+        let dval_true = ComplexNum::new(0.036_162_994_264_296_92, 0.);
         let err = (val - val_true).norm();
         let derr = (dval - dval_true).norm();
         dbg!(err, derr);

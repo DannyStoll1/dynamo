@@ -18,10 +18,10 @@ impl ParameterPlane for RiemannXi {
     fn map(&self, s: Self::Var, c: Self::Param) -> Self::Var {
         riemann_xi(s) + c
     }
-    fn dynamical_derivative(&self, s: Self::Var, c: Self::Param) -> Self::Deriv {
+    fn dynamical_derivative(&self, s: Self::Var, _c: Self::Param) -> Self::Deriv {
         riemann_xi_d(s).1
     }
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv {
+    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv {
         ONE
     }
     fn param_map(&self, point: ComplexNum) -> Self::Param {

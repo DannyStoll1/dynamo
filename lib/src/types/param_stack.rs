@@ -5,9 +5,10 @@ use derive_more::Display;
 #[display(fmt = "")]
 pub struct NoParam {}
 
-pub trait Summarize : std::fmt::Display
+pub trait Summarize: std::fmt::Display
 {
-    fn summarize(&self) -> Option<String> {
+    fn summarize(&self) -> Option<String>
+    {
         Some(format!("{}", self))
     }
 }
@@ -95,21 +96,19 @@ where
 {
     fn summarize(&self) -> Option<String>
     {
-        if let Some(meta) = self.meta_params.summarize()
-        {
-            if let Some(local) = self.local_param.summarize()
-            {
-                Some(format!("[{}, {}]", meta, local))
-            }
-            else
-            {
-                Some(meta)
-            }
-        }
-        else
-        {
-            self.local_param.summarize()
-        }
+        self.meta_params.summarize().map_or_else(
+            || self.local_param.summarize(),
+            |meta| {
+                if let Some(local) = self.local_param.summarize()
+                {
+                    Some(format!("[{}, {}]", meta, local))
+                }
+                else
+                {
+                    Some(meta)
+                }
+            },
+        )
     }
 }
 
@@ -118,7 +117,8 @@ where
     T: Clone + Default + Summarize,
     H: Clone + Default + PartialEq + Summarize,
 {
-    pub fn new(meta_params: T, local_param: H) -> Self
+    #[must_use]
+    pub const fn new(meta_params: T, local_param: H) -> Self
     {
         Self {
             meta_params,

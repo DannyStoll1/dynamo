@@ -16,7 +16,7 @@ pub struct FractalTab
 // {{{impl FractalTab
 impl FractalTab
 {
-    pub fn with_node_index(mut self, node: NodeIndex) -> Self
+    pub const fn with_node_index(mut self, node: NodeIndex) -> Self
     {
         self.node = node;
         self

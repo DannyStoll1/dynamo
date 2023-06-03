@@ -213,14 +213,14 @@ impl PointGrid
 
     #[inline]
     #[must_use]
-    pub fn with_width(self, res_x: usize) -> Self
+    pub const fn with_width(self, res_x: usize) -> Self
     {
         Self::new_by_res_x(res_x, self.bounds)
     }
 
     #[inline]
     #[must_use]
-    pub fn with_height(self, res_y: usize) -> Self
+    pub const fn with_height(self, res_y: usize) -> Self
     {
         Self::new_by_res_y(res_y, self.bounds)
     }

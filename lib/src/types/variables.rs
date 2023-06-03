@@ -1,4 +1,4 @@
-use super::{ComplexNum, RealNum, ZERO, param_stack::Summarize};
+use super::{param_stack::Summarize, ComplexNum, RealNum, ZERO};
 use derive_more::{Add, Display, From, Sub};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -199,9 +199,12 @@ pub enum PlaneID
     #[display(fmt = "z-plane")]
     WPlane,
 }
-impl PlaneID {
-    pub fn swap(&self) -> Self {
-        match self {
+impl PlaneID
+{
+    pub const fn swap(&self) -> Self
+    {
+        match self
+        {
             Self::ZPlane => Self::WPlane,
             Self::WPlane => Self::ZPlane,
         }

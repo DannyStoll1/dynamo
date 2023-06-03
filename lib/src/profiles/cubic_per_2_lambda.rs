@@ -148,7 +148,7 @@ pub struct CubicPer2LambdaParam
     max_iter: Period,
 }
 
-impl CubicPer2LambdaParam
+impl Default for CubicPer2LambdaParam
 {
     fractal_impl!(-2.5, 2.5, -2.5, 2.5);
 }

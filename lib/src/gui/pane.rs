@@ -608,14 +608,10 @@ where
 
     fn name(&self) -> String
     {
-        if let Some(local) = self.plane.get_local_param().summarize()
-        {
-            format!("{}: {}", self.plane.name(), local)
-        }
-        else
-        {
-            self.plane.name()
-        }
+        self.plane.get_local_param().summarize().map_or_else(
+            || self.plane.name(),
+            |local| format!("{}: {}", self.plane.name(), local),
+        )
     }
 }
 

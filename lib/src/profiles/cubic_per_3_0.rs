@@ -14,7 +14,7 @@ impl Summarize for ComplexPair {}
 
 impl From<ComplexNum> for ComplexPair
 {
-    fn from(z: ComplexNum) -> Self
+    fn from(_z: ComplexNum) -> Self
     {
         todo!()
     }
@@ -22,7 +22,7 @@ impl From<ComplexNum> for ComplexPair
 
 impl From<ComplexPair> for ComplexNum
 {
-    fn from(value: ComplexPair) -> Self
+    fn from(_value: ComplexPair) -> Self
     {
         todo!()
     }
