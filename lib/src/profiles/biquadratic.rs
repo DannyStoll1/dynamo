@@ -58,7 +58,8 @@ impl Biquadratic
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 }
 
-impl Default for Biquadratic {
+impl Default for Biquadratic
+{
     fractal_impl!(multiplier, ZERO);
 }
 
@@ -325,7 +326,7 @@ impl ParameterPlane for BiquadraticMult
         {
             2 =>
             {
-                let (r0, r1, r2) = solve_cubic(a * b - 1., a * a + b, a + a);
+                let [r0, r1, r2] = solve_cubic(a * b - 1., a * a + b, a + a);
                 vec![
                     Bicomplex::PlaneA(ZERO),
                     Bicomplex::PlaneA(r0),

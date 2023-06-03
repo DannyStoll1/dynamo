@@ -3,14 +3,28 @@ use egui::{Key, KeyboardShortcut, Modifiers};
 macro_rules! key_press {
     ($key: expr) => {
         KeyboardShortcut::new(Modifiers::NONE, $key)
-    }
+    };
 }
 
 macro_rules! ctrl {
     ($key: expr) => {
         KeyboardShortcut::new(Modifiers::CTRL, $key)
+    };
+}
+
+macro_rules! shift {
+    ($key: expr) => {
+        KeyboardShortcut::new(Modifiers::SHIFT, $key)
+    };
+}
+
+macro_rules! shortcut_used {
+    ($ctx: expr, $shortcut: expr) => {
+        $ctx.input_mut(|i| i.consume_shortcut($shortcut))
     }
 }
+
+pub(super) use shortcut_used;
 
 pub const CTRL_A: KeyboardShortcut = ctrl!(Key::A);
 pub const CTRL_B: KeyboardShortcut = ctrl!(Key::B);
@@ -84,3 +98,9 @@ pub const KEY_RIGHT: KeyboardShortcut = key_press!(Key::ArrowRight);
 pub const KEY_SPACE: KeyboardShortcut = key_press!(Key::Space);
 pub const KEY_MINUS: KeyboardShortcut = key_press!(Key::Minus);
 pub const KEY_EQUALS: KeyboardShortcut = key_press!(Key::PlusEquals);
+
+pub const SHIFT_UP: KeyboardShortcut = shift!(Key::ArrowUp);
+pub const SHIFT_DOWN: KeyboardShortcut = shift!(Key::ArrowDown);
+pub const SHIFT_LEFT: KeyboardShortcut = shift!(Key::ArrowLeft);
+pub const SHIFT_RIGHT: KeyboardShortcut = shift!(Key::ArrowRight);
+pub const SHIFT_SPACE: KeyboardShortcut = shift!(Key::Space);

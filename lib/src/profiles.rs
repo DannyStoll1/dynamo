@@ -1,5 +1,5 @@
 use crate::macros::*;
-use crate::math_utils::{slog, weierstrass_p};
+use crate::math_utils::{slog, solve_cubic, solve_quartic, weierstrass_p};
 profile_imports!();
 
 pub mod mandelbrot;
@@ -31,7 +31,6 @@ pub use zeta::RiemannXi;
 
 pub mod rulkov;
 pub use rulkov::Rulkov;
-
 
 #[derive(Clone, Debug)]
 pub struct QuadRatSymmetryLocus
@@ -292,6 +291,22 @@ impl ParameterPlane for CubicPer2CritMarked
         vec![(0.).into(), TWO_THIRDS * u]
     }
 
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 => solve_cubic(c, -ONE, -c - c.inv()).to_vec(),
+            2 =>
+            {
+                let cinv = c.inv();
+                let cinv2 = cinv * cinv;
+                let [r2, r3, r4, r5] = solve_quartic(cinv2, c - cinv, cinv2 + 1., -c - cinv - cinv);
+                vec![ZERO, c, r2, r3, r4, r5]
+            }
+            _ => vec![],
+        }
+    }
+
     #[inline]
     fn default_julia_bounds(&self, _point: ComplexNum, param: ComplexNum) -> Bounds
     {
@@ -497,7 +512,8 @@ impl Sailboat
     };
     const JULIA_BOUNDS: Bounds = Bounds::centered_square(5.);
 }
-impl Default for Sailboat {
+impl Default for Sailboat
+{
     fractal_impl!(shift, ZERO);
 }
 

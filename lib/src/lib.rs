@@ -132,4 +132,51 @@ mod tests
         let res = horner_monic!(x, 2, -3, 5);
         assert_eq!(res, 24);
     }
+
+    #[test]
+    fn quartic_roots()
+    {
+        use crate::macros::horner_monic;
+        use crate::math_utils::solve_quartic;
+
+        let a = ComplexNum::new(2., 0.);
+        let b = ComplexNum::new(3., 0.);
+        let c = ComplexNum::new(5., 0.);
+        let d = ComplexNum::new(7., 0.);
+
+        let roots = solve_quartic(a, b, c, d);
+        for r in roots.iter() {
+            let val = horner_monic!(r, a, b, c, d);
+            assert!(val.norm() < 1e-13);
+        }
+    }
+
+    #[test]
+    fn zeta()
+    {
+        use crate::math_utils::riemann_zeta_d;
+        let s = ComplexNum::new(0.5, 14.1347251417346937904572519835);
+        let (val, dval) = riemann_zeta_d(s);
+        let err = val.norm();
+        let dval_true = ComplexNum::new(0.7832965118670309286, 0.1246998297481710894);
+        let derr = (dval - dval_true).norm();
+        dbg!(err, derr);
+        assert!(err < 1e-11);
+        assert!(derr < 1e-11);
+    }
+
+    #[test]
+    fn xi()
+    {
+        use crate::math_utils::riemann_xi_d;
+        let s = ComplexNum::new(2., 0.);
+        let (val, dval) = riemann_xi_d(s);
+        let val_true = ComplexNum::new(0.5235987755982989266812, 0.);
+        let dval_true = ComplexNum::new(0.0361629942642969215427, 0.);
+        let err = (val - val_true).norm();
+        let derr = (dval - dval_true).norm();
+        dbg!(err, derr);
+        assert!(err < 1e-11);
+        assert!(derr < 1e-11);
+    }
 }

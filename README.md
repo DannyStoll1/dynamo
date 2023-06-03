@@ -7,12 +7,16 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 ## Usage
 
 ### Navigation
+
 - Z: zoom in to selection
 - Ctrl-Z: zoom in far
 - V: zoom out from selection
 - Ctrl-V: zoom out far
+- Shift+arrows: pan view
+- Space: Center selection
 
 ### Computation
+
 - +: Increase max iters
 - -: Decrease max iters
 - Ctrl-S: save image (prompt in command line; currently does not include marked points/curves)
@@ -22,8 +26,10 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - U: Toggle 2-cycles
 - P: Toggle critical points
 - C: Clear marked curves
+- Shift+Space: Reset selection
 
 ### Coloring
+
 - R: Randomize palette
 - W: White palette
 - B: Black palette
@@ -37,6 +43,7 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Right/Left: Change coloring phase
 
 ## Planned Features
+
 - [x] Live Julia sets
 - [x] Mark orbits
 - [x] Marked points

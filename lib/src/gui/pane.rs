@@ -5,8 +5,8 @@ use crate::dynamics::ParameterPlane;
 use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::profiles::QuadRatPer2;
-use crate::types::*;
 use crate::types::param_stack::Summarize;
+use crate::types::*;
 use input_macro::input;
 
 use super::keyboard_shortcuts::*;
@@ -65,6 +65,7 @@ pub trait Pane
 
     fn select_point(&mut self, point: ComplexNum);
     fn get_selection(&self) -> ComplexNum;
+    fn reset_selection(&mut self);
 
     fn get_marked_curves(&self) -> &Vec<ColoredCurve>;
     fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>;
@@ -206,17 +207,31 @@ pub trait Pane
     fn recompute(&mut self);
 
     fn redraw(&mut self);
-    // {
-    //     let image = self.get_iter_plane().render(self.get_coloring());
-    //     let image_frame = self.get_frame_mut();
-    //     image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
-    // }
 
     fn zoom(&mut self, scale: RealNum, base_point: ComplexNum);
-    // {
-    //     self.grid_mut().zoom(scale, base_point);
-    //     self.schedule_recompute();
-    // }
+
+    #[inline]
+    fn pan(&mut self, offset_vector: ComplexNum)
+    {
+        self.grid_mut().translate(offset_vector);
+        self.schedule_recompute();
+    }
+
+    #[inline]
+    fn nudge_horizontal(&mut self, relative_offset: f64)
+    {
+        let grid_width = self.grid().range_x();
+        let translation_vector = ComplexNum::from(grid_width * relative_offset);
+        self.pan(translation_vector);
+    }
+
+    #[inline]
+    fn nudge_vertical(&mut self, relative_offset: f64)
+    {
+        let grid_height = self.grid().range_y();
+        let translation_vector = ComplexNum::new(0., grid_height * relative_offset);
+        self.pan(translation_vector);
+    }
 
     fn process_task(&mut self)
     {
@@ -315,7 +330,8 @@ where
     pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param)
     {
         let old_param = self.plane.get_local_param();
-        if old_param != new_param {
+        if old_param != new_param
+        {
             self.plane.set_param(new_param);
             self.schedule_recompute();
         }
@@ -476,6 +492,11 @@ where
     fn get_selection(&self) -> ComplexNum
     {
         self.selection
+    }
+    #[inline]
+    fn reset_selection(&mut self)
+    {
+        self.select_point(self.plane.default_selection())
     }
     #[inline]
     fn marking_mode(&self) -> &MarkingMode
@@ -699,16 +720,6 @@ where
     //     MainInterface::new(new_parent, new_child)
     // }
 }
-
-// fn make_interface<P, J, M, T>(parent_plane: P, child_plane: J) -> MainInterface<P, J>
-// where
-//     P: ParameterPlane + Clone,
-//     J: ParameterPlane<MetaParam = M> + Clone + 'static,
-//     M: ParamStack<Param = T>,
-//     T: From<P::Param>,
-// {
-//     MainInterface::new(parent_plane, child_plane)
-// }
 
 impl<P, J, C, M, T> PanePair for MainInterface<P, J>
 where
@@ -940,54 +951,54 @@ where
             return;
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_R))
+        if shortcut_used!(ctx, &KEY_R)
         {
             self.randomize_palette();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_B))
+        if shortcut_used!(ctx, &KEY_B)
         {
             let black_palette = ColorPalette::black(32.);
             self.set_palette(black_palette);
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_W))
+        if shortcut_used!(ctx, &KEY_W)
         {
             let white_palette = ColorPalette::white(32.);
             self.set_palette(white_palette);
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_P))
+        if shortcut_used!(ctx, &CTRL_P)
         {
             self.parent_mut().cycle_active_plane();
             self.child_mut().cycle_active_plane();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_P))
+        if shortcut_used!(ctx, &KEY_P)
         {
             self.child_mut().marking_mode_mut().toggle_critical();
             self.child_mut().schedule_redraw();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_O))
+        if shortcut_used!(ctx, &KEY_O)
         {
             self.parent_mut().marking_mode_mut().toggle_critical();
             self.parent_mut().schedule_redraw();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_Y))
+        if shortcut_used!(ctx, &KEY_Y)
         {
             self.child_mut().marking_mode_mut().toggle_cycles(1);
             self.child_mut().schedule_redraw();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_U))
+        if shortcut_used!(ctx, &KEY_U)
         {
             self.child_mut().marking_mode_mut().toggle_cycles(2);
             self.child_mut().schedule_redraw();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_H))
+        if shortcut_used!(ctx, &KEY_H)
         {
             match input!("Enter new image height: ").parse::<usize>()
             {
@@ -999,7 +1010,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_UP))
+        if shortcut_used!(ctx, &KEY_UP)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1007,7 +1018,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_DOWN))
+        if shortcut_used!(ctx, &KEY_DOWN)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1015,7 +1026,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_LEFT))
+        if shortcut_used!(ctx, &KEY_LEFT)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1023,7 +1034,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_RIGHT))
+        if shortcut_used!(ctx, &KEY_RIGHT)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1031,7 +1042,39 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_Z))
+        if shortcut_used!(ctx, &SHIFT_LEFT)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.nudge_horizontal(-0.01);
+            }
+        }
+
+        if shortcut_used!(ctx, &SHIFT_RIGHT)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.nudge_horizontal(0.01);
+            }
+        }
+
+        if shortcut_used!(ctx, &SHIFT_UP)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.nudge_vertical(0.01);
+            }
+        }
+
+        if shortcut_used!(ctx, &SHIFT_DOWN)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.nudge_vertical(-0.01);
+            }
+        }
+
+        if shortcut_used!(ctx, &KEY_Z)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1039,7 +1082,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_Z))
+        if shortcut_used!(ctx, &CTRL_Z)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1047,7 +1090,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_V))
+        if shortcut_used!(ctx, &KEY_V)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1055,7 +1098,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_V))
+        if shortcut_used!(ctx, &CTRL_V)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1063,7 +1106,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_SPACE))
+        if shortcut_used!(ctx, &KEY_SPACE)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1073,7 +1116,27 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_0))
+        if shortcut_used!(ctx, &SHIFT_SPACE)
+        {
+            match self.active_pane
+            {
+                Some(PaneID::Parent) =>
+                {
+                    self.parent.reset_selection();
+                    let new_child_param = self.parent.plane.param_map(self.parent.selection);
+                    self.set_child_param(self.parent.selection, new_child_param);
+                }
+                Some(PaneID::Child) =>
+                {
+                    self.child.reset_selection();
+                    self.child.clear_marked_curves();
+                }
+                None =>
+                {}
+            }
+        }
+
+        if shortcut_used!(ctx, &KEY_0)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1081,7 +1144,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_1))
+        if shortcut_used!(ctx, &KEY_1)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1089,7 +1152,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_2))
+        if shortcut_used!(ctx, &KEY_2)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1097,7 +1160,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_3))
+        if shortcut_used!(ctx, &KEY_3)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1105,7 +1168,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_4))
+        if shortcut_used!(ctx, &KEY_4)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1113,7 +1176,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_5))
+        if shortcut_used!(ctx, &KEY_5)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1121,7 +1184,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_C))
+        if shortcut_used!(ctx, &KEY_C)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1130,12 +1193,12 @@ where
             // pane.clear_marked_points();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_L))
+        if shortcut_used!(ctx, &KEY_L)
         {
             self.toggle_live_mode();
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&CTRL_S))
+        if shortcut_used!(ctx, &CTRL_S)
         {
             self.save_active_pane();
             // if let Some(pane) = self.get_active_pane_mut() {
@@ -1151,7 +1214,7 @@ where
             // }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_EQUALS))
+        if shortcut_used!(ctx, &KEY_EQUALS)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
@@ -1159,7 +1222,7 @@ where
             }
         }
 
-        if ctx.input_mut(|i| i.consume_shortcut(&KEY_MINUS))
+        if shortcut_used!(ctx, &KEY_MINUS)
         {
             if let Some(pane) = self.get_active_pane_mut()
             {

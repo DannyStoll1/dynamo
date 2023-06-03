@@ -243,4 +243,9 @@ where
             fill_rate: 0.015,
         }
     }
+
+    fn is_dynamical(&self) -> bool
+    {
+        true
+    }
 }

@@ -1,13 +1,13 @@
 use crate::types::{ComplexNum, RealNum};
 use egui::{Pos2, Vec2};
-use std::ops::{Deref, DerefMut};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Bounds
 {
     pub min_x: RealNum,
@@ -52,7 +52,7 @@ impl Bounds
         (self.max_y + self.min_y) / 2.
     }
 
-    pub fn shift(&mut self, translation: ComplexNum)
+    pub fn translate(&mut self, translation: ComplexNum)
     {
         self.min_x += translation.re;
         self.max_x += translation.re;
@@ -62,12 +62,12 @@ impl Bounds
 
     pub fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
     {
-        self.shift(-base_point);
+        self.translate(-base_point);
         self.min_x *= scale;
         self.max_x *= scale;
         self.min_y *= scale;
         self.max_y *= scale;
-        self.shift(base_point);
+        self.translate(base_point);
     }
 
     #[inline]
@@ -83,7 +83,7 @@ impl Bounds
     pub fn recenter(&mut self, new_center: ComplexNum)
     {
         let old_center = self.center();
-        self.shift(new_center - old_center);
+        self.translate(new_center - old_center);
     }
 
     #[must_use]
@@ -123,7 +123,7 @@ impl Default for Bounds
 }
 
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PointGrid
 {
     pub res_x: usize,
@@ -300,7 +300,7 @@ impl PointGrid
     pub fn recenter(&mut self, new_center: ComplexNum)
     {
         let old_center = self.center();
-        self.shift(new_center - old_center);
+        self.translate(new_center - old_center);
     }
 
     pub fn change_bounds(&mut self, new_bounds: Bounds)
@@ -362,16 +362,20 @@ impl Default for PointGrid
     }
 }
 
-impl Deref for PointGrid {
+impl Deref for PointGrid
+{
     type Target = Bounds;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self::Target
+    {
         &self.bounds
     }
 }
 
-impl DerefMut for PointGrid {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+impl DerefMut for PointGrid
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
         &mut self.bounds
     }
 }

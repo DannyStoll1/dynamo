@@ -1,4 +1,4 @@
-use crate::{macros::*, types::param_stack::Summarize};
+use crate::{macros::*, math_utils::solve_cubic, types::param_stack::Summarize};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
@@ -93,6 +93,19 @@ impl ParameterPlane for CubicPer2Lambda
         let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
         let denom = 3. * c.a;
         vec![(c.b + disc) / denom, (c.b - disc) / denom]
+    }
+
+    fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let u = b / a;
+                solve_cubic(u, 2. / a - 1., -u).to_vec()
+            }
+            _ => vec![],
+        }
     }
 
     fn get_param(&self) -> Self::MetaParam

@@ -93,7 +93,7 @@ impl ParameterPlane for CubicPer3_0
     }
     fn critical_points(&self) -> Vec<Self::Var>
     {
-        let (r0, r1, r2) = solve_cubic(ONE, 2.0.into(), ONE);
+        let [r0, r1, r2] = solve_cubic(ONE, 2.0.into(), ONE);
         vec![ZERO, (-1.).into(), r0, r1, r2]
     }
     fn default_selection(&self) -> ComplexNum

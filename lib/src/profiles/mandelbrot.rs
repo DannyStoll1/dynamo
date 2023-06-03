@@ -32,6 +32,16 @@ impl ParameterPlane for Mandelbrot
     parameter_plane_impl!();
     default_name!();
 
+    fn param_map(&self, point: ComplexNum) -> Self::Param
+    {
+        point
+    }
+
+    fn escape_radius(&self) -> RealNum
+    {
+        1e26
+    }
+
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         f(z, c)

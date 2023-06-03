@@ -14,6 +14,7 @@ use thread_local::ThreadLocal;
 
 pub mod covering_maps;
 pub mod julia;
+pub mod newton;
 pub mod orbit;
 // pub mod simple_parameter_plane;
 // pub mod functions;
@@ -431,6 +432,11 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     fn cycle_active_plane(&mut self) {}
+
+    fn is_dynamical(&self) -> bool
+    {
+        false
+    }
 
     // fn julia_set(&self, point: ComplexNum) -> Option<Self::Child>
     // where

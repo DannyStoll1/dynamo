@@ -91,6 +91,19 @@ impl ParameterPlane for CubicPer1Lambda
         vec![-ONE_THIRD * (c + disc), -ONE_THIRD * (c - disc)]
     }
 
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let disc = (c * c + 4. * (4. - self.multiplier)).sqrt();
+                vec![ZERO, -0.5 * (c + disc), 0.5 * (disc - c)]
+            }
+            _ => vec![],
+        }
+    }
+
     fn get_param(&self) -> Self::Param
     {
         self.multiplier
@@ -127,7 +140,8 @@ impl ParameterPlane for CubicPer1Lambda
         Bounds::centered_square(r)
     }
 
-    fn cycle_active_plane(&mut self) {
+    fn cycle_active_plane(&mut self)
+    {
         self.starting_crit = self.starting_crit.swap();
     }
 }
@@ -241,7 +255,8 @@ impl ParameterPlane for CubicPer1LambdaParam
         Bounds::centered_square(r)
     }
 
-    fn cycle_active_plane(&mut self) {
+    fn cycle_active_plane(&mut self)
+    {
         self.starting_crit = self.starting_crit.swap();
     }
 }
@@ -354,6 +369,18 @@ impl ParameterPlane for CubicPer1_1
     {
         let u = (param * param - 3.).sqrt();
         vec![-(param + u) / 3., (u - param) / 3.]
+    }
+
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                vec![ZERO, -c]
+            }
+            _ => vec![],
+        }
     }
 
     #[inline]
