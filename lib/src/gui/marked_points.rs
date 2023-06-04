@@ -34,7 +34,7 @@ impl MarkingMode
                 if *enabled
                 {
                     let per_pts = plane.cycles(1 + period as Period);
-                    let color = self.palette.map_color32(period as f32, 1.);
+                    let color = self.palette.map_color32((1 + period) as f32, 1.);
                     points.extend(per_pts.iter().map(|z| ((*z).into(), color)));
                 }
             });

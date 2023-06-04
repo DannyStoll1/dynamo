@@ -63,6 +63,14 @@ pub fn slog(x: RealNum) -> RealNum
     }
 }
 
+// Roots of the polynomial a + bx + x^2
+#[must_use]
+pub fn solve_quadratic(a: ComplexNum, b: ComplexNum) -> [ComplexNum; 2]
+{
+    let disc = (b * b - 4. * a).sqrt();
+    [-0.5 * (b + disc), 0.5 * (disc - b)]
+}
+
 // Roots of the polynomial a + bx + cx^2 + x^3
 #[must_use]
 pub fn solve_cubic(a: ComplexNum, b: ComplexNum, c: ComplexNum) -> [ComplexNum; 3]
@@ -108,7 +116,12 @@ pub fn solve_quartic(a: ComplexNum, b: ComplexNum, c: ComplexNum, d: ComplexNum)
     let disc_2 = 0.5 * (u + v).sqrt();
     let disc_3 = 0.5 * (u - v).sqrt();
 
-    [x0 - s + disc_2, x0 - s - disc_2, x0 + s + disc_3, x0 + s - disc_3]
+    [
+        x0 - s + disc_2,
+        x0 - s - disc_2,
+        x0 + s + disc_3,
+        x0 + s - disc_3,
+    ]
 }
 
 fn bernoulli(n: u64) -> f64

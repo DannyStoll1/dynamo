@@ -1,5 +1,5 @@
 use crate::macros::*;
-use crate::math_utils::weierstrass_p;
+use crate::math_utils::{weierstrass_p, solve_quadratic};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -85,6 +85,17 @@ impl ParameterPlane for QuadRatPreper21
     fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
     {
         vec![(-1.).into(), (1.).into()]
+    }
+
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var> {
+        match period {
+            1 => {
+                let u = c/(c-1.);
+                solve_quadratic(u, u+u).to_vec()
+            },
+            2 => solve_quadratic(c/(c+1.), TWO).to_vec(),
+            _ => vec![],
+        }
     }
 
     #[inline]

@@ -5,7 +5,7 @@ use crate::{
     point_grid::{Bounds, PointGrid},
     types::{
         ComplexNum, ComplexVec, EscapeState, IterCount, OrbitInfo, Period, PointInfo, RealNum,
-        ONE_COMPLEX, TAU, TWO,
+        ONE_COMPLEX, TAU,
     },
 };
 use dyn_clone::DynClone;
@@ -412,7 +412,7 @@ pub trait SimpleParameterPlane: Sync + Send + DynClone
         {
             let us = (0..sharpness)
                 .map(|j| escape_radius.ln() * ((-f64::from(j)) / f64::from(sharpness)).exp2());
-            let v = ComplexNum::new(0., theta * TWO.powi(k as i32));
+            let v = ComplexNum::new(0., theta * 2.0.powi(k as i32));
             let targets = us.map(|u| (u + v).exp());
 
             let mut temp_c = *c_list.last()?;

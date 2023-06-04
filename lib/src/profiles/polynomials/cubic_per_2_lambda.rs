@@ -1,4 +1,8 @@
-use crate::{macros::*, math_utils::solve_cubic, types::param_stack::Summarize};
+use crate::{
+    macros::*,
+    math_utils::{solve_cubic, solve_quartic},
+    types::param_stack::Summarize,
+};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
@@ -235,5 +239,111 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
             max_iter: parent.max_iter(),
             multiplier: param,
         }
+    }
+}
+
+// Cubic polynomials with critical 2-cycle 0 <-> c
+#[derive(Clone, Debug)]
+pub struct CubicPer2CritMarked
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl CubicPer2CritMarked
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.6,
+        max_x: 2.6,
+        min_y: -1.9,
+        max_y: 1.9,
+    };
+}
+impl Default for CubicPer2CritMarked
+{
+    fractal_impl!();
+}
+
+impl ParameterPlane for CubicPer2CritMarked
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: ComplexNum,
+        _base_param: ComplexNum,
+    ) -> PointInfo<Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log(3.);
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+
+    #[inline]
+    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        z * z * (z - c - 1. / c) + c
+    }
+
+    #[inline]
+    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
+    {
+        2. / 3. * (param + 1. / param)
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        // let u = z * (3. * z - c - c - 2. / c) * (z / c).re.signum();
+        // u / u.norm()
+        z * (3. * z - c - c - 2. / c)
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    {
+        let z2 = z * z;
+        let c2 = c * c;
+        1. + z2 / c2 + -z2
+    }
+
+    #[inline]
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        let u = c + c.inv();
+        vec![(0.).into(), TWO_THIRDS * u]
+    }
+
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 => solve_cubic(c, -ONE, -c - c.inv()).to_vec(),
+            2 =>
+            {
+                let cinv = c.inv();
+                let cinv2 = cinv * cinv;
+                let [r2, r3, r4, r5] = solve_quartic(cinv2, c - cinv, cinv2 + 1., -c - cinv - cinv);
+                vec![ZERO, c, r2, r3, r4, r5]
+            }
+            _ => vec![],
+        }
+    }
+
+    #[inline]
+    fn default_julia_bounds(&self, _point: ComplexNum, param: ComplexNum) -> Bounds
+    {
+        Bounds::square(2.2, param / 2.)
     }
 }

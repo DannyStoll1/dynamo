@@ -62,7 +62,7 @@ impl ParameterPlane for QuadRatPer3
         let c2 = c * c;
         let u = (z2 - c2).inv();
         let v = c + 1.;
-        ((z2 + c2 * c - v) * u, TWO * (1. - c) * v * v * z * u * u)
+        ((z2 + c2 * c - v) * u, 2.0 * (1. - c) * v * v * z * u * u)
     }
 
     #[inline]
@@ -78,7 +78,7 @@ impl ParameterPlane for QuadRatPer3
     {
         let u = 1. / (c * c - z * z);
         let v = c + 1.;
-        TWO * (1. - c) * v * v * z * u * u
+        2.0 * (1. - c) * v * v * z * u * u
     }
 
     #[inline]
@@ -86,7 +86,7 @@ impl ParameterPlane for QuadRatPer3
     {
         let r = c * c - z * z;
         let u2 = 1. / (r * r);
-        (c + 1.) * u2 * (r - c * (r + TWO * (ONE - z * z)))
+        (c + 1.) * u2 * (r - c * (r + 2.0 * (ONE - z * z)))
     }
 
     #[inline]
@@ -100,8 +100,8 @@ impl ParameterPlane for QuadRatPer3
         let v = c + 1.;
 
         let f = u * (z2 + c2 * c - v);
-        let df_dz = TWO * (1. - c) * v * v * z * u2;
-        let df_dc = v * u2 * (r - c * (r + TWO * (ONE - z * z)));
+        let df_dz = 2. * (1. - c) * v * v * z * u2;
+        let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z * z)));
         (f, df_dz, df_dc)
     }
 

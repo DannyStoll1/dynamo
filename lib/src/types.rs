@@ -13,15 +13,16 @@ pub type ComplexVec = Vec<ComplexNum>;
 pub mod variables;
 pub use variables::{Dist, Norm};
 pub mod param_stack;
-pub use param_stack::{ParamList, ParamStack, NoParam};
+pub use param_stack::{NoParam, ParamList, ParamStack};
 
 pub const TAU: RealNum = 2. * PI;
-pub const TWO: RealNum = 2.;
 pub const ZERO: ComplexNum = ComplexNum::new(0., 0.);
 pub const ONE: ComplexNum = ComplexNum::new(1., 0.);
+pub const TWO: ComplexNum = ComplexNum::new(2., 0.);
 pub const TAUI: ComplexNum = ComplexNum::new(0., 2. * PI);
 pub const OMEGA: ComplexNum = ComplexNum::new(-0.5, 0.866025403784439);
 pub const OMEGA_BAR: ComplexNum = ComplexNum::new(-0.5, -0.866025403784439);
+pub const SQRT_I: ComplexNum = ComplexNum::new(0.707106781186548, 0.707106781186548);
 pub const ONE_THIRD: f64 = 1. / 3.;
 pub const TWO_THIRDS: f64 = 2. / 3.;
 pub const SQRT_3: f64 = 1.73205080756888;
@@ -63,6 +64,7 @@ pub enum PointInfo<D>
         final_error: RealNum,
     },
     Bounded,
+    Wandering,
 }
 
 use std::fmt::Display;
@@ -84,7 +86,7 @@ where
     #[must_use]
     fn to_string(&self) -> String
     {
-        use PointInfo::{Bounded, Escaping, Periodic};
+        use PointInfo::*;
         let result_summary = match &self.result
         {
             Escaping { potential } => format!("Escaped, potential: {potential}"),
@@ -97,6 +99,7 @@ where
                 "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier}"
             ),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
+            Wandering => "Wandering (appears to escape very slowly)".to_owned(),
         };
         format!(
             "Parameter: {}\nStarting point: {}\n{}",
@@ -104,4 +107,3 @@ where
         )
     }
 }
-

@@ -28,6 +28,7 @@ impl From<ComplexPair> for ComplexNum
     }
 }
 
+// Cubic polynomials with a critical 3-cycle 0 -2-> 1 -> a+b+1 -> 0
 #[derive(Clone, Debug, PartialEq)]
 pub struct CubicPer3_0
 {
@@ -95,6 +96,18 @@ impl ParameterPlane for CubicPer3_0
     {
         let [r0, r1, r2] = solve_cubic(ONE, 2.0.into(), ONE);
         vec![ZERO, (-1.).into(), r0, r1, r2]
+    }
+    fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let ainv = a.inv();
+                solve_cubic(ainv, -ainv, b * ainv).to_vec()
+            }
+            _ => vec![],
+        }
     }
     fn default_selection(&self) -> ComplexNum
     {

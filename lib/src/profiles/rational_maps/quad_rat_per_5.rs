@@ -1,5 +1,5 @@
+use crate::math_utils::{solve_cubic, solve_quadratic, weierstrass_p};
 use crate::{macros::*, types::param_stack::Summarize};
-use crate::math_utils::weierstrass_p;
 use derive_more::{Add, Display, From};
 profile_imports!();
 
@@ -34,10 +34,10 @@ fn top_coeff(a: ComplexNum, b: ComplexNum) -> ComplexNum
     let d6 = horner!(x, -16., 144., 1430., 30., -1682., 2738., 1084.);
     let d7 = horner!(x, 26., 322., 286., -78., 1272., 268.);
     let d8 = horner!(x, 36., 106., 166., 414., 30.);
-    let d9 = 4.*(7.*x+3.)*(3.*x+1.);
-    let d10 = 8.*(x+1.);
+    let d9 = 4. * (7. * x + 3.) * (3. * x + 1.);
+    let d10 = 8. * (x + 1.);
 
-    let n0 = horner_monic!(b, c0, c1, c2, c3, c4, c5, c6, c7, 10.*x);
+    let n0 = horner_monic!(b, c0, c1, c2, c3, c4, c5, c6, c7, 10. * x);
     let n1 = a + b + 1.;
     let denom = horner!(b, d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10);
     n0 * n1 / denom
@@ -174,8 +174,19 @@ impl ParameterPlane for QuadRatPer5
         1e24
     }
 
-    fn critical_points_child(&self, param: Self::Param) -> Vec<Self::Var> {
+    fn critical_points_child(&self, param: Self::Param) -> Vec<Self::Var>
+    {
         vec![self.start_point(ONE, param)]
+    }
+
+    fn cycles_child(&self, Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 => solve_cubic(-b, -a, -ONE).to_vec(),
+            2 => solve_quadratic(b, a - b).to_vec(),
+            _ => vec![],
+        }
     }
 
     fn default_julia_bounds(&self, _point: ComplexNum, param: Self::Param) -> Bounds

@@ -1,21 +1,21 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::types::*;
-pub mod types;
 pub mod algorithms;
 pub mod palette;
+pub mod types;
 
-use types::Hsv;
 use algorithms::ColoringAlgorithm;
 use egui::Color32;
 use image::Rgb;
 use palette::ColorPalette;
+use types::Hsv;
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, Default)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coloring
 {
     algorithm: ColoringAlgorithm,
@@ -28,7 +28,7 @@ impl Coloring
     where
         D: Norm<RealNum>,
     {
-        use PointInfo::{Bounded, Escaping, Periodic};
+        use PointInfo::*;
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
@@ -45,6 +45,7 @@ impl Coloring
                 final_error,
             ),
             Bounded => self.palette.in_color,
+            Wandering => self.palette.wandering_color,
         }
     }
 
@@ -53,7 +54,7 @@ impl Coloring
     where
         D: Norm<RealNum>,
     {
-        use PointInfo::{Bounded, Escaping, Periodic};
+        use PointInfo::*;
         match point_info
         {
             Escaping { potential } => self.palette.map_rgb(potential),
@@ -71,6 +72,11 @@ impl Coloring
                 Rgb([r, g, b])
             }
             Bounded => self.palette.map_rgb(0.),
+            Wandering =>
+            {
+                let (r, g, b, _a) = self.palette.wandering_color.to_tuple();
+                Rgb([r, g, b])
+            }
         }
     }
 

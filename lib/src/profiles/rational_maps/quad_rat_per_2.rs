@@ -11,14 +11,14 @@ fn map_and_multiplier(z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
 {
     let z2 = z * z;
     let u = z2 - 1.;
-    ((c + z2) / u, -TWO * z * (c + 1.) / (u * u))
+    ((c + z2) / u, -2.0 * z * (c + 1.) / (u * u))
 }
 
 #[inline]
 fn dynamical_derivative(z: ComplexNum, c: ComplexNum) -> ComplexNum
 {
     let u = 1. / (z * z - 1.);
-    -TWO * (c + 1.) * z * u * u
+    -2.0 * (c + 1.) * z * u * u
 }
 
 #[inline]

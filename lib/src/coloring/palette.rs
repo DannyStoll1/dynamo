@@ -6,11 +6,11 @@ use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution};
 use std::f64::consts::PI;
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Sinusoid
 {
     period: f64,
@@ -86,7 +86,7 @@ impl Default for Sinusoid
 }
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ColorPalette
 {
     pub color_map_r: Sinusoid,
@@ -94,6 +94,7 @@ pub struct ColorPalette
     pub color_map_b: Sinusoid,
     pub period_coloring: DiscretePalette,
     pub in_color: Color32,
+    pub wandering_color: Color32,
 }
 
 impl ColorPalette
@@ -107,6 +108,7 @@ impl ColorPalette
             color_map_b: Sinusoid::new(period_b),
             period_coloring: DiscretePalette::default(),
             in_color: Color32::BLACK,
+            wandering_color: Color32::WHITE,
         }
     }
 
@@ -120,6 +122,7 @@ impl ColorPalette
             color_map_b: color_map,
             period_coloring: DiscretePalette::default(),
             in_color: Color32::BLACK,
+            wandering_color: Color32::BROWN,
         }
     }
 
@@ -138,6 +141,7 @@ impl ColorPalette
             color_map_b: color_map,
             period_coloring: DiscretePalette::default(),
             in_color: Color32::WHITE,
+            wandering_color: Color32::BROWN,
         }
     }
 
@@ -145,8 +149,7 @@ impl ColorPalette
     pub fn new_random(contrast: f64, brightness: f64) -> Self
     {
         let mut rng = thread_rng();
-        ChiSquared::new(7.5).map_or(Self::black(8.), |period_dist|
-        {
+        ChiSquared::new(7.5).map_or(Self::black(8.), |period_dist| {
             let period_r: f64 = period_dist.sample(&mut rng);
             let period_g: f64 = period_dist.sample(&mut rng);
             let period_b: f64 = period_dist.sample(&mut rng);
@@ -199,6 +202,7 @@ impl ColorPalette
             color_map_b: palette_b,
             period_coloring: DiscretePalette::default(),
             in_color: Color32::BLACK,
+            wandering_color: Color32::BROWN,
         }
     }
 
@@ -262,7 +266,7 @@ impl Default for ColorPalette
 }
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DiscretePalette
 {
     pub num_colors: f32,

@@ -662,7 +662,7 @@ where
     image_height: usize,
     active_pane: Option<PaneID>,
     live_mode: bool,
-    save_dialog: FileDialog,
+    save_dialog: Option<FileDialog>,
     pane_to_save: PaneID,
     click_used: bool,
 }
@@ -677,17 +677,13 @@ where
 {
     pub fn new(parent: P, child: J, image_height: usize) -> Self
     {
-        let dialog = FileDialog::save_file(None)
-            .default_filename(format!("{}.png", parent.name()))
-            .show_rename(false)
-            .show_new_folder(true);
         Self {
             parent: parent.into(),
             child: child.into(),
             image_height,
             active_pane: Some(PaneID::Parent),
             live_mode: false,
-            save_dialog: dialog,
+            save_dialog: None,
             pane_to_save: PaneID::Parent,
             click_used: false,
         }
@@ -750,10 +746,13 @@ where
 
     fn save_pane(&mut self, pane_id: PaneID)
     {
-        // let name = self.get_pane(pane_id).name();
         self.pane_to_save = pane_id;
-        // self.save_dialog = self.save_dialog.default_filename(name);
-        self.save_dialog.open();
+        let mut dialog = FileDialog::save_file(None)
+            .default_filename(format!("{}.png", self.parent.name()))
+            .show_rename(false)
+            .show_new_folder(true);
+        dialog.open();
+        self.save_dialog = Some(dialog);
     }
 
     fn save_active_pane(&mut self)
@@ -852,7 +851,7 @@ where
 {
     fn handle_mouse(&mut self, ctx: &Context)
     {
-        let clicked = ctx.input(|i| i.pointer.any_click());
+        let clicked = ctx.input(|i| i.pointer.any_click()) & !self.click_used;
         let zoom_factor = ctx.input(InputState::zoom_delta);
 
         if let Some(pointer_pos) = ctx.pointer_latest_pos()
@@ -900,6 +899,7 @@ where
                 ctx.set_cursor_icon(CursorIcon::Default);
             }
         }
+        self.reset_click();
     }
 
     fn toggle_live_mode(&mut self)
@@ -915,36 +915,43 @@ where
 
     fn show_save_dialog(&mut self, ctx: &Context)
     {
-        self.save_dialog.show(ctx); // show the dialog
-
-        // Check if a file has been selected
-        if self.save_dialog.selected()
+        if let Some(save_dialog) = self.save_dialog.as_mut()
         {
-            self.set_active_pane(None);
-            if let Some(path) = self.save_dialog.path()
+            save_dialog.show(ctx); // show the dialog
+
+            // Check if a file has been selected
+            if save_dialog.selected()
             {
-                let filename = path.to_string_lossy().into_owned();
+                if let Some(path) = save_dialog.path()
+                {
+                    let filename = path.to_string_lossy().into_owned();
 
-                let mut image_width: usize = 4096;
+                    let image_width: usize = 4096;
 
-                // Use a slider for image width input
-                SidePanel::left("side_panel").show(ctx, |ui| {
-                    ui.heading("Enter image width:");
-                    ui.add(Slider::new(&mut image_width, 1..=1000));
-                });
+                    // // Use a slider for image width input
+                    // SidePanel::left("side_panel").show(ctx, |ui| {
+                    //     ui.heading("Enter image width:");
+                    //     ui.add(Slider::new(&mut image_width, 1..=1000));
+                    // });
 
-                let pane = self.get_pane_mut(self.pane_to_save);
-                pane.save_image(image_width, &filename);
+                    let pane = self.get_pane_mut(self.pane_to_save);
+                    pane.save_image(image_width, &filename);
+                    self.save_dialog = None;
+                }
+                self.set_active_pane(None);
             }
         }
     }
 
     fn handle_input(&mut self, ctx: &Context)
     {
-        if self.save_dialog.visible()
+        if let Some(save_dialog) = self.save_dialog.as_ref()
         {
-            ctx.set_cursor_icon(CursorIcon::Default);
-            return;
+            if save_dialog.visible()
+            {
+                ctx.set_cursor_icon(CursorIcon::Default);
+                return;
+            }
         }
 
         if shortcut_used!(ctx, &KEY_R)

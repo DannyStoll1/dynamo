@@ -519,6 +519,7 @@ pub trait ParameterPlane: Sync + Send + Clone
                     per.mul_add(potential, f64::from(preperiod))
                 }
             }
+            PointInfo::Wandering => 0.,
         }
     }
 }

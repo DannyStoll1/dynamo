@@ -116,6 +116,11 @@ impl Matrix2x2
         let v1 = Point { x: 0., y: v11 };
         Self { v0, v1 }
     }
+    #[must_use]
+    pub const fn identity() -> Self
+    {
+        Self::diag(1., 1.)
+    }
     fn det(&self) -> RealNum
     {
         self.v0.x.mul_add(self.v1.y, -self.v0.y * self.v1.x)

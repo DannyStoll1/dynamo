@@ -187,6 +187,79 @@ macro_rules! basic_escape_encoding {
     };
 }
 
+macro_rules! fractal_menu_button {
+    ($self: ident, $ui: ident, $name: expr, $fractal: ty) => {
+        if $ui.button($name).clicked()
+        {
+            $self.change_fractal(
+                || <$fractal>::default(),
+                <$fractal as ParameterPlane>::Child::from,
+            );
+            $self.interface.consume_click();
+            $ui.close_menu();
+            return;
+        }
+    };
+    ($self: ident, $ui: ident, $name: expr, $fractal: ty, $covering: ident, $($periods: expr),+) => {
+        if $ui.button($name).clicked()
+        {
+            $self.change_fractal(|| <$fractal>::default().$covering($($periods),+), JuliaSet::from);
+            $self.interface.consume_click();
+            $ui.close_menu();
+            return;
+        }
+    };
+    ($self: ident, $ui: ident, $name: expr, $fractal: ident, $child: ident) => {
+        if $ui.button($name).clicked()
+        {
+            $self.change_fractal(|| $fractal::default(), $child::from);
+            $self.interface.consume_click();
+            $ui.close_menu();
+            return;
+        }
+    };
+}
+
+macro_rules! fractal_menu_button_mc {
+    ($self: ident, $ui: ident, $fractal: ty, $period: expr) => {
+        fractal_menu_button!(
+            $self,
+            $ui,
+            format!("Period {}", $period),
+            $fractal,
+            marked_cycle_curve,
+            $period
+        );
+    };
+}
+
+macro_rules! fractal_menu_button_dyn {
+    ($self: ident, $ui: ident, $fractal: ty, $period: expr) => {
+        fractal_menu_button!(
+            $self,
+            $ui,
+            format!("Period {}", $period),
+            $fractal,
+            dynatomic_curve,
+            $period
+        );
+    };
+}
+
+macro_rules! fractal_menu_button_mis {
+    ($self: ident, $ui: ident, $fractal: ty, $preperiod: expr, $period: expr) => {
+        fractal_menu_button!(
+            $self,
+            $ui,
+            format!("Preperiod {}, Period {}", $preperiod, $period),
+            $fractal,
+            misiurewicz_curve,
+            $preperiod,
+            $period
+        );
+    };
+}
+
 macro_rules! max {
     ($x:expr) => ( $x );
     ($x:expr, $($xs:expr),+) => {
@@ -234,7 +307,8 @@ macro_rules! profile_imports {
 }
 
 pub(crate) use {
-    basic_escape_encoding, basic_plane_impl, default_name, fractal_impl, horner, horner_monic,
+    basic_escape_encoding, basic_plane_impl, default_name, fractal_impl, fractal_menu_button,
+    fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis, horner, horner_monic,
     parameter_plane_impl, point_grid_getters, profile_imports,
 };
 
