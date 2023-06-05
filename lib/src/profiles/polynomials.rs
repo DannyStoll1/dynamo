@@ -2,7 +2,7 @@ pub mod mandelbrot;
 pub use mandelbrot::Mandelbrot;
 
 pub mod cubic_per_1_lambda;
-pub use cubic_per_1_lambda::{CubicPer1Lambda, CubicPer1LambdaParam, CubicPer1_1};
+pub use cubic_per_1_lambda::{CubicPer1Lambda, CubicPer1LambdaParam, CubicPer1_0, CubicPer1_1};
 
 pub mod cubic_per_2_lambda;
 pub use cubic_per_2_lambda::{CubicPer2CritMarked, CubicPer2Lambda, CubicPer2LambdaParam};

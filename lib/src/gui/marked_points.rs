@@ -8,6 +8,7 @@ use egui::Color32;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MarkingMode
 {
+    pub selection_enabled: bool,
     pub critical: bool,
     pub cycles: Vec<bool>,
     pub palette: DiscretePalette,
@@ -15,11 +16,18 @@ pub struct MarkingMode
 
 impl MarkingMode
 {
-    pub fn compute<P>(&self, plane: &P) -> ColoredPoints
+    pub fn compute<P>(&self, plane: &P, selection: ComplexNum) -> ColoredPoints
     where
         P: ParameterPlane + 'static,
     {
         let mut points = vec![];
+
+        if self.selection_enabled
+        {
+            let color = Color32::WHITE;
+            points.push((selection, color));
+        }
+
         if self.critical
         {
             let crit_pts = plane.critical_points();
@@ -40,6 +48,11 @@ impl MarkingMode
             });
 
         points
+    }
+
+    pub fn toggle_selection(&mut self)
+    {
+        self.selection_enabled ^= true;
     }
 
     pub fn toggle_critical(&mut self)

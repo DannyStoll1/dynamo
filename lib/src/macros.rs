@@ -162,11 +162,11 @@ macro_rules! default_name {
 }
 
 macro_rules! basic_escape_encoding {
-    ($degree: expr, $period: expr) => {
+    ($degree: expr) => {
         fn encode_escaping_point(
             &self,
             iters: Period,
-            z: ComplexNum,
+            z: Self::Var,
             _base_param: Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
@@ -179,7 +179,29 @@ macro_rules! basic_escape_encoding {
 
             let u = self.escape_radius().log2();
             let v = z.norm_sqr().log2();
-            let residual = (v / u).log2();
+            let residual = (v / u).log($degree);
+            let potential = IterCount::from(iters) - IterCount::from(residual);
+            PointInfo::Escaping { potential }
+        }
+    };
+    ($degree: expr, $period: expr) => {
+        fn encode_escaping_point(
+            &self,
+            iters: Period,
+            z: Self::Var,
+            _base_param: Self::Param,
+        ) -> PointInfo<Self::Deriv>
+        {
+            if z.is_nan()
+            {
+                return PointInfo::Escaping {
+                    potential: f64::from(iters) - 1.,
+                };
+            }
+
+            let u = self.escape_radius().log2();
+            let v = z.norm_sqr().log2();
+            let residual = (v / u).log($degree);
             let potential =
                 ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
             PointInfo::Escaping { potential }

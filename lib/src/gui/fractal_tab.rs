@@ -201,6 +201,21 @@ impl FractalTab
                 self.interface.consume_click();
                 ui.close_menu();
             }
+            else if ui.button("[I] Toggle selection").clicked()
+            {
+                self.interface
+                    .child_mut()
+                    .marking_mode_mut()
+                    .toggle_selection();
+                self.interface
+                    .parent_mut()
+                    .marking_mode_mut()
+                    .toggle_selection();
+                self.interface.child_mut().schedule_redraw();
+                self.interface.parent_mut().schedule_redraw();
+                self.interface.consume_click();
+                ui.close_menu();
+            }
             else if ui.button("[P] Toggle Critical points (Julia)").clicked()
             {
                 self.interface
@@ -265,8 +280,10 @@ impl FractalTab
             });
             ui.menu_button("Cubic Family", |ui| {
                 fractal_menu_button!(self, ui, "Odd Cubics", OddCubic);
+                fractal_menu_button!(self, ui, "Per(1)", CubicPer1_0);
                 fractal_menu_button!(self, ui, "Per(2)", CubicPer2CritMarked);
                 fractal_menu_button!(self, ui, "Per(3)", CubicPer3_0);
+                fractal_menu_button!(self, ui, "Per(1, 1)", CubicPer1_1);
                 fractal_menu_button!(self, ui, "Per(1, lambda)", CubicPer1LambdaParam);
             });
             fractal_menu_button!(self, ui, "Biquadratic Maps", BiquadraticMultParam);

@@ -22,9 +22,11 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Ctrl-S: save image (prompt in command line; currently does not include marked points/curves)
 - H: Resize images
 - L: Toggle live mode
-- Y: Toggle fixed points
-- U: Toggle 2-cycles
-- P: Toggle critical points
+- I: Toggle selection (active plane)
+- Y: Toggle fixed points (dynamical plane)
+- U: Toggle 2-cycles (dynamical plane)
+- O: Toggle marked points (parameter plane)
+- P: Toggle critical points (dynamical plane)
 - C: Clear marked curves
 - Shift+Space: Reset selection
 

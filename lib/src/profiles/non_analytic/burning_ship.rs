@@ -77,18 +77,22 @@ impl ParameterPlane for BurningShip
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var> {
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
         vec![ZERO]
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var> {
-        match period {
-            1 => {
-                let disc = (1. - 4.*c).sqrt();
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let disc = (1. - 4. * c).sqrt();
                 vec![0.5 * (1. - disc), 0.5 * (1. + disc)]
             }
-            _ => vec![]
+            _ => vec![],
         }
     }
 
@@ -222,7 +226,6 @@ impl ParameterPlane for SailboatParam
     type Child = Sailboat;
 
     basic_plane_impl!();
-    basic_escape_encoding!(2., 1.);
 
     #[inline]
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var

@@ -389,3 +389,54 @@ impl ParameterPlane for CubicPer1_1
         Bounds::centered_square(2.2)
     }
 }
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct CubicPer1_0
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl Default for CubicPer1_0
+{
+    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+}
+
+impl ParameterPlane for CubicPer1_0
+{
+    parameter_plane_impl!();
+    default_name!();
+    basic_escape_encoding!(3., 1);
+
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    {
+        z * z * (z + c)
+    }
+
+    #[inline]
+    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    {
+        -TWO_THIRDS * c
+    }
+
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    {
+        z * (c + c + 3. * z)
+    }
+
+    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
+    {
+        z * z
+    }
+
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO, -TWO_THIRDS * c]
+    }
+
+    fn default_julia_bounds(&self, _point: ComplexNum, c: Self::Param) -> Bounds
+    {
+        Bounds::square(2.5, -ONE_THIRD * c)
+    }
+}

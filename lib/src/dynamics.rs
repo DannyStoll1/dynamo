@@ -75,7 +75,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn early_bailout(
         &self,
         _start: Self::Var,
-        _param: Self::Param,
+        _c: Self::Param,
     ) -> EscapeState<Self::Var, Self::Deriv>
     {
         EscapeState::NotYetEscaped
@@ -100,9 +100,9 @@ pub trait ParameterPlane: Sync + Send + Clone
         1e-14
     }
 
-    fn start_point(&self, _point: ComplexNum, param: Self::Param) -> Self::Var
+    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
     {
-        param.into()
+        c.into()
     }
 
     fn param_map(&self, point: ComplexNum) -> Self::Param
@@ -124,7 +124,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn encode_escape_result(
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
-        base_param: Self::Param,
+        c: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         match state
@@ -143,7 +143,7 @@ pub trait ParameterPlane: Sync + Send + Clone
             },
             EscapeState::Escaped { iters, final_value } =>
             {
-                self.encode_escaping_point(iters, final_value, base_param)
+                self.encode_escaping_point(iters, final_value, c)
             }
         }
     }
@@ -152,7 +152,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         &self,
         iters: Period,
         z: Self::Var,
-        _base_param: Self::Param,
+        _c: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -259,7 +259,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![]
     }
@@ -270,7 +270,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         vec![]
     }
 
-    fn cycles_child(&self, _param: Self::Param, _period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
@@ -332,7 +332,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     //     None
     // }
 
-    fn run_point(&self, start: Self::Var, param: Self::Param) -> PointInfo<Self::Deriv>
+    fn run_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),
@@ -345,12 +345,12 @@ pub trait ParameterPlane: Sync + Send + Clone
             |z, c| self.map_and_multiplier(z, c),
             |z, c| self.early_bailout(z, c),
             start,
-            param,
+            c,
             orbit_params,
         );
         if let Some((_, state)) = orbit.last()
         {
-            self.encode_escape_result(state, param)
+            self.encode_escape_result(state, c)
         }
         else
         {
@@ -431,7 +431,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         Bounds::centered_square(2.2)
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: ComplexNum, _c: Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }

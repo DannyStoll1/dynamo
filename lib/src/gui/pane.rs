@@ -284,6 +284,7 @@ pub trait Pane
         if reselect_point
         {
             self.select_point(pointer_value);
+            self.schedule_redraw();
         }
     }
 
@@ -539,7 +540,9 @@ where
     #[inline]
     fn redraw(&mut self)
     {
-        self.marked_points = self.marking_mode.compute(self.plane());
+        self.marked_points = self
+            .marking_mode
+            .compute(self.plane(), self.get_selection());
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
@@ -975,6 +978,15 @@ where
         {
             self.parent_mut().cycle_active_plane();
             self.child_mut().cycle_active_plane();
+        }
+
+        if shortcut_used!(ctx, &KEY_I)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.marking_mode_mut().toggle_selection();
+                pane.schedule_redraw();
+            }
         }
 
         if shortcut_used!(ctx, &KEY_P)
