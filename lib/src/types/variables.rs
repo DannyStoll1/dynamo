@@ -1,4 +1,4 @@
-use super::{param_stack::Summarize, ComplexNum, RealNum};
+use super::{param_stack::Summarize, Cplx, Real};
 use crate::consts::ZERO;
 use derive_more::{Add, Display, From, Sub};
 #[cfg(feature = "serde")]
@@ -12,20 +12,20 @@ pub trait Norm<R>: Copy
     fn is_nan(&self) -> bool;
 }
 
-impl Norm<RealNum> for ComplexNum
+impl Norm<Real> for Cplx
 {
     #[inline]
-    fn norm(&self) -> RealNum
+    fn norm(&self) -> Real
     {
         <Self>::norm(*self)
     }
     #[inline]
-    fn norm_sqr(&self) -> RealNum
+    fn norm_sqr(&self) -> Real
     {
         <Self>::norm_sqr(self)
     }
     #[inline]
-    fn arg(&self) -> RealNum
+    fn arg(&self) -> Real
     {
         <Self>::arg(*self)
     }
@@ -36,19 +36,19 @@ impl Norm<RealNum> for ComplexNum
     }
 }
 
-impl Norm<RealNum> for Point
+impl Norm<Real> for Point
 {
-    fn norm(&self) -> RealNum
+    fn norm(&self) -> Real
     {
         self.norm_sqr().sqrt()
     }
 
-    fn norm_sqr(&self) -> RealNum
+    fn norm_sqr(&self) -> Real
     {
         self.x.mul_add(self.x, self.y * self.y)
     }
 
-    fn arg(&self) -> RealNum
+    fn arg(&self) -> Real
     {
         self.y.atan2(self.x)
     }
@@ -63,21 +63,21 @@ impl Norm<RealNum> for Point
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point
 {
-    pub x: RealNum,
-    pub y: RealNum,
+    pub x: Real,
+    pub y: Real,
 }
 impl Summarize for Point {}
 
 impl Point
 {
-    fn dot(&self, other: &Self) -> RealNum
+    fn dot(&self, other: &Self) -> Real
     {
         self.x.mul_add(other.x, self.y * other.y)
     }
 }
-impl From<ComplexNum> for Point
+impl From<Cplx> for Point
 {
-    fn from(value: ComplexNum) -> Self
+    fn from(value: Cplx) -> Self
     {
         Self {
             x: value.re,
@@ -85,7 +85,7 @@ impl From<ComplexNum> for Point
         }
     }
 }
-impl From<Point> for ComplexNum
+impl From<Point> for Cplx
 {
     fn from(value: Point) -> Self
     {
@@ -104,14 +104,14 @@ pub struct Matrix2x2
 impl Matrix2x2
 {
     #[must_use]
-    pub const fn new(v00: RealNum, v01: RealNum, v10: RealNum, v11: RealNum) -> Self
+    pub const fn new(v00: Real, v01: Real, v10: Real, v11: Real) -> Self
     {
         let v0 = Point { x: v00, y: v01 };
         let v1 = Point { x: v10, y: v11 };
         Self { v0, v1 }
     }
     #[must_use]
-    pub const fn diag(v00: RealNum, v11: RealNum) -> Self
+    pub const fn diag(v00: Real, v11: Real) -> Self
     {
         let v0 = Point { x: v00, y: 0. };
         let v1 = Point { x: 0., y: v11 };
@@ -122,25 +122,25 @@ impl Matrix2x2
     {
         Self::diag(1., 1.)
     }
-    fn det(&self) -> RealNum
+    fn det(&self) -> Real
     {
         self.v0.x.mul_add(self.v1.y, -self.v0.y * self.v1.x)
     }
-    fn trace(&self) -> RealNum
+    fn trace(&self) -> Real
     {
         self.v0.x + self.v1.y
     }
 }
-impl From<Matrix2x2> for ComplexNum
+impl From<Matrix2x2> for Cplx
 {
     fn from(value: Matrix2x2) -> Self
     {
         Self::new(value.v0.x * value.v1.y, value.v0.y * value.v1.x)
     }
 }
-impl From<RealNum> for Matrix2x2
+impl From<Real> for Matrix2x2
 {
-    fn from(value: RealNum) -> Self
+    fn from(value: Real) -> Self
     {
         Self::new(value, 0., 0., value)
     }
@@ -155,18 +155,18 @@ impl std::ops::MulAssign for Matrix2x2
         self.v1.y = self.v0.y.mul_add(rhs.v1.x, self.v1.y * rhs.v1.y);
     }
 }
-impl Norm<RealNum> for Matrix2x2
+impl Norm<Real> for Matrix2x2
 {
-    fn norm_sqr(&self) -> RealNum
+    fn norm_sqr(&self) -> Real
     {
         let u = self.det();
         u * u
     }
-    fn norm(&self) -> RealNum
+    fn norm(&self) -> Real
     {
         self.det().abs()
     }
-    fn arg(&self) -> RealNum
+    fn arg(&self) -> Real
     {
         self.v0.arg()
     }
@@ -222,20 +222,20 @@ impl PlaneID
 pub enum Bicomplex
 {
     #[display(fmt = "PlaneA({})", _0)]
-    PlaneA(ComplexNum),
+    PlaneA(Cplx),
     #[display(fmt = "PlaneB({})", _0)]
-    PlaneB(ComplexNum),
+    PlaneB(Cplx),
 }
 
-impl From<ComplexNum> for Bicomplex
+impl From<Cplx> for Bicomplex
 {
-    fn from(value: ComplexNum) -> Self
+    fn from(value: Cplx) -> Self
     {
         Self::PlaneA(value)
         // Self::PlaneB(value)
     }
 }
-impl From<Bicomplex> for ComplexNum
+impl From<Bicomplex> for Cplx
 {
     fn from(value: Bicomplex) -> Self
     {
@@ -246,9 +246,9 @@ impl From<Bicomplex> for ComplexNum
         }
     }
 }
-impl Norm<RealNum> for Bicomplex
+impl Norm<Real> for Bicomplex
 {
-    fn norm(&self) -> RealNum
+    fn norm(&self) -> Real
     {
         match self
         {
@@ -256,7 +256,7 @@ impl Norm<RealNum> for Bicomplex
             Self::PlaneB(z) => z.norm(),
         }
     }
-    fn norm_sqr(&self) -> RealNum
+    fn norm_sqr(&self) -> Real
     {
         match self
         {
@@ -264,7 +264,7 @@ impl Norm<RealNum> for Bicomplex
             Self::PlaneB(z) => z.norm_sqr(),
         }
     }
-    fn arg(&self) -> RealNum
+    fn arg(&self) -> Real
     {
         match self
         {
@@ -290,36 +290,36 @@ impl Default for Bicomplex
     }
 }
 
-impl Dist<RealNum> for Bicomplex
+impl Dist<Real> for Bicomplex
 {
-    fn dist(&self, rhs: Self) -> RealNum
+    fn dist(&self, rhs: Self) -> Real
     {
         match self
         {
             Self::PlaneA(z) => match rhs
             {
                 Self::PlaneA(w) => (z - w).norm(),
-                Self::PlaneB(_) => RealNum::INFINITY,
+                Self::PlaneB(_) => Real::INFINITY,
             },
             Self::PlaneB(z) => match rhs
             {
-                Self::PlaneA(_) => RealNum::INFINITY,
+                Self::PlaneA(_) => Real::INFINITY,
                 Self::PlaneB(w) => (z - w).norm(),
             },
         }
     }
-    fn dist_sqr(&self, rhs: Self) -> RealNum
+    fn dist_sqr(&self, rhs: Self) -> Real
     {
         match self
         {
             Self::PlaneA(z) => match rhs
             {
                 Self::PlaneA(w) => (z - w).norm_sqr(),
-                Self::PlaneB(_) => RealNum::INFINITY,
+                Self::PlaneB(_) => Real::INFINITY,
             },
             Self::PlaneB(z) => match rhs
             {
-                Self::PlaneA(_) => RealNum::INFINITY,
+                Self::PlaneA(_) => Real::INFINITY,
                 Self::PlaneB(w) => (z - w).norm_sqr(),
             },
         }

@@ -26,11 +26,11 @@ impl Default for BurningShip
 
 impl ParameterPlane for BurningShip
 {
-    type Var = ComplexNum;
-    type Param = ComplexNum;
+    type Var = Cplx;
+    type Param = Cplx;
     type MetaParam = NoParam;
     // type Deriv = Matrix2x2;
-    type Deriv = ComplexNum;
+    type Deriv = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
@@ -38,8 +38,8 @@ impl ParameterPlane for BurningShip
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -57,20 +57,20 @@ impl ParameterPlane for BurningShip
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let z = ComplexNum::new(z.re.abs(), z.im.abs());
+        let z = Cplx::new(z.re.abs(), z.im.abs());
         z * z + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> Self::Deriv
+    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Self::Deriv
     {
         z + z
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> Self::Deriv
+    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Self::Deriv
     {
         ONE
         // Matrix2x2::identity()
@@ -97,7 +97,7 @@ impl ParameterPlane for BurningShip
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    fn param_map(&self, c: Cplx) -> Cplx
     {
         c
     }
@@ -109,7 +109,7 @@ pub struct Sailboat
 {
     point_grid: PointGrid,
     max_iter: Period,
-    shift: ComplexNum,
+    shift: Cplx,
 }
 
 impl Sailboat
@@ -129,18 +129,18 @@ impl Default for Sailboat
 
 impl ParameterPlane for Sailboat
 {
-    type Var = ComplexNum;
-    type Param = ComplexNum;
-    type MetaParam = ComplexNum;
-    type Deriv = ComplexNum;
+    type Var = Cplx;
+    type Param = Cplx;
+    type MetaParam = Cplx;
+    type Deriv = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -158,14 +158,14 @@ impl ParameterPlane for Sailboat
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let z = ComplexNum::new(z.re.abs(), z.im.abs()) + self.shift;
+        let z = Cplx::new(z.re.abs(), z.im.abs()) + self.shift;
         z * z + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         let mut w = z + z;
         w.re *= z.re.signum();
@@ -174,7 +174,7 @@ impl ParameterPlane for Sailboat
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Cplx
     {
         ONE //TODO
     }
@@ -186,7 +186,7 @@ impl ParameterPlane for Sailboat
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    fn param_map(&self, c: Cplx) -> Cplx
     {
         c
     }
@@ -219,10 +219,10 @@ impl Default for SailboatParam
 
 impl ParameterPlane for SailboatParam
 {
-    type Param = ComplexNum;
+    type Param = Cplx;
     type MetaParam = NoParam;
-    type Var = ComplexNum;
-    type Deriv = ComplexNum;
+    type Var = Cplx;
+    type Deriv = Cplx;
     type Child = Sailboat;
 
     basic_plane_impl!();
@@ -230,7 +230,7 @@ impl ParameterPlane for SailboatParam
     #[inline]
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
     {
-        let z = ComplexNum::new(z.re.abs(), z.im.abs()) + a;
+        let z = Cplx::new(z.re.abs(), z.im.abs()) + a;
         z * z
     }
 
@@ -250,7 +250,7 @@ impl ParameterPlane for SailboatParam
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         -ONE_THIRD * (c + c)
     }
@@ -265,12 +265,12 @@ impl ParameterPlane for SailboatParam
         "Cubic Per(2, lambda) lambda-plane".to_owned()
     }
 
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
         ZERO
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(3.5)
     }

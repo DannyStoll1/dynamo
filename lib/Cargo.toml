@@ -1,6 +1,6 @@
 [package]
 name = "fractal_lib"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Danny Stoll"]
@@ -30,6 +30,7 @@ egui_file = ">=0.9.0"
 egui_dock = ">=0.6.1"
 egui = "0.22.0"
 spfunc = "0.1.0"
+seq-macro = "0.3.3"
 
 [features]
 serde = ["dep:serde", "eframe/serde", "epaint/serde", "num-complex/serde"]

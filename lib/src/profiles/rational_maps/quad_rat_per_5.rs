@@ -3,10 +3,10 @@ use crate::{macros::*, types::param_stack::Summarize};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
-const G2: ComplexNum = ComplexNum::new(2.75, 0.);
-const G3: ComplexNum = ComplexNum::new(-0.375, 0.);
+const G2: Cplx = Cplx::new(2.75, 0.);
+const G3: Cplx = Cplx::new(-0.375, 0.);
 
-fn top_coeff(a: ComplexNum, b: ComplexNum) -> ComplexNum
+fn top_coeff(a: Cplx, b: Cplx) -> Cplx
 {
     let a2 = a * a;
     let x = a + 1.;
@@ -47,15 +47,15 @@ fn top_coeff(a: ComplexNum, b: ComplexNum) -> ComplexNum
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct Param
 {
-    pub a: ComplexNum,
-    pub b: ComplexNum,
+    pub a: Cplx,
+    pub b: Cplx,
 }
 
 impl Summarize for Param {}
 
-impl From<ComplexNum> for Param
+impl From<Cplx> for Param
 {
-    fn from(z: ComplexNum) -> Self
+    fn from(z: Cplx) -> Self
     {
         let (mut x, mut y) = weierstrass_p(G2, G3, z, 0.01);
 
@@ -89,7 +89,7 @@ impl From<ComplexNum> for Param
     }
 }
 
-impl From<Param> for ComplexNum
+impl From<Param> for Cplx
 {
     fn from(value: Param) -> Self
     {
@@ -111,9 +111,9 @@ impl Default for QuadRatPer5
 
 impl ParameterPlane for QuadRatPer5
 {
-    type Var = ComplexNum;
+    type Var = Cplx;
     type Param = Param;
-    type Deriv = ComplexNum;
+    type Deriv = Cplx;
     type MetaParam = NoParam;
     type Child = JuliaSet<Self>;
 
@@ -148,7 +148,7 @@ impl ParameterPlane for QuadRatPer5
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
+        z: Cplx,
         c: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
@@ -169,7 +169,7 @@ impl ParameterPlane for QuadRatPer5
         PointInfo::Escaping { potential }
     }
 
-    fn escape_radius(&self) -> RealNum
+    fn escape_radius(&self) -> Real
     {
         1e24
     }
@@ -189,12 +189,12 @@ impl ParameterPlane for QuadRatPer5
         }
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, param: Self::Param) -> Bounds
     {
         Bounds::square(20., self.start_point(ONE, param))
     }
 
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
         ONE
     }

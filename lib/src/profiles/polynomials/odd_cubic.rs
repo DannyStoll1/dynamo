@@ -30,8 +30,8 @@ impl ParameterPlane for OddCubic
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -49,31 +49,31 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         2. * (z * z * z / 3. - c * z)
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: Cplx, param: Cplx) -> Cplx
     {
         param.powf(0.5)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         2. * (z * z - c)
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         -(z + z)
     }
 
     #[inline]
-    fn critical_points_child(&self, param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, param: Cplx) -> ComplexVec
     {
         let sqrt_c = param.sqrt();
         vec![-sqrt_c, sqrt_c]
@@ -102,7 +102,7 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }

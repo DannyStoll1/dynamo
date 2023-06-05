@@ -1,4 +1,4 @@
-use crate::types::{ComplexNum, RealNum};
+use crate::types::{Cplx, Real};
 use egui::{Pos2, Vec2};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
@@ -10,49 +10,49 @@ use std::ops::{Deref, DerefMut};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Bounds
 {
-    pub min_x: RealNum,
-    pub max_x: RealNum,
-    pub min_y: RealNum,
-    pub max_y: RealNum,
+    pub min_x: Real,
+    pub max_x: Real,
+    pub min_y: Real,
+    pub max_y: Real,
 }
 impl Bounds
 {
     #[inline]
     #[must_use]
-    pub fn range_x(&self) -> RealNum
+    pub fn range_x(&self) -> Real
     {
         self.max_x - self.min_x
     }
 
     #[inline]
     #[must_use]
-    pub fn range_y(&self) -> RealNum
+    pub fn range_y(&self) -> Real
     {
         self.max_y - self.min_y
     }
 
     #[inline]
     #[must_use]
-    pub fn area(&self) -> RealNum
+    pub fn area(&self) -> Real
     {
         self.range_x() * self.range_y()
     }
 
     #[inline]
     #[must_use]
-    pub fn mid_x(&self) -> RealNum
+    pub fn mid_x(&self) -> Real
     {
         (self.max_x + self.min_x) / 2.
     }
 
     #[inline]
     #[must_use]
-    pub fn mid_y(&self) -> RealNum
+    pub fn mid_y(&self) -> Real
     {
         (self.max_y + self.min_y) / 2.
     }
 
-    pub fn translate(&mut self, translation: ComplexNum)
+    pub fn translate(&mut self, translation: Cplx)
     {
         self.min_x += translation.re;
         self.max_x += translation.re;
@@ -60,7 +60,7 @@ impl Bounds
         self.max_y += translation.im;
     }
 
-    pub fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
+    pub fn zoom(&mut self, scale: Real, base_point: Cplx)
     {
         self.translate(-base_point);
         self.min_x *= scale;
@@ -72,22 +72,22 @@ impl Bounds
 
     #[inline]
     #[must_use]
-    pub fn center(&self) -> ComplexNum
+    pub fn center(&self) -> Cplx
     {
         let re = self.mid_x();
         let im = self.mid_y();
-        ComplexNum::new(re, im)
+        Cplx::new(re, im)
     }
 
     #[inline]
-    pub fn recenter(&mut self, new_center: ComplexNum)
+    pub fn recenter(&mut self, new_center: Cplx)
     {
         let old_center = self.center();
         self.translate(new_center - old_center);
     }
 
     #[must_use]
-    pub const fn centered_square(radius: RealNum) -> Self
+    pub const fn centered_square(radius: Real) -> Self
     {
         Self {
             min_x: -radius,
@@ -98,7 +98,7 @@ impl Bounds
     }
 
     #[must_use]
-    pub const fn square(radius: RealNum, center: ComplexNum) -> Self
+    pub const fn square(radius: Real, center: Cplx) -> Self
     {
         Self {
             min_x: -radius + center.re,
@@ -150,7 +150,7 @@ impl PointGrid
         debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_x > 0);
 
-        let res_x_float = res_x as RealNum;
+        let res_x_float = res_x as Real;
         let res_y_float =
             res_x_float * (bounds.max_y - bounds.min_y) / (bounds.max_x - bounds.min_x);
         res_y_float as usize
@@ -163,7 +163,7 @@ impl PointGrid
         debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_y > 0);
 
-        let res_y_float = res_y as RealNum;
+        let res_y_float = res_y as Real;
         let res_x_float =
             res_y_float * (bounds.max_x - bounds.min_x) / (bounds.max_y - bounds.min_y);
         res_x_float as usize
@@ -226,33 +226,33 @@ impl PointGrid
     }
 
     #[must_use]
-    pub fn map_pixel(&self, pixel_x: usize, pixel_y: usize) -> ComplexNum
+    pub fn map_pixel(&self, pixel_x: usize, pixel_y: usize) -> Cplx
     {
-        let re = (pixel_x as RealNum).mul_add(self.pixel_width(), self.bounds.min_x);
-        let im = (pixel_y as RealNum).mul_add(self.pixel_height(), self.bounds.min_y);
-        ComplexNum::new(re, im)
+        let re = (pixel_x as Real).mul_add(self.pixel_width(), self.bounds.min_x);
+        let im = (pixel_y as Real).mul_add(self.pixel_height(), self.bounds.min_y);
+        Cplx::new(re, im)
     }
 
     #[must_use]
-    pub fn map_vec2(&self, pos: Vec2) -> ComplexNum
+    pub fn map_vec2(&self, pos: Vec2) -> Cplx
     {
         let re = f64::from(pos.x).mul_add(self.pixel_width(), self.bounds.min_x);
         let im = f64::from(pos.y).mul_add(-self.pixel_height(), self.bounds.max_y);
-        ComplexNum::new(re, im)
+        Cplx::new(re, im)
     }
 
     #[inline]
     #[must_use]
-    pub fn pixel_width(&self) -> RealNum
+    pub fn pixel_width(&self) -> Real
     {
-        self.bounds.range_x() / self.res_x as RealNum
+        self.bounds.range_x() / self.res_x as Real
     }
 
     #[inline]
     #[must_use]
-    pub fn pixel_height(&self) -> RealNum
+    pub fn pixel_height(&self) -> Real
     {
-        self.bounds.range_y() / self.res_y as RealNum
+        self.bounds.range_y() / self.res_y as Real
     }
 
     #[inline]
@@ -263,7 +263,7 @@ impl PointGrid
     }
 
     #[must_use]
-    pub fn locate_point(&self, z: ComplexNum) -> Pos2
+    pub fn locate_point(&self, z: Cplx) -> Pos2
     {
         let x = (z.re - self.bounds.min_x) / (self.pixel_width());
         let y = (z.im - self.bounds.min_y) / (self.pixel_height());
@@ -272,7 +272,7 @@ impl PointGrid
     }
 
     #[must_use]
-    pub fn locate_point_safe(&self, z: ComplexNum) -> Option<(usize, usize)>
+    pub fn locate_point_safe(&self, z: Cplx) -> Option<(usize, usize)>
     {
         if z.re >= self.bounds.max_x
             || z.re < self.bounds.min_x
@@ -290,14 +290,14 @@ impl PointGrid
 
     #[inline]
     #[must_use]
-    pub fn center(&self) -> ComplexNum
+    pub fn center(&self) -> Cplx
     {
         let re = self.bounds.mid_x();
         let im = self.bounds.mid_y();
-        ComplexNum::new(re, im)
+        Cplx::new(re, im)
     }
 
-    pub fn recenter(&mut self, new_center: ComplexNum)
+    pub fn recenter(&mut self, new_center: Cplx)
     {
         let old_center = self.center();
         self.translate(new_center - old_center);
@@ -324,15 +324,15 @@ impl PointGrid
     }
 
     #[must_use]
-    pub fn to_array(&self) -> Array2<ComplexNum>
+    pub fn to_array(&self) -> Array2<Cplx>
     {
         let mut points = Array2::zeros((self.res_x, self.res_y));
         let pixel_width = self.pixel_width();
         let pixel_height = self.pixel_height();
         points.indexed_iter_mut().for_each(|((i, j), value)| {
-            let re = (i as RealNum).mul_add(pixel_width, self.bounds.min_x);
-            let im = (j as RealNum).mul_add(pixel_height, self.bounds.min_y);
-            *value = ComplexNum::new(re, im);
+            let re = (i as Real).mul_add(pixel_width, self.bounds.min_x);
+            let im = (j as Real).mul_add(pixel_height, self.bounds.min_y);
+            *value = Cplx::new(re, im);
         });
         points
     }
@@ -382,7 +382,7 @@ impl DerefMut for PointGrid
 
 impl IntoIterator for PointGrid
 {
-    type Item = ((usize, usize), ComplexNum);
+    type Item = ((usize, usize), Cplx);
     type IntoIter = PointGridIterator;
 
     fn into_iter(self) -> PointGridIterator
@@ -393,12 +393,12 @@ impl IntoIterator for PointGrid
 
 pub struct PointGridIterator
 {
-    step_x: RealNum,
-    step_y: RealNum,
+    step_x: Real,
+    step_y: Real,
     res_x: usize,
     res_y: usize,
-    min_x: RealNum,
-    min_y: RealNum,
+    min_x: Real,
+    min_y: Real,
     idx_x: usize,
     idx_y: usize,
 }
@@ -408,8 +408,8 @@ impl PointGridIterator
     #[must_use]
     pub fn new(res_x: usize, res_y: usize, bounds: &Bounds) -> Self
     {
-        let step_x = bounds.range_x() / (res_x as RealNum);
-        let step_y = bounds.range_y() / (res_y as RealNum);
+        let step_x = bounds.range_x() / (res_x as Real);
+        let step_y = bounds.range_y() / (res_y as Real);
 
         Self {
             step_x,
@@ -426,7 +426,7 @@ impl PointGridIterator
 
 impl Iterator for PointGridIterator
 {
-    type Item = ((usize, usize), ComplexNum);
+    type Item = ((usize, usize), Cplx);
 
     fn next(&mut self) -> Option<Self::Item>
     {
@@ -440,9 +440,9 @@ impl Iterator for PointGridIterator
 
         self.idx_x %= self.res_x;
 
-        let z = ComplexNum::new(
-            (self.idx_x as RealNum).mul_add(self.step_x, self.min_x),
-            (self.idx_y as RealNum).mul_add(self.step_y, self.min_y),
+        let z = Cplx::new(
+            (self.idx_x as Real).mul_add(self.step_x, self.min_x),
+            (self.idx_y as Real).mul_add(self.step_y, self.min_y),
         );
 
         Some(((self.idx_x, self.idx_y), z))

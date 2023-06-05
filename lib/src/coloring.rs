@@ -26,7 +26,7 @@ impl Coloring
     #[must_use]
     pub fn map_color32<D>(&self, point_info: PointInfo<D>) -> Color32
     where
-        D: Norm<RealNum>,
+        D: Norm<Real>,
     {
         use PointInfo::*;
         match point_info
@@ -52,7 +52,7 @@ impl Coloring
     #[must_use]
     pub fn map_rgb<D>(&self, point_info: PointInfo<D>) -> Rgb<u8>
     where
-        D: Norm<RealNum>,
+        D: Norm<Real>,
     {
         use PointInfo::*;
         match point_info

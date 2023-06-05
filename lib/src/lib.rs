@@ -20,7 +20,7 @@ mod tests
     use crate::dynamics::ParameterPlane;
     use crate::point_grid::Bounds;
     use crate::profiles::*;
-    use crate::types::ComplexNum;
+    use crate::types::Cplx;
 
     #[test]
     fn compute_biquadratic()
@@ -140,10 +140,10 @@ mod tests
         use crate::macros::horner_monic;
         use crate::math_utils::solve_quartic;
 
-        let a = ComplexNum::new(2., 0.);
-        let b = ComplexNum::new(3., 0.);
-        let c = ComplexNum::new(5., 0.);
-        let d = ComplexNum::new(7., 0.);
+        let a = Cplx::new(2., 0.);
+        let b = Cplx::new(3., 0.);
+        let c = Cplx::new(5., 0.);
+        let d = Cplx::new(7., 0.);
 
         let roots = solve_quartic(a, b, c, d);
         for r in roots.iter()
@@ -157,10 +157,10 @@ mod tests
     fn zeta()
     {
         use crate::math_utils::riemann_zeta_d;
-        let s = ComplexNum::new(0.5, 14.134_725_141_734_695);
+        let s = Cplx::new(0.5, 14.134_725_141_734_695);
         let (val, dval) = riemann_zeta_d(s);
         let err = val.norm();
-        let dval_true = ComplexNum::new(0.783_296_511_867_031, 0.124_699_829_748_171_09);
+        let dval_true = Cplx::new(0.783_296_511_867_031, 0.124_699_829_748_171_09);
         let derr = (dval - dval_true).norm();
         dbg!(err, derr);
         assert!(err < 1e-11);
@@ -172,10 +172,10 @@ mod tests
     {
         use crate::math_utils::riemann_xi_d;
         use std::f64::consts::FRAC_PI_6;
-        let s = ComplexNum::new(2., 0.);
+        let s = Cplx::new(2., 0.);
         let (val, dval) = riemann_xi_d(s);
-        let val_true = ComplexNum::from(FRAC_PI_6);
-        let dval_true = ComplexNum::new(0.036_162_994_264_296_92, 0.);
+        let val_true = Cplx::from(FRAC_PI_6);
+        let dval_true = Cplx::new(0.036_162_994_264_296_92, 0.);
         let err = (val - val_true).norm();
         let derr = (dval - dval_true).norm();
         dbg!(err, derr);

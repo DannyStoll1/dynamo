@@ -32,8 +32,8 @@ impl ParameterPlane for CubicMarked2Cycle
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -51,13 +51,13 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let z2 = z * z;
         (z + c) * z2 - (2. + c) * z + 1.
     }
 
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let x0 = c + 2.;
         let z2 = z * z;
@@ -66,7 +66,7 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
@@ -74,7 +74,7 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn critical_points_child(&self, c: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, c: Cplx) -> ComplexVec
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
@@ -82,7 +82,7 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let z2 = z * z;
         let x1 = z + c;
@@ -90,13 +90,13 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         z * (z - 1.)
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
     {
         Bounds::square(2.2, -param / 3.)
     }

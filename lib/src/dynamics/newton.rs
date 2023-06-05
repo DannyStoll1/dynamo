@@ -1,7 +1,7 @@
 use super::ParameterPlane;
 use crate::types::*;
 
-trait NewtonPlane: ParameterPlane<Var = ComplexNum, Deriv = ComplexNum>
+trait NewtonPlane: ParameterPlane<Var = Cplx, Deriv = Cplx>
 {
     fn second_dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
 

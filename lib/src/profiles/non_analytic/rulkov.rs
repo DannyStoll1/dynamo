@@ -1,7 +1,7 @@
 use crate::macros::*;
 use crate::types::{
     variables::{Matrix2x2, Point},
-    ComplexNum,
+    Cplx,
 };
 
 profile_imports!();
@@ -70,7 +70,7 @@ impl ParameterPlane for Rulkov
     basic_plane_impl!();
     default_name!();
 
-    fn param_map(&self, point: ComplexNum) -> Self::Param
+    fn param_map(&self, point: Cplx) -> Self::Param
     {
         Point {
             x: point.re,
@@ -97,7 +97,7 @@ impl ParameterPlane for Rulkov
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, param: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, param: Self::Param) -> Self::Var
     {
         let mut z = Point { x: 0.5, y: 1.5 };
         for _ in 0..10000

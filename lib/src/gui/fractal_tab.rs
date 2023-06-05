@@ -10,6 +10,7 @@ use crate::profiles::*;
 use crate::types::*;
 use egui::Ui;
 use egui_dock::NodeIndex;
+use seq_macro::seq;
 
 pub struct FractalTab
 {
@@ -286,6 +287,11 @@ impl FractalTab
                 fractal_menu_button!(self, ui, "Per(1, 1)", CubicPer1_1);
                 fractal_menu_button!(self, ui, "Per(1, lambda)", CubicPer1LambdaParam);
             });
+            ui.menu_button("Unicritical Maps: z -> c*(1+z/d)^d", |ui| {
+                seq!(D in 2..=8 {
+                    fractal_menu_button!(self, ui, format!("Degree {}", D), Unicritical<D>);
+                });
+            });
             fractal_menu_button!(self, ui, "Biquadratic Maps", BiquadraticMultParam);
         });
     }
@@ -329,8 +335,19 @@ impl FractalTab
                 });
             });
             fractal_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
-            fractal_menu_button!(self, ui, "McMullen Family", McMullenFamily);
-            fractal_menu_button!(self, ui, "Minsik Han Φ", MinsikHanPhi);
+            ui.menu_button("McMullen Family: z -> z^m + 1/(c*z^n)", |ui| {
+                seq!(N in 2..=8 {
+                    fractal_menu_button!(self, ui, format!("(m=2, n={})", N), McMullenFamily<2, N>);
+                });
+                seq!(M in 2..=8 {
+                    fractal_menu_button!(self, ui, format!("(m={}, n={})", M, M), McMullenFamily<M, M>);
+                });
+            });
+            ui.menu_button("Minsik Han Φ: z -> az/(z^d+d-1)", |ui| {
+                seq!(D in 2..=8 {
+                    fractal_menu_button!(self, ui, format!("Degree {}", D), MinsikHanPhi<D>);
+                });
+            });
         });
     }
 

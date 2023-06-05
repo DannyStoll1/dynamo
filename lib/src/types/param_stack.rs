@@ -1,4 +1,4 @@
-use super::ComplexNum;
+use super::Cplx;
 use derive_more::Display;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
@@ -54,7 +54,7 @@ where
     }
 }
 
-impl ParamList for ComplexNum
+impl ParamList for Cplx
 {
     type Param = Self;
     fn local_param(&self) -> Self::Param

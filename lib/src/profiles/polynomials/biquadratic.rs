@@ -10,20 +10,20 @@ use derive_more::{Add, Display, From, Sub};
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct ComplexPair
 {
-    pub a: ComplexNum,
-    pub b: ComplexNum,
+    pub a: Cplx,
+    pub b: Cplx,
 }
 
 impl Summarize for ComplexPair {}
 
-impl From<ComplexNum> for ComplexPair
+impl From<Cplx> for ComplexPair
 {
-    fn from(z: ComplexNum) -> Self
+    fn from(z: Cplx) -> Self
     {
         Self::from((z, ONE))
     }
 }
-impl From<ComplexPair> for ComplexNum
+impl From<ComplexPair> for Cplx
 {
     fn from(value: ComplexPair) -> Self
     {
@@ -44,7 +44,7 @@ pub struct Biquadratic
 {
     point_grid: PointGrid,
     max_iter: Period,
-    multiplier: ComplexNum,
+    multiplier: Cplx,
 }
 
 impl Biquadratic
@@ -66,9 +66,9 @@ impl Default for Biquadratic
 impl ParameterPlane for Biquadratic
 {
     type Var = Bicomplex;
-    type Param = ComplexNum;
-    type Deriv = ComplexNum;
-    type MetaParam = ComplexNum;
+    type Param = Cplx;
+    type Deriv = Cplx;
+    type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
@@ -83,7 +83,7 @@ impl ParameterPlane for Biquadratic
         &self,
         iters: Period,
         z: Self::Var,
-        _base_param: ComplexNum,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -101,19 +101,19 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    fn param_map(&self, c: Cplx) -> Cplx
     {
         c
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Cplx) -> Self::Var
     {
         Self::Var::default()
     }
 
     #[inline]
-    fn map(&self, zw: Self::Var, c: ComplexNum) -> Self::Var
+    fn map(&self, zw: Self::Var, c: Cplx) -> Self::Var
     {
         match zw
         {
@@ -123,7 +123,7 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: ComplexNum) -> (Self::Var, ComplexNum)
+    fn map_and_multiplier(&self, zw: Self::Var, c: Cplx) -> (Self::Var, Cplx)
     {
         match zw
         {
@@ -133,14 +133,14 @@ impl ParameterPlane for Biquadratic
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, _c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
     {
-        let u: ComplexNum = zw.into();
+        let u: Cplx = zw.into();
         u + u
     }
 
     #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
     {
         match zw
         {
@@ -156,7 +156,7 @@ pub struct BiquadraticMult
 {
     point_grid: PointGrid,
     max_iter: Period,
-    multiplier: ComplexNum,
+    multiplier: Cplx,
     starting_plane: PlaneID,
 }
 
@@ -190,8 +190,8 @@ impl ParameterPlane for BiquadraticMult
 {
     type Var = Bicomplex;
     type Param = ComplexPair;
-    type Deriv = ComplexNum;
-    type MetaParam = ComplexNum;
+    type Deriv = Cplx;
+    type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
@@ -224,7 +224,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn param_map(&self, point: ComplexNum) -> Self::Param
+    fn param_map(&self, point: Cplx) -> Self::Param
     {
         Self::Param {
             a: point,
@@ -233,7 +233,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         match self.starting_plane
         {
@@ -253,7 +253,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, ComplexNum)
+    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
     {
         match zw
         {
@@ -263,7 +263,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> ComplexNum
+    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
     {
         match zw
         {
@@ -273,7 +273,7 @@ impl ParameterPlane for BiquadraticMult
     }
 
     #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> ComplexNum
+    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
     {
         match zw
         {
@@ -343,17 +343,17 @@ impl ParameterPlane for BiquadraticMult
         self.starting_plane = self.starting_plane.swap();
     }
 
-    fn periodicity_tolerance(&self) -> RealNum
+    fn periodicity_tolerance(&self) -> Real
     {
         1e-14
     }
 
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
-        ComplexNum::new(1.0626588, 0.)
+        Cplx::new(1.0626588, 0.)
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
     {
         Bounds::square(2.5, -0.5 * c.a)
     }
@@ -363,7 +363,7 @@ impl ParameterPlane for BiquadraticMult
         self.multiplier = meta_param;
     }
 
-    fn set_param(&mut self, multiplier: ComplexNum)
+    fn set_param(&mut self, multiplier: Cplx)
     {
         self.multiplier = multiplier;
     }
@@ -415,7 +415,7 @@ impl ParameterPlane for BiquadraticMultParam
 {
     type Param = ComplexPair;
     type Var = Bicomplex;
-    type Deriv = ComplexNum;
+    type Deriv = Cplx;
     type MetaParam = NoParam;
     type Child = BiquadraticMult;
     basic_plane_impl!();
@@ -442,7 +442,7 @@ impl ParameterPlane for BiquadraticMultParam
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> Self::Param
+    fn param_map(&self, c: Cplx) -> Self::Param
     {
         Self::Param {
             a: 1e-4.into(),
@@ -460,7 +460,7 @@ impl ParameterPlane for BiquadraticMultParam
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, ComplexNum)
+    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
     {
         match zw
         {
@@ -470,7 +470,7 @@ impl ParameterPlane for BiquadraticMultParam
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> ComplexNum
+    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
     {
         match zw
         {
@@ -480,7 +480,7 @@ impl ParameterPlane for BiquadraticMultParam
     }
 
     #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> ComplexNum
+    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
     {
         match zw
         {
@@ -490,7 +490,7 @@ impl ParameterPlane for BiquadraticMultParam
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         match self.starting_plane
         {
@@ -504,15 +504,15 @@ impl ParameterPlane for BiquadraticMultParam
         self.starting_plane = self.starting_plane.swap();
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(3.5)
     }
 
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
         // (1.0 - 5.0_f64.sqrt()).into()
-        ComplexNum::new(0., 0.99)
+        Cplx::new(0., 0.99)
     }
 
     fn name(&self) -> String
@@ -545,7 +545,7 @@ pub struct BiquadraticMultSecondIterate
 {
     point_grid: PointGrid,
     max_iter: Period,
-    multiplier: ComplexNum,
+    multiplier: Cplx,
 }
 
 impl BiquadraticMultSecondIterate
@@ -565,10 +565,10 @@ impl Default for BiquadraticMultSecondIterate
 
 impl ParameterPlane for BiquadraticMultSecondIterate
 {
-    type Var = ComplexNum;
-    type Param = ComplexNum;
-    type Deriv = ComplexNum;
-    type MetaParam = ComplexNum;
+    type Var = Cplx;
+    type Param = Cplx;
+    type Deriv = Cplx;
+    type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
@@ -582,8 +582,8 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -601,26 +601,26 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    fn param_map(&self, c: Cplx) -> Cplx
     {
         c
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
     {
         -0.5 * c
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let w = z * (z + c);
         w * (w + self.multiplier / c)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let a = self.multiplier / c;
         let w = z * (z + c);
@@ -628,7 +628,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let a = self.multiplier / c;
         let w = z * (z + c);
@@ -636,7 +636,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         2. * (z * z + c)
     }

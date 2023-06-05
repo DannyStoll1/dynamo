@@ -24,13 +24,13 @@ impl ParameterPlane for RiemannXi {
     fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv {
         ONE
     }
-    fn param_map(&self, point: ComplexNum) -> Self::Param {
+    fn param_map(&self, point: Cplx) -> Self::Param {
         point
     }
-    fn default_selection(&self) -> ComplexNum {
+    fn default_selection(&self) -> Cplx {
         ZERO
     }
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds {
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds {
         Bounds::centered_square(30.)
     }
     fn name(&self) -> String {

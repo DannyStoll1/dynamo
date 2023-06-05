@@ -2,11 +2,11 @@ use crate::macros::*;
 
 profile_imports!();
 
-fn f(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn f(z: Cplx, c: Cplx) -> Cplx
 {
     z * z + c
 }
-fn df_dz(z: ComplexNum, _c: ComplexNum) -> ComplexNum
+fn df_dz(z: Cplx, _c: Cplx) -> Cplx
 {
     z + z
 }
@@ -28,12 +28,12 @@ impl ParameterPlane for Mandelbrot
     parameter_plane_impl!();
     default_name!();
 
-    fn param_map(&self, point: ComplexNum) -> Self::Param
+    fn param_map(&self, point: Cplx) -> Self::Param
     {
         point
     }
 
-    fn escape_radius(&self) -> RealNum
+    fn escape_radius(&self) -> Real
     {
         1e26
     }
@@ -55,9 +55,9 @@ impl ParameterPlane for Mandelbrot
 
     fn early_bailout(
         &self,
-        _start: ComplexNum,
-        param: ComplexNum,
-    ) -> EscapeState<ComplexNum, ComplexNum>
+        _start: Cplx,
+        param: Cplx,
+    ) -> EscapeState<Cplx, Cplx>
     {
         // Main cardioid
         let four_c = 4. * param;
@@ -103,18 +103,18 @@ impl ParameterPlane for Mandelbrot
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
-        vec![ComplexNum::new(0., 0.)]
+        vec![Cplx::new(0., 0.)]
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
 
-    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
         match period
         {
@@ -137,7 +137,7 @@ impl HasDynamicalCovers for Mandelbrot
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let bounds: Bounds;
 
         match period
@@ -193,7 +193,7 @@ impl HasDynamicalCovers for Mandelbrot
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let bounds: Bounds;
 
         match period
@@ -234,7 +234,7 @@ impl HasDynamicalCovers for Mandelbrot
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let bounds: Bounds;
 
         match (preperiod, period)

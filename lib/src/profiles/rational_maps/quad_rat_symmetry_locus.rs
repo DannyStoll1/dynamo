@@ -31,8 +31,8 @@ impl ParameterPlane for QuadRatSymmetryLocus
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        base_param: ComplexNum,
+        z: Cplx,
+        base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -51,37 +51,37 @@ impl ParameterPlane for QuadRatSymmetryLocus
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         c * (z + 1. / z)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let u = z.inv();
         (c * (z + u), c * (1. - u * u))
     }
 
-    fn start_point(&self, _point: ComplexNum, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         (1.).into()
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         c * (1. - 1. / (z * z))
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         z + 1. / z
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
         vec![(-1.).into(), (1.).into()]
     }
@@ -105,7 +105,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(4.)
     }

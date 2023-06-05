@@ -3,11 +3,11 @@ use num_complex::Complex;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-pub type IterCount = f64;
-pub type RealNum = f64;
-pub type ComplexNum = Complex<RealNum>;
-pub type Period = u32;
-pub type ComplexVec = Vec<ComplexNum>;
+pub(crate) type IterCount = f64;
+pub(crate) type Real = f64;
+pub(crate) type Cplx = Complex<Real>;
+pub(crate) type Period = u32;
+pub(crate) type ComplexVec = Vec<Cplx>;
 
 pub mod variables;
 pub use variables::{Dist, Norm};
@@ -28,7 +28,7 @@ pub enum EscapeState<V, D>
         preperiod: Period,
         period: Period,
         multiplier: D,
-        final_error: RealNum,
+        final_error: Real,
     },
     NotYetEscaped,
     Bounded,
@@ -47,7 +47,7 @@ pub enum PointInfo<D>
         preperiod: Period,
         period: Period,
         multiplier: D,
-        final_error: RealNum,
+        final_error: Real,
     },
     Bounded,
     Wandering,

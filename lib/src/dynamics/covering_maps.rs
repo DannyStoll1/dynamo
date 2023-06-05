@@ -1,7 +1,7 @@
 use super::ParameterPlane;
 use super::julia::JuliaSet;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::{ComplexNum, ComplexVec, EscapeState, Period, PointInfo};
+use crate::types::{Cplx, ComplexVec, EscapeState, Period, PointInfo};
 
 #[derive(Clone)]
 pub struct CoveringMap<C>
@@ -9,7 +9,7 @@ where
     C: ParameterPlane + Clone,
 {
     base_curve: C,
-    covering_map: fn(ComplexNum) -> ComplexNum,
+    covering_map: fn(Cplx) -> Cplx,
     point_grid: PointGrid,
     compose_parameterizations: bool,
 }
@@ -21,7 +21,7 @@ where
     #[must_use]
     pub fn new(
         base_curve: C,
-        covering_map: fn(ComplexNum) -> ComplexNum,
+        covering_map: fn(Cplx) -> Cplx,
         point_grid: PointGrid,
     ) -> Self
     {
@@ -36,7 +36,7 @@ where
     #[must_use]
     pub fn without_base_parameterization(
         base_curve: C,
-        covering_map: fn(ComplexNum) -> ComplexNum,
+        covering_map: fn(Cplx) -> Cplx,
         point_grid: PointGrid,
     ) -> Self
     {
@@ -108,7 +108,7 @@ where
         self
     }
 
-    fn param_map(&self, c: ComplexNum) -> C::Param
+    fn param_map(&self, c: Cplx) -> C::Param
     {
         if self.compose_parameterizations
         {
@@ -121,7 +121,7 @@ where
         }
     }
 
-    fn start_point(&self, p: ComplexNum, c: C::Param) -> C::Var
+    fn start_point(&self, p: Cplx, c: C::Param) -> C::Var
     {
         self.base_curve.start_point(p, c)
     }
@@ -190,7 +190,7 @@ where
         self.base_curve.cycles_child(param, period)
     }
 
-    fn default_julia_bounds(&self, point: ComplexNum, param: C::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, param: C::Param) -> Bounds
     {
         self.base_curve.default_julia_bounds(point, param)
     }

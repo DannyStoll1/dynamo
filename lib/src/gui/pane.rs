@@ -22,9 +22,9 @@ use epaint::{CircleShape, PathShape};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-pub type ColoredPoint = (ComplexNum, Color32);
+pub type ColoredPoint = (Cplx, Color32);
 pub type ColoredPoints = Vec<ColoredPoint>;
-pub type ColoredCurve = (Vec<ComplexNum>, Color32);
+pub type ColoredCurve = (Vec<Cplx>, Color32);
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -63,8 +63,8 @@ pub trait Pane
     fn get_coloring(&self) -> &Coloring;
     fn get_coloring_mut(&mut self) -> &mut Coloring;
 
-    fn select_point(&mut self, point: ComplexNum);
-    fn get_selection(&self) -> ComplexNum;
+    fn select_point(&mut self, point: Cplx);
+    fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
 
     fn get_marked_curves(&self) -> &Vec<ColoredCurve>;
@@ -108,7 +108,7 @@ pub trait Pane
     fn get_marked_points(&self) -> &ColoredPoints;
     fn get_marked_points_mut(&mut self) -> &mut ColoredPoints;
 
-    fn mark_point(&mut self, z: ComplexNum, color: Color32)
+    fn mark_point(&mut self, z: Cplx, color: Color32)
     {
         let points = self.get_marked_points_mut();
         points.push((z, color));
@@ -208,10 +208,10 @@ pub trait Pane
 
     fn redraw(&mut self);
 
-    fn zoom(&mut self, scale: RealNum, base_point: ComplexNum);
+    fn zoom(&mut self, scale: Real, base_point: Cplx);
 
     #[inline]
-    fn pan(&mut self, offset_vector: ComplexNum)
+    fn pan(&mut self, offset_vector: Cplx)
     {
         self.grid_mut().translate(offset_vector);
         self.schedule_recompute();
@@ -221,7 +221,7 @@ pub trait Pane
     fn nudge_horizontal(&mut self, relative_offset: f64)
     {
         let grid_width = self.grid().range_x();
-        let translation_vector = ComplexNum::from(grid_width * relative_offset);
+        let translation_vector = Cplx::from(grid_width * relative_offset);
         self.pan(translation_vector);
     }
 
@@ -229,7 +229,7 @@ pub trait Pane
     fn nudge_vertical(&mut self, relative_offset: f64)
     {
         let grid_height = self.grid().range_y();
-        let translation_vector = ComplexNum::new(0., grid_height * relative_offset);
+        let translation_vector = Cplx::new(0., grid_height * relative_offset);
         self.pan(translation_vector);
     }
 
@@ -263,7 +263,7 @@ pub trait Pane
         self.get_frame().region.contains(pointer_pos)
     }
 
-    fn map_pixel(&self, pointer_pos: Pos2) -> ComplexNum
+    fn map_pixel(&self, pointer_pos: Pos2) -> Cplx
     {
         let relative_pos = self.get_frame().to_local_coords(pointer_pos);
         self.grid().map_vec2(relative_pos)
@@ -271,7 +271,7 @@ pub trait Pane
 
     fn process_mouse_input(
         &mut self,
-        pointer_value: ComplexNum,
+        pointer_value: Cplx,
         zoom_factor: f32,
         reselect_point: bool,
     )
@@ -304,7 +304,7 @@ pub trait Pane
 
     fn change_height(&mut self, new_height: usize);
 
-    fn mark_orbit_and_info(&mut self, pointer_value: ComplexNum);
+    fn mark_orbit_and_info(&mut self, pointer_value: Cplx);
     fn describe_marked_info(&self) -> String;
 }
 
@@ -317,12 +317,12 @@ where
     iter_plane: IterPlane<P::Deriv>,
     pub image_frame: ImageFrame,
     task: ComputeTask,
-    selection: ComplexNum,
+    selection: Cplx,
     marked_curves: Vec<ColoredCurve>,
     marked_points: ColoredPoints,
     marked_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
     pub marking_mode: MarkingMode,
-    pub zoom_factor: RealNum,
+    pub zoom_factor: Real,
 }
 impl<P> WindowPane<P>
 where
@@ -490,7 +490,7 @@ where
         &mut self.image_frame
     }
     #[inline]
-    fn get_selection(&self) -> ComplexNum
+    fn get_selection(&self) -> Cplx
     {
         self.selection
     }
@@ -510,7 +510,7 @@ where
         &mut self.marking_mode
     }
     #[inline]
-    fn select_point(&mut self, point: ComplexNum)
+    fn select_point(&mut self, point: Cplx)
     {
         self.selection = point;
         //
@@ -567,7 +567,7 @@ where
     }
 
     #[inline]
-    fn zoom(&mut self, scale: RealNum, base_point: ComplexNum)
+    fn zoom(&mut self, scale: Real, base_point: Cplx)
     {
         self.zoom_factor *= scale;
         self.grid_mut().zoom(scale, base_point);
@@ -595,7 +595,7 @@ where
         self.grid_mut().resize_x(orig_width);
     }
 
-    fn mark_orbit_and_info(&mut self, pointer_value: ComplexNum)
+    fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
     {
         let (orbit, info) = self.plane.get_orbit_and_info(pointer_value);
         let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
@@ -692,7 +692,7 @@ where
         }
     }
 
-    fn set_child_param(&mut self, point: ComplexNum, new_param: P::Param)
+    fn set_child_param(&mut self, point: Cplx, new_param: P::Param)
     {
         let mut new_bounds = self.parent.plane.default_julia_bounds(point, new_param);
 

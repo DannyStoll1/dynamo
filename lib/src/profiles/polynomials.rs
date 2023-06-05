@@ -16,5 +16,8 @@ pub use odd_cubic::OddCubic;
 pub mod cubic_marked_2_cycle;
 pub use cubic_marked_2_cycle::CubicMarked2Cycle;
 
+pub mod unicritical;
+pub use unicritical::Unicritical;
+
 pub mod biquadratic;
 pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam};

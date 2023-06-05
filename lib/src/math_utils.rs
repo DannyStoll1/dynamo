@@ -1,19 +1,19 @@
 use crate::consts::*;
-use crate::types::{ComplexNum, RealNum};
+use crate::types::{Cplx, Real};
 use num_complex::ComplexFloat;
 use spfunc::gamma::{digamma, gamma};
 use std::f64::consts::PI;
 
 #[must_use]
 pub fn weierstrass_p(
-    g2: ComplexNum,
-    g3: ComplexNum,
-    z: ComplexNum,
-    tolerance: RealNum,
-) -> (ComplexNum, ComplexNum)
+    g2: Cplx,
+    g3: Cplx,
+    z: Cplx,
+    tolerance: Real,
+) -> (Cplx, Cplx)
 {
     let num_iters = (z.norm() / tolerance).log2().round() as i32 + 1;
-    let shrink_scale = (2.0 as RealNum).powi(-num_iters);
+    let shrink_scale = (2.0 as Real).powi(-num_iters);
     let z0 = z * shrink_scale;
 
     let u = z0 * z0;
@@ -21,12 +21,12 @@ pub fn weierstrass_p(
     let mut p = 1. / u + g2 * u / 20. + g3 * u * u / 28.;
     let mut dp = -2. / (u * z0) + g2 * z0 / 10. + g3 * u * z0 / 7.;
 
-    let mut p_2: ComplexNum;
-    let mut dp_2: ComplexNum;
-    let mut ddp: ComplexNum;
-    let mut ddp_2: ComplexNum;
-    let mut tmp: ComplexNum;
-    let mut four_dp_2: ComplexNum;
+    let mut p_2: Cplx;
+    let mut dp_2: Cplx;
+    let mut ddp: Cplx;
+    let mut ddp_2: Cplx;
+    let mut tmp: Cplx;
+    let mut four_dp_2: Cplx;
 
     for _ in 0..num_iters
     {
@@ -44,7 +44,7 @@ pub fn weierstrass_p(
 }
 
 #[must_use]
-pub fn slog(x: RealNum) -> RealNum
+pub fn slog(x: Real) -> Real
 {
     if x.is_infinite()
     {
@@ -66,7 +66,7 @@ pub fn slog(x: RealNum) -> RealNum
 
 // Roots of the polynomial a + bx + x^2
 #[must_use]
-pub fn solve_quadratic(a: ComplexNum, b: ComplexNum) -> [ComplexNum; 2]
+pub fn solve_quadratic(a: Cplx, b: Cplx) -> [Cplx; 2]
 {
     let disc = (b * b - 4. * a).sqrt();
     [-0.5 * (b + disc), 0.5 * (disc - b)]
@@ -74,7 +74,7 @@ pub fn solve_quadratic(a: ComplexNum, b: ComplexNum) -> [ComplexNum; 2]
 
 // Roots of the polynomial a + bx + cx^2 + x^3
 #[must_use]
-pub fn solve_cubic(a: ComplexNum, b: ComplexNum, c: ComplexNum) -> [ComplexNum; 3]
+pub fn solve_cubic(a: Cplx, b: Cplx, c: Cplx) -> [Cplx; 3]
 {
     let x0 = -c / 3.;
     let c2 = c * c;
@@ -94,8 +94,8 @@ pub fn solve_cubic(a: ComplexNum, b: ComplexNum, c: ComplexNum) -> [ComplexNum; 
 
 // Roots of the polynomial a + bx + cx^2 + dx^3 + x^4
 #[must_use]
-pub fn solve_quartic(a: ComplexNum, b: ComplexNum, c: ComplexNum, d: ComplexNum)
-    -> [ComplexNum; 4]
+pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx)
+    -> [Cplx; 4]
 {
     let c2 = c * c;
     let d2 = d * d;
@@ -161,47 +161,47 @@ fn factorial(n: u64) -> f64
     }
 }
 
-fn zeta_t(k: u64, nf: f64, s: ComplexNum) -> ComplexNum
+fn zeta_t(k: u64, nf: f64, s: Cplx) -> Cplx
 {
     let two_k = k + k;
     let t0 = bernoulli(two_k) / factorial(two_k);
     let t1 = nf.powc(1. - s - (two_k as f64));
-    let t2: ComplexNum = (0..two_k - 1).map(|j| s + (j as f64)).product();
+    let t2: Cplx = (0..two_k - 1).map(|j| s + (j as f64)).product();
     t0 * t1 * t2
 }
 
-fn zeta_t_d(k: u64, nf: f64, s: ComplexNum) -> (ComplexNum, ComplexNum)
+fn zeta_t_d(k: u64, nf: f64, s: Cplx) -> (Cplx, Cplx)
 {
     let two_k = k + k;
     let t0 = bernoulli(two_k) / factorial(two_k);
     let t1 = nf.powc(1. - s - (two_k as f64));
     let dt1 = -t1 * nf.ln();
-    let t2: ComplexNum = (0..two_k - 1).map(|j| s + (j as f64)).product();
-    let dt2: ComplexNum = (0..two_k - 1).map(|j| t2 / (s + (j as f64))).sum();
+    let t2: Cplx = (0..two_k - 1).map(|j| s + (j as f64)).product();
+    let dt2: Cplx = (0..two_k - 1).map(|j| t2 / (s + (j as f64))).sum();
     (t0 * t1 * t2, t0 * (t1 * dt2 + dt1 * t2))
 }
 
-pub fn riemann_zeta(s: ComplexNum) -> ComplexNum
+pub fn riemann_zeta(s: Cplx) -> Cplx
 {
     let n = 20;
     let m = 19;
     let u = 1. - s;
     let nf = n as f64;
-    let s0: ComplexNum = (1..n).map(|j| (j as f64).powc(-s)).sum();
+    let s0: Cplx = (1..n).map(|j| (j as f64).powc(-s)).sum();
     let s1 = 0.5 * nf.powc(-s);
     let s2 = nf.powc(u) / u;
-    let s3: ComplexNum = (1..=m).map(|k| zeta_t(k, nf, s)).sum();
+    let s3: Cplx = (1..=m).map(|k| zeta_t(k, nf, s)).sum();
 
     s0 + s1 - s2 + s3
 }
 
-pub fn riemann_zeta_d(s: ComplexNum) -> (ComplexNum, ComplexNum)
+pub fn riemann_zeta_d(s: Cplx) -> (Cplx, Cplx)
 {
     let n = 10;
     let m = 9;
     let u = 1. - s;
     let nf = n as f64;
-    let (s0, ds0): (ComplexNum, ComplexNum) = (1..n)
+    let (s0, ds0): (Cplx, Cplx) = (1..n)
         .map(|j| {
             let jf = j as f64;
             let term = jf.powc(-s);
@@ -212,20 +212,20 @@ pub fn riemann_zeta_d(s: ComplexNum) -> (ComplexNum, ComplexNum)
     let ds1 = -s1 * nf.ln();
     let s2 = nf.powc(u) / u;
     let ds2 = s2 * (u.inv() - nf.ln());
-    let (s3, ds3): (ComplexNum, ComplexNum) = (1..=m)
+    let (s3, ds3): (Cplx, Cplx) = (1..=m)
         .map(|k| zeta_t_d(k, nf, s))
         .fold((ZERO, ZERO), |(a, da), (b, db)| (a + b, da + db));
 
     (s0 + s1 - s2 + s3, ds0 + ds1 - ds2 + ds3)
 }
 
-pub fn riemann_xi(s: ComplexNum) -> ComplexNum
+pub fn riemann_xi(s: Cplx) -> Cplx
 {
     let u = s * 0.5;
     u * (s - 1.) * PI.powc(-u) * gamma(u) * riemann_zeta(s)
 }
 
-pub fn riemann_xi_d(s: ComplexNum) -> (ComplexNum, ComplexNum)
+pub fn riemann_xi_d(s: Cplx) -> (Cplx, Cplx)
 {
     let x0 = s * 0.5;
     let x1 = s - 1.;
@@ -239,4 +239,11 @@ pub fn riemann_xi_d(s: ComplexNum) -> (ComplexNum, ComplexNum)
         x01 * x2 * x3 * x4,
         x2 * x3 * x4 * (s - 0.5) + x01 * (x2 * x3 * dx4 + 0.5 * (dx2 * x3 * x4 + x2 * dx3 * x4)),
     )
+}
+
+pub fn roots_of_unity(degree: i32) -> impl Iterator<Item=Cplx>
+{
+    let theta = TAUI / (degree as Real);
+    (0..degree)
+        .map(move|k| (theta.clone() * (k as Real)).exp())
 }

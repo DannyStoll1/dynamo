@@ -28,7 +28,7 @@ impl ParameterPlane for QuadRatPer3
     parameter_plane_impl!();
     default_name!();
 
-    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
     {
         0.0.into()
     }
@@ -36,8 +36,8 @@ impl ParameterPlane for QuadRatPer3
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        base_param: ComplexNum,
+        z: Cplx,
+        base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -56,7 +56,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let z2 = z * z;
         let c2 = c * c;
@@ -66,7 +66,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let z2 = z * z;
         let c2 = c * c;
@@ -74,7 +74,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let u = 1. / (c * c - z * z);
         let v = c + 1.;
@@ -82,7 +82,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let r = c * c - z * z;
         let u2 = 1. / (r * r);
@@ -106,12 +106,12 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
         vec![(0.).into()]
     }
 
-    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
         match period
         {
@@ -138,7 +138,7 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -147,7 +147,7 @@ impl HasDynamicalCovers for QuadRatPer3
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let bounds: Bounds;
 
         match period
@@ -171,9 +171,9 @@ impl HasDynamicalCovers for QuadRatPer3
             4 =>
             {
                 param_map = |c| {
-                    let t = (13.0 as RealNum).sqrt();
-                    let g2 = ComplexNum::new(-8.0 / 3.0, 0.);
-                    let g3 = ComplexNum::new(1.0 / 27.0, 0.);
+                    let t = (13.0 as Real).sqrt();
+                    let g2 = Cplx::new(-8.0 / 3.0, 0.);
+                    let g3 = Cplx::new(1.0 / 27.0, 0.);
 
                     let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
                     let x = p - 1. / 3.;

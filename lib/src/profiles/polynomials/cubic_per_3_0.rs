@@ -6,21 +6,21 @@ profile_imports!();
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct ComplexPair
 {
-    pub a: ComplexNum,
-    pub b: ComplexNum,
+    pub a: Cplx,
+    pub b: Cplx,
 }
 
 impl Summarize for ComplexPair {}
 
-impl From<ComplexNum> for ComplexPair
+impl From<Cplx> for ComplexPair
 {
-    fn from(_z: ComplexNum) -> Self
+    fn from(_z: Cplx) -> Self
     {
         todo!()
     }
 }
 
-impl From<ComplexPair> for ComplexNum
+impl From<ComplexPair> for Cplx
 {
     fn from(_value: ComplexPair) -> Self
     {
@@ -43,10 +43,10 @@ impl Default for CubicPer3_0
 
 impl ParameterPlane for CubicPer3_0
 {
-    type Var = ComplexNum;
+    type Var = Cplx;
     type Param = ComplexPair;
     type MetaParam = NoParam;
-    type Deriv = ComplexNum;
+    type Deriv = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
@@ -76,7 +76,7 @@ impl ParameterPlane for CubicPer3_0
     {
         z * z * z
     }
-    fn param_map(&self, t: ComplexNum) -> Self::Param
+    fn param_map(&self, t: Cplx) -> Self::Param
     {
         let u = t + 1.;
         let u2_inv = (u * u).inv();
@@ -84,7 +84,7 @@ impl ParameterPlane for CubicPer3_0
         let b = t * t * t * u2_inv + u / t;
         ComplexPair { a, b }
     }
-    fn start_point(&self, _point: ComplexNum, ComplexPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, ComplexPair { a, b }: Self::Param) -> Self::Var
     {
         -(b + b) / (3. * a)
     }
@@ -109,12 +109,12 @@ impl ParameterPlane for CubicPer3_0
             _ => vec![],
         }
     }
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
         // ComplexNum::new(-3.34447065821736, 0.) // center of a capture component; c1 -2> c0=0 -2> 1 -> a+b+1 -> 0
-        ComplexNum::new(-0.521257806222939, 0.) // center of a period 1 component; c1 -2> c1
+        Cplx::new(-0.521257806222939, 0.) // center of a period 1 component; c1 -2> c1
     }
-    fn default_julia_bounds(&self, point: ComplexNum, c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, c: Self::Param) -> Bounds
     {
         let crit = self.start_point(point, c);
         // let center = (crit + 2. + c.a + c.b) * ONE_THIRD;

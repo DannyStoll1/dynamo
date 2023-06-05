@@ -16,7 +16,7 @@ pub struct MarkingMode
 
 impl MarkingMode
 {
-    pub fn compute<P>(&self, plane: &P, selection: ComplexNum) -> ColoredPoints
+    pub fn compute<P>(&self, plane: &P, selection: Cplx) -> ColoredPoints
     where
         P: ParameterPlane + 'static,
     {

@@ -15,7 +15,7 @@ where
     pub parent: T,
     pub meta_params: T::MetaParam,
     pub local_param: T::Param,
-    pub parent_selection: ComplexNum,
+    pub parent_selection: Cplx,
 }
 
 impl<T> JuliaSet<T>
@@ -23,7 +23,7 @@ where
     T: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(parent: T, parent_selection: ComplexNum, _max_iter: Period) -> Self
+    pub fn new(parent: T, parent_selection: Cplx, _max_iter: Period) -> Self
     {
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
@@ -112,13 +112,13 @@ where
     }
 
     #[inline]
-    fn param_map(&self, _z: ComplexNum) -> Self::Param
+    fn param_map(&self, _z: Cplx) -> Self::Param
     {
         self.local_param
     }
 
     #[inline]
-    fn start_point(&self, point: ComplexNum, _param: Self::Param) -> Self::Var
+    fn start_point(&self, point: Cplx, _param: Self::Param) -> Self::Var
     {
         point.into()
     }
@@ -180,7 +180,7 @@ where
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         self.point_grid.bounds.clone()
     }
@@ -216,7 +216,7 @@ where
     }
 
     #[inline]
-    fn periodicity_tolerance(&self) -> RealNum
+    fn periodicity_tolerance(&self) -> Real
     {
         self.parent.periodicity_tolerance()
     }

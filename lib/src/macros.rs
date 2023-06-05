@@ -106,19 +106,19 @@ macro_rules! basic_plane_impl {
 
 macro_rules! parameter_plane_impl {
     () => {
-        type Var = ComplexNum;
-        type Param = ComplexNum;
+        type Var = Cplx;
+        type Param = Cplx;
         type MetaParam = NoParam;
-        type Deriv = ComplexNum;
+        type Deriv = Cplx;
         type Child = JuliaSet<Self>;
 
         crate::macros::basic_plane_impl!();
     };
     ($child: ty) => {
-        type Var = ComplexNum;
-        type Param = ComplexNum;
+        type Var = Cplx;
+        type Param = Cplx;
         type MetaParam = NoParam;
-        type Deriv = ComplexNum;
+        type Deriv = Cplx;
         type Child = $child;
 
         crate::macros::basic_plane_impl!();

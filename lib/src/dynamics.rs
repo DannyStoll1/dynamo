@@ -28,15 +28,15 @@ use self::orbit::OrbitParams;
 
 pub trait ParameterPlane: Sync + Send + Clone
 {
-    type Var: Norm<RealNum>
-        + Dist<RealNum>
+    type Var: Norm<Real>
+        + Dist<Real>
         + Send
         + Default
-        + From<ComplexNum>
-        + Into<ComplexNum>
+        + From<Cplx>
+        + Into<Cplx>
         + Display;
     type Param: Into<Self::Var>
-        + From<ComplexNum>
+        + From<Cplx>
         + Clone
         + Copy
         + Send
@@ -45,7 +45,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         + PartialEq
         + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
-    type Deriv: Norm<RealNum> + Send + Default + From<f64> + MulAssign + Display;
+    type Deriv: Norm<Real> + Send + Default + From<f64> + MulAssign + Display;
     type Child: ParameterPlane + From<Self>;
 
     fn point_grid(&self) -> &PointGrid;
@@ -88,24 +88,24 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     #[inline]
-    fn escape_radius(&self) -> RealNum
+    fn escape_radius(&self) -> Real
     {
         1e12
     }
 
     #[inline]
-    fn periodicity_tolerance(&self) -> RealNum
+    fn periodicity_tolerance(&self) -> Real
     {
         // self.point_grid().bounds.area() * 1e-8
         1e-14
     }
 
-    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         c.into()
     }
 
-    fn param_map(&self, point: ComplexNum) -> Self::Param
+    fn param_map(&self, point: Cplx) -> Self::Param
     {
         point.into()
     }
@@ -358,7 +358,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn get_orbit_vec(&self, point: ComplexNum) -> Vec<Self::Var>
+    fn get_orbit_vec(&self, point: Cplx) -> Vec<Self::Var>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
@@ -372,7 +372,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         orbit.map(|(z, _s)| z).collect()
     }
 
-    fn get_orbit_info(&self, point: ComplexNum) -> OrbitInfo<Self::Var, Self::Param, Self::Deriv>
+    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Var, Self::Param, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
@@ -386,7 +386,7 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     fn get_orbit_and_info(
         &self,
-        point: ComplexNum,
+        point: Cplx,
     ) -> (
         Vec<Self::Var>,
         OrbitInfo<Self::Var, Self::Param, Self::Deriv>,
@@ -431,14 +431,14 @@ pub trait ParameterPlane: Sync + Send + Clone
         Bounds::centered_square(2.2)
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
 
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
-        ComplexNum::default()
+        Cplx::default()
     }
 
     fn cycle_active_plane(&mut self) {}

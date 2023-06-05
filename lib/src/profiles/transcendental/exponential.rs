@@ -34,8 +34,8 @@ impl ParameterPlane for Exponential
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -63,7 +63,7 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, lambda: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, lambda: Cplx) -> Cplx
     {
         z.exp() * lambda
     }
@@ -76,26 +76,26 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, _lambda: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, _lambda: Cplx) -> Cplx
     {
         z.exp()
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: ComplexNum, _lambda: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, _z: Cplx, _lambda: Cplx) -> Cplx
     {
         ONE
     }
 
     #[inline]
-    fn gradient(&self, z: ComplexNum, lambda: ComplexNum) -> (ComplexNum, ComplexNum, ComplexNum)
+    fn gradient(&self, z: Cplx, lambda: Cplx) -> (Cplx, Cplx, Cplx)
     {
         let u = z.exp();
         (u + lambda, u, ONE)
     }
 
     #[inline]
-    fn param_map(&self, lambda: ComplexNum) -> ComplexNum
+    fn param_map(&self, lambda: Cplx) -> Cplx
     {
         lambda
     }
@@ -105,7 +105,7 @@ impl ParameterPlane for Exponential
         vec![ZERO]
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, lambda: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, lambda: Self::Param) -> Bounds
     {
         Bounds::square(5., lambda)
     }
@@ -148,8 +148,8 @@ impl ParameterPlane for CosineAdd
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -172,7 +172,7 @@ impl ParameterPlane for CosineAdd
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         z.cos() + c
     }
@@ -184,19 +184,19 @@ impl ParameterPlane for CosineAdd
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         -z.sin()
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Cplx
     {
         ONE
     }
 
     #[inline]
-    fn param_map(&self, c: ComplexNum) -> ComplexNum
+    fn param_map(&self, c: Cplx) -> Cplx
     {
         c
     }
@@ -238,8 +238,8 @@ impl ParameterPlane for Cosine
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -262,7 +262,7 @@ impl ParameterPlane for Cosine
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, lambda: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, lambda: Cplx) -> Cplx
     {
         z.cos() * lambda
     }
@@ -274,24 +274,24 @@ impl ParameterPlane for Cosine
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, lambda: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, lambda: Cplx) -> Cplx
     {
         -z.sin() * lambda
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _lambda: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, _lambda: Cplx) -> Cplx
     {
         z.cos()
     }
 
     #[inline]
-    fn param_map(&self, lambda: ComplexNum) -> ComplexNum
+    fn param_map(&self, lambda: Cplx) -> Cplx
     {
         lambda
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds {
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds {
         Bounds::centered_square(5.5)
     }
 }
@@ -360,8 +360,8 @@ impl ParameterPlane for SineWander
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -384,33 +384,33 @@ impl ParameterPlane for SineWander
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         z.sin() + z + TAU*c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         z.cos() + 1.
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Cplx
     {
         TAU.into()
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, _c: Self::Param) -> Self::Var {
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var {
         PI.into()
     }
 
-    fn default_selection(&self) -> ComplexNum {
+    fn default_selection(&self) -> Cplx {
         ONE
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: Self::Param) -> Bounds {
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds {
         Bounds::centered_square(5.5)
     }
 }

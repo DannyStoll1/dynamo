@@ -2,12 +2,12 @@ use crate::macros::profile_imports;
 profile_imports!();
 
 #[inline]
-fn map(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn map(z: Cplx, c: Cplx) -> Cplx
 {
     (z * z + c) / (z * z - 1.)
 }
 #[inline]
-fn map_and_multiplier(z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+fn map_and_multiplier(z: Cplx, c: Cplx) -> (Cplx, Cplx)
 {
     let z2 = z * z;
     let u = z2 - 1.;
@@ -15,14 +15,14 @@ fn map_and_multiplier(z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
 }
 
 #[inline]
-fn dynamical_derivative(z: ComplexNum, c: ComplexNum) -> ComplexNum
+fn dynamical_derivative(z: Cplx, c: Cplx) -> Cplx
 {
     let u = 1. / (z * z - 1.);
     -2.0 * (c + 1.) * z * u * u
 }
 
 #[inline]
-fn parameter_derivative(z: ComplexNum, _c: ComplexNum) -> ComplexNum
+fn parameter_derivative(z: Cplx, _c: Cplx) -> Cplx
 {
     1. / (z * z - 1.)
 }
@@ -48,8 +48,8 @@ impl ParameterPlane for QuadRatPer2
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -100,12 +100,12 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
         vec![(0.).into()]
     }
 
-    fn cycles_child(&self, c: ComplexNum, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
         match period
         {
@@ -129,7 +129,7 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -139,7 +139,7 @@ impl HasDynamicalCovers for QuadRatPer2
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let bounds: Bounds;
 
         match period
@@ -172,26 +172,26 @@ impl HasDynamicalCovers for QuadRatPer2
                 param_map = |c| {
                     // t = sqrt(-2235)
                     // ((-2043332879690812551104*t + 322671215001188162496)*c^6 + (-7211787718815174272*t + 38457203855637713472)*c^5 + (-10445615819508480*t + 113836835145028800)*c^4 + (-7931553616080*t + 135137329840080)*c^3 + (-3321323160*t + 79799557200)*c^2 + (-724598*t + 23400162)*c + (-64*t + 2724))/((-165726073638468871360*t + 59671792608719217337728)*c^6 + (-532082528560799520*t + 218792941658814953376)*c^5 + (-681491680626360*t + 334169395252260120)*c^4 + (-435333784880*t + 272101938829200)*c^3 + (-138715290*t + 124564255830)*c^2 + (-17640*t + 30391956)*c + 3087)
-                    let pole = ComplexNum::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
-                    let angle = ComplexNum::new(1., 0.);
+                    let pole = Cplx::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
+                    let angle = Cplx::new(1., 0.);
 
                     let c = angle / c + pole;
 
-                    let a0 = ComplexNum::new(-5448., 6_051.300_686_629_28);
-                    let a1 = ComplexNum::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
-                    let a2 = ComplexNum::new(-65_413.655_299_273_2, 128_711.643_030_672);
-                    let a3 = ComplexNum::new(-70_918.940_786_376_0, 196_781.349_743_989);
-                    let a4 = ComplexNum::new(-38_246.235_127_179_3, 165_912.340_564_512);
-                    let a5 = ComplexNum::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
-                    let a6 = ComplexNum::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
+                    let a0 = Cplx::new(-5448., 6_051.300_686_629_28);
+                    let a1 = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
+                    let a2 = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
+                    let a3 = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
+                    let a4 = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
+                    let a5 = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
+                    let a6 = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
 
-                    let b0 = ComplexNum::new(-6174., 0.);
-                    let b1 = ComplexNum::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
-                    let b2 = ComplexNum::new(-102_108.377_281_498, 5_375.650_615_514_38);
-                    let b3 = ComplexNum::new(-142_796.822_391_875, 10_800.604_008_295_7);
-                    let b4 = ComplexNum::new(-112_272.282_050_380, 10_824.434_074_704_7);
-                    let b5 = ComplexNum::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
-                    let b6 = ComplexNum::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
+                    let b0 = Cplx::new(-6174., 0.);
+                    let b1 = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
+                    let b2 = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
+                    let b3 = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
+                    let b4 = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
+                    let b5 = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
+                    let b6 = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
 
                     let numer = a0 + c * (a1 + c * (a2 + c * (a3 + c * (a4 + c * (a5 + c * a6)))));
                     let denom = b0 + c * (b1 + c * (b2 + c * (b3 + c * (b4 + c * (b5 + c * b6)))));
@@ -217,7 +217,7 @@ impl HasDynamicalCovers for QuadRatPer2
 
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let bounds: Bounds;
 
         match (preperiod, period)

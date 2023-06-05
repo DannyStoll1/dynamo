@@ -32,8 +32,8 @@ impl ParameterPlane for QuadRatPreper21
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        base_param: ComplexNum,
+        z: Cplx,
+        base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -52,37 +52,37 @@ impl ParameterPlane for QuadRatPreper21
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         c * (z + 2. + 1. / z)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: ComplexNum, c: ComplexNum) -> (ComplexNum, ComplexNum)
+    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let u = z.inv();
         (c * (z + 2. + u), c * (1. - u * u))
     }
 
-    fn start_point(&self, _point: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
     {
         (1.).into()
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         c * (1. - 1. / (z * z))
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         z + 1. / z + 2.
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
         vec![(-1.).into(), (1.).into()]
     }
@@ -99,7 +99,7 @@ impl ParameterPlane for QuadRatPreper21
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -109,7 +109,7 @@ impl HasDynamicalCovers for QuadRatPreper21
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(ComplexNum) -> ComplexNum;
+        let param_map: fn(Cplx) -> Cplx;
         let grid: PointGrid;
         let bounds: Bounds;
 
@@ -132,12 +132,12 @@ impl HasDynamicalCovers for QuadRatPreper21
             4 =>
             {
                 param_map = |c| {
-                    let g2 = ComplexNum::new(-1. / 96., 0.);
-                    let g3 = ComplexNum::new(-13. / 55296., 0.);
+                    let g2 = Cplx::new(-1. / 96., 0.);
+                    let g3 = Cplx::new(-13. / 55296., 0.);
                     let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
 
                     let x = p + 1.0 / 24.0;
-                    let root_neg2_over_16 = ComplexNum::new(0., 0.088_388_347_648_318_4);
+                    let root_neg2_over_16 = Cplx::new(0., 0.088_388_347_648_318_4);
                     let mut y = dp * root_neg2_over_16;
                     // e4 = 8*x^3 - x^2 + 256*y^2 + x/16 - 1.0/1024.0
 

@@ -22,7 +22,7 @@ pub struct IterPlane<D>
 
 impl<D> FractalImage for IterPlane<D>
 where
-    D: Norm<RealNum>,
+    D: Norm<Real>,
 {
     fn point_grid(&self) -> &PointGrid
     {
@@ -56,7 +56,8 @@ where
         {
             println!("Error encountered saving file: {e:?}")
         }
-        else {
+        else
+        {
             println!("Image saved to {}", filename);
         }
     }

@@ -29,7 +29,7 @@ pub enum ColoringAlgorithm
 }
 impl ColoringAlgorithm
 {
-    fn multiplier_coloring_rate(mult_norm: RealNum, fill_rate: RealNum) -> f64
+    fn multiplier_coloring_rate(mult_norm: Real, fill_rate: Real) -> f64
     {
         let scaling_rate = mult_norm;
 
@@ -50,10 +50,10 @@ impl ColoringAlgorithm
         period: Period,
         preperiod: Period,
         multiplier: D,
-        final_error: RealNum,
+        final_error: Real,
     ) -> Color32
     where
-        D: Norm<RealNum>,
+        D: Norm<Real>,
     {
         match self
         {
@@ -134,7 +134,7 @@ impl ColoringAlgorithm
                 let mult_norm = multiplier.norm();
 
                 // Superattracting case
-                if mult_norm <= 1e-10
+                if mult_norm <= 1e-12
                 {
                     let w = 2. * (final_error.log(*periodicity_tolerance)).log2() as IterCount;
                     let v = hue.mul_add(-w, IterCount::from(preperiod));

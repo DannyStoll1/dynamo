@@ -7,7 +7,7 @@ pub struct CubicPer1Lambda
 {
     point_grid: PointGrid,
     max_iter: Period,
-    multiplier: ComplexNum,
+    multiplier: Cplx,
     starting_crit: PlaneID,
 }
 
@@ -33,7 +33,7 @@ impl Default for CubicPer1Lambda
 
 impl ParameterPlane for CubicPer1Lambda
 {
-    parameter_plane_impl!(ComplexNum, ComplexNum, ComplexNum, ComplexNum);
+    parameter_plane_impl!(Cplx, Cplx, Cplx, Cplx);
     basic_escape_encoding!(3., 1.);
 
     #[inline]
@@ -65,7 +65,7 @@ impl ParameterPlane for CubicPer1Lambda
     }
 
     #[inline]
-    fn start_point(&self, m: ComplexNum, _c: Self::Param) -> Self::Var
+    fn start_point(&self, m: Cplx, _c: Self::Param) -> Self::Var
     {
         match self.starting_crit
         {
@@ -124,7 +124,7 @@ impl ParameterPlane for CubicPer1Lambda
         self.multiplier = value
     }
 
-    fn param_map(&self, m: ComplexNum) -> Self::Param
+    fn param_map(&self, m: Cplx) -> Self::Param
     {
         -m.inv() - 0.75 * self.multiplier * m
     }
@@ -156,9 +156,9 @@ pub struct CubicPer1LambdaParam
 
 impl CubicPer1LambdaParam
 {
-    const BASE_POINT: ComplexNum = ComplexNum::new(1e-4, 0.);
+    const BASE_POINT: Cplx = Cplx::new(1e-4, 0.);
 
-    fn base_param(lambda: ComplexNum) -> ComplexNum
+    fn base_param(lambda: Cplx) -> Cplx
     {
         -Self::BASE_POINT.inv() - 0.75 * lambda * Self::BASE_POINT
     }
@@ -219,7 +219,7 @@ impl ParameterPlane for CubicPer1LambdaParam
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         match self.starting_crit
         {
@@ -229,7 +229,7 @@ impl ParameterPlane for CubicPer1LambdaParam
     }
 
     #[inline]
-    fn param_map(&self, point: ComplexNum) -> Self::Param
+    fn param_map(&self, point: Cplx) -> Self::Param
     {
         point
     }
@@ -244,12 +244,12 @@ impl ParameterPlane for CubicPer1LambdaParam
         "Cubic Per(1, lambda) lambda-plane".to_owned()
     }
 
-    fn default_selection(&self) -> ComplexNum
+    fn default_selection(&self) -> Cplx
     {
         ZERO
     }
 
-    fn default_julia_bounds(&self, point: ComplexNum, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, _param: Self::Param) -> Bounds
     {
         let r = 4. / (point.norm() + 0.01);
         Bounds::centered_square(r)
@@ -306,7 +306,7 @@ impl ParameterPlane for CubicPer1_1
     parameter_plane_impl!();
     default_name!();
 
-    fn periodicity_tolerance(&self) -> RealNum
+    fn periodicity_tolerance(&self) -> Real
     {
         1e-6
     }
@@ -317,8 +317,8 @@ impl ParameterPlane for CubicPer1_1
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: ComplexNum,
-        _base_param: ComplexNum,
+        z: Cplx,
+        _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -336,13 +336,13 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
-    fn map(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         z * (z * (z + c) + 1.)
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, param: ComplexNum) -> ComplexNum
+    fn start_point(&self, _point: Cplx, param: Cplx) -> Cplx
     {
         let mut u = (param * param - 3.).sqrt();
         if param.re < 0.
@@ -353,19 +353,19 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: ComplexNum, c: ComplexNum) -> ComplexNum
+    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         z * (2. * c + 3. * z) + 1.
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: ComplexNum, _c: ComplexNum) -> ComplexNum
+    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
         z * z
     }
 
     #[inline]
-    fn critical_points_child(&self, param: ComplexNum) -> ComplexVec
+    fn critical_points_child(&self, param: Cplx) -> ComplexVec
     {
         let u = (param * param - 3.).sqrt();
         vec![-(param + u) / 3., (u - param) / 3.]
@@ -384,7 +384,7 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: ComplexNum, _param: ComplexNum) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -415,7 +415,7 @@ impl ParameterPlane for CubicPer1_0
     }
 
     #[inline]
-    fn start_point(&self, _point: ComplexNum, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         -TWO_THIRDS * c
     }
@@ -435,7 +435,7 @@ impl ParameterPlane for CubicPer1_0
         vec![ZERO, -TWO_THIRDS * c]
     }
 
-    fn default_julia_bounds(&self, _point: ComplexNum, c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
     {
         Bounds::square(2.5, -ONE_THIRD * c)
     }

@@ -4,20 +4,20 @@ pub struct OrbitParams
 {
     pub max_iter: Period,
     pub min_iter: Period,
-    pub periodicity_tolerance: RealNum,
-    pub escape_radius: RealNum,
+    pub periodicity_tolerance: Real,
+    pub escape_radius: Real,
 }
 
 pub struct SimpleOrbit<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
-    V: Norm<RealNum>,
+    V: Norm<Real>,
 {
     f: F,
     param: P,
     max_iter: Period,
-    escape_radius: RealNum,
+    escape_radius: Real,
     pub z: V,
     pub iter: Period,
     pub state: EscapeState<V, V>,
@@ -27,9 +27,9 @@ impl<V, P, F> SimpleOrbit<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
-    V: Norm<RealNum>,
+    V: Norm<Real>,
 {
-    pub const fn new(f: F, z: V, param: P, max_iter: Period, escape_radius: RealNum) -> Self
+    pub const fn new(f: F, z: V, param: P, max_iter: Period, escape_radius: Real) -> Self
     {
         Self {
             f,
@@ -81,7 +81,7 @@ impl<V, P, F> Iterator for SimpleOrbit<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
-    V: Norm<RealNum>,
+    V: Norm<Real>,
 {
     type Item = (V, EscapeState<V, V>);
 
@@ -114,8 +114,8 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<RealNum> + Dist<RealNum>,
-    D: Norm<RealNum> + std::ops::MulAssign + From<f64>,
+    V: Norm<Real> + Dist<Real>,
+    D: Norm<Real> + std::ops::MulAssign + From<f64>,
 {
     f: F,
     map_and_multiplier: G,
@@ -123,8 +123,8 @@ where
     param: P,
     max_iter: Period,
     min_iter: Period,
-    periodicity_tolerance: RealNum,
-    escape_radius: RealNum,
+    periodicity_tolerance: Real,
+    escape_radius: Real,
     pub z_slow: V,
     pub z_fast: V,
     pub multiplier: D,
@@ -138,8 +138,8 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<RealNum> + Dist<RealNum>,
-    D: Norm<RealNum> + std::ops::MulAssign + From<f64>,
+    V: Norm<Real> + Dist<Real>,
+    D: Norm<Real> + std::ops::MulAssign + From<f64>,
 {
     pub fn new(
         f: F,
@@ -312,7 +312,7 @@ where
         &self,
         z0: V,
         _c: P,
-        tolerance: RealNum,
+        tolerance: Real,
         patience: usize,
     ) -> Option<(Period, D)>
     {
@@ -342,8 +342,8 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<RealNum> + Dist<RealNum>,
-    D: Norm<RealNum> + std::ops::MulAssign + From<f64>,
+    V: Norm<Real> + Dist<Real>,
+    D: Norm<Real> + std::ops::MulAssign + From<f64>,
 {
     type Item = (V, EscapeState<V, D>);
 
