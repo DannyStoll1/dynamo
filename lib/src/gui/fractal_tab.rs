@@ -59,7 +59,7 @@ impl FractalTab
     {
         ui.menu_button("Fractal", |ui| {
             self.polynomials_menu(ui);
-            self.quadratic_rational_maps_menu(ui);
+            self.rational_maps_menu(ui);
             self.transcendental_menu(ui);
             self.non_analytic_menu(ui);
         });
@@ -272,10 +272,10 @@ impl FractalTab
             fractal_menu_button!(self, ui, "Biquadratic Maps", BiquadraticMultParam);
         });
     }
-    fn quadratic_rational_maps_menu(&mut self, ui: &mut Ui)
+    fn rational_maps_menu(&mut self, ui: &mut Ui)
     {
-        ui.menu_button("Quadratic Rational Maps", |ui| {
-            ui.menu_button("Per(2)", |ui| {
+        ui.menu_button("Rational Maps", |ui| {
+            ui.menu_button("QuadRat Per(2)", |ui| {
                 fractal_menu_button!(self, ui, "Base Curve", QuadRatPer2);
                 ui.menu_button("Marked Cycle", |ui| {
                     fractal_menu_button_mc!(self, ui, QuadRatPer2, 1);
@@ -290,28 +290,30 @@ impl FractalTab
                     fractal_menu_button_mis!(self, ui, QuadRatPer2, 2, 2);
                 });
             });
-            ui.menu_button("Per(3)", |ui| {
+            ui.menu_button("QuadRat Per(3)", |ui| {
                 fractal_menu_button!(self, ui, "Base Curve", QuadRatPer3);
                 ui.menu_button("Marked Cycle curves", |ui| {
                     fractal_menu_button_mc!(self, ui, QuadRatPer3, 1);
                     fractal_menu_button_mc!(self, ui, QuadRatPer3, 4);
                 });
             });
-            ui.menu_button("Per(4)", |ui| {
+            ui.menu_button("QuadRat Per(4)", |ui| {
                 fractal_menu_button!(self, ui, "Base Curve", QuadRatPer4);
                 ui.menu_button("Marked Cycle curves", |ui| {
                     fractal_menu_button_mc!(self, ui, QuadRatPer4, 3);
                 });
             });
-            fractal_menu_button!(self, ui, "Per(5)", QuadRatPer5);
-            ui.menu_button("Preper(2, 1)", |ui| {
+            fractal_menu_button!(self, ui, "QuadRat Per(5)", QuadRatPer5);
+            ui.menu_button("QuadRat Preper(2, 1)", |ui| {
                 fractal_menu_button!(self, ui, "Base Curve", QuadRatPreper21);
                 ui.menu_button("Marked Cycle", |ui| {
                     fractal_menu_button_mc!(self, ui, QuadRatPreper21, 3);
                     fractal_menu_button_mc!(self, ui, QuadRatPreper21, 4);
                 });
             });
-            fractal_menu_button!(self, ui, "Symmetry Locus", QuadRatSymmetryLocus);
+            fractal_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
+            fractal_menu_button!(self, ui, "McMullen Family", McMullenFamily);
+            fractal_menu_button!(self, ui, "Minsik Han Φ", MinsikHanPhi);
         });
     }
 

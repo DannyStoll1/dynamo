@@ -21,7 +21,9 @@ impl Summarize for NoParam
     }
 }
 
-impl Summarize for ComplexNum
+impl<T> Summarize for T
+where
+    T: num::Num + std::fmt::Display,
 {
     fn summarize(&self) -> Option<String>
     {
@@ -53,6 +55,19 @@ where
 }
 
 impl ParamList for ComplexNum
+{
+    type Param = Self;
+    fn local_param(&self) -> Self::Param
+    {
+        *self
+    }
+    fn into_local_param(self) -> Self::Param
+    {
+        self
+    }
+}
+
+impl ParamList for i32
 {
     type Param = Self;
     fn local_param(&self) -> Self::Param

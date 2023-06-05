@@ -104,12 +104,12 @@ impl ParameterPlane for CubicPer1Lambda
         }
     }
 
-    fn get_param(&self) -> Self::Param
+    fn get_meta_params(&self) -> Self::Param
     {
         self.multiplier
     }
 
-    fn get_local_param(&self) -> Self::Param
+    fn get_param(&self) -> Self::Param
     {
         self.multiplier
     }

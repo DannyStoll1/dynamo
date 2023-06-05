@@ -368,12 +368,12 @@ impl ParameterPlane for BiquadraticMult
         self.multiplier = multiplier;
     }
 
-    fn get_param(&self) -> Self::MetaParam
+    fn get_meta_params(&self) -> Self::MetaParam
     {
         self.multiplier
     }
 
-    fn get_local_param(&self) -> <Self::MetaParam as ParamList>::Param
+    fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.multiplier
     }
@@ -661,7 +661,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         self.multiplier = value;
     }
 
-    fn get_param(&self) -> Self::Param
+    fn get_meta_params(&self) -> Self::Param
     {
         self.multiplier
     }

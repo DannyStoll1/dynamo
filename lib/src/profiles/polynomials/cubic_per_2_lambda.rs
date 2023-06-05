@@ -112,7 +112,7 @@ impl ParameterPlane for CubicPer2Lambda
         }
     }
 
-    fn get_param(&self) -> Self::MetaParam
+    fn get_meta_params(&self) -> Self::MetaParam
     {
         self.multiplier
     }
@@ -129,7 +129,7 @@ impl ParameterPlane for CubicPer2Lambda
 
     fn param_map(&self, m: ComplexNum) -> Self::Param
     {
-        let s = (1. - self.get_param()) / 4.;
+        let s = (1. - self.get_meta_params()) / 4.;
         let m2 = m * m;
         let denom = m + m + 1.;
         ComplexPair {

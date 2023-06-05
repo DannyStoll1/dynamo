@@ -179,7 +179,7 @@ macro_rules! basic_escape_encoding {
 
             let u = self.escape_radius().log2();
             let v = z.norm_sqr().log2();
-            let residual = (v / u).log($degree);
+            let residual = (v / u).log2();
             let potential =
                 ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
             PointInfo::Escaping { potential }
@@ -293,6 +293,7 @@ macro_rules! horner_monic {
 
 macro_rules! profile_imports {
     () => {
+        use crate::consts::*;
         use crate::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
         use crate::dynamics::julia::JuliaSet;
         use crate::dynamics::ParameterPlane;

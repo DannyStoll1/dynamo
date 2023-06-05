@@ -1,5 +1,13 @@
 use crate::types::*;
 
+pub struct OrbitParams
+{
+    pub max_iter: Period,
+    pub min_iter: Period,
+    pub periodicity_tolerance: RealNum,
+    pub escape_radius: RealNum,
+}
+
 pub struct SimpleOrbit<V, P, F>
 where
     F: Fn(V, P) -> V,
@@ -139,10 +147,7 @@ where
         early_bailout: B,
         z: V,
         param: P,
-        max_iter: Period,
-        min_iter: Period,
-        periodicity_tolerance: RealNum,
-        escape_radius: RealNum,
+        orbit_params: OrbitParams,
     ) -> Self
     {
         Self {
@@ -155,10 +160,10 @@ where
             multiplier: (1.).into(),
             iter: 0,
             state: EscapeState::NotYetEscaped,
-            max_iter,
-            min_iter,
-            escape_radius,
-            periodicity_tolerance,
+            max_iter: orbit_params.max_iter,
+            min_iter: orbit_params.min_iter,
+            periodicity_tolerance: orbit_params.periodicity_tolerance,
+            escape_radius: orbit_params.escape_radius,
         }
     }
 

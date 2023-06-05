@@ -1,13 +1,14 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
+use crate::consts::*;
 use crate::types::*;
 use egui::Color32;
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ColoringAlgorithm
 {
     PeriodMultiplier,
@@ -250,8 +251,10 @@ impl ColoringAlgorithm
     // }
 }
 
-impl Default for ColoringAlgorithm {
-    fn default() -> Self {
+impl Default for ColoringAlgorithm
+{
+    fn default() -> Self
+    {
         Self::PeriodMultiplier
     }
 }

@@ -232,7 +232,7 @@ impl ParameterPlane for SailboatParam
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, a: Self::Param) -> Self::Deriv
+    fn dynamical_derivative(&self, z: Self::Var, _a: Self::Param) -> Self::Deriv
     {
         let mut w = z + z;
         w.re *= z.re.signum();
@@ -241,7 +241,7 @@ impl ParameterPlane for SailboatParam
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
         ONE
     }

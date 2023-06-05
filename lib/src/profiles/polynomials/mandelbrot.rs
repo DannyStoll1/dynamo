@@ -10,10 +10,6 @@ fn df_dz(z: ComplexNum, _c: ComplexNum) -> ComplexNum
 {
     z + z
 }
-fn df_dc(_z: ComplexNum, _c: ComplexNum) -> ComplexNum
-{
-    ONE
-}
 
 #[derive(Clone, Debug)]
 pub struct Mandelbrot
@@ -52,9 +48,9 @@ impl ParameterPlane for Mandelbrot
         df_dz(z, c)
     }
 
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        df_dc(z, c)
+        ONE
     }
 
     fn early_bailout(

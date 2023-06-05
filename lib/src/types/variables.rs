@@ -1,4 +1,5 @@
-use super::{param_stack::Summarize, ComplexNum, RealNum, ZERO};
+use super::{param_stack::Summarize, ComplexNum, RealNum};
+use crate::consts::ZERO;
 use derive_more::{Add, Display, From, Sub};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

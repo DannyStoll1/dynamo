@@ -3,6 +3,7 @@
 #![feature(const_fn_floating_point_arithmetic)]
 
 pub mod coloring;
+pub mod consts;
 pub mod dynamics;
 pub mod gui;
 pub mod iter_plane;
@@ -145,7 +146,8 @@ mod tests
         let d = ComplexNum::new(7., 0.);
 
         let roots = solve_quartic(a, b, c, d);
-        for r in roots.iter() {
+        for r in roots.iter()
+        {
             let val = horner_monic!(r, a, b, c, d);
             assert!(val.norm() < 1e-13);
         }
@@ -168,8 +170,8 @@ mod tests
     #[test]
     fn xi()
     {
-        use std::f64::consts::FRAC_PI_6;
         use crate::math_utils::riemann_xi_d;
+        use std::f64::consts::FRAC_PI_6;
         let s = ComplexNum::new(2., 0.);
         let (val, dval) = riemann_xi_d(s);
         let val_true = ComplexNum::from(FRAC_PI_6);

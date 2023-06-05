@@ -329,7 +329,7 @@ where
 {
     pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param)
     {
-        let old_param = self.plane.get_local_param();
+        let old_param = self.plane.get_param();
         if old_param != new_param
         {
             self.plane.set_param(new_param);
@@ -608,7 +608,7 @@ where
 
     fn name(&self) -> String
     {
-        self.plane.get_local_param().summarize().map_or_else(
+        self.plane.get_param().summarize().map_or_else(
             || self.plane.name(),
             |local| format!("{}: {}", self.plane.name(), local),
         )

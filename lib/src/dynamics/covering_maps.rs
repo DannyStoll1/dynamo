@@ -151,9 +151,9 @@ where
         self.base_curve.gradient(z, c)
     }
 
-    fn get_param(&self) -> Self::MetaParam
+    fn get_meta_params(&self) -> Self::MetaParam
     {
-        self.base_curve.get_param()
+        self.base_curve.get_meta_params()
     }
 
     fn set_meta_param(&mut self, value: Self::MetaParam)

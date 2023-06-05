@@ -22,6 +22,8 @@ pub mod orbit;
 use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
 use std::ops::{MulAssign, Sub};
+
+use self::orbit::OrbitParams;
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
 pub trait ParameterPlane: Sync + Send + Clone
@@ -191,7 +193,12 @@ pub trait ParameterPlane: Sync + Send + Clone
                     let point = self.point_grid().map_pixel(x, y);
                     let param = self.param_map(point);
                     let start = self.start_point(point, param);
-
+                    let orbit_params = OrbitParams {
+                        max_iter: self.max_iter(),
+                        min_iter: self.min_iter(),
+                        periodicity_tolerance: self.periodicity_tolerance(),
+                        escape_radius: self.escape_radius(),
+                    };
                     let mut orbit = orbits
                         .get_or(|| {
                             RefCell::new(CycleDetectedOrbitFloyd::new(
@@ -200,10 +207,7 @@ pub trait ParameterPlane: Sync + Send + Clone
                                 |c, z| self.early_bailout(c, z),
                                 start,
                                 param,
-                                self.max_iter(),
-                                self.min_iter(),
-                                self.periodicity_tolerance(),
-                                self.escape_radius(),
+                                orbit_params,
                             ))
                         })
                         .borrow_mut();
@@ -230,13 +234,13 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     #[inline]
-    fn get_param(&self) -> Self::MetaParam
+    fn get_meta_params(&self) -> Self::MetaParam
     {
         Self::MetaParam::default()
     }
 
     #[inline]
-    fn get_local_param(&self) -> <Self::MetaParam as ParamList>::Param
+    fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         <Self::MetaParam as ParamList>::Param::default()
     }
@@ -330,16 +334,19 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     fn run_point(&self, start: Self::Var, param: Self::Param) -> PointInfo<Self::Deriv>
     {
+        let orbit_params = OrbitParams {
+            max_iter: self.max_iter(),
+            min_iter: self.min_iter(),
+            periodicity_tolerance: self.periodicity_tolerance(),
+            escape_radius: self.escape_radius(),
+        };
         let orbit = CycleDetectedOrbitFloyd::new(
             |z, c| self.map(z, c),
             |z, c| self.map_and_multiplier(z, c),
             |z, c| self.early_bailout(z, c),
             start,
             param,
-            self.max_iter(),
-            self.min_iter(),
-            self.periodicity_tolerance(),
-            self.escape_radius(),
+            orbit_params,
         );
         if let Some((_, state)) = orbit.last()
         {
@@ -387,16 +394,19 @@ pub trait ParameterPlane: Sync + Send + Clone
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
+        let orbit_params = OrbitParams {
+            max_iter: self.max_iter(),
+            min_iter: self.min_iter(),
+            periodicity_tolerance: self.periodicity_tolerance(),
+            escape_radius: self.escape_radius(),
+        };
         let orbit = CycleDetectedOrbitFloyd::new(
             |c, z| self.map(c, z),
             |c, z| self.map_and_multiplier(c, z),
             |c, z| self.early_bailout(c, z),
             start,
             param,
-            self.max_iter(),
-            self.min_iter(),
-            self.periodicity_tolerance(),
-            self.escape_radius(),
+            orbit_params,
         );
         let mut final_state = EscapeState::Bounded;
         let trajectory: Vec<Self::Var> = orbit

@@ -34,7 +34,7 @@ where
             parent: parent.clone(),
             max_iter: parent.max_iter(),
             min_iter: parent.min_iter(),
-            meta_params: parent.get_param(),
+            meta_params: parent.get_meta_params(),
             local_param,
             parent_selection,
         }
@@ -57,7 +57,7 @@ where
             parent: parent.clone(),
             max_iter: parent.max_iter(),
             min_iter: parent.min_iter(),
-            meta_params: parent.get_param(),
+            meta_params: parent.get_meta_params(),
             local_param,
             parent_selection,
         }
@@ -152,7 +152,7 @@ where
     }
 
     #[inline]
-    fn get_param(&self) -> Self::MetaParam
+    fn get_meta_params(&self) -> Self::MetaParam
     {
         ParamStack {
             local_param: self.local_param,
@@ -161,7 +161,7 @@ where
     }
 
     #[inline]
-    fn get_local_param(&self) -> Self::Param
+    fn get_param(&self) -> Self::Param
     {
         self.local_param
     }

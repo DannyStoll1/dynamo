@@ -1,4 +1,5 @@
-use crate::types::{ComplexNum, RealNum, OMEGA, OMEGA_BAR, ONE_THIRD, TWO_THIRDS, ZERO};
+use crate::consts::*;
+use crate::types::{ComplexNum, RealNum};
 use num_complex::ComplexFloat;
 use spfunc::gamma::{digamma, gamma};
 use std::f64::consts::PI;
