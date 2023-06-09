@@ -107,3 +107,96 @@ impl ParameterPlane for OddCubic
         Bounds::centered_square(2.2)
     }
 }
+
+impl HasDynamicalCovers for OddCubic
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |t| ONE_THIRD * t * t - 0.5;
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            2 =>
+            {
+                param_map = |t| ONE_THIRD * t * t + 1.;
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |t| t;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = todo!();
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match (preperiod, period)
+        {
+            (2, 1) =>
+            {
+                param_map = todo!();
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            (_, _) =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+}

@@ -107,6 +107,11 @@ impl Bounds
             max_y: radius + center.im,
         }
     }
+
+    pub fn is_nan(&self) -> bool
+    {
+        self.min_x.is_nan() || self.max_x.is_nan() || self.min_y.is_nan() || self.max_y.is_nan()
+    }
 }
 
 impl Default for Bounds

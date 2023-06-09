@@ -269,12 +269,7 @@ pub trait Pane
         self.grid().map_vec2(relative_pos)
     }
 
-    fn process_mouse_input(
-        &mut self,
-        pointer_value: Cplx,
-        zoom_factor: f32,
-        reselect_point: bool,
-    )
+    fn process_mouse_input(&mut self, pointer_value: Cplx, zoom_factor: f32, reselect_point: bool)
     {
         if (zoom_factor - 1.0).abs() > f32::EPSILON
         {
@@ -702,11 +697,19 @@ where
         let offset = new_bounds.center() - old_default_center;
         let new_center = old_center + offset;
 
-        new_bounds.zoom(self.child.zoom_factor, new_center);
-        new_bounds.recenter(new_center);
-
-        self.child.grid_mut().change_bounds(new_bounds);
-        self.child.set_param(T::from(new_param));
+        if !offset.is_nan()
+        {
+            new_bounds.zoom(self.child.zoom_factor, new_center);
+            new_bounds.recenter(new_center);
+            self.child.grid_mut().change_bounds(new_bounds);
+            self.child.set_param(T::from(new_param));
+        }
+        else {
+            self.child.grid_mut().change_bounds(new_bounds);
+            self.child.set_param(T::from(new_param));
+            self.child.grid_mut().resize_y(self.image_height);
+            self.child.set_task(ComputeTask::Compute);
+        }
     }
 
     // fn to_child(self) -> MainInterface<J, C> {
@@ -857,52 +860,52 @@ where
         let clicked = ctx.input(|i| i.pointer.any_click()) & !self.click_used;
         let zoom_factor = ctx.input(InputState::zoom_delta);
 
-        if let Some(pointer_pos) = ctx.pointer_latest_pos()
+        self.reset_click();
+
+        let Some(pointer_pos) = ctx.pointer_latest_pos() else {return};
+
+        if self.parent().frame_contains_pixel(pointer_pos)
         {
-            if self.parent().frame_contains_pixel(pointer_pos)
+            ctx.set_cursor_icon(CursorIcon::Crosshair);
+            self.set_active_pane(Some(PaneID::Parent));
+            let reselect_point = self.live_mode || clicked;
+            let pointer_value = self.parent().map_pixel(pointer_pos);
+            self.parent_mut()
+                .process_mouse_input(pointer_value, zoom_factor, reselect_point);
+            if reselect_point
             {
-                ctx.set_cursor_icon(CursorIcon::Crosshair);
-                self.set_active_pane(Some(PaneID::Parent));
-                let reselect_point = self.live_mode || clicked;
-                let pointer_value = self.parent().map_pixel(pointer_pos);
-                self.parent_mut()
-                    .process_mouse_input(pointer_value, zoom_factor, reselect_point);
-                if reselect_point
-                {
-                    let child_param = self.parent.plane.param_map(pointer_value);
-                    self.set_child_param(pointer_value, child_param);
-                }
-
-                if clicked
-                {
-                    self.consume_click();
-                    self.child_mut().clear_marked_curves();
-                    let param = self.parent.plane.param_map(pointer_value);
-                    let start = self.parent.plane.start_point(pointer_value, param);
-                    self.child_mut().mark_orbit_and_info(start.into());
-                }
+                let child_param = self.parent.plane.param_map(pointer_value);
+                self.set_child_param(pointer_value, child_param);
             }
-            else if self.child().frame_contains_pixel(pointer_pos)
-            {
-                ctx.set_cursor_icon(CursorIcon::Crosshair);
-                self.set_active_pane(Some(PaneID::Child));
-                let pointer_value = self.child().map_pixel(pointer_pos);
-                self.child_mut()
-                    .process_mouse_input(pointer_value, zoom_factor, clicked);
 
-                if clicked
-                {
-                    self.consume_click();
-                    self.child_mut().clear_marked_curves();
-                    self.child_mut().mark_orbit_and_info(pointer_value);
-                }
-            }
-            else
+            if clicked
             {
-                ctx.set_cursor_icon(CursorIcon::Default);
+                self.consume_click();
+                self.child_mut().clear_marked_curves();
+                let param = self.parent.plane.param_map(pointer_value);
+                let start = self.parent.plane.start_point(pointer_value, param);
+                self.child_mut().mark_orbit_and_info(start.into());
             }
         }
-        self.reset_click();
+        else if self.child().frame_contains_pixel(pointer_pos)
+        {
+            ctx.set_cursor_icon(CursorIcon::Crosshair);
+            self.set_active_pane(Some(PaneID::Child));
+            let pointer_value = self.child().map_pixel(pointer_pos);
+            self.child_mut()
+                .process_mouse_input(pointer_value, zoom_factor, clicked);
+
+            if clicked
+            {
+                self.consume_click();
+                self.child_mut().clear_marked_curves();
+                self.child_mut().mark_orbit_and_info(pointer_value);
+            }
+        }
+        else
+        {
+            ctx.set_cursor_icon(CursorIcon::Default);
+        }
     }
 
     fn toggle_live_mode(&mut self)
@@ -918,31 +921,30 @@ where
 
     fn show_save_dialog(&mut self, ctx: &Context)
     {
-        if let Some(save_dialog) = self.save_dialog.as_mut()
+        let Some(save_dialog) = self.save_dialog.as_mut() else {return};
+
+        save_dialog.show(ctx); // show the dialog
+
+        // Check if a file has been selected
+        if save_dialog.selected()
         {
-            save_dialog.show(ctx); // show the dialog
-
-            // Check if a file has been selected
-            if save_dialog.selected()
+            if let Some(path) = save_dialog.path()
             {
-                if let Some(path) = save_dialog.path()
-                {
-                    let filename = path.to_string_lossy().into_owned();
+                let filename = path.to_string_lossy().into_owned();
 
-                    let image_width: usize = 4096;
+                let image_width: usize = 4096;
 
-                    // // Use a slider for image width input
-                    // SidePanel::left("side_panel").show(ctx, |ui| {
-                    //     ui.heading("Enter image width:");
-                    //     ui.add(Slider::new(&mut image_width, 1..=1000));
-                    // });
+                // // Use a slider for image width input
+                // SidePanel::left("side_panel").show(ctx, |ui| {
+                //     ui.heading("Enter image width:");
+                //     ui.add(Slider::new(&mut image_width, 1..=1000));
+                // });
 
-                    let pane = self.get_pane_mut(self.pane_to_save);
-                    pane.save_image(image_width, &filename);
-                    self.save_dialog = None;
-                }
-                self.set_active_pane(None);
+                let pane = self.get_pane_mut(self.pane_to_save);
+                pane.save_image(image_width, &filename);
+                self.save_dialog = None;
             }
+            self.set_active_pane(None);
         }
     }
 

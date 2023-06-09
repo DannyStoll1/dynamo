@@ -28,13 +28,7 @@ use self::orbit::OrbitParams;
 
 pub trait ParameterPlane: Sync + Send + Clone
 {
-    type Var: Norm<Real>
-        + Dist<Real>
-        + Send
-        + Default
-        + From<Cplx>
-        + Into<Cplx>
-        + Display;
+    type Var: Norm<Real> + Dist<Real> + Send + Default + From<Cplx> + Into<Cplx> + Display;
     type Param: Into<Self::Var>
         + From<Cplx>
         + Clone
@@ -179,6 +173,11 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     fn compute_escape_times_into(&self, iter_counts: &mut Array2<PointInfo<Self::Deriv>>)
     {
+        if self.point_grid().is_nan()
+        {
+            return;
+        }
+
         let orbits = ThreadLocal::new();
 
         let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance

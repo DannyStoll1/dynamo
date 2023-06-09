@@ -56,11 +56,11 @@ impl ParameterPlane for Mandelbrot
     fn early_bailout(
         &self,
         _start: Cplx,
-        param: Cplx,
+        c: Self::Param,
     ) -> EscapeState<Cplx, Cplx>
     {
         // Main cardioid
-        let four_c = 4. * param;
+        let four_c = 4. * c;
         let y2 = four_c.im * four_c.im;
         let temp = four_c.re - 1.;
         let mu_norm2 = temp.mul_add(temp, y2);
@@ -71,7 +71,7 @@ impl ParameterPlane for Mandelbrot
             let multiplier = 1. - (1. - four_c).sqrt();
             let decay_rate = multiplier.norm();
             let fixed_point = 0.5 * multiplier;
-            let init_dist = (param - fixed_point).norm_sqr();
+            let init_dist = (c - fixed_point).norm_sqr();
             let potential = init_dist.log(decay_rate);
             let preperiod = potential as Period;
             return EscapeState::Periodic {
@@ -88,7 +88,7 @@ impl ParameterPlane for Mandelbrot
         {
             let decay_rate = mu2.norm();
             let fixed_point = -0.5 - 0.5 * (-four_c - 3.).sqrt();
-            let init_dist = (param - fixed_point).norm_sqr();
+            let init_dist = (c - fixed_point).norm_sqr();
             let potential = 2. * init_dist.log(decay_rate);
             let preperiod = potential as Period;
             return EscapeState::Periodic {

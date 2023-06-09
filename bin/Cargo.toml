@@ -11,7 +11,7 @@ description = "A tool for studying discrete time dynamical systems - Native UI"
 
 [dependencies]
 eframe = ">=0.22.0"
-fractal_lib = { version = ">=0.2.0", path = "../lib" }
+fractal_lib = { version = ">=0.3.0", path = "../lib" }
 
 [features]
 serde = ["fractal_lib/serde"]

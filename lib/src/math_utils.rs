@@ -1,16 +1,14 @@
 use crate::consts::*;
 use crate::types::{Cplx, Real};
 use num_complex::ComplexFloat;
-use spfunc::gamma::{digamma, gamma};
+pub use spfunc::{
+    gamma::{digamma, gamma, polygamma},
+    zeta::zeta,
+};
 use std::f64::consts::PI;
 
 #[must_use]
-pub fn weierstrass_p(
-    g2: Cplx,
-    g3: Cplx,
-    z: Cplx,
-    tolerance: Real,
-) -> (Cplx, Cplx)
+pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cplx)
 {
     let num_iters = (z.norm() / tolerance).log2().round() as i32 + 1;
     let shrink_scale = (2.0 as Real).powi(-num_iters);
@@ -94,8 +92,7 @@ pub fn solve_cubic(a: Cplx, b: Cplx, c: Cplx) -> [Cplx; 3]
 
 // Roots of the polynomial a + bx + cx^2 + dx^3 + x^4
 #[must_use]
-pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx)
-    -> [Cplx; 4]
+pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx) -> [Cplx; 4]
 {
     let c2 = c * c;
     let d2 = d * d;
@@ -131,20 +128,35 @@ fn bernoulli(n: u64) -> f64
     {
         0 => 1.,
         1 => -0.5,
-        2 => 1. / 6.,
-        4 | 8 => -1. / 30.,
-        6 => 1. / 42.,
-        10 => 5. / 66.,
-        12 => -691. / 2730.,
-        14 => 7. / 6.,
-        16 => -3617. / 510.,
-        18 => 43867. / 798.,
-        20 => -174611. / 330.,
-        22 => 854513. / 138.,
-        24 => -236364091. / 2730.,
-        26 => 8553103. / 6.,
-        28 => -23749461029. / 870.,
-        30 => 8615841276005. / 14322.,
+        2 => 0.166666666666667,
+        4 | 8 => -0.0333333333333333,
+        6 => 0.0238095238095238,
+        10 => 0.0757575757575758,
+        12 => -0.253113553113553,
+        14 => 1.16666666666667,
+        16 => -7.09215686274510,
+        18 => 54.9711779448622,
+        20 => -529.124242424242,
+        22 => 6192.12318840580,
+        24 => -86580.2531135531,
+        26 => 1.42551716666667e6,
+        28 => -2.72982310678161e7,
+        30 => 6.01580873900642e8,
+        32 => -1.51163157670922e10,
+        34 => 4.29614643061167e11,
+        36 => -1.37116552050883e13,
+        38 => 4.88332318973593e14,
+        40 => -1.92965793419401e16,
+        42 => 8.41693047573683e17,
+        44 => -4.03380718540595e19,
+        46 => 2.11507486380820e21,
+        48 => -1.20866265222965e23,
+        50 => 7.50086674607696e24,
+        52 => -5.03877810148107e26,
+        54 => 3.65287764848181e28,
+        56 => -2.84987693024509e30,
+        58 => 2.38654274996836e32,
+        60 => -2.13999492572253e34,
         _ => 0.,
     }
 }
@@ -170,7 +182,7 @@ fn zeta_t(k: u64, nf: f64, s: Cplx) -> Cplx
     t0 * t1 * t2
 }
 
-fn zeta_t_d(k: u64, nf: f64, s: Cplx) -> (Cplx, Cplx)
+fn zeta_t_d(k: u64, nf: f64, s: Cplx) -> [Cplx; 2]
 {
     let two_k = k + k;
     let t0 = bernoulli(two_k) / factorial(two_k);
@@ -178,13 +190,37 @@ fn zeta_t_d(k: u64, nf: f64, s: Cplx) -> (Cplx, Cplx)
     let dt1 = -t1 * nf.ln();
     let t2: Cplx = (0..two_k - 1).map(|j| s + (j as f64)).product();
     let dt2: Cplx = (0..two_k - 1).map(|j| t2 / (s + (j as f64))).sum();
-    (t0 * t1 * t2, t0 * (t1 * dt2 + dt1 * t2))
+    [t0 * t1 * t2, t0 * (t1 * dt2 + dt1 * t2)]
 }
 
+fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
+{
+    let two_k = k + k;
+    let t0 = bernoulli(two_k) / factorial(two_k);
+    let t1d0 = nf.powc(1. - s - (two_k as f64));
+    let t1d1 = -t1d0 * nf.ln();
+    let t1d2 = -t1d1 * nf.ln();
+
+    let t2d0: Cplx = (0..two_k - 1).map(|j| s + (j as f64)).product();
+    let t2d1: Cplx = (0..two_k - 1).map(|j| t2d0 / (s + (j as f64))).sum();
+    let t2d2: Cplx = (0..two_k - 1)
+        .map(|j| {
+            let v = s + (j as f64);
+            (t2d1 * v - t2d0) / (v * v)
+        })
+        .sum();
+    [
+        t0 * t1d0 * t2d0,
+        t0 * (t1d0 * t2d1 + t1d1 * t2d0),
+        t0 * (t1d0 * t2d2 + 2. * t1d1 * t2d1 + t1d2 * t2d0),
+    ]
+}
+
+// The Riemann zeta function
 pub fn riemann_zeta(s: Cplx) -> Cplx
 {
-    let n = 20;
-    let m = 19;
+    let n = 12;
+    let m = 12;
     let u = 1. - s;
     let nf = n as f64;
     let s0: Cplx = (1..n).map(|j| (j as f64).powc(-s)).sum();
@@ -195,28 +231,72 @@ pub fn riemann_zeta(s: Cplx) -> Cplx
     s0 + s1 - s2 + s3
 }
 
-pub fn riemann_zeta_d(s: Cplx) -> (Cplx, Cplx)
+// The Riemann zeta function and its derivative
+pub fn riemann_zeta_d(s: Cplx) -> [Cplx; 2]
 {
-    let n = 10;
-    let m = 9;
+    let n = 12;
+    let m = 12;
     let u = 1. - s;
     let nf = n as f64;
-    let (s0, ds0): (Cplx, Cplx) = (1..n)
+    let [s0, ds0]: [Cplx; 2] = (1..n)
         .map(|j| {
             let jf = j as f64;
             let term = jf.powc(-s);
-            (term, -term * jf.ln())
+            [term, -term * jf.ln()]
         })
-        .fold((ZERO, ZERO), |(a, da), (b, db)| (a + b, da + db));
+        .fold([ZERO, ZERO], |[a, da], [b, db]| [a + b, da + db]);
     let s1 = 0.5 * nf.powc(-s);
     let ds1 = -s1 * nf.ln();
     let s2 = nf.powc(u) / u;
     let ds2 = s2 * (u.inv() - nf.ln());
-    let (s3, ds3): (Cplx, Cplx) = (1..=m)
+    let [s3, ds3]: [Cplx; 2] = (1..=m)
         .map(|k| zeta_t_d(k, nf, s))
-        .fold((ZERO, ZERO), |(a, da), (b, db)| (a + b, da + db));
+        .fold([ZERO, ZERO], |[a, da], [b, db]| [a + b, da + db]);
 
-    (s0 + s1 - s2 + s3, ds0 + ds1 - ds2 + ds3)
+    [s0 + s1 - s2 + s3, ds0 + ds1 - ds2 + ds3]
+}
+
+// The Riemann zeta function and its first two derivatives
+pub fn riemann_zeta_d2(s: Cplx) -> [Cplx; 3]
+{
+    let n = 14;
+    let m = 10;
+    let u = 1. - s;
+    let nf = n as f64;
+    let (s0d0, s0d1, s0d2): (Cplx, Cplx, Cplx) = (1..n)
+        .map(|j| {
+            let jf = j as f64;
+            let term = jf.powc(-s);
+            let log_j = jf.ln();
+            let dterm = term * log_j;
+            (term, -dterm, dterm * log_j)
+        })
+        .fold((ZERO, ZERO, ZERO), |(a0, a1, a2), (b0, b1, b2)| {
+            (a0 + b0, a1 + b1, a2 + b2)
+        });
+
+    let log_n = nf.ln();
+    let s1d0 = 0.5 * nf.powc(-s);
+    let s1d1 = -s1d0 * log_n;
+    let s1d2 = -s1d1 * log_n;
+
+    let u_inv = u.inv();
+    let s2d0 = nf.powc(u) * u_inv;
+    let alpha = u_inv - nf.ln();
+    let s2d1 = s2d0 * alpha;
+    let s2d2 = s2d1 * alpha + s2d0 * u_inv * u_inv;
+
+    let [s3d0, s3d1, s3d2]: [Cplx; 3] = (1..=m)
+        .map(|k| zeta_t_d2(k, nf, s))
+        .fold([ZERO, ZERO, ZERO], |[a0, a1, a2], [b0, b1, b2]| {
+            [a0 + b0, a1 + b1, a2 + b2]
+        });
+
+    [
+        s0d0 + s1d0 - s2d0 + s3d0,
+        s0d1 + s1d1 - s2d1 + s3d1,
+        s0d2 + s1d2 - s2d2 + s3d2,
+    ]
 }
 
 pub fn riemann_xi(s: Cplx) -> Cplx
@@ -225,25 +305,70 @@ pub fn riemann_xi(s: Cplx) -> Cplx
     u * (s - 1.) * PI.powc(-u) * gamma(u) * riemann_zeta(s)
 }
 
-pub fn riemann_xi_d(s: Cplx) -> (Cplx, Cplx)
+pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
 {
+    if s.re < -5.
+    {
+        // avoid underflow issues for large neative s
+        let [z0, z1] = riemann_xi_d(1.0 - s);
+        return [z0, -z1];
+    }
     let x0 = s * 0.5;
     let x1 = s - 1.;
     let x2 = PI.powc(-x0);
     let dx2 = -x2 * PI.ln();
     let x3 = gamma(x0);
     let dx3 = x3 * digamma(x0);
-    let (x4, dx4) = riemann_zeta_d(s);
+    let [x4, dx4] = riemann_zeta_d(s);
     let x01 = x0 * x1;
-    (
+    [
         x01 * x2 * x3 * x4,
         x2 * x3 * x4 * (s - 0.5) + x01 * (x2 * x3 * dx4 + 0.5 * (dx2 * x3 * x4 + x2 * dx3 * x4)),
-    )
+    ]
 }
 
-pub fn roots_of_unity(degree: i32) -> impl Iterator<Item=Cplx>
+pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
+{
+    if s.re < -5.
+    {
+        // avoid underflow issues for large neative s
+        let [z0, z1, z2] = riemann_xi_d2(1.0 - s);
+        return [z0, -z1, z2];
+    }
+    let [z0, z1, z2] = riemann_zeta_d2(s);
+
+    let x0 = s - 1.;
+    let x1 = 0.5 * s;
+
+    let h = digamma(x1);
+    let k = polygamma(x1, 1);
+    let x3 = gamma(x1) * PI.powc(-x1);
+
+    let x2 = z0 * x1;
+    let x4 = z0 * x0;
+    let x5 = 0.5 * x4;
+    let x6 = x0 * z1;
+    let x7 = x1 * x6;
+    let x8 = s * x4;
+    let x9 = 0.25 * x8;
+    let x10 = h * x9;
+    let x12 = 0.125 * x8;
+    let y = x2 + x5 + x7;
+    [
+        x0 * x2 * x3,
+        x3 * ((h - LOG_PI) * x9 + y),
+        x3 * (h * (y + h * x12)
+            + k * x12
+            + s * z1
+            + z0
+            + x0 * x1 * z2
+            + LOG_PI * (-x10 + x12 * LOG_PI - y)
+            + x6),
+    ]
+}
+
+pub fn roots_of_unity(degree: i32) -> impl Iterator<Item = Cplx>
 {
     let theta = TAUI / (degree as Real);
-    (0..degree)
-        .map(move|k| (theta.clone() * (k as Real)).exp())
+    (0..degree).map(move |k| (theta.clone() * (k as Real)).exp())
 }

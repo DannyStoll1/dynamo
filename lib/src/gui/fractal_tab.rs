@@ -263,6 +263,7 @@ impl FractalTab
     fn polynomials_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Polynomials", |ui| {
+            ui.set_max_width(250.);
             ui.menu_button("Quadratic Family", |ui| {
                 fractal_menu_button!(self, ui, "Base Curve", Mandelbrot);
                 ui.menu_button("Marked Cycle", |ui| {
@@ -280,11 +281,47 @@ impl FractalTab
                 });
             });
             ui.menu_button("Cubic Family", |ui| {
-                fractal_menu_button!(self, ui, "Odd Cubics", OddCubic);
-                fractal_menu_button!(self, ui, "Per(1)", CubicPer1_0);
-                fractal_menu_button!(self, ui, "Per(2)", CubicPer2CritMarked);
+                ui.menu_button("Odd Cubics", |ui| {
+                    fractal_menu_button!(self, ui, "Base curve", OddCubic);
+                    ui.menu_button("Marked Cycle", |ui| {
+                        fractal_menu_button_mc!(self, ui, OddCubic, 1);
+                        fractal_menu_button_mc!(self, ui, OddCubic, 2);
+                    });
+                });
+                ui.menu_button("Per(1)", |ui| {
+                    fractal_menu_button!(self, ui, "Base Curve", CubicPer1_0);
+                    ui.menu_button("Marked Cycle", |ui| {
+                        fractal_menu_button_mc!(self, ui, CubicPer1_0, 1);
+                        fractal_menu_button_mc!(self, ui, CubicPer1_0, 2);
+                    });
+                    ui.menu_button("Marked Periodic Point", |ui| {
+                        fractal_menu_button_dyn!(self, ui, CubicPer1_0, 1);
+                        fractal_menu_button_dyn!(self, ui, CubicPer1_0, 2);
+                    });
+                    ui.menu_button("Marked Preperiodic Point", |ui| {
+                        fractal_menu_button_mis!(self, ui, CubicPer1_0, 1, 1);
+                    });
+                });
+                ui.menu_button("Per(2)", |ui| {
+                    fractal_menu_button!(self, ui, "Base curve", CubicPer2CritMarked);
+                    ui.menu_button("Marked Cycle", |ui| {
+                        fractal_menu_button_mc!(self, ui, CubicPer2CritMarked, 1);
+                        fractal_menu_button_mc!(self, ui, CubicPer2CritMarked, 2);
+                    });
+                });
                 fractal_menu_button!(self, ui, "Per(3)", CubicPer3_0);
-                fractal_menu_button!(self, ui, "Per(1, 1)", CubicPer1_1);
+                ui.menu_button("Per(1, 1)", |ui| {
+                    fractal_menu_button!(self, ui, "Base Curve", CubicPer1_1);
+                    ui.menu_button("Marked Cycle", |ui| {
+                        fractal_menu_button_mc!(self, ui, CubicPer1_1, 2);
+                    });
+                    ui.menu_button("Marked Periodic Point", |ui| {
+                        fractal_menu_button_dyn!(self, ui, CubicPer1_1, 2);
+                    });
+                    ui.menu_button("Marked Preperiodic Point", |ui| {
+                        fractal_menu_button_mis!(self, ui, CubicPer1_1, 1, 1);
+                    });
+                });
                 fractal_menu_button!(self, ui, "Per(1, lambda)", CubicPer1LambdaParam);
             });
             ui.menu_button("Unicritical Maps: z -> c*(1+z/d)^d", |ui| {
@@ -298,6 +335,7 @@ impl FractalTab
     fn rational_maps_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Rational Maps", |ui| {
+            ui.set_max_width(250.);
             ui.menu_button("QuadRat Per(2)", |ui| {
                 fractal_menu_button!(self, ui, "Base Curve", QuadRatPer2);
                 ui.menu_button("Marked Cycle", |ui| {
@@ -358,7 +396,7 @@ impl FractalTab
             fractal_menu_button!(self, ui, "z -> λcos(z)", Cosine);
             fractal_menu_button!(self, ui, "z -> cos(z) + c", CosineAdd);
             fractal_menu_button!(self, ui, "z -> sin(z) + z + τc", SineWander);
-            // fractal_menu_button!(self, ui, "Riemann Xi [SLOW!]", RiemannXi);
+            fractal_menu_button!(self, ui, "Riemann Xi Newton [SLOW!]", RiemannXi);
         });
     }
 

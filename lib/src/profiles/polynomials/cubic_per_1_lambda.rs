@@ -1,6 +1,13 @@
 use crate::macros::*;
+use crate::math_utils::solve_quadratic;
 use crate::types::variables::PlaneID;
 profile_imports!();
+
+const I: Cplx = Cplx::new(0., 1.);
+const I2: Cplx = Cplx::new(0., 2.);
+const A0: Cplx = Cplx::new(0., 27. / 64.);
+const A2: Cplx = Cplx::new(0., -21. / 16.);
+const A4: Cplx = Cplx::new(0., -7. / 4.);
 
 #[derive(Clone, Debug)]
 pub struct CubicPer1Lambda
@@ -407,7 +414,7 @@ impl ParameterPlane for CubicPer1_0
 {
     parameter_plane_impl!();
     default_name!();
-    basic_escape_encoding!(3., 1);
+    basic_escape_encoding!(3.);
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
@@ -435,8 +442,229 @@ impl ParameterPlane for CubicPer1_0
         vec![ZERO, -TWO_THIRDS * c]
     }
 
+    #[inline]
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let [r1, r2] = solve_quadratic(-ONE, c);
+                vec![ZERO, r1, r2]
+            }
+            _ => vec![],
+        }
+    }
+
     fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
     {
         Bounds::square(2.5, -ONE_THIRD * c)
+    }
+}
+
+impl HasDynamicalCovers for CubicPer1_0
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |t| t.inv() - t;
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            2 =>
+            {
+                param_map = |t| {
+                    let t2 = t * t;
+                    (t2 + 2.) * t / (t2 + 1.)
+                };
+                bounds = Bounds {
+                    min_x: -1.5,
+                    max_x: 1.5,
+                    min_y: -3.2,
+                    max_y: 3.2,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |t| t.inv() - t;
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            2 =>
+            {
+                param_map = |t| {
+                    let t2 = t * t;
+                    let numer = t * horner!(t2, 2.25, -2., 4.);
+                    let denom = horner!(t2, A0, A2, A4, I);
+                    numer / denom
+                };
+                bounds = Bounds {
+                    min_x: -3.2,
+                    max_x: 3.2,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match (preperiod, period)
+        {
+            (1, 1) =>
+            {
+                param_map = |t| {
+                    let t2 = t * t;
+                    -(t2 * t2 + t2 + 1.) / (t * t2 + t)
+                };
+                bounds = Bounds {
+                    min_x: -2.0,
+                    max_x: 2.0,
+                    min_y: -2.8,
+                    max_y: 2.8,
+                };
+            }
+            (_, _) =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+}
+
+impl HasDynamicalCovers for CubicPer1_1
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            2 =>
+            {
+                param_map = |t| {
+                    let t2 = t * t;
+                    (t2 + 3.) * t / (t2 + 1.)
+                };
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            2 =>
+            {
+                param_map = |t| {
+                    let t2 = t*t;
+                    let numer = -1. + t2*(3. - t*(8.+t*(3.-t2)));
+                    let denom = t*I2*(t2*t2 - 1.);
+                    numer / denom
+                };
+                bounds = Bounds {
+                    min_x: -4.8,
+                    max_x: 5.5,
+                    min_y: -5.0,
+                    max_y: 5.0,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match (preperiod, period)
+        {
+            (1, 1) =>
+            {
+                param_map = |t| {
+                    t + t.inv()
+                };
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            (_, _) =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 }

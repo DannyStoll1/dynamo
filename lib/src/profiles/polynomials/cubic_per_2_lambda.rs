@@ -1,6 +1,6 @@
 use crate::{
     macros::*,
-    math_utils::{solve_cubic, solve_quartic},
+    math_utils::{solve_cubic, solve_quartic, weierstrass_p},
     types::param_stack::Summarize,
 };
 use derive_more::{Add, Display, From};
@@ -345,5 +345,86 @@ impl ParameterPlane for CubicPer2CritMarked
     fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
     {
         Bounds::square(2.2, param / 2.)
+    }
+}
+
+impl HasDynamicalCovers for CubicPer2CritMarked
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |t| {
+                    let g2 = 0.5.into();
+                    let g3 = Cplx::new(-0.0625, 0.);
+                    let (mut x, y) = weierstrass_p(g2, g3, t, 0.01);
+
+                    x += x;
+                    x * (x - 1.) / (y + y - x + 0.5)
+                };
+                bounds = Bounds {
+                    min_x: -3.5,
+                    max_x: 3.5,
+                    min_y: -3.5,
+                    max_y: 3.5,
+                };
+            }
+            2 =>
+            {
+                param_map = |t| t + t.inv();
+                bounds = Bounds {
+                    min_x: -2.2,
+                    max_x: 2.2,
+                    min_y: -2.8,
+                    max_y: 2.8,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |t| {
+                    let g2 = 0.5.into();
+                    let g3 = Cplx::new(-0.0625, 0.);
+                    let (mut x, y) = weierstrass_p(g2, g3, t, 0.01);
+
+                    x += x;
+                    x * (x - 1.) / (y + y - x + 0.5)
+                };
+                bounds = Bounds {
+                    min_x: -3.5,
+                    max_x: 3.5,
+                    min_y: -3.5,
+                    max_y: 3.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
     }
 }

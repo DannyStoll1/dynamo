@@ -194,6 +194,22 @@ where
     {
         self.base_curve.default_julia_bounds(point, param)
     }
+
+    fn periodicity_tolerance(&self) -> crate::types::Real {
+        self.base_curve.periodicity_tolerance()
+    }
+
+    fn set_param(&mut self, value: <Self::MetaParam as crate::types::param_stack::ParamList>::Param) {
+        self.base_curve.set_param(value)
+    }
+
+    fn get_param(&self) -> <Self::MetaParam as crate::types::param_stack::ParamList>::Param {
+        self.base_curve.get_param()
+    }
+
+    fn cycle_active_plane(&mut self) {
+        self.base_curve.cycle_active_plane()
+    }
 }
 
 pub trait HasDynamicalCovers: super::ParameterPlane + Clone

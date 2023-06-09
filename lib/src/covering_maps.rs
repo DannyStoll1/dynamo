@@ -1,3 +1,0 @@
-ColoringMethod
-ColoringMethod
-ColoringMethod

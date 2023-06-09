@@ -15,7 +15,6 @@ pub struct Unicritical<const D: i32>
 impl<const D: i32> Unicritical<D>
 {
     const D_FLOAT: Real = D as Real;
-    const D_MINUS_1: Real = Self::D_FLOAT - 1.;
     const CRIT: Cplx = Cplx::new(-Self::D_FLOAT, 0.0);
     const DEFAULT_BOUNDS: Bounds =
         Bounds::square(-Self::D_FLOAT * 1.2, Cplx::new(-Self::D_FLOAT + 1.0, 0.0));
@@ -59,6 +58,12 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
     {
         Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
+    }
+
+    fn default_selection(&self) -> Cplx
+    {
+        let zeta = (TAUI / Self::D_FLOAT).exp();
+        (zeta - 1.) * Self::D_FLOAT
     }
 
     fn name(&self) -> String
