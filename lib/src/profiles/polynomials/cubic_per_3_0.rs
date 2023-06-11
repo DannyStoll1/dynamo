@@ -3,6 +3,7 @@ use derive_more::{Add, Display, From};
 profile_imports!();
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
 pub struct ComplexPair
 {

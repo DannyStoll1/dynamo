@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::{macros::*, math_utils::weierstrass_p};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -156,12 +156,25 @@ impl HasDynamicalCovers for OddCubic
         {
             1 =>
             {
-                param_map = todo!();
+                param_map = |t| ONE_THIRD * t * t - 0.5;
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
                     min_y: -2.5,
                     max_y: 2.5,
+                };
+            }
+            2 =>
+            {
+                param_map = |t| {
+                    let t2 = t * t;
+                    0.75 * t2 + ONE_THIRD / t2
+                };
+                bounds = Bounds {
+                    min_x: -1.5,
+                    max_x: 1.5,
+                    min_y: -1.5,
+                    max_y: 1.5,
                 };
             }
             _ =>
@@ -180,9 +193,48 @@ impl HasDynamicalCovers for OddCubic
 
         match (preperiod, period)
         {
-            (2, 1) =>
+            (1, 1) =>
             {
-                param_map = todo!();
+                param_map = |t| {
+                    let t2 = t * t;
+                    0.75 * t2 + 0.5 + ONE_THIRD / t2
+                };
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            (1, 2) =>
+            {
+                param_map = |t| {
+                    let g2 = ONE_NINTH.into();
+                    let g3 = ZERO;
+                    let (mut x, mut y) = weierstrass_p(g2, g3, t, 0.01);
+
+                    x *= 3.;
+                    y *= 6.;
+
+                    x = x.inv();
+                    y *= x;
+
+                    let y2 = y*y;
+                    let x2 = x*x;
+                    let x4 = x2*x2;
+
+                    let u0 = 3./y;
+                    let u2 = (x2*x + 3.*y2).inv();
+                    let u3 = x4*u0*u2 - x*u0;
+                    let u4 = 3./y2;
+                    let u5 = x4*x*u2*u4 - x2*u4;
+
+                    let u3_2 = u3*u3;
+                    let u5_2 = u5*u5;
+                    let v = u3_2 * u3_2 / (u5*u5_2) + 3.*u3_2 / u5_2;
+
+                    v.inv()
+                };
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,

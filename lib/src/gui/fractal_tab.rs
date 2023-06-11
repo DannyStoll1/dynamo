@@ -217,7 +217,7 @@ impl FractalTab
                 self.interface.consume_click();
                 ui.close_menu();
             }
-            else if ui.button("[P] Toggle Critical points (Julia)").clicked()
+            else if ui.button("[P] Toggle critical points (Julia)").clicked()
             {
                 self.interface
                     .child_mut()
@@ -287,6 +287,14 @@ impl FractalTab
                         fractal_menu_button_mc!(self, ui, OddCubic, 1);
                         fractal_menu_button_mc!(self, ui, OddCubic, 2);
                     });
+                    ui.menu_button("Marked Periodic Point", |ui| {
+                        fractal_menu_button_dyn!(self, ui, OddCubic, 1);
+                        fractal_menu_button_dyn!(self, ui, OddCubic, 2);
+                    });
+                    ui.menu_button("Marked Preperiodic Point", |ui| {
+                        fractal_menu_button_mis!(self, ui, OddCubic, 1, 1);
+                        fractal_menu_button_mis!(self, ui, OddCubic, 1, 2);
+                    });
                 });
                 ui.menu_button("Per(1)", |ui| {
                     fractal_menu_button!(self, ui, "Base Curve", CubicPer1_0);
@@ -323,6 +331,19 @@ impl FractalTab
                     });
                 });
                 fractal_menu_button!(self, ui, "Per(1, lambda)", CubicPer1LambdaParam);
+                ui.menu_button("2-cycle 0 <-> 1", |ui| {
+                    fractal_menu_button!(self, ui, "Base curve", CubicMarked2Cycle);
+                    ui.menu_button("Marked Cycle", |ui| {
+                        fractal_menu_button_mc!(self, ui, CubicMarked2Cycle, 1);
+                    });
+                    ui.menu_button("Marked Periodic Point", |ui| {
+                        fractal_menu_button_dyn!(self, ui, CubicMarked2Cycle, 2);
+                    });
+                    ui.menu_button("Marked Preperiodic Point", |ui| {
+                        fractal_menu_button_mis!(self, ui, CubicMarked2Cycle, 1, 1);
+                        fractal_menu_button_mis!(self, ui, CubicMarked2Cycle, 1, 2);
+                    });
+                });
             });
             ui.menu_button("Unicritical Maps: z -> c*(1+z/d)^d", |ui| {
                 seq!(D in 2..=8 {

@@ -9,6 +9,7 @@ pub const OMEGA: Cplx = Cplx::new(-0.5, 0.866025403784439);
 pub const OMEGA_BAR: Cplx = Cplx::new(-0.5, -0.866025403784439);
 pub const ONE_THIRD: f64 = 1. / 3.;
 pub const TWO_THIRDS: f64 = 2. / 3.;
+pub const ONE_NINTH: f64 = 1. / 9.;
 pub const SQRT_3: f64 = 1.73205080756888;
 pub const ISQRT_PI: Real = 0.56418958354775628694807945156; // 1 / sqrt(pi)
 pub const LOG_PI: f64 = 1.14472988584940;
