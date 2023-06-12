@@ -135,6 +135,22 @@ impl ParameterPlane for QuadRatPer2
     }
 }
 
+const A0: Cplx = Cplx::new(-5448., 6_051.300_686_629_28);
+const A1: Cplx = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
+const A2: Cplx = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
+const A3: Cplx = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
+const A4: Cplx = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
+const A5: Cplx = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
+const A6: Cplx = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
+
+const B0: Cplx = Cplx::new(-6174., 0.);
+const B1: Cplx = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
+const B2: Cplx = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
+const B3: Cplx = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
+const B4: Cplx = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
+const B5: Cplx = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
+const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
+
 impl HasDynamicalCovers for QuadRatPer2
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
@@ -177,24 +193,8 @@ impl HasDynamicalCovers for QuadRatPer2
 
                     let c = angle / c + pole;
 
-                    let a0 = Cplx::new(-5448., 6_051.300_686_629_28);
-                    let a1 = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
-                    let a2 = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
-                    let a3 = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
-                    let a4 = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
-                    let a5 = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
-                    let a6 = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
-
-                    let b0 = Cplx::new(-6174., 0.);
-                    let b1 = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
-                    let b2 = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
-                    let b3 = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
-                    let b4 = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
-                    let b5 = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
-                    let b6 = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
-
-                    let numer = a0 + c * (a1 + c * (a2 + c * (a3 + c * (a4 + c * (a5 + c * a6)))));
-                    let denom = b0 + c * (b1 + c * (b2 + c * (b3 + c * (b4 + c * (b5 + c * b6)))));
+                    let numer = A0 + c * (A1 + c * (A2 + c * (A3 + c * (A4 + c * (A5 + c * A6)))));
+                    let denom = B0 + c * (B1 + c * (B2 + c * (B3 + c * (B4 + c * (B5 + c * B6)))));
 
                     -numer / denom
                 };

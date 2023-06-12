@@ -71,3 +71,173 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         format!("Unicritical({})", D)
     }
 }
+
+const U3_MC_3_DEN_0_0: Cplx = Cplx::new(
+    15.019639247721374096483891512291213301,
+    48.282356214136125505791181322357303256,
+);
+const U3_MC_3_DEN_0_1: Cplx = Cplx::new(
+    11.411649536823681903898210262013797027,
+    8.4252528735805598634775380564467266474,
+);
+const U3_MC_3_DEN_1_0: Cplx = Cplx::new(
+    14.056957561484392537067372953583571855,
+    50.196352118588645802062628004790145640,
+);
+const U3_MC_3_DEN_1_1: Cplx = Cplx::new(
+    11.541242409948602031084332383773389961,
+    8.7081257821104883767887704456728548666,
+);
+const U3_MC_3_NUM_0: Cplx = Cplx::new(
+    -1744.4085890137323522786251794517118838,
+    1473.7406022924868333263830519688068733,
+);
+const U3_MC_3_NUM_1: Cplx = Cplx::new(
+    -343.84995190007797545558612484001381645,
+    1273.1006905106409712731472362996230616,
+);
+const U3_MC_3_NUM_2: Cplx = Cplx::new(
+    96.708321954359615099287578681161821316,
+    269.23872202836427878674659230859595175,
+);
+const U3_MC_3_NUM_3: Cplx = Cplx::new(
+    22.564029832221341871706338236042215261,
+    15.916865188953581664230580625630756331,
+);
+
+const U3_MC_3_CONST: Cplx = Cplx::new(
+    -2.2165312633441736636979371216505676846,
+    0.38892825772801723043367655111187170378,
+);
+
+const U3_MC_3_POLE_0: Cplx = Cplx::new(
+    -5.9140152052732332793003934321513703506,
+    -3.7098663410743973546667039624491877621,
+);
+
+const U3_MC_3_POLE_1: Cplx = Cplx::new(
+    -5.4976343315504486245978168298624266761,
+    -4.7153865325061625088108340939975388853,
+);
+
+const U3_MC_3_ANGLE: Cplx = Cplx::new(
+    0.5*SQRT_3, -0.5
+);
+
+// const U3_MC_3_POLE_0: Cplx = Cplx::new(
+//     -6.3071559227053154449928460559449771172,
+//     -4.4052647736416225259941095453003318476,
+// );
+//
+// const U3_MC_3_POLE_1: Cplx = Cplx::new(
+//     -5.2340864872432865860914863278284128442,
+//     -4.3028610084688658507946609003725230190,
+// );
+
+impl HasDynamicalCovers for Unicritical<3>
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            3 =>
+            {
+                param_map = |t| {
+                    let t = t * U3_MC_3_ANGLE;
+                    let t = (U3_MC_3_POLE_1 * t + U3_MC_3_POLE_0) / (t + 1.);
+                    let num0 = horner_monic!(
+                        t,
+                        U3_MC_3_NUM_0,
+                        U3_MC_3_NUM_1,
+                        U3_MC_3_NUM_2,
+                        U3_MC_3_NUM_3
+                    );
+                    let den0 = horner_monic!(t, U3_MC_3_DEN_0_0, U3_MC_3_DEN_0_1);
+                    let den1 = horner_monic!(t, U3_MC_3_DEN_1_0, U3_MC_3_DEN_1_1);
+                    if t.norm() < 1e-6
+                    {
+                        dbg!(num0, den0, den1);
+                    }
+                    U3_MC_3_CONST * num0 * num0 / (den0 * den0 * den0 * den1)
+                };
+                bounds = Bounds {
+                    min_x: -2.,
+                    max_x: 5.8,
+                    min_y: -2.,
+                    max_y: 3.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |t| todo!();
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match (preperiod, period)
+        {
+            (2, 1) =>
+            {
+                param_map = |t| todo!();
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 2.5,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            (_, _) =>
+            {
+                param_map = |t| todo!();
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+}
+
+// coeffs for mc(3) uni(1)
+// [(t^2 + (11.411649536823681903898210262013797027 + 8.4252528735805598634775380564467266474*I)*t + 15.019639247721374096483891512291213301 + 48.282356214136125505791181322357303256*I,
+//   -3),
+//  (t^2 + (11.541242409948602031084332383773389961 + 8.7081257821104883767887704456728548666*I)*t + 14.056957561484392537067372953583571855 + 50.196352118588645802062628004790145640*I,
+//  -1),
+// (t^4 + (22.564029832221341871706338236042215261 + 15.916865188953581664230580625630756331*I)*t^3 + (96.708321954359615099287578681161821316 + 269.23872202836427878674659230859595175*I)*t^2 + (-343.84995190007797545558612484001381645 + 1273.1006905106409712731472362996230616*I)*t - 1744.4085890137323522786251794517118838 + 1473.7406022924868333263830519688068733*I,
+//  2)]

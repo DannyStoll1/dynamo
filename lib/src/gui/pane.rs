@@ -704,7 +704,8 @@ where
             self.child.grid_mut().change_bounds(new_bounds);
             self.child.set_param(T::from(new_param));
         }
-        else {
+        else
+        {
             self.child.grid_mut().change_bounds(new_bounds);
             self.child.set_param(T::from(new_param));
             self.child.grid_mut().resize_y(self.image_height);
