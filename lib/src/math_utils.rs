@@ -126,7 +126,7 @@ pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx) -> [Cplx; 4]
     ]
 }
 
-fn bernoulli(n: u64) -> f64
+const fn bernoulli(n: u64) -> f64
 {
     match n
     {
@@ -374,7 +374,7 @@ pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
 pub fn roots_of_unity(degree: i32) -> impl Iterator<Item = Cplx>
 {
     let theta = TAUI / (degree as Real);
-    (0..degree).map(move |k| (theta.clone() * (k as Real)).exp())
+    (0..degree).map(move |k| (theta * (k as Real)).exp())
 }
 
 pub fn newton_fixed_iter<T, F, G>(f_and_df: F, start: T, target: T, iters: usize) -> T

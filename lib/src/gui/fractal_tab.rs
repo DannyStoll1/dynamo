@@ -331,6 +331,7 @@ impl FractalTab
                     });
                 });
                 fractal_menu_button!(self, ui, "Per(1, lambda)", CubicPer1LambdaParam);
+                fractal_menu_button!(self, ui, "Per(2, lambda)", CubicPer2LambdaParam);
                 ui.menu_button("2-cycle 0 <-> 1", |ui| {
                     fractal_menu_button!(self, ui, "Base curve", CubicMarked2Cycle);
                     ui.menu_button("Marked Cycle", |ui| {
@@ -362,7 +363,7 @@ impl FractalTab
                     fractal_menu_button!(self, ui, format!("Degree {}", D), Unicritical<D>);
                 });
             });
-            ui.menu_button("Chebyshev family: z -> (-1)^k * c * cheb2k(z/2)", |ui|{
+            ui.menu_button("Chebyshev family: z -> (-1)^k * c * cheb2k(z/2)", |ui| {
                 seq!(D in 1..=5 {
                     fractal_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);
                 });
@@ -452,8 +453,8 @@ impl FractalTab
     fn change_fractal<P, J, C, M, T>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
     where
         P: ParameterPlane + Clone + 'static,
-        J: ParameterPlane<Param = P::Param, MetaParam = M, Child = C> + Clone + 'static,
-        C: ParameterPlane<Param = P::Param> + From<J>,
+        J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+        C: ParameterPlane + From<J>,
         M: ParamList<Param = T>,
         T: From<P::Param> + std::fmt::Display,
     {

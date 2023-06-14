@@ -2,36 +2,37 @@ use crate::{
     macros::*,
     math_utils::{solve_cubic, solve_quartic, weierstrass_p},
     types::param_stack::Summarize,
+    types::{variables::PlaneID, CplxPair},
 };
 use derive_more::{Add, Display, From};
 profile_imports!();
 
-#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
-#[display(fmt = "[ a: {}, b: {} ] ", a, b)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ComplexPair
-{
-    a: Cplx,
-    b: Cplx,
-}
-impl Summarize for ComplexPair {}
-
-// Unused
-impl From<Cplx> for ComplexPair
-{
-    fn from(t: Cplx) -> Self
-    {
-        Self { a: t, b: ZERO }
-    }
-}
-impl From<ComplexPair> for Cplx
-{
-    fn from(c: ComplexPair) -> Self
-    {
-        let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
-        (c.b + disc) / (3. * c.a)
-    }
-}
+// #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+// #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
+// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+// pub struct CplxPair
+// {
+//     a: Cplx,
+//     b: Cplx,
+// }
+// impl Summarize for CplxPair {}
+//
+// // Unused
+// impl From<Cplx> for CplxPair
+// {
+//     fn from(t: Cplx) -> Self
+//     {
+//         Self { a: t, b: ZERO }
+//     }
+// }
+// impl From<CplxPair> for Cplx
+// {
+//     fn from(c: CplxPair) -> Self
+//     {
+//         let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
+//         (c.b + disc) / (3. * c.a)
+//     }
+// }
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -40,6 +41,7 @@ pub struct CubicPer2Lambda
     point_grid: PointGrid,
     max_iter: Period,
     multiplier: Cplx,
+    starting_crit: PlaneID,
 }
 
 impl CubicPer2Lambda
@@ -49,12 +51,21 @@ impl CubicPer2Lambda
 
 impl Default for CubicPer2Lambda
 {
-    fractal_impl!(multiplier, ZERO);
+    fn default() -> Self
+    {
+        let point_grid = PointGrid::default().with_same_height(Self::DEFAULT_BOUNDS);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            multiplier: ZERO,
+            starting_crit: PlaneID::ZPlane,
+        }
+    }
 }
 
 impl ParameterPlane for CubicPer2Lambda
 {
-    parameter_plane_impl!(Cplx, ComplexPair, Cplx, Cplx);
+    parameter_plane_impl!(Cplx, CplxPair, Cplx, Cplx);
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -66,7 +77,7 @@ impl ParameterPlane for CubicPer2Lambda
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        ComplexPair { a, b }: Self::Param,
+        CplxPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let x1 = -a - 1.;
@@ -74,7 +85,7 @@ impl ParameterPlane for CubicPer2Lambda
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, ComplexPair { a, b }: Self::Param) -> Self::Deriv
+    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
     {
         horner!(z, -a - 1., -(b + b), 3. * a)
     }
@@ -86,10 +97,15 @@ impl ParameterPlane for CubicPer2Lambda
     }
 
     #[inline]
-    fn start_point(&self, _m: Cplx, ComplexPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _m: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
         let disc = (3. * a * (a + 1.) + b * b).sqrt();
-        (b + disc) / (3. * a)
+
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => (b + disc) / (3. * a),
+            PlaneID::WPlane => (b - disc) / (3. * a),
+        }
     }
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
@@ -127,15 +143,20 @@ impl ParameterPlane for CubicPer2Lambda
         self.multiplier = value
     }
 
-    fn param_map(&self, m: Cplx) -> Self::Param
+    fn param_map(&self, t: Cplx) -> Self::Param
     {
-        let s = (1. - self.get_meta_params()) / 4.;
-        let m2 = m * m;
-        let denom = m + m + 1.;
-        ComplexPair {
-            a: (s - m2) / denom,
-            b: (m2 + m + s) / denom,
+        let s = (1. - self.multiplier) / 4.;
+        let t2 = t * t;
+        let denom = t + t + 1.;
+        CplxPair {
+            a: (s - t2) / denom,
+            b: (t2 + t + s) / denom,
         }
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_crit = self.starting_crit.swap();
     }
 
     fn name(&self) -> String
@@ -150,11 +171,21 @@ pub struct CubicPer2LambdaParam
 {
     point_grid: PointGrid,
     max_iter: Period,
+    starting_crit: PlaneID,
 }
 
 impl Default for CubicPer2LambdaParam
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fn default() -> Self
+    {
+        let bounds = Bounds::centered_square(2.5);
+        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            starting_crit: PlaneID::ZPlane,
+        }
+    }
 }
 
 impl ParameterPlane for CubicPer2LambdaParam
@@ -166,29 +197,28 @@ impl ParameterPlane for CubicPer2LambdaParam
     type Child = CubicPer2Lambda;
 
     basic_plane_impl!();
-    basic_escape_encoding!(3., 1.);
+    basic_escape_encoding!(2., 1.);
 
     #[inline]
-    fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
     {
-        let z2 = z * z;
-        z * (z2 + a)
+        let a = 0.25 * (1.0 - l);
+        horner!(z, a, -(a + 1.), -a, a)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        let u = z2 + a;
-        (z * u, u + z * (a + z + z))
+        let a = 0.25 * (1.0 - l);
+        let f = horner!(z, a, -(a + 1.), -a, a);
+        let df = horner!(z, -(a + 1.), -(a + a), 3. * a);
+        (f, df)
     }
 
     #[inline]
     fn dynamical_derivative(&self, z: Self::Var, a: Self::Param) -> Self::Deriv
     {
-        let z2 = z * z;
-        let u = z2 + a;
-        u + z * (a + z + z)
+        unimplemented!()
     }
 
     #[inline]
@@ -198,9 +228,20 @@ impl ParameterPlane for CubicPer2LambdaParam
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, l: Self::Param) -> Self::Var
     {
-        -ONE_THIRD * (c + c)
+        let a = (1.0 - l) * 0.25;
+        let disc = (a * (1. - l + 3.)).sqrt();
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => ONE_THIRD * (1. + disc / a),
+            PlaneID::WPlane => ONE_THIRD * (1. - disc / a),
+        }
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_crit = self.starting_crit.swap();
     }
 
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
@@ -238,6 +279,7 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
             point_grid,
             max_iter: parent.max_iter(),
             multiplier: param,
+            starting_crit: parent.starting_crit,
         }
     }
 }

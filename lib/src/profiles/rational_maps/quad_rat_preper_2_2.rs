@@ -85,11 +85,11 @@ impl ParameterPlane for QuadRatPreper22
         let u = self.escape_radius().log(expansion_rate);
         let v = z.norm_sqr().log(expansion_rate);
         let residual = u - v;
-        let potential = IterCount::from(iters) + 2.*(residual as IterCount);
+        let potential = 2.0f64.mul_add(residual as IterCount, IterCount::from(iters));
         PointInfo::Escaping { potential }
     }
 
-    fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, CplxPair { a: _, b }: Self::Param) -> Vec<Self::Var>
     {
         let disc = (b + 1.).sqrt();
         vec![1. + disc, 1. - disc]

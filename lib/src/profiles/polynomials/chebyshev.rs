@@ -27,20 +27,20 @@ impl ChebyshevCoeffTable
     pub fn extend(&mut self)
     {
         let n = self.coeffs.len();
-        if n % 2 == 0
+        let coeff0 = self.coeffs[n - 2].iter().chain(once(&0));
+
+        let new_coeff: Vec<i32> = if n % 2 == 0
         {
-            let coeff0 = self.coeffs[n - 2].iter().chain(once(&0)); // -1  + 2x^2
-            let coeff1 = once(&0).chain(self.coeffs[n - 1].iter()); // -3x + 4x^3
-            let new_coeff = coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect();
-            self.coeffs.push(new_coeff);
+            let coeff1 = once(&0).chain(self.coeffs[n - 1].iter());
+            coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect()
         }
         else
         {
-            let coeff0 = self.coeffs[n - 2].iter().chain(once(&0)); //  x
-            let coeff1 = self.coeffs[n - 1].iter(); // -1 + 2x^2
-            let new_coeff = coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect();
-            self.coeffs.push(new_coeff);
-        }
+            let coeff1 = self.coeffs[n - 1].iter();
+            coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect()
+        };
+
+        self.coeffs.push(new_coeff);
     }
 
     pub fn extend_to(&mut self, degree: usize)
@@ -173,12 +173,12 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         ONE
     }
 
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
     }
 
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
     }

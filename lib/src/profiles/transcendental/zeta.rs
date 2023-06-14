@@ -96,7 +96,7 @@ impl ParameterPlane for RiemannXiNewton
         true
     }
 
-    fn start_point(&self, s: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, s: Cplx, _c: Self::Param) -> Self::Var
     {
         s
     }
