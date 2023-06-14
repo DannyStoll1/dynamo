@@ -1,11 +1,15 @@
 use crate::consts::*;
-use crate::types::{Cplx, Real};
+use crate::types::{Cplx, Real, Norm};
 use num_complex::ComplexFloat;
 pub use spfunc::{
     gamma::{digamma, gamma, polygamma},
     zeta::zeta,
 };
 use std::f64::consts::PI;
+use std::ops::{AddAssign, Div, Sub};
+
+// pub mod erf;
+// pub mod poly_solve;
 
 #[must_use]
 pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cplx)
@@ -371,4 +375,38 @@ pub fn roots_of_unity(degree: i32) -> impl Iterator<Item = Cplx>
 {
     let theta = TAUI / (degree as Real);
     (0..degree).map(move |k| (theta.clone() * (k as Real)).exp())
+}
+
+pub fn newton_fixed_iter<T, F, G>(f_and_df: F, start: T, target: T, iters: usize) -> T
+where
+    F: Fn(T) -> (T, T),
+    T: Sub<Output = T> + Div<Output = T> + AddAssign + Copy,
+{
+    let mut z = start;
+    for _ in 0..iters
+    {
+        let (f, df) = f_and_df(z);
+        z += (target - f) / df;
+    }
+    z
+}
+
+pub fn newton_until_convergence<T, F, G>(f_and_df: F, start: T, target: T, tolerance: Real) -> T
+where
+    F: Fn(T) -> (T, T),
+    T: Sub<Output = T> + Div<Output = T> + AddAssign + Norm<Real> + Copy,
+{
+    let mut z = start;
+    let mut z_old = start;
+
+    let mut error = Real::INFINITY;
+
+    while error > tolerance
+    {
+        let (f, df) = f_and_df(z);
+        z += (target - f) / df;
+        error = (z - z_old).norm_sqr();
+        z_old = z;
+    }
+    z
 }

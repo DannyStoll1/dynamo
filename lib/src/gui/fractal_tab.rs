@@ -349,18 +349,22 @@ impl FractalTab
                 ui.menu_button("Degree 3", |ui| {
                     fractal_menu_button!(self, ui, "Base curve", Unicritical<3>);
                     ui.menu_button("Marked Cycle", |ui| {
+                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 1);
+                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 2);
                         fractal_menu_button_mc!(self, ui, Unicritical<3>, 3);
                     });
-                    // ui.menu_button("Marked Periodic Point", |ui| {
-                    //     fractal_menu_button_dyn!(self, ui, Unicritical<3>, 2);
-                    // });
-                    // ui.menu_button("Marked Preperiodic Point", |ui| {
-                    //     fractal_menu_button_mis!(self, ui, Unicritical<3>, 1, 1);
-                    //     fractal_menu_button_mis!(self, ui, Unicritical<3>, 1, 2);
-                    // });
+                    ui.menu_button("Marked Periodic Point", |ui| {
+                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 1);
+                        fractal_menu_button_dyn!(self, ui, Unicritical<3>, 2);
+                    });
                 });
                 seq!(D in 4..=8 {
                     fractal_menu_button!(self, ui, format!("Degree {}", D), Unicritical<D>);
+                });
+            });
+            ui.menu_button("Chebyshev family: z -> (-1)^k * c * cheb2k(z/2)", |ui|{
+                seq!(D in 1..=5 {
+                    fractal_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);
                 });
             });
             fractal_menu_button!(self, ui, "Biquadratic Maps", BiquadraticMultParam);
@@ -406,6 +410,7 @@ impl FractalTab
                     fractal_menu_button_mc!(self, ui, QuadRatPreper21, 4);
                 });
             });
+            fractal_menu_button!(self, ui, "QuadRat Preper(2, 2)", QuadRatPreper22);
             fractal_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
             ui.menu_button("McMullen Family: z -> z^m + 1/(c*z^n)", |ui| {
                 seq!(N in 2..=8 {
@@ -497,3 +502,4 @@ impl eframe::App for FractalTab
         });
     }
 }
+// (-1)^k * c * chebyshev(z/2k)

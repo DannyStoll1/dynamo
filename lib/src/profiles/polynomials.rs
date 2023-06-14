@@ -19,5 +19,8 @@ pub use cubic_marked_2_cycle::CubicMarked2Cycle;
 pub mod unicritical;
 pub use unicritical::Unicritical;
 
+pub mod chebyshev;
+pub use chebyshev::Chebyshev;
+
 pub mod biquadratic;
 pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam};

@@ -1,4 +1,5 @@
 use num_complex::Complex;
+use derive_more::{Add, From, Display};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -55,6 +56,8 @@ pub enum PointInfo<D>
 
 use std::fmt::Display;
 
+use self::param_stack::Summarize;
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitInfo<V, P, D>
@@ -91,5 +94,63 @@ where
             "Parameter: {}\nStarting point: {}\n{}",
             self.param, self.start, result_summary
         )
+    }
+}
+
+
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[display(fmt = "[ a: {}, b: {} ] ", a, b)]
+pub struct CplxPair
+{
+    pub a: Cplx,
+    pub b: Cplx,
+}
+
+impl Summarize for CplxPair {}
+
+impl From<Cplx> for CplxPair
+{
+    fn from(_z: Cplx) -> Self
+    {
+        unimplemented!()
+    }
+}
+
+impl From<CplxPair> for Cplx
+{
+    fn from(_value: CplxPair) -> Self
+    {
+        unimplemented!()
+    }
+}
+
+
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[display(fmt = "[ a: {}, b: {}, c: {}, d: {} ] ", a, b, c, d)]
+pub struct ComplexQuad
+{
+    pub a: Cplx,
+    pub b: Cplx,
+    pub c: Cplx,
+    pub d: Cplx,
+}
+
+impl Summarize for ComplexQuad {}
+
+impl From<Cplx> for ComplexQuad
+{
+    fn from(_z: Cplx) -> Self
+    {
+        unimplemented!()
+    }
+}
+
+impl From<ComplexQuad> for Cplx
+{
+    fn from(_value: ComplexQuad) -> Self
+    {
+        unimplemented!()
     }
 }

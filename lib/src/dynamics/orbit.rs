@@ -308,13 +308,8 @@ where
         }
     }
 
-    fn compute_period(
-        &self,
-        z0: V,
-        _c: P,
-        tolerance: Real,
-        patience: usize,
-    ) -> Option<(Period, D)>
+    fn compute_period(&self, z0: V, _c: P, tolerance: Real, patience: usize)
+        -> Option<(Period, D)>
     {
         let mut z = z0;
         let mut dz: D;

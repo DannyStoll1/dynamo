@@ -1,33 +1,5 @@
-use crate::{macros::*, math_utils::solve_cubic, types::param_stack::Summarize};
-use derive_more::{Add, Display, From};
+use crate::{macros::*, math_utils::solve_cubic, types::CplxPair};
 profile_imports!();
-
-#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {}, b: {} ] ", a, b)]
-pub struct ComplexPair
-{
-    pub a: Cplx,
-    pub b: Cplx,
-}
-
-impl Summarize for ComplexPair {}
-
-impl From<Cplx> for ComplexPair
-{
-    fn from(_z: Cplx) -> Self
-    {
-        todo!()
-    }
-}
-
-impl From<ComplexPair> for Cplx
-{
-    fn from(_value: ComplexPair) -> Self
-    {
-        todo!()
-    }
-}
 
 // Cubic polynomials with a critical 3-cycle 0 -2-> 1 -> a+b+1 -> 0
 #[derive(Clone, Debug, PartialEq)]
@@ -45,7 +17,7 @@ impl Default for CubicPer3_0
 impl ParameterPlane for CubicPer3_0
 {
     type Var = Cplx;
-    type Param = ComplexPair;
+    type Param = CplxPair;
     type MetaParam = NoParam;
     type Deriv = Cplx;
     type Child = JuliaSet<Self>;
@@ -56,19 +28,19 @@ impl ParameterPlane for CubicPer3_0
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        ComplexPair { a, b }: Self::Param,
+        CplxPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z * z;
         (1. + z2 * (b + a * z), z * (3. * a * z + b + b))
     }
 
-    fn map(&self, z: Self::Var, ComplexPair { a, b }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {
         horner!(z, 1., 0., b, a)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, ComplexPair { a, b }: Self::Param) -> Self::Deriv
+    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
     {
         z * (3. * a + b + b)
     }
@@ -83,13 +55,13 @@ impl ParameterPlane for CubicPer3_0
         let u2_inv = (u * u).inv();
         let a = 1. - t - 3. / u + u2_inv;
         let b = t * t * t * u2_inv + u / t;
-        ComplexPair { a, b }
+        CplxPair { a, b }
     }
-    fn start_point(&self, _point: Cplx, ComplexPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
         -(b + b) / (3. * a)
     }
-    fn critical_points_child(&self, ComplexPair { a, b }: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, -(b + b) / (3. * a)]
     }

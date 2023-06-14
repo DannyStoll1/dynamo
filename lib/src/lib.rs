@@ -290,14 +290,26 @@ mod tests
     }
 
     #[test]
-    fn erf()
+    fn chebyshev()
     {
-        use crate::math_utils::erf::erf;
-        let s = 0.3;
-        let val = erf(s);
-        let val_true = 0.328626759459127;
-        let err = (val - val_true).abs();
-        dbg!(err);
-        assert!(err < 1e-11);
+        let chebyshev: Chebyshev<3> = Default::default();
+        let c = Cplx::new(1.0, 0.0);
+        let z = Cplx::new(10.0, 0.0);
+        let (val, mul) = chebyshev.map_and_multiplier(z, c);
+        dbg!(val, mul);
+        assert!((val + 470449.).norm() < 1e-2);
+        assert!((mul + 288090.).norm() < 1e-2);
     }
+
+    // #[test]
+    // fn erf()
+    // {
+    //     use crate::math_utils::erf::erf;
+    //     let s = 0.3;
+    //     let val = erf(s);
+    //     let val_true = 0.328626759459127;
+    //     let err = (val - val_true).abs();
+    //     dbg!(err);
+    //     assert!(err < 1e-11);
+    // }
 }
