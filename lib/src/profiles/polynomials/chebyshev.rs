@@ -1,4 +1,5 @@
 use crate::{macros::*, math_utils::solve_quadratic};
+use std::f64::consts::SQRT_2;
 profile_imports!();
 use std::iter::once;
 
@@ -103,11 +104,32 @@ impl<const D: Period> Default for Chebyshev<D>
     }
 }
 
+const CHEBYSHEV_4_CRIT: [Real; 7] = [
+    0.0,
+    SQRT_2,
+    -SQRT_2,
+    -1.84775906502257,  // -sqrt(2+sqrt(2))
+    1.84775906502257,   // sqrt(2+sqrt(2))
+    -0.765366864730180, // -sqrt(2-sqrt(2))
+    0.765366864730180,  // sqrt(2-sqrt(2))
+];
+
+const CHEBYSHEV_5_CRIT: [Real; 9] = [
+    -1.90211303259031,
+    -1.61803398874989,
+    -1.17557050458495,
+    -0.618033988749895,
+    0.0,
+    0.618033988749895,
+    1.17557050458495,
+    1.61803398874989,
+    1.90211303259031,
+];
+
 impl<const D: Period> ParameterPlane for Chebyshev<D>
 {
     parameter_plane_impl!();
     basic_escape_encoding!((2 * D) as Real, 1);
-    default_name!();
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
@@ -175,11 +197,31 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
-        vec![ZERO]
+        match D
+        {
+            2 =>
+            {
+                let sqrt2 = SQRT_2.into();
+                vec![ZERO, sqrt2, -sqrt2]
+            }
+            3 =>
+            {
+                let sqrt3 = SQRT_3.into();
+                vec![ZERO, sqrt3, -sqrt3, ONE, -ONE]
+            }
+            4 => CHEBYSHEV_4_CRIT.map(|x|x.into()).to_vec(),
+            5 => CHEBYSHEV_5_CRIT.map(|x|x.into()).to_vec(),
+            _ => vec![ZERO],
+        }
     }
 
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
+    }
+
+    fn name(&self) -> String
+    {
+        format!("Chebyshev degree {}", D)
     }
 }

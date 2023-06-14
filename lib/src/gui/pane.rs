@@ -1027,6 +1027,19 @@ where
                 Err(e) => println!("Error parsing height: {e:?}"),
             }
         }
+        //
+        // if shortcut_used!(ctx, &CTRL_C)
+        // {
+        //     if let Some(pane) = self.get_active_pane_mut() {
+        //     match input!("Enter new param: ").parse::<Cplx>()
+        //     {
+        //         Ok(new_param) =>
+        //         {
+        //             pane.set_param(new_param);
+        //         }
+        //         Err(e) => println!("Error parsing param: {e:?}"),
+        //     }
+        // }
 
         if shortcut_used!(ctx, &KEY_UP)
         {

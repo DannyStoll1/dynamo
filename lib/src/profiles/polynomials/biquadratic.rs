@@ -304,36 +304,56 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        // vec![Bicomplex::PlaneA(-0.5 * c.a), Bicomplex::PlaneB(-0.5 * c.b)]
-
-        let disc = (c.a * c.a - c.b - c.b).sqrt();
-        vec![
-            Bicomplex::PlaneA(-0.5 * c.a),
-            Bicomplex::PlaneA(-0.5 * (c.a + disc)),
-            Bicomplex::PlaneA(-0.5 * (c.a - disc)),
-        ]
-        // let disc = (c.b * c.b - c.a - c.a).sqrt();
-        // vec![
-        //     Bicomplex::PlaneB(-0.5 * c.b),
-        //     Bicomplex::PlaneB(-0.5 * (c.b + disc)),
-        //     Bicomplex::PlaneB(-0.5 * (c.b - disc)),
-        // ]
+        match self.starting_plane
+        {
+            PlaneID::ZPlane =>
+            {
+                let disc = (c.a * c.a - c.b - c.b).sqrt();
+                vec![
+                    Bicomplex::PlaneA(-0.5 * c.a),
+                    Bicomplex::PlaneA(-0.5 * (c.a + disc)),
+                    Bicomplex::PlaneA(-0.5 * (c.a - disc)),
+                ]
+            }
+            PlaneID::WPlane =>
+            {
+                let disc = (c.b * c.b - c.a - c.a).sqrt();
+                vec![
+                    Bicomplex::PlaneB(-0.5 * c.b),
+                    Bicomplex::PlaneB(-0.5 * (c.b + disc)),
+                    Bicomplex::PlaneB(-0.5 * (c.b - disc)),
+                ]
+            }
+        }
     }
 
     fn cycles_child(&self, ComplexPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period
         {
-            2 =>
+            2 => match self.starting_plane
             {
-                let [r0, r1, r2] = solve_cubic(a * b - 1., a * a + b, a + a);
-                vec![
-                    Bicomplex::PlaneA(ZERO),
-                    Bicomplex::PlaneA(r0),
-                    Bicomplex::PlaneA(r1),
-                    Bicomplex::PlaneA(r2),
-                ]
-            }
+                PlaneID::ZPlane =>
+                {
+                    let [r0, r1, r2] = solve_cubic(a * b - 1., a * a + b, a + a);
+                    vec![
+                        Bicomplex::PlaneA(ZERO),
+                        Bicomplex::PlaneA(r0),
+                        Bicomplex::PlaneA(r1),
+                        Bicomplex::PlaneA(r2),
+                    ]
+                }
+                PlaneID::WPlane =>
+                {
+                    let [r0, r1, r2] = solve_cubic(b * a - 1., b * b + a, b + b);
+                    vec![
+                        Bicomplex::PlaneB(ZERO),
+                        Bicomplex::PlaneB(r0),
+                        Bicomplex::PlaneB(r1),
+                        Bicomplex::PlaneB(r2),
+                    ]
+                }
+            },
             _ => vec![],
         }
     }
@@ -341,6 +361,15 @@ impl ParameterPlane for BiquadraticMult
     fn cycle_active_plane(&mut self)
     {
         self.starting_plane = self.starting_plane.swap();
+    }
+
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        match self.starting_plane
+        {
+            PlaneID::ZPlane => Bicomplex::PlaneA(point),
+            PlaneID::WPlane => Bicomplex::PlaneB(point),
+        }
     }
 
     fn periodicity_tolerance(&self) -> Real

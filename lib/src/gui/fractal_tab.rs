@@ -330,8 +330,44 @@ impl FractalTab
                         fractal_menu_button_mis!(self, ui, CubicPer1_1, 1, 1);
                     });
                 });
-                fractal_menu_button!(self, ui, "Per(1, lambda)", CubicPer1LambdaParam);
-                fractal_menu_button!(self, ui, "Per(2, lambda)", CubicPer2LambdaParam);
+                ui.menu_button("Per(1, λ)", |ui| {
+                    fractal_menu_button!(self, ui, "λ-plane", CubicPer1LambdaParam);
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.3",
+                        CubicPer1Lambda,
+                        with_param,
+                        Cplx::from(0.3)
+                    );
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.99i",
+                        CubicPer1Lambda,
+                        with_param,
+                        Cplx::new(0., 0.99)
+                    );
+                });
+                ui.menu_button("Per(2, λ)", |ui| {
+                    fractal_menu_button!(self, ui, "λ-plane", CubicPer2LambdaParam);
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.3",
+                        CubicPer2Lambda,
+                        with_param,
+                        Cplx::from(0.3)
+                    );
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.99i",
+                        CubicPer2Lambda,
+                        with_param,
+                        Cplx::new(0., 0.99)
+                    );
+                });
                 ui.menu_button("2-cycle 0 <-> 1", |ui| {
                     fractal_menu_button!(self, ui, "Base curve", CubicMarked2Cycle);
                     ui.menu_button("Marked Cycle", |ui| {
@@ -368,7 +404,25 @@ impl FractalTab
                     fractal_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);
                 });
             });
-            fractal_menu_button!(self, ui, "Biquadratic Maps", BiquadraticMultParam);
+            ui.menu_button("Biquadratic Maps", |ui| {
+                fractal_menu_button!(self, ui, "λ-plane", BiquadraticMultParam);
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=0.3",
+                    BiquadraticMult,
+                    with_param,
+                    Cplx::from(0.3)
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=0.99i",
+                    BiquadraticMult,
+                    with_param,
+                    Cplx::new(0., 0.99)
+                );
+            });
         });
     }
     fn rational_maps_menu(&mut self, ui: &mut Ui)

@@ -120,7 +120,13 @@ where
     #[inline]
     fn start_point(&self, point: Cplx, _param: Self::Param) -> Self::Var
     {
-        point.into()
+        self.parent.dynam_map(point)
+    }
+
+    #[inline]
+    fn cycle_active_plane(&mut self)
+    {
+        self.parent.cycle_active_plane();
     }
 
     fn encode_escape_result(

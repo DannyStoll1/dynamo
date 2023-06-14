@@ -104,6 +104,11 @@ pub trait ParameterPlane: Sync + Send + Clone
         point.into()
     }
 
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        point.into()
+    }
+
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         (self.map(z, c), self.dynamical_derivative(z, c))
