@@ -5,6 +5,10 @@ use derive_more::Display;
 #[display(fmt = "")]
 pub struct NoParam {}
 
+trait Float: std::fmt::Display {}
+impl Float for f32 {}
+impl Float for f64 {}
+
 pub trait Summarize: std::fmt::Display
 {
     fn summarize(&self) -> Option<String>
@@ -21,15 +25,39 @@ impl Summarize for NoParam
     }
 }
 
-impl<T> Summarize for T
-where
-    T: num::Num + std::fmt::Display,
+impl<T: Float> Summarize for T
+{
+    fn summarize(&self) -> Option<String>
+    {
+        Some(format!("c = {self:.14}"))
+    }
+}
+
+impl Summarize for Cplx
+{
+    fn summarize(&self) -> Option<String>
+    {
+        Some(format!("c = {self:.14}"))
+    }
+}
+
+impl Summarize for i32
 {
     fn summarize(&self) -> Option<String>
     {
         Some(format!("c = {self}"))
     }
 }
+
+// impl<T> Summarize for T
+// where
+//     T: num::Num + std::fmt::Display,
+// {
+//     fn summarize(&self) -> Option<String>
+//     {
+//         Some(format!("c = {self}"))
+//     }
+// }
 
 pub trait ParamList: Clone
 {

@@ -1,4 +1,5 @@
 use crate::coloring::{algorithms::*, palette::*};
+use crate::consts::{OMEGA, ONE};
 use crate::dynamics::covering_maps::*;
 use crate::dynamics::julia::JuliaSet;
 use crate::dynamics::ParameterPlane;
@@ -401,7 +402,7 @@ impl FractalTab
             });
             ui.menu_button("Chebyshev family: z -> (-1)^k * c * cheb2k(z/2)", |ui| {
                 seq!(D in 1..=5 {
-                    fractal_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);
+                    fractal_menu_button!(self, ui, format!("Degree {}", 2), Chebyshev<D>);
                 });
             });
             ui.menu_button("Biquadratic Maps", |ui| {
@@ -422,6 +423,7 @@ impl FractalTab
                     with_param,
                     Cplx::new(0., 0.99)
                 );
+                fractal_menu_button!(self, ui, "Section (b=1): λ-plane", BiquadraticMultSection);
             });
         });
     }
@@ -466,6 +468,77 @@ impl FractalTab
                 });
             });
             fractal_menu_button!(self, ui, "QuadRat Preper(2, 2)", QuadRatPreper22);
+            ui.menu_button("QuadRat Per(1, λ)", |ui| {
+                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer1LambdaParam);
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=1",
+                    QuadRatPer1Lambda,
+                    with_param,
+                    ONE
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=-1",
+                    QuadRatPer1Lambda,
+                    with_param,
+                    -ONE
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=ω",
+                    QuadRatPer1Lambda,
+                    with_param,
+                    OMEGA
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=i",
+                    QuadRatPer1Lambda,
+                    with_param,
+                    Cplx::new(0., 1.)
+                );
+            });
+            ui.menu_button("QuadRat Per(2, λ)", |ui| {
+                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer2LambdaParam);
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=1",
+                    QuadRatPer2Lambda,
+                    with_param,
+                    ONE
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=i",
+                    QuadRatPer2Lambda,
+                    with_param,
+                    Cplx::new(0., 1.)
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=-3",
+                    QuadRatPer2Lambda,
+                    with_param,
+                    Cplx::from(-3.)
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=-27",
+                    QuadRatPer2Lambda,
+                    with_param,
+                    Cplx::from(-27.)
+                );
+            });
+
             fractal_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
             ui.menu_button("McMullen Family: z -> z^m + 1/(c*z^n)", |ui| {
                 seq!(N in 2..=8 {
@@ -522,6 +595,24 @@ impl FractalTab
 
         self.interface = Box::new(MainInterface::new(parent_plane, child_plane, image_height));
     }
+
+    pub fn process_interface_message(&mut self, _ui: &mut Ui)
+    {
+        use super::pane::UIMessage::*;
+        match self.interface.pop_message()
+        {
+            DoNothing =>
+            {}
+            CloseWindow =>
+            {
+                // ui.close();
+            }
+            Quit =>
+            {
+                std::process::exit(0);
+            }
+        }
+    }
 }
 // }}}
 
@@ -541,20 +632,6 @@ impl Default for FractalTab
             interface,
             node: NodeIndex(0),
         }
-    }
-}
-
-impl eframe::App for FractalTab
-{
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
-    {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            self.show_menu(ui);
-            self.interface.handle_input(ctx);
-            self.interface.show_save_dialog(ctx);
-            self.interface.process_tasks();
-            self.interface.show(ui);
-        });
     }
 }
 // (-1)^k * c * chebyshev(z/2k)

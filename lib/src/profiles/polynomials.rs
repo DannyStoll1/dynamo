@@ -23,4 +23,4 @@ pub mod chebyshev;
 pub use chebyshev::Chebyshev;
 
 pub mod biquadratic;
-pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam};
+pub use biquadratic::{Biquadratic, BiquadraticMult, BiquadraticMultParam, BiquadraticMultSection};

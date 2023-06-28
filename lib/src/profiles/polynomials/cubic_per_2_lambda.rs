@@ -7,33 +7,6 @@ use crate::{
 use derive_more::{Add, Display, From};
 profile_imports!();
 
-// #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
-// #[display(fmt = "[ a: {}, b: {} ] ", a, b)]
-// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-// pub struct CplxPair
-// {
-//     a: Cplx,
-//     b: Cplx,
-// }
-// impl Summarize for CplxPair {}
-//
-// // Unused
-// impl From<Cplx> for CplxPair
-// {
-//     fn from(t: Cplx) -> Self
-//     {
-//         Self { a: t, b: ZERO }
-//     }
-// }
-// impl From<CplxPair> for Cplx
-// {
-//     fn from(c: CplxPair) -> Self
-//     {
-//         let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
-//         (c.b + disc) / (3. * c.a)
-//     }
-// }
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer2Lambda
@@ -66,6 +39,7 @@ impl Default for CubicPer2Lambda
 impl ParameterPlane for CubicPer2Lambda
 {
     parameter_plane_impl!(Cplx, CplxPair, Cplx, Cplx);
+    basic_escape_encoding!(3.);
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -197,7 +171,7 @@ impl ParameterPlane for CubicPer2LambdaParam
     type Child = CubicPer2Lambda;
 
     basic_plane_impl!();
-    basic_escape_encoding!(2., 1.);
+    basic_escape_encoding!(3.);
 
     #[inline]
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
@@ -216,7 +190,7 @@ impl ParameterPlane for CubicPer2LambdaParam
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, a: Self::Param) -> Self::Deriv
+    fn dynamical_derivative(&self, _z: Self::Var, _a: Self::Param) -> Self::Deriv
     {
         unimplemented!()
     }

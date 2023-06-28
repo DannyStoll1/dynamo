@@ -38,6 +38,11 @@ impl ParameterPlane for Mandelbrot
         1e26
     }
 
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    {
+        ZERO
+    }
+
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         f(z, c)
@@ -53,11 +58,7 @@ impl ParameterPlane for Mandelbrot
         ONE
     }
 
-    fn early_bailout(
-        &self,
-        _start: Cplx,
-        c: Self::Param,
-    ) -> EscapeState<Cplx, Cplx>
+    fn early_bailout(&self, _start: Cplx, c: Self::Param) -> EscapeState<Cplx, Cplx>
     {
         // Main cardioid
         let four_c = 4. * c;
@@ -128,6 +129,21 @@ impl ParameterPlane for Mandelbrot
                 let u = (-3. - 4. * c).sqrt();
                 vec![0.5 * (-1. + u), -0.5 * (1. + u)]
             }
+            // 3 =>
+            // {
+            //     use crate::math_utils::poly_solve::solve_polynomial;
+            //     let c2 = c * c;
+            //     let coeffs = vec![
+            //         1. + c + (2. + c) * c2,
+            //         1. + c + c + c2,
+            //         1. + 3. * (c + c2),
+            //         1. + c + c,
+            //         1. + 3. * c,
+            //         ONE,
+            //         ONE,
+            //     ];
+            //     solve_polynomial(&coeffs)
+            // }
             _ => vec![],
         }
     }

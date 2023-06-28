@@ -300,6 +300,7 @@ pub trait Pane
     fn change_height(&mut self, new_height: usize);
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx);
+    fn mark_external_ray(&mut self, angle: Real);
     fn describe_marked_info(&self) -> String;
 }
 
@@ -598,6 +599,14 @@ where
         self.set_marked_info(info);
     }
 
+    fn mark_external_ray(&mut self, angle: Real)
+    {
+        if let Some(cs) = self.plane.external_ray(angle, 50, 50, 128)
+        {
+            self.mark_curve(cs, Color32::BLUE);
+        }
+    }
+
     fn describe_marked_info(&self) -> String
     {
         self.get_marked_info()
@@ -610,6 +619,22 @@ where
             || self.plane.name(),
             |local| format!("{}: {}", self.plane.name(), local),
         )
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum UIMessage
+{
+    DoNothing,
+    CloseWindow,
+    Quit,
+}
+impl Default for UIMessage
+{
+    fn default() -> Self
+    {
+        Self::DoNothing
     }
 }
 
@@ -647,6 +672,10 @@ pub trait Interactive
     fn show(&mut self, ui: &mut Ui);
     fn consume_click(&mut self);
     fn reset_click(&mut self);
+    fn schedule_close(&mut self);
+    fn schedule_quit(&mut self);
+    fn get_message(&self) -> UIMessage;
+    fn pop_message(&mut self) -> UIMessage;
     fn name(&self) -> String;
 }
 
@@ -663,6 +692,7 @@ where
     save_dialog: Option<FileDialog>,
     pane_to_save: PaneID,
     click_used: bool,
+    pub message: UIMessage,
 }
 
 impl<P, J, C, M, T> MainInterface<P, J>
@@ -684,6 +714,7 @@ where
             save_dialog: None,
             pane_to_save: PaneID::Parent,
             click_used: false,
+            message: Default::default(),
         }
     }
 
@@ -960,6 +991,16 @@ where
             }
         }
 
+        if shortcut_used!(ctx, &CTRL_Q)
+        {
+            self.schedule_quit();
+        }
+
+        if shortcut_used!(ctx, &CTRL_W)
+        {
+            self.schedule_close();
+        }
+
         if shortcut_used!(ctx, &KEY_R)
         {
             self.randomize_palette();
@@ -1015,6 +1056,14 @@ where
             self.child_mut().marking_mode_mut().toggle_cycles(2);
             self.child_mut().schedule_redraw();
         }
+
+        // if shortcut_used!(ctx, &KEY_E)
+        // {
+        //     if let Some(pane) = self.get_active_pane_mut()
+        //     {
+        //         pane.mark_external_ray(0.3);
+        //     }
+        // }
 
         if shortcut_used!(ctx, &KEY_H)
         {
@@ -1302,6 +1351,29 @@ where
                     });
                 });
             });
+    }
+
+    fn schedule_close(&mut self)
+    {
+        self.message = UIMessage::CloseWindow;
+    }
+
+    fn schedule_quit(&mut self)
+    {
+        self.message = UIMessage::Quit;
+    }
+
+    #[inline]
+    fn get_message(&self) -> UIMessage
+    {
+        self.message
+    }
+
+    #[inline]
+    fn pop_message(&mut self) -> UIMessage {
+        let msg = self.get_message();
+        self.message = UIMessage::DoNothing;
+        msg
     }
 
     fn consume_click(&mut self)

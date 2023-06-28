@@ -695,3 +695,216 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         self.multiplier
     }
 }
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct BiquadraticMultSection
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+    starting_plane: PlaneID,
+}
+
+impl BiquadraticMultSection
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.8,
+        max_x: 2.8,
+        min_y: -2.55,
+        max_y: 2.55,
+    };
+    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
+}
+
+impl Default for BiquadraticMultSection
+{
+    fn default() -> Self
+    {
+        let bounds = Self::DEFAULT_BOUNDS;
+        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            starting_plane: PlaneID::ZPlane,
+        }
+    }
+}
+
+impl ParameterPlane for BiquadraticMultSection
+{
+    type Var = Bicomplex;
+    type Param = Cplx;
+    type Deriv = Cplx;
+    type MetaParam = NoParam;
+    type Child = JuliaSet<Self>;
+    basic_plane_impl!();
+
+    #[inline]
+    fn name(&self) -> String
+    {
+        "Biquadratic Section".to_string()
+    }
+
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        _base_param: Self::Param,
+    ) -> PointInfo<Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+
+    #[inline]
+    fn param_map(&self, multiplier: Cplx) -> Self::Param
+    {
+        multiplier
+    }
+
+    #[inline]
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    {
+        match self.starting_plane
+        {
+            PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c),
+            PlaneID::WPlane => Bicomplex::PlaneB(Cplx::from(-0.5)),
+        }
+    }
+
+    #[inline]
+    fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
+    {
+        match zw
+        {
+            Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c)),
+            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * (w + 1.)),
+        }
+    }
+
+    #[inline]
+    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
+    {
+        match zw
+        {
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), z + z + c),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), w + w + 1.),
+        }
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
+    {
+        match zw
+        {
+            Bicomplex::PlaneA(z) => z + z + c,
+            Bicomplex::PlaneB(w) => w + w + 1.,
+        }
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
+    {
+        match zw
+        {
+            Bicomplex::PlaneA(_) => ONE,
+            Bicomplex::PlaneB(_) => -c.inv(),
+        }
+    }
+
+    #[inline]
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        match self.starting_plane
+        {
+            PlaneID::ZPlane =>
+            {
+                let disc = (c * c - 2.).sqrt();
+                vec![
+                    Bicomplex::PlaneA(-0.5 * c),
+                    Bicomplex::PlaneA(-0.5 * (c + disc)),
+                    Bicomplex::PlaneA(-0.5 * (c - disc)),
+                ]
+            }
+            PlaneID::WPlane =>
+            {
+                let disc = (1. - c - c).sqrt();
+                vec![
+                    Bicomplex::PlaneB((-0.5).into()),
+                    Bicomplex::PlaneB(-0.5 * (1. + disc)),
+                    Bicomplex::PlaneB(-0.5 * (1. - disc)),
+                ]
+            }
+        }
+    }
+
+    fn cycles_child(&self, a: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            2 => match self.starting_plane
+            {
+                PlaneID::ZPlane =>
+                {
+                    let [r0, r1, r2] = solve_cubic(a - 1., a * a + 1., a + a);
+                    vec![
+                        Bicomplex::PlaneA(ZERO),
+                        Bicomplex::PlaneA(r0),
+                        Bicomplex::PlaneA(r1),
+                        Bicomplex::PlaneA(r2),
+                    ]
+                }
+                PlaneID::WPlane =>
+                {
+                    let [r0, r1, r2] = solve_cubic(a - 1., 1. + a, TWO);
+                    vec![
+                        Bicomplex::PlaneB(ZERO),
+                        Bicomplex::PlaneB(r0),
+                        Bicomplex::PlaneB(r1),
+                        Bicomplex::PlaneB(r2),
+                    ]
+                }
+            },
+            _ => vec![],
+        }
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_plane = self.starting_plane.swap();
+    }
+
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        match self.starting_plane
+        {
+            PlaneID::ZPlane => Bicomplex::PlaneA(point),
+            PlaneID::WPlane => Bicomplex::PlaneB(point),
+        }
+    }
+
+    fn periodicity_tolerance(&self) -> Real
+    {
+        1e-14
+    }
+
+    fn default_selection(&self) -> Cplx
+    {
+        Cplx::new(1.0626588, 0.)
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, a: Self::Param) -> Bounds
+    {
+        Bounds::square(2.5, -0.5 * a)
+    }
+}

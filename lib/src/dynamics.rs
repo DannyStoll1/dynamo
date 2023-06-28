@@ -3,7 +3,7 @@ use crate::{
     iter_plane::IterPlane,
     point_grid::{self, Bounds, PointGrid},
     types::param_stack::Summarize,
-    types::*, math_utils::newton_until_convergence,
+    types::*, math_utils::{newton_until_convergence, newton_until_convergence_d}, consts::ONE,
 };
 use ndarray::{Array2, Axis};
 use num_cpus;
@@ -39,7 +39,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         + PartialEq
         + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
-    type Deriv: Norm<Real> + Send + Default + From<f64> + MulAssign + Display;
+    type Deriv: Norm<Real> + Send + Default + From<f64> + MulAssign + Display + Into<Cplx>;
     type Child: ParameterPlane + From<Self>;
 
     fn point_grid(&self) -> &PointGrid;
@@ -284,58 +284,61 @@ pub trait ParameterPlane: Sync + Send + Clone
         vec![]
     }
 
-    // fn external_ray(
-    //     &self,
-    //     theta: Real,
-    //     depth: u32,
-    //     sharpness: u32,
-    //     pixel_count: u32,
-    // ) -> Option<Vec<Cplx>>
-    // {
-    //     let escape_radius = 20.;
-    //     let pixel_width = self.point_grid().pixel_width();
-    //     let error = f64::from(pixel_count * pixel_count) * 1e-8;
-    //
-    //     let base_point = Cplx::new(escape_radius, theta).exp();
-    //     let mut c_list = vec![base_point];
-    //
-    //     for k in 0..depth
-    //     {
-    //         let us = (0..sharpness)
-    //             .map(|j| escape_radius.ln() * ((-f64::from(j)) / f64::from(sharpness)).exp2());
-    //         let v = Cplx::new(0., theta * 2.0_f64.powi(k as i32));
-    //         let targets = us.map(|u| (u + v).exp());
-    //
-    //         let mut temp_c = *c_list.last()?;
-    //         // let mut dist = pixel_width * 2.;
-    //         let mut dist: f64;
-    //
-    //         let fk_and_dfk = |c_k| {
-    //             let mut d_k = ONE;
-    //             for _ in 0..k
-    //             {
-    //                 let (f, df_dz, df_dc) = self.gradient(c_k, c_k);
-    //                 d_k = d_k * df_dz + df_dc;
-    //                 c_k = f;
-    //             }
-    //         };
-    //
-    //         for target in targets
-    //         {
-    //             let c_k = newton_until_convergence(fk_and_dfk, temp_c, target, error);
-    //
-    //             dist = (2. * c_k.norm() * (c_k.norm()).log2()) / d_k.norm();
-    //
-    //             if dist < pixel_width
-    //             {
-    //                 return Some(c_list);
-    //             }
-    //         }
-    //         c_list.push(temp_c);
-    //     }
-    //
-    //     Some(c_list)
-    // }
+    fn external_ray(
+        &self,
+        theta: Real,
+        depth: u32,
+        sharpness: u32,
+        pixel_count: u32,
+    ) -> Option<Vec<Cplx>>
+    {
+        let escape_radius = 20.;
+        let pixel_width = self.point_grid().pixel_width();
+        let error = f64::from(pixel_count * pixel_count) * 1e-8;
+
+        let base_point = Cplx::new(escape_radius, theta).exp();
+        let mut c_list = vec![base_point];
+
+        for k in 0..depth
+        {
+            let us = (0..sharpness)
+                .map(|j| escape_radius.ln() * ((-f64::from(j)) / f64::from(sharpness)).exp2());
+            let v = Cplx::new(0., theta * 2.0_f64.powi(k as i32));
+            let targets = us.map(|u| (u + v).exp());
+
+            let mut temp_c = *c_list.last()?;
+            // let mut dist = pixel_width * 2.;
+            let mut dist: f64;
+
+            let fk_and_dfk = |mut c_k: Cplx| {
+                let mut d_k = ONE;
+                for _ in 0..k
+                {
+                    let (f, df_dz, df_dc) = self.gradient(c_k.into(), c_k.into());
+                    d_k = d_k * df_dz.into() + df_dc.into();
+                    c_k = f.into();
+                }
+                (c_k, d_k)
+            };
+
+            for target in targets
+            {
+                let (sol, c_k, d_k) = newton_until_convergence_d(fk_and_dfk, temp_c, target, error);
+
+                temp_c = sol;
+
+                dist = (2. * c_k.norm() * (c_k.norm()).log2()) / d_k.norm();
+
+                if dist < pixel_width
+                {
+                    return Some(c_list);
+                }
+            }
+            c_list.push(temp_c);
+        }
+
+        Some(c_list)
+    }
 
     // fn external_angle(&self, point: Cplx) -> Option<Real>
     // {

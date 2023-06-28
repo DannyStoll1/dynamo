@@ -1,5 +1,5 @@
+use derive_more::{Add, Display, From};
 use num_complex::Complex;
-use derive_more::{Add, From, Display};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -58,6 +58,8 @@ use std::fmt::Display;
 
 use self::param_stack::Summarize;
 
+const DISPLAY_PREC: usize = 16;
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitInfo<V, P, D>
@@ -78,25 +80,24 @@ where
         use PointInfo::*;
         let result_summary = match &self.result
         {
-            Escaping { potential } => format!("Escaped, potential: {potential}"),
+            Escaping { potential } => format!("Escaped, potential: {potential:.*}", DISPLAY_PREC),
             Periodic {
                 period,
                 preperiod,
                 multiplier,
                 final_error: _,
             } => format!(
-                "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier}"
+                "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier:.*}", DISPLAY_PREC
             ),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
         };
         format!(
-            "Parameter: {}\nStarting point: {}\n{}",
-            self.param, self.start, result_summary
+            "Parameter: {:.*}\nStarting point: {:.*}\n{}",
+            DISPLAY_PREC, self.param, DISPLAY_PREC, self.start, result_summary
         )
     }
 }
-
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -124,7 +125,6 @@ impl From<CplxPair> for Cplx
         unimplemented!()
     }
 }
-
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

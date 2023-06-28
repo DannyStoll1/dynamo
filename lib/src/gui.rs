@@ -43,6 +43,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
         ui.label(tab.interface.name());
         tab.show_menu(ui);
         tab.interface.handle_input(ui.ctx());
+        tab.process_interface_message(ui);
         tab.interface.process_tasks();
         tab.interface.show_save_dialog(ui.ctx());
         tab.interface.show(ui);
