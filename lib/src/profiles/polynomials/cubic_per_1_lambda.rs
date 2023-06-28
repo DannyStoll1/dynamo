@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::{basic_escape_encoding, horner, horner_monic, profile_imports};
 use crate::math_utils::solve_quadratic;
 use crate::types::variables::PlaneID;
 profile_imports!();
@@ -123,12 +123,12 @@ impl ParameterPlane for CubicPer1Lambda
 
     fn set_meta_param(&mut self, value: Self::Param)
     {
-        self.multiplier = value
+        self.multiplier = value;
     }
 
     fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
     {
-        self.multiplier = value
+        self.multiplier = value;
     }
 
     fn param_map(&self, m: Cplx) -> Self::Param
@@ -351,12 +351,8 @@ impl ParameterPlane for CubicPer1_1
     #[inline]
     fn start_point(&self, _point: Cplx, param: Cplx) -> Cplx
     {
-        let mut u = (param * param - 3.).sqrt();
-        if param.re < 0.
-        {
-            u = -u
-        }
-        -(param + u) / 3.
+        let u = (param * param - 3.).sqrt();
+        -(param + u * param.re.signum()) / 3.
     }
 
     #[inline]
@@ -618,9 +614,9 @@ impl HasDynamicalCovers for CubicPer1_1
             2 =>
             {
                 param_map = |t| {
-                    let t2 = t*t;
-                    let numer = -1. + t2*(3. - t*(8.+t*(3.-t2)));
-                    let denom = t*I2*(t2*t2 - 1.);
+                    let t2 = t * t;
+                    let numer = -1. + t2 * (3. - t * (8. + t * (3. - t2)));
+                    let denom = t * I2 * (t2 * t2 - 1.);
                     numer / denom
                 };
                 bounds = Bounds {
@@ -648,9 +644,7 @@ impl HasDynamicalCovers for CubicPer1_1
         {
             (1, 1) =>
             {
-                param_map = |t| {
-                    t + t.inv()
-                };
+                param_map = |t| t + t.inv();
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,

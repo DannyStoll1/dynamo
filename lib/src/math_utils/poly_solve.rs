@@ -36,7 +36,7 @@ pub fn solve_polynomial(coeffs: &[Cplx]) -> Vec<Cplx>
 }
 
 #[cfg(not(feature = "mpsolve"))]
-pub fn solve_polynomial(coeffs: &[Cplx]) -> Vec<Cplx>
+#[must_use] pub fn solve_polynomial(_coeffs: &[Cplx]) -> Vec<Cplx>
 {
     vec![]
 }

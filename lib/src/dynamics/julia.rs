@@ -2,7 +2,7 @@ use crate::coloring::{algorithms::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::*;
+use crate::types::{Cplx, EscapeState, ParamList, ParamStack, Period, PointInfo, Real};
 
 #[derive(Clone)]
 pub struct JuliaSet<T>

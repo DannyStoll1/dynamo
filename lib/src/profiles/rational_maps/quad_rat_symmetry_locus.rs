@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::profile_imports;
 profile_imports!();
 
 // Quadratic rational maps of the form z -> c(z+1/z)

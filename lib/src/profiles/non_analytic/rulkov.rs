@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::profile_imports;
 use crate::types::{
     variables::{Matrix2x2, Point},
     Cplx,

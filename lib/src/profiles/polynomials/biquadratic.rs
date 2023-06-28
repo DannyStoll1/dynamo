@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::profile_imports;
 use crate::math_utils::solve_cubic;
 use crate::types::param_stack::Summarize;
 use crate::types::variables::{Bicomplex, PlaneID};
@@ -7,7 +7,7 @@ use derive_more::{Add, Display, From, Sub};
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {}, b: {} ] ", a, b)]
+#[display(fmt = "[ a: {a}, b: {b} ] ")]
 pub struct ComplexPair
 {
     pub a: Cplx,
@@ -379,7 +379,7 @@ impl ParameterPlane for BiquadraticMult
 
     fn default_selection(&self) -> Cplx
     {
-        Cplx::new(1.0626588, 0.)
+        Cplx::new(1.062_658_8, 0.)
     }
 
     fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
@@ -900,7 +900,7 @@ impl ParameterPlane for BiquadraticMultSection
 
     fn default_selection(&self) -> Cplx
     {
-        Cplx::new(1.0626588, 0.)
+        Cplx::new(1.062_658_8, 0.)
     }
 
     fn default_julia_bounds(&self, _point: Cplx, a: Self::Param) -> Bounds

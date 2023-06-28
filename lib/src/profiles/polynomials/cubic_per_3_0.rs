@@ -1,4 +1,4 @@
-use crate::{macros::*, math_utils::solve_cubic, types::CplxPair};
+use crate::{macros::{basic_escape_encoding, horner, profile_imports}, math_utils::solve_cubic, types::CplxPair};
 profile_imports!();
 
 // Cubic polynomials with a critical 3-cycle 0 -2-> 1 -> a+b+1 -> 0
@@ -85,7 +85,7 @@ impl ParameterPlane for CubicPer3_0
     fn default_selection(&self) -> Cplx
     {
         // ComplexNum::new(-3.34447065821736, 0.) // center of a capture component; c1 -2> c0=0 -2> 1 -> a+b+1 -> 0
-        Cplx::new(-0.521257806222939, 0.) // center of a period 1 component; c1 -2> c1
+        Cplx::new(-0.521_257_806_222_939, 0.) // center of a period 1 component; c1 -2> c1
     }
     fn default_julia_bounds(&self, point: Cplx, c: Self::Param) -> Bounds
     {

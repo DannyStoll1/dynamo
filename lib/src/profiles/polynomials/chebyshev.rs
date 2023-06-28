@@ -1,4 +1,7 @@
-use crate::{macros::*, math_utils::solve_quadratic};
+use crate::{
+    macros::{basic_escape_encoding, profile_imports},
+    math_utils::solve_quadratic,
+};
 use std::f64::consts::SQRT_2;
 profile_imports!();
 use std::iter::once;
@@ -52,6 +55,7 @@ impl ChebyshevCoeffTable
         }
     }
 
+    #[must_use]
     pub fn with_max_degree(mut self, degree: usize) -> Self
     {
         self.extend_to(degree);
@@ -79,15 +83,15 @@ impl<const D: Period> Default for Chebyshev<D>
 {
     fn default() -> Self
     {
-        let bounds = Bounds::centered_square(3.0 / (D as f64));
+        let bounds = Bounds::centered_square(3.0 / f64::from(D));
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
 
-        let sign = 1 - 2 * (D as i32 % 2);
+        let sign = 1 - 2 * ((D % 2) as i32);
 
         let coeffs: Vec<Real> = ChebyshevCoeffTable::new(2 * D as usize)
             .coefficients(2 * D as usize)
             .iter()
-            .map(|&x| (sign * x) as Real)
+            .map(|&x| f64::from(sign * x))
             .collect();
         let coeffs_d: Vec<Real> = coeffs
             .iter()
@@ -108,28 +112,28 @@ const CHEBYSHEV_4_CRIT: [Real; 7] = [
     0.0,
     SQRT_2,
     -SQRT_2,
-    -1.84775906502257,  // -sqrt(2+sqrt(2))
-    1.84775906502257,   // sqrt(2+sqrt(2))
-    -0.765366864730180, // -sqrt(2-sqrt(2))
-    0.765366864730180,  // sqrt(2-sqrt(2))
+    -1.847_759_065_022_57,  // -sqrt(2+sqrt(2))
+    1.847_759_065_022_57,   // sqrt(2+sqrt(2))
+    -0.765_366_864_730_180, // -sqrt(2-sqrt(2))
+    0.765_366_864_730_180,  // sqrt(2-sqrt(2))
 ];
 
 const CHEBYSHEV_5_CRIT: [Real; 9] = [
-    -1.90211303259031,
-    -1.61803398874989,
-    -1.17557050458495,
-    -0.618033988749895,
+    -1.902_113_032_590_31,
+    -1.618_033_988_749_89,
+    -1.175_570_504_584_95,
+    -0.618_033_988_749_895,
     0.0,
-    0.618033988749895,
-    1.17557050458495,
-    1.61803398874989,
-    1.90211303259031,
+    0.618_033_988_749_895,
+    1.175_570_504_584_95,
+    1.618_033_988_749_89,
+    1.902_113_032_590_31,
 ];
 
 impl<const D: Period> ParameterPlane for Chebyshev<D>
 {
     parameter_plane_impl!();
-    basic_escape_encoding!((2 * D) as Real, 1);
+    basic_escape_encoding!(f64::from(2 * D), 1);
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
@@ -209,8 +213,8 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
                 let sqrt3 = SQRT_3.into();
                 vec![ZERO, sqrt3, -sqrt3, ONE, -ONE]
             }
-            4 => CHEBYSHEV_4_CRIT.map(|x|x.into()).to_vec(),
-            5 => CHEBYSHEV_5_CRIT.map(|x|x.into()).to_vec(),
+            4 => CHEBYSHEV_4_CRIT.map(std::convert::Into::into).to_vec(),
+            5 => CHEBYSHEV_5_CRIT.map(std::convert::Into::into).to_vec(),
             _ => vec![ZERO],
         }
     }
@@ -222,6 +226,6 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 
     fn name(&self) -> String
     {
-        format!("Chebyshev degree {}", D)
+        format!("Chebyshev degree {D}")
     }
 }

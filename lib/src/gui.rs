@@ -117,7 +117,7 @@ impl eframe::App for FractalApp
                     added_nodes: &mut added_nodes,
                 },
             );
-        added_nodes.into_iter().for_each(|tab| {
+        for tab in added_nodes {
             self.tree.set_focused_node(tab.node);
             // self.tree.push_to_focused_leaf(FractalTab {
             //     interface: tab.interface,
@@ -125,6 +125,6 @@ impl eframe::App for FractalApp
             // });
             self.tree.push_to_focused_leaf(FractalTab::default());
             self.counter += 1;
-        });
+        }
     }
 }

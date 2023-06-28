@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::profile_imports;
 use crate::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -49,8 +49,8 @@ impl ParameterPlane for QuadRatPer3
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
-        let residual = ((u + q) / (v + q)).log2();
+        let delta = ((base_param - 1.) / (4. * base_param)).norm().log2();
+        let residual = ((u + delta) / (v + delta)).log2();
         let potential = (residual as IterCount).mul_add(3., f64::from(iters));
         PointInfo::Escaping { potential }
     }

@@ -1,4 +1,4 @@
-use crate::{macros::*, math_utils::weierstrass_p};
+use crate::{macros::profile_imports, math_utils::weierstrass_p};
 profile_imports!();
 
 #[derive(Clone, Debug)]

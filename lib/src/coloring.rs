@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::types::*;
+use crate::types::{Norm, PointInfo, Real};
 pub mod algorithms;
 pub mod palette;
 pub mod types;
@@ -28,7 +28,7 @@ impl Coloring
     where
         D: Norm<Real>,
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, Periodic, Wandering};
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
@@ -54,7 +54,7 @@ impl Coloring
     where
         D: Norm<Real>,
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, Periodic, Wandering};
         match point_info
         {
             Escaping { potential } => self.palette.map_rgb(potential),

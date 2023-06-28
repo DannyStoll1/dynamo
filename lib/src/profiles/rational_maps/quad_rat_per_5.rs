@@ -1,11 +1,15 @@
 use crate::math_utils::{solve_cubic, solve_quadratic, weierstrass_p};
-use crate::{macros::*, types::param_stack::Summarize};
+use crate::{
+    macros::{horner, horner_monic, profile_imports},
+    types::param_stack::Summarize,
+};
 use derive_more::{Add, Display, From};
 profile_imports!();
 
 const G2: Cplx = Cplx::new(2.75, 0.);
 const G3: Cplx = Cplx::new(-0.375, 0.);
 
+// Utility function for determining smooth coloring rate
 fn top_coeff(a: Cplx, b: Cplx) -> Cplx
 {
     let a2 = a * a;
@@ -43,60 +47,6 @@ fn top_coeff(a: Cplx, b: Cplx) -> Cplx
     n0 * n1 / denom
 }
 
-#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
-#[display(fmt = "[ a: {}, b: {} ] ", a, b)]
-pub struct Param
-{
-    pub a: Cplx,
-    pub b: Cplx,
-}
-
-impl Summarize for Param {}
-
-impl From<Cplx> for Param
-{
-    fn from(z: Cplx) -> Self
-    {
-        let (mut x, mut y) = weierstrass_p(G2, G3, z, 0.01);
-
-        // F5 = 4*x^3 - y^2 - 11/4*x + 3/8
-
-        y /= 2.;
-        x = -x - 0.25;
-        // F3 = x^3 + 3/4*x^2 + y^2 - 1/2*x - 1/4
-
-        y += 0.5 * (x + 1.);
-        // F2 = x^3 + x^2 - (x+1)*y + y^2
-
-        y /= x;
-        // F1 = x*y^2 + x^2 - x*y + x - y
-
-        let z = y - x - 1.;
-        y = x - 1.;
-        // F0 = 2*x^3 + x^2*y - 3*x*y^2 + y^3 + 2*x^2*z + x*y*z - y^2*z + x*z^2
-
-        x /= z;
-        y /= z;
-        // E5 = 2*x^3 + x^2*y - 3*x*y^2 + y^3 + 2*x^2 + x*y - y^2 + x
-
-        let t = (x + 1.) * y;
-        let b = x / t;
-        let a = x * b - 1.;
-
-        // E0 = 2*a^5 + 8*a^4*b + 13*a^3*b^2 + 11*a^2*b^3 + 5*a*b^4 + b^5 + 11*a^4 + 35*a^3*b + 42*a^2*b^2 + 23*a*b^3 + 5*b^4 + 21*a^3 + 53*a^2*b + 44*a*b^2 + 12*b^3 + 18*a^2 + 33*a*b + 15*b^2 + 7*a + 7*b + 1
-
-        Self::from((a, b))
-    }
-}
-
-impl From<Param> for Cplx
-{
-    fn from(value: Param) -> Self
-    {
-        -(value.b + value.b) / value.a
-    }
-}
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer5
@@ -112,7 +62,7 @@ impl Default for QuadRatPer5
 impl ParameterPlane for QuadRatPer5
 {
     type Var = Cplx;
-    type Param = Param;
+    type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = NoParam;
     type Child = JuliaSet<Self>;
@@ -145,11 +95,51 @@ impl ParameterPlane for QuadRatPer5
     {
         ONE
     }
+
+    #[inline]
+    fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
+    {
+        -(b + b) / a
+    }
+
+    fn param_map(&self, t: Cplx) -> Self::Param
+    {
+        let (mut x, mut y) = weierstrass_p(G2, G3, t, 0.01);
+
+        // F5 = 4*x^3 - y^2 - 11/4*x + 3/8
+
+        y /= 2.;
+        x = -x - 0.25;
+        // F3 = x^3 + 3/4*x^2 + y^2 - 1/2*x - 1/4
+
+        y += 0.5 * (x + 1.);
+        // F2 = x^3 + x^2 - (x+1)*y + y^2
+
+        y /= x;
+        // F1 = x*y^2 + x^2 - x*y + x - y
+
+        let mut tmp = y - x - 1.;
+        y = x - 1.;
+        // F0 = 2*x^3 + x^2*y - 3*x*y^2 + y^3 + 2*x^2*z + x*y*z - y^2*z + x*z^2
+
+        x /= tmp;
+        y /= tmp;
+        // E5 = 2*x^3 + x^2*y - 3*x*y^2 + y^3 + 2*x^2 + x*y - y^2 + x
+
+        tmp = (x + 1.) * y;
+        let b = x / tmp;
+        let a = x * b - 1.;
+
+        // E0 = 2*a^5 + 8*a^4*b + 13*a^3*b^2 + 11*a^2*b^3 + 5*a*b^4 + b^5 + 11*a^4 + 35*a^3*b + 42*a^2*b^2 + 23*a*b^3 + 5*b^4 + 21*a^3 + 53*a^2*b + 44*a*b^2 + 12*b^3 + 18*a^2 + 33*a*b + 15*b^2 + 7*a + 7*b + 1
+
+        CplxPair::from((a, b))
+    }
+
     fn encode_escaping_point(
         &self,
         iters: Period,
         z: Cplx,
-        c: Self::Param,
+        CplxPair { a, b }: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
@@ -161,8 +151,8 @@ impl ParameterPlane for QuadRatPer5
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let q = top_coeff(c.a, c.b).norm_sqr().log2();
-        let residual = ((u + q) / (v + q)).log2();
+        let delta = top_coeff(a, b).norm_sqr().log2();
+        let residual = ((u + delta) / (v + delta)).log2();
         // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
         // (F - M) / (2L - M)
         let potential = (residual as IterCount).mul_add(5., f64::from(iters));
@@ -179,7 +169,7 @@ impl ParameterPlane for QuadRatPer5
         vec![self.start_point(ONE, param)]
     }
 
-    fn cycles_child(&self, Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period
         {

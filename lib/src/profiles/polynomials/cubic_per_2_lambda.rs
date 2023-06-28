@@ -1,5 +1,5 @@
 use crate::{
-    macros::*,
+    macros::{basic_escape_encoding, horner, profile_imports},
     math_utils::{solve_cubic, solve_quartic, weierstrass_p},
     types::param_stack::Summarize,
     types::{variables::PlaneID, CplxPair},
@@ -109,12 +109,12 @@ impl ParameterPlane for CubicPer2Lambda
 
     fn set_meta_param(&mut self, value: Self::MetaParam)
     {
-        self.multiplier = value
+        self.multiplier = value;
     }
 
     fn set_param(&mut self, value: Self::MetaParam)
     {
-        self.multiplier = value
+        self.multiplier = value;
     }
 
     fn param_map(&self, t: Cplx) -> Self::Param

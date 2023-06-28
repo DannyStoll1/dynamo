@@ -1,5 +1,5 @@
 use crate::{
-    macros::*,
+    macros::profile_imports,
     math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2},
 };
 profile_imports!();
@@ -135,7 +135,7 @@ impl ParameterPlane for RiemannXiNewton
     }
     fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
     {
-        self.param = value
+        self.param = value;
     }
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {

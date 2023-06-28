@@ -1,4 +1,4 @@
-use crate::consts::*;
+use crate::consts::{LOG_PI, OMEGA, OMEGA_BAR, ONE_THIRD, TAUI, ZERO};
 use crate::types::{Cplx, Norm, Real};
 use num_complex::ComplexFloat;
 pub use spfunc::{
@@ -132,35 +132,35 @@ const fn bernoulli(n: u64) -> f64
     {
         0 => 1.,
         1 => -0.5,
-        2 => 0.166666666666667,
-        4 | 8 => -0.0333333333333333,
-        6 => 0.0238095238095238,
-        10 => 0.0757575757575758,
-        12 => -0.253113553113553,
-        14 => 1.16666666666667,
-        16 => -7.09215686274510,
-        18 => 54.9711779448622,
-        20 => -529.124242424242,
-        22 => 6192.12318840580,
-        24 => -86580.2531135531,
-        26 => 1.42551716666667e6,
-        28 => -2.72982310678161e7,
-        30 => 6.01580873900642e8,
-        32 => -1.51163157670922e10,
-        34 => 4.29614643061167e11,
-        36 => -1.37116552050883e13,
-        38 => 4.88332318973593e14,
-        40 => -1.92965793419401e16,
-        42 => 8.41693047573683e17,
-        44 => -4.03380718540595e19,
-        46 => 2.11507486380820e21,
-        48 => -1.20866265222965e23,
-        50 => 7.50086674607696e24,
-        52 => -5.03877810148107e26,
-        54 => 3.65287764848181e28,
-        56 => -2.84987693024509e30,
-        58 => 2.38654274996836e32,
-        60 => -2.13999492572253e34,
+        2 => 0.166_666_666_666_667,
+        4 | 8 => -0.033_333_333_333_333_3,
+        6 => 0.023_809_523_809_523_8,
+        10 => 0.075_757_575_757_575_8,
+        12 => -0.253_113_553_113_553,
+        14 => 1.166_666_666_666_67,
+        16 => -7.092_156_862_745_10,
+        18 => 54.971_177_944_862_2,
+        20 => -529.124_242_424_242,
+        22 => 6_192.123_188_405_80,
+        24 => -86_580.253_113_553_1,
+        26 => 1.425_517_166_666_67e6,
+        28 => -2.729_823_106_781_61e7,
+        30 => 6.015_808_739_006_42e8,
+        32 => -1.511_631_576_709_22e10,
+        34 => 4.296_146_430_611_67e11,
+        36 => -1.371_165_520_508_83e13,
+        38 => 4.883_323_189_735_93e14,
+        40 => -1.929_657_934_194_01e16,
+        42 => 8.416_930_475_736_83e17,
+        44 => -4.033_807_185_405_95e19,
+        46 => 2.115_074_863_808_20e21,
+        48 => -1.208_662_652_229_65e23,
+        50 => 7.500_866_746_076_96e24,
+        52 => -5.038_778_101_481_07e26,
+        54 => 3.652_877_648_481_81e28,
+        56 => -2.849_876_930_245_09e30,
+        58 => 2.386_542_749_968_36e32,
+        60 => -2.139_994_925_722_53e34,
         _ => 0.,
     }
 }
@@ -221,13 +221,13 @@ fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
 }
 
 // The Riemann zeta function
-pub fn riemann_zeta(s: Cplx) -> Cplx
+#[must_use] pub fn riemann_zeta(s: Cplx) -> Cplx
 {
     let n = 12;
     let m = 12;
     let u = 1. - s;
-    let nf = n as f64;
-    let s0: Cplx = (1..n).map(|j| (j as f64).powc(-s)).sum();
+    let nf = f64::from(n);
+    let s0: Cplx = (1..n).map(|j| f64::from(j).powc(-s)).sum();
     let s1 = 0.5 * nf.powc(-s);
     let s2 = nf.powc(u) / u;
     let s3: Cplx = (1..=m).map(|k| zeta_t(k, nf, s)).sum();
@@ -236,15 +236,15 @@ pub fn riemann_zeta(s: Cplx) -> Cplx
 }
 
 // The Riemann zeta function and its derivative
-pub fn riemann_zeta_d(s: Cplx) -> [Cplx; 2]
+#[must_use] pub fn riemann_zeta_d(s: Cplx) -> [Cplx; 2]
 {
     let n = 12;
     let m = 12;
     let u = 1. - s;
-    let nf = n as f64;
+    let nf = f64::from(n);
     let [s0, ds0]: [Cplx; 2] = (1..n)
         .map(|j| {
-            let jf = j as f64;
+            let jf = f64::from(j);
             let term = jf.powc(-s);
             [term, -term * jf.ln()]
         })
@@ -261,15 +261,15 @@ pub fn riemann_zeta_d(s: Cplx) -> [Cplx; 2]
 }
 
 // The Riemann zeta function and its first two derivatives
-pub fn riemann_zeta_d2(s: Cplx) -> [Cplx; 3]
+#[must_use] pub fn riemann_zeta_d2(s: Cplx) -> [Cplx; 3]
 {
     let n = 14;
     let m = 10;
     let u = 1. - s;
-    let nf = n as f64;
+    let nf = f64::from(n);
     let (s0d0, s0d1, s0d2): (Cplx, Cplx, Cplx) = (1..n)
         .map(|j| {
-            let jf = j as f64;
+            let jf = f64::from(j);
             let term = jf.powc(-s);
             let log_j = jf.ln();
             let dterm = term * log_j;
@@ -303,13 +303,13 @@ pub fn riemann_zeta_d2(s: Cplx) -> [Cplx; 3]
     ]
 }
 
-pub fn riemann_xi(s: Cplx) -> Cplx
+#[must_use] pub fn riemann_xi(s: Cplx) -> Cplx
 {
     let u = s * 0.5;
     u * (s - 1.) * PI.powc(-u) * gamma(u) * riemann_zeta(s)
 }
 
-pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
+#[must_use] pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
 {
     if s.re < -5.
     {
@@ -331,7 +331,7 @@ pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
     ]
 }
 
-pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
+#[must_use] pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
 {
     if s.re < -5.
     {
@@ -373,8 +373,8 @@ pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
 
 pub fn roots_of_unity(degree: i32) -> impl Iterator<Item = Cplx>
 {
-    let theta = TAUI / (degree as Real);
-    (0..degree).map(move |k| (theta * (k as Real)).exp())
+    let theta = TAUI / f64::from(degree);
+    (0..degree).map(move |k| (theta * f64::from(k)).exp())
 }
 
 pub fn newton_fixed_iter<T, F, G>(f_and_df: F, start: T, target: T, iters: usize) -> T

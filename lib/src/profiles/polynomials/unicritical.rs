@@ -1,5 +1,5 @@
 use crate::{
-    macros::*,
+    macros::{basic_escape_encoding, horner_monic, profile_imports},
     math_utils::{roots_of_unity, solve_quadratic},
 };
 profile_imports!();
@@ -68,7 +68,7 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
 
     fn name(&self) -> String
     {
-        format!("Unicritical({})", D)
+        format!("Unicritical({D})")
     }
 }
 

@@ -59,7 +59,7 @@ impl Norm<Real> for Point
     }
 }
 #[derive(Default, Clone, Copy, Debug, Add, Sub, Display, From, PartialEq)]
-#[display(fmt = "({}, {})", x, y)]
+#[display(fmt = "({x}, {y})")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point
 {
@@ -94,7 +94,7 @@ impl From<Point> for Cplx
 }
 
 #[derive(Default, Debug, Clone, Copy, Add, Sub, Display, From, PartialEq)]
-#[display(fmt = "[{}, {}]", v0, v1)]
+#[display(fmt = "[{v0}, {v1}]")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Matrix2x2
 {
@@ -207,6 +207,7 @@ pub enum PlaneID
 }
 impl PlaneID
 {
+    #[must_use]
     pub const fn swap(&self) -> Self
     {
         match self
@@ -221,9 +222,9 @@ impl PlaneID
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Bicomplex
 {
-    #[display(fmt = "PlaneA({})", _0)]
+    #[display(fmt = "PlaneA({_0})")]
     PlaneA(Cplx),
-    #[display(fmt = "PlaneB({})", _0)]
+    #[display(fmt = "PlaneB({_0})")]
     PlaneB(Cplx),
 }
 
@@ -239,10 +240,10 @@ impl From<Bicomplex> for Cplx
 {
     fn from(value: Bicomplex) -> Self
     {
+        use Bicomplex::{PlaneA, PlaneB};
         match value
         {
-            Bicomplex::PlaneA(z) => z,
-            Bicomplex::PlaneB(z) => z,
+            PlaneA(z) | PlaneB(z) => z,
         }
     }
 }
@@ -252,32 +253,28 @@ impl Norm<Real> for Bicomplex
     {
         match self
         {
-            Self::PlaneA(z) => z.norm(),
-            Self::PlaneB(z) => z.norm(),
+            Self::PlaneA(z) | Self::PlaneB(z) => z.norm(),
         }
     }
     fn norm_sqr(&self) -> Real
     {
         match self
         {
-            Self::PlaneA(z) => z.norm_sqr(),
-            Self::PlaneB(z) => z.norm_sqr(),
+            Self::PlaneA(z) | Self::PlaneB(z) => z.norm_sqr(),
         }
     }
     fn arg(&self) -> Real
     {
         match self
         {
-            Self::PlaneA(z) => z.arg(),
-            Self::PlaneB(z) => z.arg(),
+            Self::PlaneA(z) | Self::PlaneB(z) => z.arg(),
         }
     }
     fn is_nan(&self) -> bool
     {
         match self
         {
-            Self::PlaneA(z) => z.is_nan(),
-            Self::PlaneB(z) => z.is_nan(),
+            Self::PlaneA(z) | Self::PlaneB(z) => z.is_nan(),
         }
     }
 }

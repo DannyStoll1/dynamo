@@ -77,17 +77,17 @@ where
     #[must_use]
     fn to_string(&self) -> String
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, Periodic, Wandering};
         let result_summary = match &self.result
         {
-            Escaping { potential } => format!("Escaped, potential: {potential:.*}", DISPLAY_PREC),
+            Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
             Periodic {
                 period,
                 preperiod,
                 multiplier,
                 final_error: _,
             } => format!(
-                "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier:.*}", DISPLAY_PREC
+                "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier:.DISPLAY_PREC$}"
             ),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
@@ -101,7 +101,7 @@ where
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {}, b: {} ] ", a, b)]
+#[display(fmt = "[ a: {a}, b: {b} ] ")]
 pub struct CplxPair
 {
     pub a: Cplx,
@@ -128,7 +128,7 @@ impl From<CplxPair> for Cplx
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {}, b: {}, c: {}, d: {} ] ", a, b, c, d)]
+#[display(fmt = "[ a: {a}, b: {b}, c: {c}, d: {d} ] ")]
 pub struct ComplexQuad
 {
     pub a: Cplx,

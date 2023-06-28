@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use crate::macros::*;
+use crate::macros::profile_imports;
 use crate::math_utils::slog;
 profile_imports!();
 

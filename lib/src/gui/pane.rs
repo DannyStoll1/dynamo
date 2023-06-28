@@ -6,10 +6,10 @@ use crate::iter_plane::{FractalImage, IterPlane};
 use crate::point_grid::{Bounds, PointGrid};
 use crate::profiles::QuadRatPer2;
 use crate::types::param_stack::Summarize;
-use crate::types::*;
+use crate::types::{ComplexVec, Cplx, Norm, OrbitInfo, ParamList, Real};
 use input_macro::input;
 
-use super::keyboard_shortcuts::*;
+use super::keyboard_shortcuts::{CTRL_P, CTRL_Q, CTRL_S, CTRL_V, CTRL_W, CTRL_Z, KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_B, KEY_C, KEY_DOWN, KEY_EQUALS, KEY_H, KEY_I, KEY_L, KEY_LEFT, KEY_MINUS, KEY_O, KEY_P, KEY_R, KEY_RIGHT, KEY_SPACE, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_Y, KEY_Z, SHIFT_DOWN, SHIFT_LEFT, SHIFT_RIGHT, SHIFT_SPACE, SHIFT_UP, shortcut_used};
 use super::marked_points::MarkingMode;
 
 use egui::{
@@ -493,7 +493,7 @@ where
     #[inline]
     fn reset_selection(&mut self)
     {
-        self.select_point(self.plane.default_selection())
+        self.select_point(self.plane.default_selection());
     }
     #[inline]
     fn marking_mode(&self) -> &MarkingMode
@@ -714,7 +714,7 @@ where
             save_dialog: None,
             pane_to_save: PaneID::Parent,
             click_used: false,
-            message: Default::default(),
+            message: UIMessage::default(),
         }
     }
 
@@ -728,7 +728,7 @@ where
         let offset = new_bounds.center() - old_default_center;
         let new_center = old_center + offset;
 
-        if !offset.is_nan()
+        if offset.is_finite()
         {
             new_bounds.zoom(self.child.zoom_factor, new_center);
             new_bounds.recenter(new_center);
@@ -737,6 +737,7 @@ where
         }
         else
         {
+            // Reset child bounds to default
             self.child.grid_mut().change_bounds(new_bounds);
             self.child.set_param(T::from(new_param));
             self.child.grid_mut().resize_y(self.image_height);
@@ -889,7 +890,7 @@ where
 {
     fn handle_mouse(&mut self, ctx: &Context)
     {
-        let clicked = ctx.input(|i| i.pointer.any_click()) & !self.click_used;
+        let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;
         let zoom_factor = ctx.input(InputState::zoom_delta);
 
         self.reset_click();

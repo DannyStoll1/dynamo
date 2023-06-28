@@ -3,3 +3,5 @@
 bin/images
 images
 wasm/Cargo.lock
+perf_notes.txt
+lib/src/bindings.rs

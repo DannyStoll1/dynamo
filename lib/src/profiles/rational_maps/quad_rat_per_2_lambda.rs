@@ -1,6 +1,9 @@
 use crate::math_utils::solve_cubic;
 use crate::types::CplxPair;
-use crate::{macros::*, math_utils::solve_quadratic};
+use crate::{
+    macros::{basic_escape_encoding, profile_imports},
+    math_utils::solve_quadratic,
+};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -91,7 +94,7 @@ impl ParameterPlane for QuadRatPer2Lambda
 
     fn set_param(&mut self, lambda: <Self::MetaParam as ParamList>::Param)
     {
-        self.multiplier = lambda
+        self.multiplier = lambda;
     }
 
     fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
@@ -108,11 +111,13 @@ impl ParameterPlane for QuadRatPer2Lambda
         }
     }
 
-    fn periodicity_tolerance(&self) -> Real {
+    fn periodicity_tolerance(&self) -> Real
+    {
         1e-6
     }
 
-    fn min_iter(&self) -> Period {
+    fn min_iter(&self) -> Period
+    {
         self.max_iter / 4
     }
 }

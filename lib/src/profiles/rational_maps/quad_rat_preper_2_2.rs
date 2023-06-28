@@ -1,6 +1,6 @@
 use crate::math_utils::solve_cubic;
 use crate::types::CplxPair;
-use crate::{macros::*, math_utils::solve_quadratic};
+use crate::{macros::profile_imports, math_utils::solve_quadratic};
 profile_imports!();
 
 #[derive(Clone, Debug)]

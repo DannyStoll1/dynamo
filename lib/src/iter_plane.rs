@@ -1,7 +1,7 @@
 use crate::coloring::Coloring;
 use crate::point_grid::PointGrid;
 
-use crate::types::*;
+use crate::types::{Norm, PointInfo, Real};
 use egui::{Color32, ColorImage};
 use image::ImageBuffer;
 use ndarray::Array2;
@@ -43,8 +43,8 @@ where
     }
     fn save(&self, coloring: &Coloring, filename: String)
     {
-        let res_x = self.point_grid().res_x as u32;
-        let res_y = self.point_grid().res_y as u32;
+        let res_x = u32::try_from(self.point_grid().res_x).unwrap_or(u32::MAX);
+        let res_y = u32::try_from(self.point_grid().res_y).unwrap_or(u32::MAX);
         let mut image = ImageBuffer::new(res_x, res_y);
 
         for (x, y, pixel) in image.enumerate_pixels_mut()
@@ -54,11 +54,11 @@ where
         }
         if let Err(e) = image.save(filename.clone())
         {
-            println!("Error encountered saving file: {e:?}")
+            println!("Error encountered saving file: {e:?}");
         }
         else
         {
-            println!("Image saved to {}", filename);
+            println!("Image saved to {filename}");
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{macros::*, math_utils::solve_quadratic};
+use crate::{macros::profile_imports, math_utils::solve_quadratic};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -68,7 +68,7 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         (0..D)
-            .map(|k| (TAUI * (k as Real) / Self::D_FLOAT).exp())
+            .map(|k| (TAUI * f64::from(k) / Self::D_FLOAT).exp())
             .collect()
     }
     fn default_selection(&self) -> Cplx
@@ -79,6 +79,6 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
 
     fn name(&self) -> String
     {
-        format!("Minsik Han Family, degree {}", D)
+        format!("Minsik Han Family, degree {D}")
     }
 }

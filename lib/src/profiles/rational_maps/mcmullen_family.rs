@@ -1,4 +1,4 @@
-use crate::{macros::*, math_utils::solve_quadratic};
+use crate::{macros::{basic_escape_encoding, profile_imports}, math_utils::solve_quadratic};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -67,7 +67,7 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         let w0 = Self::N_FLOAT / (c * Self::M_FLOAT);
         let z0 = w0.powf(Self::M_PLUS_N_INV);
         (0..(M + N))
-            .map(|k| (TAUI * (k as Real) * Self::M_PLUS_N_INV).exp() * z0)
+            .map(|k| (TAUI * f64::from(k) * Self::M_PLUS_N_INV).exp() * z0)
             .collect()
     }
 
@@ -88,6 +88,6 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
 
     fn name(&self) -> String
     {
-        format!("McMullen Family ({}, {})", M, N)
+        format!("McMullen Family ({M}, {N})")
     }
 }

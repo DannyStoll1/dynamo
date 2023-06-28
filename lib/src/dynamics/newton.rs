@@ -1,5 +1,5 @@
 use super::ParameterPlane;
-use crate::types::*;
+use crate::types::Cplx;
 
 trait NewtonPlane: ParameterPlane<Var = Cplx, Deriv = Cplx>
 {

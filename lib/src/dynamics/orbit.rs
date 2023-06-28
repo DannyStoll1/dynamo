@@ -1,4 +1,4 @@
-use crate::types::*;
+use crate::types::{Dist, EscapeState, Norm, Period, Real};
 
 pub struct OrbitParams
 {
@@ -147,7 +147,7 @@ where
         early_bailout: B,
         z: V,
         param: P,
-        orbit_params: OrbitParams,
+        orbit_params: &OrbitParams,
     ) -> Self
     {
         Self {

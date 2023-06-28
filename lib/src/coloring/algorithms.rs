@@ -1,7 +1,7 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
-use crate::consts::*;
-use crate::types::*;
+use crate::consts::TAU;
+use crate::types::{IterCount, Norm, Period, Real};
 use egui::Color32;
 
 #[cfg(feature = "serde")]
@@ -71,7 +71,6 @@ impl ColoringAlgorithm
             }
             Self::Preperiod =>
             {
-                let _coloring_rate = 0.02;
                 let per = IterCount::from(period);
                 let val = IterCount::from(preperiod);
 

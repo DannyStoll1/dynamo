@@ -1,7 +1,7 @@
 use super::pane::ColoredPoints;
 use crate::coloring::palette::DiscretePalette;
 use crate::dynamics::ParameterPlane;
-use crate::types::*;
+use crate::types::{Cplx, Period};
 use egui::Color32;
 
 #[derive(Clone, Debug, Default)]

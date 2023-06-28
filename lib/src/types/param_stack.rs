@@ -13,7 +13,7 @@ pub trait Summarize: std::fmt::Display
 {
     fn summarize(&self) -> Option<String>
     {
-        Some(format!("{}", self))
+        Some(format!("{self}"))
     }
 }
 
@@ -122,7 +122,7 @@ impl ParamList for NoParam
 }
 
 #[derive(Clone, Copy, Display, Default)]
-#[display(fmt = "[{}, {}]", meta_params, local_param)]
+#[display(fmt = "[{meta_params}, {local_param}]")]
 pub struct ParamStack<T, H>
 where
     T: Clone + Default + Summarize,

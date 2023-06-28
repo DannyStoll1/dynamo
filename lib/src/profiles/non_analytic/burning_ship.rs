@@ -1,4 +1,4 @@
-use crate::{macros::*, types::variables::Matrix2x2};
+use crate::{macros::profile_imports, types::variables::Matrix2x2};
 profile_imports!();
 
 #[derive(Clone, Debug)]

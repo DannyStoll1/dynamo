@@ -1,14 +1,22 @@
-use crate::coloring::{algorithms::*, palette::*};
+use crate::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette};
 use crate::consts::{OMEGA, ONE};
-use crate::dynamics::covering_maps::*;
+use crate::dynamics::covering_maps::HasDynamicalCovers;
 use crate::dynamics::julia::JuliaSet;
 use crate::dynamics::ParameterPlane;
-use crate::gui::pane::*;
+use crate::gui::pane::{Interactive, Interface, MainInterface, Pane, PaneID, PanePair};
 use crate::macros::{
     fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
 };
-use crate::profiles::*;
-use crate::types::*;
+use crate::profiles::{
+    BiquadraticMult, BiquadraticMultParam, BiquadraticMultSection, BurningShip, Chebyshev, Cosine,
+    CosineAdd, CubicMarked2Cycle, CubicPer1Lambda, CubicPer1LambdaParam, CubicPer1_0, CubicPer1_1,
+    CubicPer2CritMarked, CubicPer2Lambda, CubicPer2LambdaParam, CubicPer3_0, Exponential,
+    Mandelbrot, McMullenFamily, MinsikHanPhi, OddCubic, QuadRatPer1Lambda, QuadRatPer1LambdaParam,
+    QuadRatPer2, QuadRatPer2Lambda, QuadRatPer2LambdaParam, QuadRatPer3, QuadRatPer4, QuadRatPer5,
+    QuadRatPreper21, QuadRatPreper22, QuadRatSymmetryLocus, RiemannXi, Rulkov, SailboatParam,
+    SineWander, Tricorne, Unicritical,
+};
+use crate::types::{Cplx, ParamList};
 use egui::Ui;
 use egui_dock::NodeIndex;
 use seq_macro::seq;
@@ -22,6 +30,7 @@ pub struct FractalTab
 // {{{impl FractalTab
 impl FractalTab
 {
+    #[must_use]
     pub const fn with_node_index(mut self, node: NodeIndex) -> Self
     {
         self.node = node;
@@ -598,7 +607,7 @@ impl FractalTab
 
     pub fn process_interface_message(&mut self, _ui: &mut Ui)
     {
-        use super::pane::UIMessage::*;
+        use super::pane::UIMessage::{CloseWindow, DoNothing, Quit};
         match self.interface.pop_message()
         {
             DoNothing =>
@@ -620,9 +629,10 @@ impl Default for FractalTab
 {
     fn default() -> Self
     {
+        type Profile = Mandelbrot;
+
         let height = 768;
 
-        type Profile = Mandelbrot;
         let parent_plane = Profile::default().with_res_y(height).with_max_iter(1024);
         let child_plane = <Profile as ParameterPlane>::Child::from(parent_plane.clone());
 

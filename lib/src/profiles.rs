@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::profile_imports;
 profile_imports!();
 
 pub mod polynomials;

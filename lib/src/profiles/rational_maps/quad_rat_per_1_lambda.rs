@@ -1,6 +1,9 @@
 use crate::math_utils::solve_cubic;
 use crate::types::CplxPair;
-use crate::{macros::*, math_utils::solve_quadratic};
+use crate::{
+    macros::{basic_escape_encoding, horner_monic, profile_imports},
+    math_utils::solve_quadratic,
+};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -104,7 +107,7 @@ impl ParameterPlane for QuadRatPer1Lambda
 
     fn set_param(&mut self, lambda: <Self::MetaParam as ParamList>::Param)
     {
-        self.multiplier = lambda
+        self.multiplier = lambda;
     }
 }
 
@@ -155,14 +158,14 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     #[inline]
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
     {
-        let a = -4.*l/horner_monic!(l, 8., 12., 6.);
+        let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         1. + a / (z * z)
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let a = -4.*l/horner_monic!(l, 8., 12., 6.);
+        let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         let z2 = z * z;
         (1. + a / z2, -(a + a) / (z2 * z))
     }
@@ -170,7 +173,7 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     #[inline]
     fn dynamical_derivative(&self, z: Self::Var, l: Self::Param) -> Self::Deriv
     {
-        let a = -4.*l/horner_monic!(l, 8., 12., 6.);
+        let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         -(a + a) / (z * z * z)
     }
 
@@ -185,7 +188,6 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     {
         ONE
     }
-
 
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {

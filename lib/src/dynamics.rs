@@ -1,9 +1,13 @@
 use crate::{
     coloring::{algorithms::ColoringAlgorithm, Coloring},
+    consts::ONE,
     iter_plane::IterPlane,
+    math_utils::{newton_until_convergence, newton_until_convergence_d},
     point_grid::{self, Bounds, PointGrid},
     types::param_stack::Summarize,
-    types::*, math_utils::{newton_until_convergence, newton_until_convergence_d}, consts::ONE,
+    types::{
+        Cplx, Dist, EscapeState, IterCount, Norm, OrbitInfo, ParamList, Period, PointInfo, Real,
+    },
 };
 use ndarray::{Array2, Axis};
 use num_cpus;
@@ -44,12 +48,18 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
+
+    #[must_use]
     fn with_point_grid(self, point_grid: PointGrid) -> Self;
+
+    #[must_use]
     fn with_bounds(self, bounds: Bounds) -> Self
     {
         let point_grid = self.point_grid().new_with_same_height(bounds);
         self.with_point_grid(point_grid)
     }
+
+    #[must_use]
     fn with_res_y(mut self, res_y: usize) -> Self
     {
         self.point_grid_mut().resize_y(res_y);
@@ -59,6 +69,8 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn max_iter(&self) -> Period;
     fn max_iter_mut(&mut self) -> &mut Period;
     fn set_max_iter(&mut self, new_max_iter: Period);
+
+    #[must_use]
     fn with_max_iter(self, max_iter: Period) -> Self;
 
     fn name(&self) -> String;
@@ -192,17 +204,18 @@ pub trait ParameterPlane: Sync + Send + Clone
             .enumerate()
             .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
+                let orbit_params = OrbitParams {
+                    max_iter: self.max_iter(),
+                    min_iter: self.min_iter(),
+                    periodicity_tolerance: self.periodicity_tolerance(),
+                    escape_radius: self.escape_radius(),
+                };
+
                 chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
                     let y = chunk_idx * chunk_size + local_y;
                     let point = self.point_grid().map_pixel(x, y);
                     let param = self.param_map(point);
                     let start = self.start_point(point, param);
-                    let orbit_params = OrbitParams {
-                        max_iter: self.max_iter(),
-                        min_iter: self.min_iter(),
-                        periodicity_tolerance: self.periodicity_tolerance(),
-                        escape_radius: self.escape_radius(),
-                    };
                     let mut orbit = orbits
                         .get_or(|| {
                             RefCell::new(CycleDetectedOrbitFloyd::new(
@@ -211,7 +224,7 @@ pub trait ParameterPlane: Sync + Send + Clone
                                 |c, z| self.early_bailout(c, z),
                                 start,
                                 param,
-                                orbit_params,
+                                &orbit_params,
                             ))
                         })
                         .borrow_mut();
@@ -256,6 +269,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn set_param(&mut self, _value: <Self::MetaParam as ParamList>::Param) {}
 
     #[inline]
+    #[must_use]
     fn with_param(mut self, param: <Self::MetaParam as ParamList>::Param) -> Self
     {
         self.set_param(param);
@@ -406,7 +420,7 @@ pub trait ParameterPlane: Sync + Send + Clone
             |z, c| self.early_bailout(z, c),
             start,
             c,
-            orbit_params,
+            &orbit_params,
         );
         if let Some((_, state)) = orbit.last()
         {
@@ -432,7 +446,7 @@ pub trait ParameterPlane: Sync + Send + Clone
             |z, c| self.early_bailout(z, c),
             start,
             c,
-            orbit_params,
+            &orbit_params,
         );
         if let Some((_, state)) = orbit.last()
         {
@@ -492,7 +506,7 @@ pub trait ParameterPlane: Sync + Send + Clone
             |c, z| self.early_bailout(c, z),
             start,
             param,
-            orbit_params,
+            &orbit_params,
         );
         let mut final_state = EscapeState::Bounded;
         let trajectory: Vec<Self::Var> = orbit
@@ -578,7 +592,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     {
         match point_info
         {
-            PointInfo::Bounded => 0.,
+            PointInfo::Bounded | PointInfo::Wandering => 0.,
             PointInfo::Escaping { potential } => potential,
             PointInfo::Periodic {
                 preperiod,
@@ -615,7 +629,6 @@ pub trait ParameterPlane: Sync + Send + Clone
                     per.mul_add(potential, f64::from(preperiod))
                 }
             }
-            PointInfo::Wandering => 0.,
         }
     }
 }

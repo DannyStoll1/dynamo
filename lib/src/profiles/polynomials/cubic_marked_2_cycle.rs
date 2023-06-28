@@ -1,5 +1,5 @@
 use crate::{
-    macros::*,
+    macros::{horner, horner_monic, profile_imports},
     math_utils::{solve_cubic, solve_quartic, weierstrass_p},
 };
 profile_imports!();

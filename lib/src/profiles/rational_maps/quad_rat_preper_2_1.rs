@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::profile_imports;
 use crate::math_utils::{weierstrass_p, solve_quadratic};
 profile_imports!();
 

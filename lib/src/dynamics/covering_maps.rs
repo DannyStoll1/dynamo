@@ -1,7 +1,7 @@
-use super::ParameterPlane;
 use super::julia::JuliaSet;
+use super::ParameterPlane;
 use crate::point_grid::{Bounds, PointGrid};
-use crate::types::{Cplx, ComplexVec, EscapeState, Period, PointInfo};
+use crate::types::{ComplexVec, Cplx, EscapeState, Period, PointInfo};
 
 #[derive(Clone)]
 pub struct CoveringMap<C>
@@ -19,11 +19,7 @@ where
     C: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(
-        base_curve: C,
-        covering_map: fn(Cplx) -> Cplx,
-        point_grid: PointGrid,
-    ) -> Self
+    pub fn new(base_curve: C, covering_map: fn(Cplx) -> Cplx, point_grid: PointGrid) -> Self
     {
         Self {
             base_curve,
@@ -69,7 +65,8 @@ where
         &mut self.point_grid
     }
 
-    fn with_point_grid(mut self, point_grid: PointGrid) -> Self {
+    fn with_point_grid(mut self, point_grid: PointGrid) -> Self
+    {
         self.point_grid = point_grid;
         self
     }
@@ -103,7 +100,8 @@ where
         self.base_curve.set_max_iter(new_max_iter);
     }
 
-    fn with_max_iter(mut self, max_iter: Period) -> Self {
+    fn with_max_iter(mut self, max_iter: Period) -> Self
+    {
         self.set_max_iter(max_iter);
         self
     }
@@ -158,7 +156,7 @@ where
 
     fn set_meta_param(&mut self, value: Self::MetaParam)
     {
-        self.base_curve.set_meta_param(value)
+        self.base_curve.set_meta_param(value);
     }
 
     fn encode_escape_result(
@@ -195,20 +193,24 @@ where
         self.base_curve.default_julia_bounds(point, param)
     }
 
-    fn periodicity_tolerance(&self) -> crate::types::Real {
+    fn periodicity_tolerance(&self) -> crate::types::Real
+    {
         self.base_curve.periodicity_tolerance()
     }
 
-    fn set_param(&mut self, value: <Self::MetaParam as crate::types::param_stack::ParamList>::Param) {
-        self.base_curve.set_param(value)
+    fn set_param(&mut self, value: <Self::MetaParam as crate::types::param_stack::ParamList>::Param)
+    {
+        self.base_curve.set_param(value);
     }
 
-    fn get_param(&self) -> <Self::MetaParam as crate::types::param_stack::ParamList>::Param {
+    fn get_param(&self) -> <Self::MetaParam as crate::types::param_stack::ParamList>::Param
+    {
         self.base_curve.get_param()
     }
 
-    fn cycle_active_plane(&mut self) {
-        self.base_curve.cycle_active_plane()
+    fn cycle_active_plane(&mut self)
+    {
+        self.base_curve.cycle_active_plane();
     }
 }
 

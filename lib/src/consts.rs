@@ -5,18 +5,18 @@ pub const ZERO: Cplx = Cplx::new(0., 0.);
 pub const ONE: Cplx = Cplx::new(1., 0.);
 pub const TWO: Cplx = Cplx::new(2., 0.);
 pub const TAUI: Cplx = Cplx::new(0., 2. * PI);
-pub const OMEGA: Cplx = Cplx::new(-0.5, 0.866025403784439);
-pub const OMEGA_BAR: Cplx = Cplx::new(-0.5, -0.866025403784439);
-pub const ZETA_5_1: Cplx = Cplx::new(0.309016994374947, 0.951056516295154);
-pub const ZETA_5_2: Cplx = Cplx::new(-0.809016994374947, 0.587785252292473);
+pub const OMEGA: Cplx = Cplx::new(-0.5, 0.866_025_403_784_439);
+pub const OMEGA_BAR: Cplx = Cplx::new(-0.5, -0.866_025_403_784_439);
+pub const ZETA_5_1: Cplx = Cplx::new(0.309_016_994_374_947, 0.951_056_516_295_154);
+pub const ZETA_5_2: Cplx = Cplx::new(-0.809_016_994_374_947, 0.587_785_252_292_473);
 
 pub const ONE_THIRD: Real = 1. / 3.;
 pub const TWO_THIRDS: Real = 2. / 3.;
 pub const ONE_NINTH: Real = 1. / 9.;
-pub const SQRT_3: Real = 1.73205080756888;
-pub const PHI: Real = 1.618033988749895;
+pub const SQRT_3: Real = 1.732_050_807_568_88;
+pub const PHI: Real = 1.618_033_988_749_895;
 pub const ISQRT_PI: Real = 0.564_189_583_547_756_3; // 1 / sqrt(pi)
-pub const LOG_PI: Real = 1.14472988584940;
+pub const LOG_PI: Real = 1.144_729_885_849_40;
 
 pub const NAN: Cplx = Cplx::new(Real::NAN, 0.);
 
