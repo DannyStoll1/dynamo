@@ -301,6 +301,17 @@ mod tests
         assert!((mul + 288090.).norm() < 1e-2);
     }
 
+    #[cfg(feature = "mpsolve")]
+    #[test]
+    fn mpsolve()
+    {
+        use crate::consts::*;
+        use crate::math_utils::poly_solve::solve_polynomial;
+        let poly = vec![-ONE, ZERO, ZERO, ONE];
+        let roots = solve_polynomial(&poly);
+        dbg!(roots);
+    }
+
     // #[test]
     // fn erf()
     // {

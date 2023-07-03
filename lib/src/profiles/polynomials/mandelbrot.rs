@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{horner, horner_monic, profile_imports};
 
 profile_imports!();
 
@@ -117,6 +117,7 @@ impl ParameterPlane for Mandelbrot
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
+        use crate::math_utils::poly_solve::solve_polynomial;
         match period
         {
             1 =>
@@ -129,21 +130,52 @@ impl ParameterPlane for Mandelbrot
                 let u = (-3. - 4. * c).sqrt();
                 vec![0.5 * (-1. + u), -0.5 * (1. + u)]
             }
-            // 3 =>
-            // {
-            //     use crate::math_utils::poly_solve::solve_polynomial;
-            //     let c2 = c * c;
-            //     let coeffs = vec![
-            //         1. + c + (2. + c) * c2,
-            //         1. + c + c + c2,
-            //         1. + 3. * (c + c2),
-            //         1. + c + c,
-            //         1. + 3. * c,
-            //         ONE,
-            //         ONE,
-            //     ];
-            //     solve_polynomial(&coeffs)
-            // }
+            3 =>
+            {
+                let c2 = c * c;
+                let coeffs = vec![
+                    1. + c + (2. + c) * c2,
+                    1. + c + c + c2,
+                    1. + 3. * (c + c2),
+                    1. + c + c,
+                    1. + 3. * c,
+                    ONE,
+                    ONE,
+                ];
+                solve_polynomial(&coeffs)
+            }
+            4 =>
+            {
+                // [[c^6 + 3*c^5 + 3*c^4 + 3*c^3 + 2*c^2 + 1, 0],
+                //  [c^4 + 2*c^3 + c^2 + 2*c, 1],
+                //  [6*c^5 + 12*c^4 + 6*c^3 + 5*c^2 + c, 2],
+                //  [4*c^3 + 4*c^2 + 1, 3],
+                //  [15*c^4 + 18*c^3 + 3*c^2 + 4*c, 4],
+                //  [6*c^2 + 2*c, 5],
+                //  [20*c^3 + 12*c^2 + 1, 6],
+                //  [4*c, 7],
+                //  [15*c^2 + 3*c, 8],
+                //  [1, 9],
+                //  [6*c, 10],
+                //  [1, 12]]
+                let c2 = c * c;
+                let coeffs = vec![
+                    1. + c2 * horner_monic!(c, 2., 3., 3., 3.),
+                    c * horner_monic!(c, 2., 1., 2.),
+                    c * horner!(c, 1., 5., 6., 12., 6.),
+                    1. + 4. * c2 * (1. + c),
+                    c * horner!(c, 4., 3., 18., 15.),
+                    c * horner!(c, 2., 6.),
+                    1. + c2 * (12. + 20. * c),
+                    4. * c,
+                    3. * c + 15. * c2,
+                    ONE,
+                    6. * c,
+                    ZERO,
+                    ONE,
+                ];
+                solve_polynomial(&coeffs)
+            }
             _ => vec![],
         }
     }

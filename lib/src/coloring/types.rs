@@ -1,6 +1,6 @@
+use crate::macros::{max, min};
 use egui::Color32;
 use image::Rgb;
-use crate::macros::{max, min};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Hsv

@@ -1,4 +1,7 @@
-use crate::macros::profile_imports;
+use crate::{
+    macros::{horner, horner_monic, profile_imports},
+    math_utils::poly_solve::solve_polynomial,
+};
 profile_imports!();
 
 #[inline]
@@ -123,6 +126,75 @@ impl ParameterPlane for QuadRatPer2
             2 =>
             {
                 vec![(1.).into()]
+            }
+            3 =>
+            {
+                let coeffs = [
+                    horner_monic!(c, 1., -1.),
+                    -c - 1.,
+                    3. * c - 2.,
+                    c + 1.,
+                    ONE,
+                    ZERO,
+                    ONE,
+                ];
+                solve_polynomial(&coeffs)
+            }
+            4 =>
+            {
+                let coeffs = [
+                    horner_monic!(c, 1., -4., 6., -3.),
+                    -c * horner_monic!(c, 2., -3.),
+                    horner!(c, -6., 19., -20., 7.),
+                    horner_monic!(c, -1., 11., -9.),
+                    horner!(c, 12., -28., 19.),
+                    horner!(c, 4., -18., 6.),
+                    horner_monic!(c, -7., 10.),
+                    horner!(c, -4., 8.),
+                    horner!(c, -4., 7.),
+                    c - 1.,
+                    Cplx::new(4., 0.),
+                    TWO,
+                    ONE,
+                ];
+                solve_polynomial(&coeffs)
+            }
+            5 =>
+            {
+                let coeffs = [
+                    horner_monic!(c, 1., -9., 33., -64., 76., -66., 50., -31., 15., -5.),
+                    -horner_monic!(c, 1., -7., 20., -26., 8., 18., -23., 15., -5.),
+                    horner!(c, -14., 115., -378., 652., -700., 567., -386., 204., -74., 15.),
+                    horner_monic!(c, 13., -81., 202., -208., -7., 205., -188., 84., -19.),
+                    horner!(c, 85., -636., 1862., -2837., 2738., -2019., 1185., -478., 103.),
+                    horner!(c, -72., 398., -855., 633., 357., -879., 550., -158., 14.),
+                    horner_monic!(c, -291., 1979., -5108., 6786., -5793., 3741., -1712., 408.),
+                    horner!(c, 219., -1071., 1936., -786., -1457., 1771., -696., 88.),
+                    horner!(c, 606., -3735., 8345., -9421., 6869., -3538., 954., 17.),
+                    horner_monic!(c, -387., 1671., -2431., -49., 2480., -1666., 295.),
+                    horner!(c, -751., 4182., -7780., 7018., -3921., 1127., 118.),
+                    horner!(c, 364., -1396., 1498., 998., -1783., 493., 16.),
+                    horner_monic!(c, 437., -2221., 2975., -1496., 50., 425.),
+                    horner!(c, -73., 315., -228., -556., 153., 93.),
+                    horner!(c, 126., -417., 1194., -1410., 807., 15.),
+                    horner_monic!(c, -199., 409., 22., -334., 253.),
+                    horner!(c, -375., 1220., -1464., 675., 83.),
+                    horner!(c, 176., -276., -243., 221., 12.),
+                    horner_monic!(c, 185., -431., 162., 206.),
+                    horner!(c, -9., 9., 72., 54.),
+                    horner!(c, 34., -125., 161., 11.),
+                    horner_monic!(c, -43., -7., 37.),
+                    horner!(c, -51., 66., 42.),
+                    horner!(c, 8., 18., 10.),
+                    horner_monic!(c, 5., 13.),
+                    horner!(c, 3., 3.),
+                    horner!(c, 2., 9.),
+                    c + 1.,
+                    ONE,
+                    ZERO,
+                    ONE,
+                ];
+                solve_polynomial(&coeffs)
             }
             _ => vec![],
         }

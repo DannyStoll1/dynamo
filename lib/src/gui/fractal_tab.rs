@@ -247,7 +247,7 @@ impl FractalTab
                 self.interface.consume_click();
                 ui.close_menu();
             }
-            else if ui.button("[Y] Toggle fixed points (Julia)").clicked()
+            else if ui.button("[^1] Toggle fixed points (Julia)").clicked()
             {
                 self.interface
                     .child_mut()
@@ -257,12 +257,32 @@ impl FractalTab
                 self.interface.consume_click();
                 ui.close_menu();
             }
-            else if ui.button("[U] Toggle 2-cycles (Julia)").clicked()
+            else if ui.button("[^2] Toggle 2-cycles (Julia)").clicked()
             {
                 self.interface
                     .child_mut()
                     .marking_mode_mut()
                     .toggle_cycles(2);
+                self.interface.child_mut().schedule_redraw();
+                self.interface.consume_click();
+                ui.close_menu();
+            }
+            else if ui.button("[^3] Toggle 3-cycles (Julia)").clicked()
+            {
+                self.interface
+                    .child_mut()
+                    .marking_mode_mut()
+                    .toggle_cycles(3);
+                self.interface.child_mut().schedule_redraw();
+                self.interface.consume_click();
+                ui.close_menu();
+            }
+            else if ui.button("[^4] Toggle 4-cycles (Julia)").clicked()
+            {
+                self.interface
+                    .child_mut()
+                    .marking_mode_mut()
+                    .toggle_cycles(4);
                 self.interface.child_mut().schedule_redraw();
                 self.interface.consume_click();
                 ui.close_menu();

@@ -219,19 +219,19 @@ impl HasDynamicalCovers for OddCubic
                     x = x.inv();
                     y *= x;
 
-                    let y2 = y*y;
-                    let x2 = x*x;
-                    let x4 = x2*x2;
+                    let y2 = y * y;
+                    let x2 = x * x;
+                    let x4 = x2 * x2;
 
-                    let u0 = 3./y;
-                    let u2 = (x2*x + 3.*y2).inv();
-                    let u3 = x4*u0*u2 - x*u0;
-                    let u4 = 3./y2;
-                    let u5 = x4*x*u2*u4 - x2*u4;
+                    let u0 = 3. / y;
+                    let u2 = (x2 * x + 3. * y2).inv();
+                    let u3 = x4 * u0 * u2 - x * u0;
+                    let u4 = 3. / y2;
+                    let u5 = x4 * x * u2 * u4 - x2 * u4;
 
-                    let u3_2 = u3*u3;
-                    let u5_2 = u5*u5;
-                    let v = u3_2 * u3_2 / (u5*u5_2) + 3.*u3_2 / u5_2;
+                    let u3_2 = u3 * u3;
+                    let u5_2 = u5 * u5;
+                    let v = u3_2 * u3_2 / (u5 * u5_2) + 3. * u3_2 / u5_2;
 
                     v.inv()
                 };

@@ -221,7 +221,8 @@ fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
 }
 
 // The Riemann zeta function
-#[must_use] pub fn riemann_zeta(s: Cplx) -> Cplx
+#[must_use]
+pub fn riemann_zeta(s: Cplx) -> Cplx
 {
     let n = 12;
     let m = 12;
@@ -236,7 +237,8 @@ fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
 }
 
 // The Riemann zeta function and its derivative
-#[must_use] pub fn riemann_zeta_d(s: Cplx) -> [Cplx; 2]
+#[must_use]
+pub fn riemann_zeta_d(s: Cplx) -> [Cplx; 2]
 {
     let n = 12;
     let m = 12;
@@ -261,7 +263,8 @@ fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
 }
 
 // The Riemann zeta function and its first two derivatives
-#[must_use] pub fn riemann_zeta_d2(s: Cplx) -> [Cplx; 3]
+#[must_use]
+pub fn riemann_zeta_d2(s: Cplx) -> [Cplx; 3]
 {
     let n = 14;
     let m = 10;
@@ -303,13 +306,15 @@ fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
     ]
 }
 
-#[must_use] pub fn riemann_xi(s: Cplx) -> Cplx
+#[must_use]
+pub fn riemann_xi(s: Cplx) -> Cplx
 {
     let u = s * 0.5;
     u * (s - 1.) * PI.powc(-u) * gamma(u) * riemann_zeta(s)
 }
 
-#[must_use] pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
+#[must_use]
+pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
 {
     if s.re < -5.
     {
@@ -331,7 +336,8 @@ fn zeta_t_d2(k: u64, nf: f64, s: Cplx) -> [Cplx; 3]
     ]
 }
 
-#[must_use] pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
+#[must_use]
+pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
 {
     if s.re < -5.
     {

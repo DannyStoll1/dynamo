@@ -1,4 +1,5 @@
-use crate::macros::profile_imports;
+use crate::macros::{profile_imports, horner, horner_monic};
+use crate::math_utils::poly_solve::solve_polynomial;
 use crate::math_utils::solve_cubic;
 use crate::types::param_stack::Summarize;
 use crate::types::variables::{Bicomplex, PlaneID};
@@ -354,6 +355,26 @@ impl ParameterPlane for BiquadraticMult
                     ]
                 }
             },
+            4 => {
+                let b2 = b*b;
+                let b3 = b*b2;
+                let coeffs = [
+                    a*b+1.,
+                    horner!(a, b, b2, 1., b),
+                    horner_monic!(a, b2, 2., 4.*b, 2.*b2),
+                    horner!(a, 1., 5.*b, 5.*b2, b3+4., 4.*b),
+                    horner!(a, 2.*b, 4.*b2, 3.*b3+6., 14.*b, 3.*b2, 2.),
+                    horner!(a, b2, 3.*b3+4., 18.*b, 12.*b2, 9., 3.*b),
+                    horner_monic!(a, b3 + 1., 10.*b, 18.*b2, 16., 15.*b, 0.),
+                    horner!(a, 2.*b, 12.*b2, 14., 30.*b, 0., 6.),
+                    horner!(a, 3.*b2, 6., 30.*b, 0., 15.),
+                    horner!(a, 1., 15.*b, 0., 20.),
+                    horner!(a, 3.*b, 0., 15.),
+                    6.*a,
+                    ONE
+                ];
+                solve_polynomial(&coeffs).into_iter().map(|x|Bicomplex::PlaneA(x)).collect()
+            }
             _ => vec![],
         }
     }

@@ -101,7 +101,8 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var> {
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
         vec![ZERO]
     }
 
@@ -291,7 +292,8 @@ impl ParameterPlane for Cosine
         lambda
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds {
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    {
         Bounds::centered_square(5.5)
     }
 }
@@ -386,7 +388,7 @@ impl ParameterPlane for SineWander
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        z.sin() + z + TAU*c
+        z.sin() + z + TAU * c
     }
 
     #[inline]
@@ -402,15 +404,18 @@ impl ParameterPlane for SineWander
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var {
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    {
         PI.into()
     }
 
-    fn default_selection(&self) -> Cplx {
+    fn default_selection(&self) -> Cplx
+    {
         ONE
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds {
+    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    {
         Bounds::centered_square(5.5)
     }
 }

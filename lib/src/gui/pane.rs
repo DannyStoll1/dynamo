@@ -9,7 +9,7 @@ use crate::types::param_stack::Summarize;
 use crate::types::{ComplexVec, Cplx, Norm, OrbitInfo, ParamList, Real};
 use input_macro::input;
 
-use super::keyboard_shortcuts::{CTRL_P, CTRL_Q, CTRL_S, CTRL_V, CTRL_W, CTRL_Z, KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_B, KEY_C, KEY_DOWN, KEY_EQUALS, KEY_H, KEY_I, KEY_L, KEY_LEFT, KEY_MINUS, KEY_O, KEY_P, KEY_R, KEY_RIGHT, KEY_SPACE, KEY_U, KEY_UP, KEY_V, KEY_W, KEY_Y, KEY_Z, SHIFT_DOWN, SHIFT_LEFT, SHIFT_RIGHT, SHIFT_SPACE, SHIFT_UP, shortcut_used};
+use super::keyboard_shortcuts::*;
 use super::marked_points::MarkingMode;
 
 use egui::{
@@ -1046,15 +1046,33 @@ where
             self.parent_mut().schedule_redraw();
         }
 
-        if shortcut_used!(ctx, &KEY_Y)
+        if shortcut_used!(ctx, &CTRL_1)
         {
             self.child_mut().marking_mode_mut().toggle_cycles(1);
             self.child_mut().schedule_redraw();
         }
 
-        if shortcut_used!(ctx, &KEY_U)
+        if shortcut_used!(ctx, &CTRL_2)
         {
             self.child_mut().marking_mode_mut().toggle_cycles(2);
+            self.child_mut().schedule_redraw();
+        }
+
+        if shortcut_used!(ctx, &CTRL_3)
+        {
+            self.child_mut().marking_mode_mut().toggle_cycles(3);
+            self.child_mut().schedule_redraw();
+        }
+
+        if shortcut_used!(ctx, &CTRL_4)
+        {
+            self.child_mut().marking_mode_mut().toggle_cycles(4);
+            self.child_mut().schedule_redraw();
+        }
+
+        if shortcut_used!(ctx, &CTRL_5)
+        {
+            self.child_mut().marking_mode_mut().toggle_cycles(5);
             self.child_mut().schedule_redraw();
         }
 
@@ -1371,7 +1389,8 @@ where
     }
 
     #[inline]
-    fn pop_message(&mut self) -> UIMessage {
+    fn pop_message(&mut self) -> UIMessage
+    {
         let msg = self.get_message();
         self.message = UIMessage::DoNothing;
         msg

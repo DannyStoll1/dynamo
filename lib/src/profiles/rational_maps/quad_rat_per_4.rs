@@ -1,7 +1,9 @@
-use crate::macros::profile_imports;
+use crate::macros::{horner, horner_monic, profile_imports};
+use crate::math_utils::poly_solve::solve_polynomial;
 use crate::math_utils::weierstrass_p;
 profile_imports!();
 
+// Quadratic rational maps with a critical 4-cycle: 0 => ∞ -> 1 -> c -> 0
 #[derive(Clone, Debug)]
 pub struct QuadRatPer4
 {
@@ -149,6 +151,60 @@ impl ParameterPlane for QuadRatPer4
                 let denom = 0.5 / (c - 1.);
                 let disc = (x0 * x0 - c * (8. * c2 - 6. * c + 4.) + 1.).sqrt();
                 vec![denom * (x0 + disc - 1.), denom * (x0 - disc - 1.)]
+            }
+            3 =>
+            {
+                let c2 = c * c;
+                let coeffs = [
+                    c2 * c * horner!(c, 1., -7., 18., -20., 8.),
+                    c2 * horner!(c, -4., 25., -54., 41., 4., -12.),
+                    c * horner!(c, 5., -24., 26., 33., -72., 23., 10.),
+                    horner!(c, -2., 2., 29., -83., 71., -4., -10., -5.),
+                    horner_monic!(c, 4., -17., 19., 11., -36., 23., -4.),
+                    horner!(c, -2., 9., -16., 14., -4., -3., 2.),
+                    c * horner_monic!(c, 1., -4., 6., -4.),
+                ];
+                solve_polynomial(&coeffs)
+            }
+            4 =>
+            {
+                let c2 = c * c;
+                let c3 = c * c2;
+                let c4 = c2 * c2;
+                let coeffs = [
+                    c3 * c4 * horner!(c, -1., 12., -61., 170., -280., 272., -144., 32.),
+                    c4 * horner!(
+                        c, 1., -15., 103., -419., 1089., -1817., 1835., -896., -72., 272., -80.
+                    ),
+                    c3 * horner!(
+                        c, -4., 57., -360., 1300., -2868., 3747., -2293., -527., 1686., -732.,
+                        -104., 96.
+                    ),
+                    c2 * horner!(
+                        c, 6., -79., 445., -1345., 2127., -841., -3011., 5721., -3916., 382., 726.,
+                        -144., -72.
+                    ),
+                    c * horner!(
+                        c, -4., 45., -191., 261., 737., -3856., 7348., -6869., 2028., 1633.,
+                        -1223., -90., 151., 34.
+                    ),
+                    horner!(
+                        c, 1., -6., -21., 322., -1375., 2999., -3272., 469., 3191., -3641., 1294.,
+                        192., -105., -41., -9.
+                    ),
+                    horner_monic!(
+                        c, -2., 24., -117., 264., -90., -1028., 2817., -3546., 2169., -238., -392.,
+                        115., 26., -3.
+                    ),
+                    horner!(
+                        c, 1., -14., 87., -312., 701., -987., 774., -121., -362., 329., -98., 1.,
+                        -1., 2.
+                    ),
+                    c2 * c3 * horner_monic!(c, -1., 7., -21., 35., -35., 21., -7.),
+                ];
+                let mut rs = solve_polynomial(&coeffs);
+                rs.extend([ONE, c, ZERO].into_iter());
+                rs
             }
             _ => vec![],
         }

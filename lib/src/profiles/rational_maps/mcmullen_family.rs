@@ -1,4 +1,7 @@
-use crate::{macros::{basic_escape_encoding, profile_imports}, math_utils::solve_quadratic};
+use crate::{
+    macros::{basic_escape_encoding, profile_imports},
+    math_utils::solve_quadratic,
+};
 profile_imports!();
 
 #[derive(Clone, Debug)]

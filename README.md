@@ -23,8 +23,8 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - H: Resize images
 - L: Toggle live mode
 - I: Toggle selection (active plane)
-- Y: Toggle fixed points (dynamical plane)
-- U: Toggle 2-cycles (dynamical plane)
+- Ctrl-1: Toggle fixed points (dynamical plane)
+- Ctrl-2: Toggle 2-cycles (dynamical plane)
 - O: Toggle marked points (parameter plane)
 - P: Toggle critical points (dynamical plane)
 - C: Clear marked curves

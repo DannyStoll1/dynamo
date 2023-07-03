@@ -1,7 +1,9 @@
-use crate::macros::profile_imports;
-use crate::math_utils::weierstrass_p;
+use crate::macros::{horner, horner_monic, profile_imports};
+use crate::math_utils::poly_solve::solve_polynomial;
+use crate::math_utils::{solve_cubic, weierstrass_p};
 profile_imports!();
 
+// Quadratic rational maps with a critical 3-cycle: -c => ∞ -> 1 -> -c
 #[derive(Clone, Debug)]
 pub struct QuadRatPer3
 {
@@ -132,6 +134,36 @@ impl ParameterPlane for QuadRatPer3
             {
                 let disc = (c * (5. * c + 6.) + 5.).sqrt();
                 vec![-0.5 * (c - disc + 1.), -0.5 * (c + disc + 1.)]
+            }
+            3 =>
+            {
+                let c2 = c * c;
+                let u = (c - 1.).inv();
+                let a0 = u * (1. + c + c2 + c2 * c2);
+                let a1 = u * (1. + c * (1. - 2. * c2));
+                let a2 = -u * (2. + c + c2);
+                let [r0, r1, r2] = solve_cubic(a0, a1, a2);
+                vec![ONE, -c, r0, r1, r2]
+            }
+            4 =>
+            {
+                let c2 = c * c;
+                let coeffs = [
+                    horner_monic!(c, -1., -4., -7., -2., 13., 29., 29., 15., -3., -8., -6., 0., 0.),
+                    horner_monic!(c, -1., -4., -7., -2., 12., 22., 14., -2., -9., -6., -2., 0.),
+                    horner!(c, 5., 14., 11., -34., -93., -115., -61., -3., 30., 14., 6., -6.),
+                    horner!(c, 5., 14., 13., -20., -60., -60., -12., 28., 26., 6., -4.),
+                    horner!(c, -7., -3., 37., 125., 157., 109., -1., -31., -27., 9.),
+                    horner!(c, -8., -10., 16., 66., 72., 18., -30., -26., -2.),
+                    -horner_monic!(c, 1., 33., 85., 121., 63., 1., -33.),
+                    horner!(c, 2., -12., -38., -40., -4., 20., 8.),
+                    horner!(c, 9., 35., 44., 21., -14., -7.),
+                    horner!(c, 4., 12., 9., -4., -5.),
+                    c * (5. * c2 - 7.) - 6.,
+                    c2 - 1.,
+                    1. - c,
+                ];
+                solve_polynomial(&coeffs)
             }
             _ => vec![],
         }

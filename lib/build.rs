@@ -7,7 +7,8 @@ fn main()
     use std::path::PathBuf;
 
     // Check the standard include paths
-    let local_include = format!("{}/.local/include", env::var("HOME").unwrap());
+    let local_dir = format!("{}/.local", env::var("HOME").unwrap());
+    let local_include = format!("{local_dir}/include");
     let include_paths = vec![
         "/usr/include",
         "/usr/local/include",
@@ -57,6 +58,19 @@ fn main()
             .write(Box::new(file))
             .expect("Couldn't write bindings!");
     }
+
+    let lib_directories = vec![
+        "/usr/lib".to_owned(),
+        "/usr/local/lib".to_owned(),
+        format!("{local_dir}/lib"), // Replace with your actual home directory
+    ];
+
+    for directory in lib_directories
+    {
+        println!("cargo:rustc-link-search=native={}", directory);
+    }
+
+    println!("cargo:rustc-link-lib=dylib=mps"); // Or dynamic, depending on your setup
 
     // Link the MPSolve library
     println!("cargo:rerun-if-changed={}", header_path.display());

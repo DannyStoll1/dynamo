@@ -17,6 +17,8 @@ pub use quad_rat_preper_2_2::QuadRatPreper22;
 pub mod quad_rat_symmetry_locus;
 pub use quad_rat_symmetry_locus::QuadRatSymmetryLocus;
 
+pub mod quad_rat_general;
+
 pub mod mcmullen_family;
 pub use mcmullen_family::McMullenFamily;
 

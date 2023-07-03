@@ -1,3 +1,5 @@
+use crate::macros::{horner, horner_monic};
+use crate::math_utils::poly_solve::solve_polynomial;
 use crate::math_utils::solve_cubic;
 use crate::types::CplxPair;
 use crate::{macros::profile_imports, math_utils::solve_quadratic};
@@ -96,13 +98,30 @@ impl ParameterPlane for QuadRatPreper22
     }
 
     #[inline]
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var> {
-        match period {
-            1 => {
-                solve_cubic(-a, a, b).to_vec()
-            }
+    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 => solve_cubic(-a, a, b).to_vec(),
             2 => vec![ZERO],
-            _ => vec![]
+            3 =>
+            {
+                let a2 = a * a;
+                let b2 = b * b;
+                let b3 = b * b2;
+                let b4 = b2 * b2;
+                let coeffs = [
+                    -a2,
+                    a2 * (3. - b) - 2. * a * b2,
+                    horner!(a, -b4, b2 * (4. - b) - 3. * b, 2. * b - 4.),
+                    horner!(a, b3 * (b - 3.), horner_monic!(b, -1., 7., -3.), 3. - b),
+                    -horner_monic!(a, 2. * b2 * (2. - b), 4. * b - b2 - 3.),
+                    b * (b - 3.) - 2. * a,
+                    -ONE,
+                ];
+                solve_polynomial(&coeffs)
+            }
+            _ => vec![],
         }
     }
 }

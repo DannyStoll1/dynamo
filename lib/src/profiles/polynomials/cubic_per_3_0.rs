@@ -1,4 +1,8 @@
-use crate::{macros::{basic_escape_encoding, horner, profile_imports}, math_utils::solve_cubic, types::CplxPair};
+use crate::{
+    macros::{basic_escape_encoding, horner, profile_imports},
+    math_utils::{poly_solve::solve_polynomial, solve_cubic},
+    types::CplxPair,
+};
 profile_imports!();
 
 // Cubic polynomials with a critical 3-cycle 0 -2-> 1 -> a+b+1 -> 0
@@ -78,6 +82,20 @@ impl ParameterPlane for CubicPer3_0
             {
                 let ainv = a.inv();
                 solve_cubic(ainv, -ainv, b * ainv).to_vec()
+            }
+            2 =>
+            {
+                let a2 = a * a;
+                let coeffs = [
+                    a + b + 1.,
+                    a + b,
+                    a + b * (b + 2. * a),
+                    2. * a * (a + b),
+                    a * (a + b * b),
+                    2. * a2 * b,
+                    a2 * a,
+                ];
+                solve_polynomial(&coeffs)
             }
             _ => vec![],
         }

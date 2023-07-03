@@ -12,4 +12,3 @@ pub use transcendental::*;
 
 pub mod non_analytic;
 pub use non_analytic::*;
-

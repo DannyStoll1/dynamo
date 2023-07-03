@@ -21,7 +21,7 @@ macro_rules! shift {
 macro_rules! shortcut_used {
     ($ctx: expr, $shortcut: expr) => {
         $ctx.input_mut(|i| i.consume_shortcut($shortcut))
-    }
+    };
 }
 
 pub(super) use shortcut_used;
@@ -52,6 +52,16 @@ pub const CTRL_W: KeyboardShortcut = ctrl!(Key::W);
 pub const CTRL_X: KeyboardShortcut = ctrl!(Key::X);
 pub const CTRL_Y: KeyboardShortcut = ctrl!(Key::Y);
 pub const CTRL_Z: KeyboardShortcut = ctrl!(Key::Z);
+pub const CTRL_0: KeyboardShortcut = ctrl!(Key::Num0);
+pub const CTRL_1: KeyboardShortcut = ctrl!(Key::Num1);
+pub const CTRL_2: KeyboardShortcut = ctrl!(Key::Num2);
+pub const CTRL_3: KeyboardShortcut = ctrl!(Key::Num3);
+pub const CTRL_4: KeyboardShortcut = ctrl!(Key::Num4);
+pub const CTRL_5: KeyboardShortcut = ctrl!(Key::Num5);
+pub const CTRL_6: KeyboardShortcut = ctrl!(Key::Num6);
+pub const CTRL_7: KeyboardShortcut = ctrl!(Key::Num7);
+pub const CTRL_8: KeyboardShortcut = ctrl!(Key::Num8);
+pub const CTRL_9: KeyboardShortcut = ctrl!(Key::Num9);
 
 pub const KEY_A: KeyboardShortcut = key_press!(Key::A);
 pub const KEY_B: KeyboardShortcut = key_press!(Key::B);
@@ -99,6 +109,42 @@ pub const KEY_SPACE: KeyboardShortcut = key_press!(Key::Space);
 pub const KEY_MINUS: KeyboardShortcut = key_press!(Key::Minus);
 pub const KEY_EQUALS: KeyboardShortcut = key_press!(Key::PlusEquals);
 
+pub const SHIFT_A: KeyboardShortcut = shift!(Key::A);
+pub const SHIFT_B: KeyboardShortcut = shift!(Key::B);
+pub const SHIFT_C: KeyboardShortcut = shift!(Key::C);
+pub const SHIFT_D: KeyboardShortcut = shift!(Key::D);
+pub const SHIFT_E: KeyboardShortcut = shift!(Key::E);
+pub const SHIFT_F: KeyboardShortcut = shift!(Key::F);
+pub const SHIFT_G: KeyboardShortcut = shift!(Key::G);
+pub const SHIFT_H: KeyboardShortcut = shift!(Key::H);
+pub const SHIFT_I: KeyboardShortcut = shift!(Key::I);
+pub const SHIFT_J: KeyboardShortcut = shift!(Key::J);
+pub const SHIFT_K: KeyboardShortcut = shift!(Key::K);
+pub const SHIFT_L: KeyboardShortcut = shift!(Key::L);
+pub const SHIFT_M: KeyboardShortcut = shift!(Key::M);
+pub const SHIFT_N: KeyboardShortcut = shift!(Key::N);
+pub const SHIFT_O: KeyboardShortcut = shift!(Key::O);
+pub const SHIFT_P: KeyboardShortcut = shift!(Key::P);
+pub const SHIFT_Q: KeyboardShortcut = shift!(Key::Q);
+pub const SHIFT_R: KeyboardShortcut = shift!(Key::R);
+pub const SHIFT_S: KeyboardShortcut = shift!(Key::S);
+pub const SHIFT_T: KeyboardShortcut = shift!(Key::T);
+pub const SHIFT_U: KeyboardShortcut = shift!(Key::U);
+pub const SHIFT_V: KeyboardShortcut = shift!(Key::V);
+pub const SHIFT_W: KeyboardShortcut = shift!(Key::W);
+pub const SHIFT_X: KeyboardShortcut = shift!(Key::X);
+pub const SHIFT_Y: KeyboardShortcut = shift!(Key::Y);
+pub const SHIFT_Z: KeyboardShortcut = shift!(Key::Z);
+pub const SHIFT_0: KeyboardShortcut = shift!(Key::Num0);
+pub const SHIFT_1: KeyboardShortcut = shift!(Key::Num1);
+pub const SHIFT_2: KeyboardShortcut = shift!(Key::Num2);
+pub const SHIFT_3: KeyboardShortcut = shift!(Key::Num3);
+pub const SHIFT_4: KeyboardShortcut = shift!(Key::Num4);
+pub const SHIFT_5: KeyboardShortcut = shift!(Key::Num5);
+pub const SHIFT_6: KeyboardShortcut = shift!(Key::Num6);
+pub const SHIFT_7: KeyboardShortcut = shift!(Key::Num7);
+pub const SHIFT_8: KeyboardShortcut = shift!(Key::Num8);
+pub const SHIFT_9: KeyboardShortcut = shift!(Key::Num9);
 pub const SHIFT_UP: KeyboardShortcut = shift!(Key::ArrowUp);
 pub const SHIFT_DOWN: KeyboardShortcut = shift!(Key::ArrowDown);
 pub const SHIFT_LEFT: KeyboardShortcut = shift!(Key::ArrowLeft);

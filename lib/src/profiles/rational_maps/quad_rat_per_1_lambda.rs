@@ -1,17 +1,13 @@
-use crate::math_utils::solve_cubic;
+use super::quad_rat_general::QuadRatGeneral;
+use crate::macros::{basic_escape_encoding, horner_monic, profile_imports};
 use crate::types::CplxPair;
-use crate::{
-    macros::{basic_escape_encoding, horner_monic, profile_imports},
-    math_utils::solve_quadratic,
-};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer1Lambda
 {
-    point_grid: PointGrid,
-    max_iter: Period,
+    general_plane: QuadRatGeneral,
     multiplier: Cplx,
 }
 
@@ -19,11 +15,9 @@ impl Default for QuadRatPer1Lambda
 {
     fn default() -> Self
     {
-        let bounds = Bounds::centered_square(3.);
-        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        let general_plane = QuadRatGeneral::default();
         Self {
-            point_grid,
-            max_iter: 1024,
+            general_plane,
             multiplier: ZERO,
         }
     }
@@ -36,13 +30,49 @@ impl ParameterPlane for QuadRatPer1Lambda
     type Deriv = Cplx;
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
-    basic_plane_impl!();
     default_name!();
 
-    fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn max_iter(&self) -> Period
     {
-        let z2 = z * z;
-        (z2 + a) / (z2 + b)
+        self.general_plane.max_iter
+    }
+
+    fn max_iter_mut(&mut self) -> &mut Period
+    {
+        &mut self.general_plane.max_iter
+    }
+
+    fn set_max_iter(&mut self, new_max_iter: Period)
+    {
+        self.general_plane.max_iter = new_max_iter;
+    }
+
+    #[must_use]
+    fn with_max_iter(mut self, max_iter: Period) -> Self
+    {
+        self.general_plane.max_iter = max_iter;
+        self
+    }
+
+    fn point_grid(&self) -> &PointGrid
+    {
+        &self.general_plane.point_grid
+    }
+
+    fn point_grid_mut(&mut self) -> &mut PointGrid
+    {
+        &mut self.general_plane.point_grid
+    }
+
+    fn with_point_grid(mut self, point_grid: PointGrid) -> Self
+    {
+        self.general_plane.point_grid = point_grid;
+        self
+    }
+
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    {
+        self.general_plane.map(z, c)
     }
 
     fn param_map(&self, t: Cplx) -> Self::Param
@@ -54,21 +84,14 @@ impl ParameterPlane for QuadRatPer1Lambda
         }
     }
 
-    fn map_and_multiplier(
-        &self,
-        z: Self::Var,
-        CplxPair { a, b }: Self::Param,
-    ) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        let denom = (z2 + b).inv();
-        ((z2 + a) * denom, (z + z) * (b - a) * denom * denom)
+        self.general_plane.map_and_multiplier(z, c)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        let denom = z * z + b;
-        2. * z * (b - a) / (denom * denom)
+        self.general_plane.dynamical_derivative(z, c)
     }
 
     fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
@@ -76,28 +99,19 @@ impl ParameterPlane for QuadRatPer1Lambda
         ONE
     }
 
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
     {
-        ONE
+        self.general_plane.start_point(t, c)
     }
 
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        vec![ZERO]
+        self.general_plane.critical_points_child(c)
     }
 
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 => solve_cubic(-a, b, -ONE).to_vec(),
-            2 =>
-            {
-                let denom = (b + 1.).inv();
-                solve_quadratic((a + b * b) * denom, (b - a) * denom).to_vec()
-            }
-            _ => vec![],
-        }
+        self.general_plane.cycles_child(c, period)
     }
 
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
@@ -220,9 +234,12 @@ impl From<QuadRatPer1LambdaParam> for QuadRatPer1Lambda
         let point_grid = parent
             .point_grid()
             .new_with_same_height(parent.default_julia_bounds(point, param));
-        Self {
+        let general_plane = QuadRatGeneral {
             point_grid,
             max_iter: parent.max_iter(),
+        };
+        Self {
+            general_plane,
             multiplier: point,
         }
     }
