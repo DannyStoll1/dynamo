@@ -30,6 +30,12 @@ impl ParameterPlane for CubicMarked2Cycle
     parameter_plane_impl!();
     default_name!();
 
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
     fn encode_escaping_point(
         &self,
         iters: Period,

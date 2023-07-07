@@ -25,6 +25,12 @@ impl ParameterPlane for CubicPer3_0
     default_name!();
     basic_escape_encoding!(3., 1.);
 
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
     fn map_and_multiplier(
         &self,
         z: Self::Var,

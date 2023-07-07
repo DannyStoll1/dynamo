@@ -37,6 +37,12 @@ impl ParameterPlane for CubicPer2Lambda
     basic_escape_encoding!(3.);
 
     #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         horner!(z, c.b, -(1. + c.a), -c.b, c.a)
@@ -93,6 +99,19 @@ impl ParameterPlane for CubicPer2Lambda
                 let u = b / a;
                 solve_cubic(u, 2. / a - 1., -u).to_vec()
             }
+            2 =>
+            {
+                let b2 = b * b;
+                let u = 2. * b * a * a;
+                let coeffs = [
+                    b2 * (1. - a) + a,
+                    u,
+                    -a * horner_monic!(a, -b2, 1.),
+                    -u,
+                    a * a * a,
+                ];
+                solve_polynomial(&coeffs)
+            }
             _ => vec![],
         }
     }
@@ -126,6 +145,11 @@ impl ParameterPlane for CubicPer2Lambda
     fn cycle_active_plane(&mut self)
     {
         self.starting_crit = self.starting_crit.swap();
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::centered_square(4.)
     }
 
     fn name(&self) -> String
@@ -167,6 +191,12 @@ impl ParameterPlane for CubicPer2LambdaParam
 
     basic_plane_impl!();
     basic_escape_encoding!(3.);
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
 
     #[inline]
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
@@ -299,6 +329,12 @@ impl ParameterPlane for CubicPer2CritMarked
         let residual = (v / u).log(3.);
         let potential = f64::from(iters) - (residual as IterCount);
         PointInfo::Escaping { potential }
+    }
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
     }
 
     #[inline]

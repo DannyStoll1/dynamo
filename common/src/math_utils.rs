@@ -1,3 +1,5 @@
+pub use num::integer::binomial;
+
 use crate::consts::{LOG_PI, TAUI, ZERO};
 use crate::types::{Cplx, Norm, Real};
 use num_complex::ComplexFloat;

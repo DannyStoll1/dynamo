@@ -43,6 +43,12 @@ impl ParameterPlane for CubicPer1Lambda
     basic_escape_encoding!(3., 1.);
 
     #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         z * horner_monic!(z, self.multiplier, c)
@@ -209,6 +215,12 @@ impl ParameterPlane for CubicPer1LambdaParam
     basic_escape_encoding!(3., 1.);
 
     #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
     {
         let c = Self::base_param(a);
@@ -326,6 +338,12 @@ impl ParameterPlane for CubicPer1_1
 {
     parameter_plane_impl!();
     default_name!();
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
 
     fn periodicity_tolerance(&self) -> Real
     {
@@ -464,6 +482,12 @@ impl ParameterPlane for CubicPer1_0
     default_name!();
     basic_escape_encoding!(3.);
 
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         z * z * (z + c)
@@ -499,6 +523,44 @@ impl ParameterPlane for CubicPer1_0
             {
                 let [r1, r2] = solve_quadratic(-ONE, c);
                 vec![ZERO, r1, r2]
+            }
+            2 =>
+            {
+                let u = c * c + 1.;
+                let coeffs = [ONE, c, u, c + c, u, c + c, ONE];
+                solve_polynomial(&coeffs)
+            }
+            3 =>
+            {
+                let c2 = c * c;
+                let coeffs = [
+                    ONE,
+                    c,
+                    horner_monic!(c2, 1.),
+                    c * horner_monic!(c2, 2.),
+                    horner_monic!(c2, 1., 3.),
+                    c * horner_monic!(c2, 3., 4.),
+                    horner_monic!(c2, 1., 6., 5.),
+                    c * horner!(c2, 4., 10., 6.),
+                    horner!(c2, 1., 10., 15., 3.),
+                    c * horner_monic!(c2, 5., 20., 15.),
+                    horner_monic!(c2, 1., 15., 31., 8.),
+                    c * horner!(c2, 6., 34., 26., 8.),
+                    horner!(c2, 1., 21., 45., 28., 3.),
+                    c * horner!(c2, 7., 45., 56., 21.),
+                    horner!(c2, 1., 26., 70., 64., 3.),
+                    c * horner!(c2, 8., 56., 111., 22.),
+                    horner_monic!(c2, 1., 28., 120., 70.),
+                    c * horner!(c2, 8., 83., 126., 8.),
+                    horner!(c2, 1., 36., 140., 28.),
+                    c * horner!(c2, 9., 98., 56.),
+                    horner!(c2, 1., 42., 70.),
+                    c * horner!(c2, 10., 56.),
+                    horner!(c2, 1., 28.),
+                    c * 8.,
+                    ONE,
+                ];
+                solve_polynomial(&coeffs)
             }
             _ => vec![],
         }

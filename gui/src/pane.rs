@@ -1074,7 +1074,7 @@ where
         // {
         //     if let Some(pane) = self.get_active_pane_mut()
         //     {
-        //         pane.mark_external_ray(0.3);
+        //         pane.mark_external_ray(1./7.);
         //     }
         // }
 

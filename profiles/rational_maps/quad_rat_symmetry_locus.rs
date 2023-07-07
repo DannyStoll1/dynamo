@@ -112,10 +112,13 @@ impl ParameterPlane for QuadRatSymmetryLocus
                 let a2 = v * horner!(c, 1., -1., 2., 1., 3.);
                 let a4 = v * (1. + c2 * (3. + 2. * c + 3. * c2));
                 let squared_sols = solve_cubic(c2 / u, a2, a4);
-                let mut sols: Vec<Cplx> = squared_sols.iter().map(|z| z.sqrt()).collect();
-                let neg_sols: Vec<Cplx> = sols.iter().map(|z| -z).collect();
-                sols.extend(neg_sols);
-                sols
+                squared_sols
+                    .iter()
+                    .flat_map(|z| {
+                        let sqrt_z = z.sqrt();
+                        [sqrt_z, -sqrt_z]
+                    })
+                    .collect()
             }
             4 =>
             {
@@ -132,10 +135,13 @@ impl ParameterPlane for QuadRatSymmetryLocus
                 let mut squared_sols =
                     solve_quartic(ONE, (u + 1.) * c_neg6, v * c_neg6, u * c_neg6).to_vec();
                 squared_sols.extend(solve_quadratic(c2 / (c2 + 1.), TWO));
-                let mut sols: Vec<Cplx> = squared_sols.iter().map(|z| z.sqrt()).collect();
-                let neg_sols: Vec<Cplx> = sols.iter().map(|z| -z).collect();
-                sols.extend(neg_sols);
-                sols
+                squared_sols
+                    .iter()
+                    .flat_map(|z| {
+                        let sqrt_z = z.sqrt();
+                        [sqrt_z, -sqrt_z]
+                    })
+                    .collect()
             }
             _ => vec![],
         }

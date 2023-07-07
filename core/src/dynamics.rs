@@ -12,8 +12,8 @@ use fractal_common::{
 use ndarray::{Array2, Axis};
 use num_cpus;
 use rayon::iter::{ParallelBridge, ParallelIterator};
-use std::cell::RefCell;
 use std::fmt::Display;
+use std::{cell::RefCell, f64::consts::TAU};
 use thread_local::ThreadLocal;
 
 pub mod covering_maps;
@@ -300,28 +300,36 @@ pub trait ParameterPlane: Sync + Send + Clone
     ) -> Option<Vec<Cplx>>
     {
         let escape_radius = 20.;
-        let pixel_width = self.point_grid().pixel_width();
-        let error = f64::from(pixel_count * pixel_count) * 1e-8;
+        let deg = self.degree();
+        if deg.is_nan()
+        {
+            return None;
+        }
 
-        let base_point = Cplx::new(escape_radius, theta).exp();
+        let pixel_width = self.point_grid().pixel_width();
+        let error = f64::from(pixel_count * pixel_count) * 1e-12;
+
+        let angle = theta * TAU;
+        let base_point = escape_radius * Cplx::new(0., angle).exp();
         let mut c_list = vec![base_point];
 
         for k in 0..depth
         {
-            let us = (0..sharpness)
-                .map(|j| escape_radius.ln() * ((-f64::from(j)) / f64::from(sharpness)).exp2());
-            let v = Cplx::new(0., theta * 2.0_f64.powi(k as i32));
+            let us = (0..sharpness).map(|j| {
+                escape_radius.ln() * ((-f64::from(j) * deg.log2()) / f64::from(sharpness)).exp2()
+            });
+            let v = Cplx::new(0., angle * deg.powi(k as i32));
             let targets = us.map(|u| (u + v).exp());
 
             let mut temp_c = *c_list.last()?;
-            // let mut dist = pixel_width * 2.;
             let mut dist: f64;
 
             let fk_and_dfk = |mut c_k: Cplx| {
                 let mut d_k = ONE;
+                let old_c = c_k;
                 for _ in 0..k
                 {
-                    let (f, df_dz, df_dc) = self.gradient(c_k.into(), c_k.into());
+                    let (f, df_dz, df_dc) = self.gradient(c_k.into(), old_c.into());
                     d_k = d_k * df_dz.into() + df_dc.into();
                     c_k = f.into();
                 }
@@ -334,7 +342,7 @@ pub trait ParameterPlane: Sync + Send + Clone
 
                 temp_c = sol;
 
-                dist = (2. * c_k.norm() * (c_k.norm()).log2()) / d_k.norm();
+                dist = (2. * c_k.norm() * (c_k.norm()).log(deg)) / d_k.norm();
 
                 if dist < pixel_width
                 {
@@ -539,6 +547,11 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn is_dynamical(&self) -> bool
     {
         false
+    }
+
+    fn degree(&self) -> f64
+    {
+        2.0f64
     }
 
     // fn julia_set(&self, point: Cplx) -> Option<Self::Child>

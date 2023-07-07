@@ -419,6 +419,11 @@ impl ParameterPlane for SineWander
         ONE
     }
 
+    fn degree(&self) -> f64
+    {
+        f64::NAN
+    }
+
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)

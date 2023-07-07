@@ -132,6 +132,12 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
     parameter_plane_impl!();
     basic_escape_encoding!(f64::from(2 * D), 1);
 
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        f64::from(2 * D)
+    }
+
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         let z2 = z * z * 0.25;
@@ -191,9 +197,47 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         c * result * z
     }
 
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        ONE
+        let w = z * 0.5;
+        let w2 = w * w;
+
+        let mut z_iter = self.coeffs.iter().rev();
+        let mut d_iter = self.coeffs_d.iter().rev();
+
+        let an = *z_iter.next().unwrap_or(&0.0);
+        let bn = *d_iter.next().unwrap_or(&0.0);
+
+        let mut zval = Cplx::from(an);
+        let mut dval = Cplx::from(bn);
+
+        for &a in z_iter
+        {
+            zval = zval * w2 + a;
+        }
+        for &b in d_iter
+        {
+            dval = dval * w2 + b;
+        }
+
+        (c * zval, c * dval * w, zval)
+    }
+
+    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
+    {
+        let z2 = z * z * 0.25;
+
+        let mut z_iter = self.coeffs.iter().rev();
+
+        let an = *z_iter.next().unwrap_or(&0.0);
+
+        let mut zval = Cplx::from(an);
+
+        for &a in z_iter
+        {
+            zval = zval * z2 + a;
+        }
+        zval
     }
 
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>

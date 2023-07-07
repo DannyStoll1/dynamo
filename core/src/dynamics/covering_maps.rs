@@ -81,21 +81,31 @@ where
         self.base_curve.early_bailout(start, param)
     }
 
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        self.base_curve.degree()
+    }
+
+    #[inline]
     fn min_iter(&self) -> Period
     {
         self.base_curve.min_iter()
     }
 
+    #[inline]
     fn max_iter(&self) -> Period
     {
         self.base_curve.max_iter()
     }
 
+    #[inline]
     fn max_iter_mut(&mut self) -> &mut Period
     {
         self.base_curve.max_iter_mut()
     }
 
+    #[inline]
     fn set_max_iter(&mut self, new_max_iter: Period)
     {
         self.base_curve.set_max_iter(new_max_iter);
@@ -120,46 +130,55 @@ where
         }
     }
 
+    #[inline]
     fn start_point(&self, p: Cplx, c: C::Param) -> C::Var
     {
         self.base_curve.start_point(p, c)
     }
 
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         self.base_curve.map(z, c)
     }
 
+    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.base_curve.map_and_multiplier(z, c)
     }
 
+    #[inline]
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
         self.base_curve.dynamical_derivative(z, c)
     }
 
+    #[inline]
     fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
         self.base_curve.parameter_derivative(z, c)
     }
 
+    #[inline]
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         self.base_curve.gradient(z, c)
     }
 
+    #[inline]
     fn get_meta_params(&self) -> Self::MetaParam
     {
         self.base_curve.get_meta_params()
     }
 
+    #[inline]
     fn set_meta_param(&mut self, value: Self::MetaParam)
     {
         self.base_curve.set_meta_param(value);
     }
 
+    #[inline]
     fn encode_escape_result(
         &self,
         state: EscapeState<C::Var, C::Deriv>,
@@ -169,46 +188,55 @@ where
         self.base_curve.encode_escape_result(state, base_param)
     }
 
+    #[inline]
     fn name(&self) -> String
     {
         format!("Cover over {}", self.base_curve.name())
     }
 
+    #[inline]
     fn default_coloring(&self) -> fractal_common::coloring::Coloring
     {
         self.base_curve.default_coloring()
     }
 
+    #[inline]
     fn critical_points_child(&self, param: C::Param) -> Vec<Self::Var>
     {
         self.base_curve.critical_points_child(param)
     }
 
+    #[inline]
     fn cycles_child(&self, param: C::Param, period: Period) -> Vec<Self::Var>
     {
         self.base_curve.cycles_child(param, period)
     }
 
+    #[inline]
     fn default_julia_bounds(&self, point: Cplx, param: C::Param) -> Bounds
     {
         self.base_curve.default_julia_bounds(point, param)
     }
 
+    #[inline]
     fn periodicity_tolerance(&self) -> Real
     {
         self.base_curve.periodicity_tolerance()
     }
 
+    #[inline]
     fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
     {
         self.base_curve.set_param(value);
     }
 
+    #[inline]
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.base_curve.get_param()
     }
 
+    #[inline]
     fn cycle_active_plane(&mut self)
     {
         self.base_curve.cycle_active_plane();

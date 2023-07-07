@@ -1,5 +1,5 @@
 use crate::macros::profile_imports;
-use fractal_common::math_utils::weierstrass_p;
+use fractal_common::{horner, horner_monic, math_utils::weierstrass_p};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -50,6 +50,12 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         2. * (z * z * z / 3. - c * z)
@@ -97,6 +103,34 @@ impl ParameterPlane for OddCubic
                 let r2 = (1.5 * (c + disc)).sqrt();
                 let r4 = (1.5 * (c - disc)).sqrt();
                 vec![r0, -r0, r2, -r2, r4, -r4]
+            }
+            3 =>
+            {
+                let u = -(c + c);
+                let coeffs = [
+                    horner_monic!(u, 1., 1.),
+                    horner_monic!(u, 1., 2., 2., 2., 1.),
+                    horner!(u, 1., 3., 5., 4., 5., 3., 3.),
+                    horner!(u, 1., 4., 6., 10., 12., 15., 3., 3.),
+                    horner_monic!(u, 1., 4., 10., 19., 31., 16., 19., 1.),
+                    horner!(u, 1., 5., 15., 34., 35., 51., 7., 8.),
+                    horner!(u, 1., 6., 21., 40., 75., 21., 28.),
+                    horner!(u, 1., 7., 25., 65., 35., 56.),
+                    horner!(u, 1., 8., 33., 35., 70.),
+                    horner!(u, 1., 9., 21., 56.),
+                    horner!(u, 1., 7., 28.),
+                    horner!(u, 1., 8.),
+                    ONE,
+                ];
+                let squared_sols = solve_polynomial(&coeffs);
+
+                squared_sols
+                    .iter()
+                    .flat_map(|w| {
+                        let z = (1.5 * w).sqrt();
+                        [z, -z]
+                    })
+                    .collect()
             }
             _ => vec![],
         }

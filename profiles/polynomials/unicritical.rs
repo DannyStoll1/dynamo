@@ -38,9 +38,24 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         c * (1. + z / Self::D_FLOAT).powi(D - 1)
     }
 
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        ONE
+        (1. + z / Self::D_FLOAT).powi(D)
+    }
+
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        let u = 1. + z / Self::D_FLOAT;
+        let df = c * u.powi(D - 1);
+        (u * df, df)
+    }
+
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let u = 1. + z / Self::D_FLOAT;
+        let v = u.powi(D - 1);
+        let df = c * v;
+        (u * df, df, u * v)
     }
 
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
@@ -48,9 +63,36 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         ZERO
     }
 
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        Self::D_FLOAT
+    }
+
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![Self::CRIT]
+    }
+
+    #[inline]
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        use fractal_common::math_utils::binomial;
+        match period
+        {
+            1 =>
+            {
+                let mut coeffs: Vec<Cplx> = (0..(D + 1))
+                    .map(|x| c * f64::from(binomial(D, x)))
+                    .collect();
+                coeffs[1] -= Self::D_FLOAT;
+                solve_polynomial(&coeffs)
+                    .iter()
+                    .map(|z| z * Self::D_FLOAT)
+                    .collect()
+            }
+            _ => vec![],
+        }
     }
 
     fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds

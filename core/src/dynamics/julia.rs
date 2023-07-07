@@ -1,6 +1,6 @@
-use fractal_common::coloring::{algorithms::ColoringAlgorithm, Coloring};
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
+use fractal_common::coloring::{algorithms::ColoringAlgorithm, Coloring};
 use fractal_common::point_grid::{Bounds, PointGrid};
 use fractal_common::types::{Cplx, EscapeState, ParamList, ParamStack, Period, PointInfo, Real};
 
@@ -76,33 +76,33 @@ where
     basic_plane_impl!();
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, _c: Self::Param) -> Self::Var
     {
-        self.parent.map(z, c)
+        self.parent.map(z, self.local_param)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        self.parent.dynamical_derivative(z, c)
+        self.parent.dynamical_derivative(z, self.local_param)
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        self.parent.parameter_derivative(z, c)
+        self.parent.parameter_derivative(z, self.local_param)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        self.parent.map_and_multiplier(z, c)
+        self.parent.map_and_multiplier(z, self.local_param)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        self.parent.gradient(z, c)
+        self.parent.gradient(z, self.local_param)
     }
 
     #[inline]
@@ -177,7 +177,13 @@ where
     // {
     //     None
     // }
-    //
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        self.parent.degree()
+    }
+
     #[inline]
     fn default_bounds(&self) -> Bounds
     {
