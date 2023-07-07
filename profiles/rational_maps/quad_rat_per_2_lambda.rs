@@ -137,15 +137,6 @@ pub struct QuadRatPer2LambdaParam
     max_iter: Period,
 }
 
-impl QuadRatPer2LambdaParam
-{
-    const BASE_POINT: Cplx = Cplx::new(1e-4, 0.);
-
-    fn base_param(lambda: Cplx) -> Cplx
-    {
-        -Self::BASE_POINT.inv() - 0.75 * lambda * Self::BASE_POINT
-    }
-}
 impl Default for QuadRatPer2LambdaParam
 {
     fn default() -> Self
@@ -172,7 +163,6 @@ impl ParameterPlane for QuadRatPer2LambdaParam
     type MetaParam = NoParam;
     type Child = QuadRatPer2Lambda;
     basic_plane_impl!();
-    basic_escape_encoding!(2., 1.);
 
     #[inline]
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var

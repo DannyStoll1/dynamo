@@ -1,4 +1,5 @@
 #![feature(const_fn_floating_point_arithmetic)]
+#![allow(dead_code)]
 
 pub mod coloring;
 pub mod consts;

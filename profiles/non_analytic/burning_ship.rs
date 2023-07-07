@@ -18,7 +18,6 @@ impl BurningShip
         min_y: -1.9,
         max_y: 0.6,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(4.);
 }
 impl Default for BurningShip
 {
@@ -78,7 +77,7 @@ impl ParameterPlane for BurningShip
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -108,6 +107,11 @@ impl ParameterPlane for BurningShip
     {
         c
     }
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::centered_square(4.)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -127,7 +131,6 @@ impl Sailboat
         min_y: -6.,
         max_y: 6.,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(5.);
 }
 impl Default for Sailboat
 {
@@ -199,7 +202,7 @@ impl ParameterPlane for Sailboat
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -214,6 +217,11 @@ impl ParameterPlane for Sailboat
     {
         let shift = self.shift;
         format!("Sailboat({shift})")
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::centered_square(2.5 + self.shift.norm())
     }
 }
 

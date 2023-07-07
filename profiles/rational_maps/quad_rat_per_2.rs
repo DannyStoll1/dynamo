@@ -67,7 +67,7 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
         1. / (z * z - 1.)
     }

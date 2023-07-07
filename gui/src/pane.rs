@@ -10,9 +10,7 @@ use input_macro::input;
 use super::keyboard_shortcuts::*;
 use super::marked_points::MarkingMode;
 
-use egui::{
-    Color32, Context, CursorIcon, InputState, Key, Pos2, Rect, SidePanel, Slider, Stroke, Ui,
-};
+use egui::{Color32, Context, CursorIcon, InputState, Pos2, Rect, Stroke, Ui};
 use egui_extras::{Column, RetainedImage, TableBuilder};
 use egui_file::FileDialog;
 use epaint::{CircleShape, PathShape};
@@ -534,9 +532,7 @@ where
     #[inline]
     fn redraw(&mut self)
     {
-        self.marked_points = self
-            .marking_mode
-            .compute(self.plane(), self.get_selection());
+        self.marked_points = self.marking_mode.compute(&self.plane, self.get_selection());
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
@@ -584,7 +580,7 @@ where
     {
         let orig_width = self.grid().res_x;
         self.grid_mut().resize_x(img_width);
-        let iter_plane = self.plane().compute();
+        let iter_plane = self.plane.compute();
         iter_plane.save(self.get_coloring(), filename.to_owned());
         self.grid_mut().resize_x(orig_width);
     }

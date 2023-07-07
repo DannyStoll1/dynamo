@@ -101,7 +101,7 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -133,12 +133,6 @@ impl CosineAdd
         max_x: 7.,
         min_y: -7.,
         max_y: 7.,
-    };
-    const JULIA_BOUNDS: Bounds = Bounds {
-        min_x: -5.,
-        max_x: 5.,
-        min_y: -5.,
-        max_y: 5.,
     };
 }
 
@@ -209,9 +203,14 @@ impl ParameterPlane for CosineAdd
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::centered_square(5.5)
     }
 }
 
@@ -230,12 +229,6 @@ impl Cosine
         max_x: 7.,
         min_y: -7.,
         max_y: 7.,
-    };
-    const JULIA_BOUNDS: Bounds = Bounds {
-        min_x: -5.,
-        max_x: 5.,
-        min_y: -5.,
-        max_y: 5.,
     };
 }
 impl Default for Cosine
@@ -305,7 +298,7 @@ impl ParameterPlane for Cosine
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -331,12 +324,6 @@ impl SineWander
         max_x: 7.,
         min_y: -7.,
         max_y: 7.,
-    };
-    const JULIA_BOUNDS: Bounds = Bounds {
-        min_x: -5.,
-        max_x: 5.,
-        min_y: -5.,
-        max_y: 5.,
     };
 }
 

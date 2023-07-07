@@ -1,4 +1,4 @@
-use crate::consts::{LOG_PI, OMEGA, OMEGA_BAR, ONE_THIRD, TAUI, ZERO};
+use crate::consts::{LOG_PI, TAUI, ZERO};
 use crate::types::{Cplx, Norm, Real};
 use num_complex::ComplexFloat;
 pub use spfunc::{

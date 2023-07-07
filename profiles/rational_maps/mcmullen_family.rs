@@ -14,7 +14,6 @@ impl<const M: i32, const N: i32> McMullenFamily<M, N>
     const M_FLOAT: Real = M as Real;
     const N_FLOAT: Real = N as Real;
     const M_MINUS_1: i32 = M - 1;
-    const N_MINUS_1: i32 = N - 1;
     const M_PLUS_N_INV: Real = 1. / (Self::M_FLOAT + Self::N_FLOAT);
     const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(80. / (Self::M_FLOAT - 1.8));
 }

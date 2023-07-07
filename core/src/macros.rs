@@ -78,7 +78,7 @@ macro_rules! point_grid_getters {
 #[macro_export]
 macro_rules! basic_plane_impl {
     () => {
-        crate::macros::point_grid_getters!();
+        $crate::macros::point_grid_getters!();
 
         #[inline]
         fn max_iter(&self) -> Period
@@ -175,20 +175,4 @@ macro_rules! basic_escape_encoding {
     };
 }
 
-macro_rules! max {
-    ($x:expr) => ( $x );
-    ($x:expr, $($xs:expr),+) => {
-        std::cmp::max($x, max!( $($xs),+ ))
-    };
-}
-
-macro_rules! min {
-    ($x:expr) => ( $x );
-    ($x:expr, $($xs:expr),+) => {
-        std::cmp::min($x, min!( $($xs),+ ))
-    };
-}
-
 pub use {basic_escape_encoding, basic_plane_impl, default_name, fractal_impl, point_grid_getters};
-
-pub(crate) use {max, min};

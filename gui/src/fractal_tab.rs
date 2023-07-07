@@ -1,7 +1,7 @@
 use crate::macros::{
     fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
 };
-use crate::pane::{Interactive, Interface, MainInterface, Pane, PaneID, PanePair};
+use crate::pane::{Interface, MainInterface, PaneID};
 use egui::Ui;
 use egui_dock::NodeIndex;
 use fractal_common::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette};

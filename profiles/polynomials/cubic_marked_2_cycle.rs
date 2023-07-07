@@ -156,7 +156,6 @@ impl ParameterPlane for CubicMarked2Cycle
 const MIS_1_1_G2: Cplx = Cplx::new(1. / 192., 0.);
 const MIS_1_1_G3: Cplx = Cplx::new(-161. / 13824., 0.);
 const FRAC_5_12: f64 = 5. / 12.;
-const FRAC_7_48: f64 = 7. / 48.;
 
 impl HasDynamicalCovers for CubicMarked2Cycle
 {

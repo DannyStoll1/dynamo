@@ -19,7 +19,6 @@ impl Biquadratic
         min_y: -1.25,
         max_y: 1.25,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 }
 
 impl Default for Biquadratic
@@ -132,7 +131,6 @@ impl BiquadraticMult
         min_y: -2.55,
         max_y: 2.55,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 }
 
 impl Default for BiquadraticMult
@@ -261,7 +259,8 @@ impl ParameterPlane for BiquadraticMult
             q1 * OMEGA_BAR,
         ]
         .iter()
-        .map(|x| Bicomplex::PlaneA(*x))
+        .cloned()
+        .map(Bicomplex::PlaneA)
         .collect()
     }
 
@@ -339,7 +338,7 @@ impl ParameterPlane for BiquadraticMult
                 ];
                 solve_polynomial(&coeffs)
                     .into_iter()
-                    .map(|x| Bicomplex::PlaneA(x))
+                    .map(Bicomplex::PlaneA)
                     .collect()
             }
             _ => vec![],
@@ -573,7 +572,6 @@ impl BiquadraticMultSecondIterate
         min_y: -2.25,
         max_y: 2.25,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 }
 impl Default for BiquadraticMultSecondIterate
 {
@@ -682,6 +680,11 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     {
         self.multiplier
     }
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::centered_square(2.5)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -701,7 +704,6 @@ impl BiquadraticMultSection
         min_y: -2.55,
         max_y: 2.55,
     };
-    const JULIA_BOUNDS: Bounds = Bounds::centered_square(2.5);
 }
 
 impl Default for BiquadraticMultSection

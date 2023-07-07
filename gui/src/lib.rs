@@ -1,4 +1,5 @@
-use egui;
+#![allow(dead_code)]
+
 use egui_dock::{DockArea, NodeIndex, Style, Tree};
 
 pub mod fractal_tab;

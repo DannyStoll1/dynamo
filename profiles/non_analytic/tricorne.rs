@@ -26,7 +26,7 @@ impl ParameterPlane for Tricorne
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
     }
