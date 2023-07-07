@@ -2,7 +2,11 @@ use crate::macros::{max, min};
 use egui::Color32;
 use image::Rgb;
 
-#[derive(Clone, Copy, Debug)]
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Hsv
 {
     pub hue: f32,

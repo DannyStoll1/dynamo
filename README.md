@@ -14,6 +14,7 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Ctrl-V: zoom out far
 - Shift+arrows: pan view
 - Space: Center selection
+- Shift+Space: Reset selection
 
 ### Computation
 
@@ -22,13 +23,15 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Ctrl-S: save image (prompt in command line; currently does not include marked points/curves)
 - H: Resize images
 - L: Toggle live mode
+
+### Annotations
+
 - I: Toggle selection (active plane)
 - Ctrl-1: Toggle fixed points (dynamical plane)
 - Ctrl-2: Toggle 2-cycles (dynamical plane)
 - O: Toggle marked points (parameter plane)
 - P: Toggle critical points (dynamical plane)
 - C: Clear marked curves
-- Shift+Space: Reset selection
 
 ### Coloring
 

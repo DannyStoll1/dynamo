@@ -1,6 +1,6 @@
 use crate::{
-    macros::{basic_escape_encoding, horner, profile_imports},
-    math_utils::{solve_cubic, solve_quartic, weierstrass_p},
+    macros::{basic_escape_encoding, horner, horner_monic, profile_imports},
+    math_utils::{poly_solve::solve_polynomial, solve_cubic, solve_quartic, weierstrass_p},
     types::param_stack::Summarize,
     types::{variables::PlaneID, CplxPair},
 };
@@ -352,6 +352,43 @@ impl ParameterPlane for CubicPer2CritMarked
                 let cinv2 = cinv * cinv;
                 let [r2, r3, r4, r5] = solve_quartic(cinv2, c - cinv, cinv2 + 1., -c - cinv - cinv);
                 vec![ZERO, c, r2, r3, r4, r5]
+            }
+            3 =>
+            {
+                let c2 = c * c;
+                let c3 = c * c2;
+                let c4 = c2 * c2;
+                let c5 = c2 * c3;
+                let c6 = c3 * c3;
+                let c8 = c4 * c4;
+                let coeffs = [
+                    c8,
+                    ZERO,
+                    c6 + c8,
+                    c5,
+                    -c4 * horner_monic!(c2, 2., 6., 0., -5., -1.),
+                    c3 * horner_monic!(c2, -1., 2., 7., -1., -3.),
+                    -c2 * horner_monic!(c2, -1., -7., 3., 30., 17., -9., -6.),
+                    c3 * horner!(c2, -2., -18., 6., 46., 3., -16., 2.),
+                    c2 * horner!(c2, -2., 8., 69., 33., -53., -33., -5., 5.),
+                    c * horner!(c2, -1., 13., -24., -147., -33., 107., 36., -16.),
+                    horner!(c2, 1., -2., -64., 26., 224., 75., -39., -5., -10.),
+                    c * horner!(c2, -8., 26., 170., -56., -358., -160., 36., 44.),
+                    horner!(c2, 3., 31., -98., -334., 41., 332., 91., -28., 10.),
+                    c * horner!(c2, -21., -70., 254., 573., 95., -226., -135., -56.),
+                    horner!(c2, 3., 80., 125., -429., -722., -151., 180., 95., -5.),
+                    c * horner!(c2, -22., -209., -212., 492., 710., 243., 36., 34.),
+                    horner!(c2, 1., 78., 400., 319., -426., -618., -307., -90., 1.),
+                    c * horner!(c2, -8., -182., -601., -446., 183., 302., 98., -8.),
+                    c2 * horner!(c2, 28., 308., 736., 570., 141., 28., 28.),
+                    c3 * horner!(c2, -56., -378., -695., -520., -210., -56.),
+                    c4 * horner!(c2, 70., 322., 449., 266., 70.),
+                    c5 * horner!(c2, -56., -178., -170., -56.),
+                    c6 * horner!(c2, 28., 57., 28.),
+                    -8. * c6 * (c + c3),
+                    c8,
+                ];
+                solve_polynomial(&coeffs)
             }
             _ => vec![],
         }

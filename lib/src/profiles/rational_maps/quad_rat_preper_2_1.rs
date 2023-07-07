@@ -1,5 +1,6 @@
-use crate::macros::profile_imports;
-use crate::math_utils::{solve_quadratic, weierstrass_p};
+use crate::macros::{horner, profile_imports};
+use crate::math_utils::poly_solve::solve_polynomial;
+use crate::math_utils::{solve_quadratic, solve_quartic, weierstrass_p};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -97,6 +98,60 @@ impl ParameterPlane for QuadRatPreper21
                 solve_quadratic(u, u + u).to_vec()
             }
             2 => solve_quadratic(c / (c + 1.), TWO).to_vec(),
+            3 =>
+            {
+                if c.norm_sqr() < 1e-20
+                {
+                    return vec![];
+                }
+
+                let c2 = c * c;
+                let coeffs = [
+                    c2 * c2,
+                    c2 * horner!(c, 2., 4., 6.),
+                    horner!(c, 1., 3., 14., 17., 15.),
+                    horner!(c, 2., 10., 28., 28., 20.),
+                    horner!(c, 1., 8., 23., 22., 15.),
+                    c * horner!(c, 2., 8., 8., 6.),
+                    c2 * (1. + c + c2),
+                ];
+                solve_polynomial(&coeffs)
+            }
+            4 =>
+            {
+                if c.norm_sqr() < 1e-20
+                {
+                    return vec![];
+                }
+
+                let c2 = c * c;
+                let c3 = c * c2;
+                let c5 = c2 * c3;
+                let coeffs0 = [
+                    c5,
+                    c2 * horner!(c, 1., 3., 4., 8.),
+                    c * horner!(c, 4., 13., 25., 24., 28.),
+                    horner!(c, 2., 22., 50., 75., 60., 56.),
+                    horner!(c, 6., 42., 82., 111., 80., 70.),
+                    horner!(c, 5., 33., 65., 89., 60., 56.),
+                    horner!(c, 1., 11., 25., 39., 24., 28.),
+                    c * horner!(c, 1., 4., 9., 4., 8.),
+                    c3 + c5,
+                ];
+                let coeffs1 = [
+                    c3,
+                    horner!(c, 1., 1., 2., 4.),
+                    horner!(c, 1., 3., 4., 6.),
+                    c * horner!(c, 1., 2., 4.),
+                    c3,
+                ];
+
+                let mut sol0 = solve_polynomial(&coeffs0);
+                let sol1 = solve_polynomial(&coeffs1);
+
+                sol0.extend(sol1);
+                sol0
+            }
             _ => vec![],
         }
     }

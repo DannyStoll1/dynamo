@@ -1,5 +1,12 @@
+use self::param_stack::Summarize;
 use derive_more::{Add, Display, From};
 use num_complex::Complex;
+use std::fmt::Display;
+
+pub mod variables;
+pub use variables::{Dist, Norm};
+pub mod param_stack;
+pub use param_stack::{NoParam, ParamList, ParamStack};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -9,11 +16,6 @@ pub(crate) type Real = f64;
 pub(crate) type Cplx = Complex<Real>;
 pub(crate) type Period = u32;
 pub(crate) type ComplexVec = Vec<Cplx>;
-
-pub mod variables;
-pub use variables::{Dist, Norm};
-pub mod param_stack;
-pub use param_stack::{NoParam, ParamList, ParamStack};
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -34,8 +36,15 @@ pub enum EscapeState<V, D>
     NotYetEscaped,
     Bounded,
 }
+impl<V, D> Default for EscapeState<V, D>
+{
+    fn default() -> Self
+    {
+        Self::NotYetEscaped
+    }
+}
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PointInfo<D>
 {
@@ -53,10 +62,13 @@ pub enum PointInfo<D>
     Bounded,
     Wandering,
 }
-
-use std::fmt::Display;
-
-use self::param_stack::Summarize;
+impl<D> Default for PointInfo<D>
+{
+    fn default() -> Self
+    {
+        Self::Bounded
+    }
+}
 
 const DISPLAY_PREC: usize = 16;
 

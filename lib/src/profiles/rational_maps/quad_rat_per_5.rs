@@ -1,3 +1,4 @@
+use crate::math_utils::poly_solve::solve_polynomial;
 use crate::math_utils::{solve_cubic, solve_quadratic, weierstrass_p};
 use crate::{
     macros::{horner, horner_monic, profile_imports},
@@ -175,6 +176,23 @@ impl ParameterPlane for QuadRatPer5
         {
             1 => solve_cubic(-b, -a, -ONE).to_vec(),
             2 => solve_quadratic(b, a - b).to_vec(),
+            3 =>
+            {
+                let b2 = b * b;
+                let b3 = b * b2;
+                let u = 3. * (b + 1.);
+                let ub = u * b;
+                let coeffs = [
+                    b3 * (1. + a + b),
+                    b2 * horner!(a, -b, u, 3.),
+                    b * horner!(a, ub, 2. * b, u + b, 3.),
+                    horner_monic!(a, b2 * (b - 2.), b * (5. * b + 6.), 7. * b, u - 2.),
+                    horner_monic!(a, ub + b2, ub, u + b, 4.),
+                    horner!(a, -b, u, 2. * b + 5., 2.),
+                    horner_monic!(a, b2 + b + b + 1., b + b + 2.),
+                ];
+                solve_polynomial(&coeffs)
+            }
             _ => vec![],
         }
     }

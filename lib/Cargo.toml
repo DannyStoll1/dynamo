@@ -8,7 +8,7 @@ repository = "https://github.com/dannystoll1/fractal-explorer"
 description = "A tool for studying discrete time dynamical systems - Core Files"
 
 [build-dependencies]
-bindgen = {version = "0.65", optional = true}
+bindgen = {version = "0.66", optional = true}
 
 [dependencies]
 num-complex = ">=0.4.3"
@@ -16,28 +16,25 @@ ndarray = ">=0.15.6"
 image = "*"
 eframe = ">=0.22.0"
 egui_extras = { version = ">=0.22.0", features = ["image"] }
-num = ">=0.4.0"
+# num = ">=0.4.0"
 rand = ">=0.8.5"
 rand_distr = ">=0.4.3"
 rayon = ">=1.7.0"
 epaint = ">=0.22.0"
 input-macro = ">=0.2.0"
 thread_local = ">=1.1.7"
-num_cpus = ">=1.15.0"
+num_cpus = ">=1.16.0"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
-serde = { version = "1.0.163", features = ["derive"], optional = true }
-wasm-bindgen = { version = ">=0.2.86", optional = true }
-wasm-bindgen-futures = { version = ">=0.4.36", optional = true }
-web-sys = { version = ">=0.3.63", features = ["console"] }
+serde = { version = "1.0.166", features = ["derive"], optional = true }
 egui_file = ">=0.9.0"
-egui_dock = ">=0.6.1"
+egui_dock = ">=0.6.3"
 egui = "0.22.0"
 spfunc = "0.1.0"
-seq-macro = "0.3.3"
+seq-macro = "0.3.4"
 
-libc = {version = "0.2", optional = true}
+libc = {version = "0.2.147", optional = true}
 
 [features]
 serde = ["dep:serde", "eframe/serde", "epaint/serde", "num-complex/serde"]
-wasm = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures"]
+wasm = []
 mpsolve = ["dep:libc", "dep:bindgen"]

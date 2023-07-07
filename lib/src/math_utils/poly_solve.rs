@@ -1,10 +1,12 @@
 use crate::types::Cplx;
 
 #[cfg(feature = "mpsolve")]
+#[allow(unused_mut)]
 pub fn solve_polynomial(coeffs: &[Cplx]) -> Vec<Cplx>
 {
-    if coeffs.iter().any(|x|x.is_nan()) {
-        return vec![]
+    if coeffs.iter().any(|x| x.is_nan())
+    {
+        return vec![];
     }
 
     unsafe {

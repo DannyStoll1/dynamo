@@ -1,4 +1,7 @@
-use crate::macros::profile_imports;
+use crate::{
+    macros::{horner, profile_imports},
+    math_utils::{solve_cubic, solve_quadratic, solve_quartic},
+};
 profile_imports!();
 
 // Quadratic rational maps of the form z -> c(z+1/z)
@@ -99,6 +102,43 @@ impl ParameterPlane for QuadRatSymmetryLocus
             {
                 let disc = (-c / (1. + c)).sqrt();
                 vec![disc, -disc]
+            }
+            3 =>
+            {
+                if c.norm_sqr() < 1e-20
+                {
+                    return vec![];
+                }
+                let c2 = c * c;
+                let u = 1. + c + c2;
+                let v = (c2 * u).inv();
+                let a2 = v * horner!(c, 1., -1., 2., 1., 3.);
+                let a4 = v * (1. + c2 * (3. + 2. * c + 3. * c2));
+                let squared_sols = solve_cubic(c2 / u, a2, a4);
+                let mut sols: Vec<Cplx> = squared_sols.iter().map(|z| z.sqrt()).collect();
+                let neg_sols: Vec<Cplx> = sols.iter().map(|z| -z).collect();
+                sols.extend(neg_sols);
+                sols
+            }
+            4 =>
+            {
+                if c.norm_sqr() < 1e-20
+                {
+                    return vec![];
+                }
+                let c2 = c * c;
+                let c4 = c2 * c2;
+                let c_neg6 = (c2 * c4).inv();
+                let u = c2 * horner!(c2, 1., 2., 4.);
+                let v = horner!(c2, 1., 3., 4., 6.);
+
+                let mut squared_sols =
+                    solve_quartic(ONE, (u + 1.) * c_neg6, v * c_neg6, u * c_neg6).to_vec();
+                squared_sols.extend(solve_quadratic(c2 / (c2 + 1.), TWO));
+                let mut sols: Vec<Cplx> = squared_sols.iter().map(|z| z.sqrt()).collect();
+                let neg_sols: Vec<Cplx> = sols.iter().map(|z| -z).collect();
+                sols.extend(neg_sols);
+                sols
             }
             _ => vec![],
         }
