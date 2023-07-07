@@ -1,0 +1,15 @@
+[package]
+name = "fractal_profiles"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+fractal_common = {version = "*", path = "../common"}
+fractal_core = {version = "*", path = "../core"}
+
+[lib]
+name = "fractal_profiles"
+path = "lib.rs"
+
+[features]
+mpsolve = ["fractal_common/mpsolve", "fractal_core/mpsolve"]

@@ -1,14 +1,19 @@
-use eframe::{WebRunner, WebOptions, WebLogger};
-use log;
-use fractal_lib::gui::FractalApp;
-use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use {
+    eframe::{WebRunner, WebOptions, WebLogger},
+    log,
+    fractal_gui::FractalApp,
+    wasm_bindgen::prelude::*
+};
 
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct WebHandle {
     runner: WebRunner,
 }
 
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
 impl WebHandle {
     /// Installs a panic hook, then returns.
@@ -35,6 +40,7 @@ impl WebHandle {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 impl Default for WebHandle {
     fn default() -> Self {
         Self::new()

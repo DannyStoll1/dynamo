@@ -2,7 +2,10 @@
 resolver = "2"
 
 members = [
+    "common",
+    "core",
+    "gui",
     "bin",
-    "lib",
     "wasm",
+    "profiles",
 ]

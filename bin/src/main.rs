@@ -1,5 +1,4 @@
-extern crate fractal_lib;
-use fractal_lib::gui;
+use fractal_gui as gui;
 
 fn main() -> Result<(), eframe::Error>
 {
