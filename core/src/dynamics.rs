@@ -299,7 +299,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         pixel_count: u32,
     ) -> Option<Vec<Cplx>>
     {
-        let escape_radius = 20.;
+        let escape_radius = 40.;
         let deg = self.degree();
         if deg.is_nan()
         {

@@ -325,6 +325,13 @@ pub fn roots_of_unity(degree: i32) -> impl Iterator<Item = Cplx>
     (0..degree).map(move |k| (theta * f64::from(k)).exp())
 }
 
+pub fn nth_roots(x: Cplx, degree: i32) -> impl Iterator<Item = Cplx>
+{
+    let u = x.powf(1. / Real::from(degree));
+    let theta = TAUI / f64::from(degree);
+    (0..degree).map(move |k| u * (theta * f64::from(k)).exp())
+}
+
 pub fn newton_fixed_iter<T, F, G>(f_and_df: F, start: T, target: T, iters: usize) -> T
 where
     F: Fn(T) -> (T, T),

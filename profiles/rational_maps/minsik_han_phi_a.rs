@@ -1,3 +1,5 @@
+use fractal_common::math_utils::{binomial, nth_roots, roots_of_unity};
+
 use crate::macros::profile_imports;
 profile_imports!();
 
@@ -71,6 +73,53 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
             .map(|k| (TAUI * f64::from(k) / Self::D_FLOAT).exp())
             .collect()
     }
+
+    #[inline]
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let u = (c + 1. - Self::D_FLOAT).powf(1. / Self::D_FLOAT);
+                roots_of_unity(D).map(|z| z * u).collect()
+            }
+            2 =>
+            {
+                if D < 2
+                {
+                    return vec![];
+                }
+
+                let u = c / Self::D_MINUS_1;
+
+                let coeffs: Vec<Cplx> = (0..D)
+                    .map(|i| {
+                        if i == 0
+                        {
+                            return -u - 1.;
+                        }
+                        let mut val = ONE;
+                        (1..=(D - i)).for_each(|j| {
+                            val *= u;
+                            val += Real::from(binomial(i + j - 1, j));
+                        });
+                        val -= u * Real::from(binomial(D - 1, i)) + Real::from(binomial(D, i));
+                        val
+                    })
+                    .collect();
+
+                solve_polynomial(&coeffs)
+                    .iter()
+                    .map(|z| (z * Self::D_MINUS_1))
+                    .flat_map(|z| nth_roots(z, D))
+                    .collect()
+
+            }
+            _ => vec![],
+        }
+    }
+
     fn default_selection(&self) -> Cplx
     {
         Cplx::new(Self::D_FLOAT, 0.0)
