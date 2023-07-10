@@ -35,8 +35,16 @@ pub trait ParameterPlane: Sync + Send + Clone
     type Var: Norm<Real> + Dist<Real> + Send + Default + From<Cplx> + Into<Cplx> + Display;
     type Param: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
-    type Deriv: Norm<Real> + Send + Default + From<f64> + MulAssign + Display + Into<Cplx>;
+    type Deriv: Norm<Real>
+        + Send
+        + Default
+        + From<f64>
+        + MulAssign
+        + Display
+        + Into<Cplx>
+        + std::fmt::Debug;
     type Child: ParameterPlane + From<Self>;
+    const NUM_IMAGES: usize = 1;
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
@@ -98,15 +106,11 @@ pub trait ParameterPlane: Sync + Send + Clone
         1e-14
     }
 
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var;
-    // fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
-    // {
-    //     c.into()
-    // }
+    fn start_point(&self, _point: Cplx, c: Self::Param) -> [Self::Var; Self::NUM_IMAGES];
 
-    fn param_map(&self, point: Cplx) -> Self::Param
+    fn param_map(&self, point: Cplx) -> [Self::Param; Self::NUM_IMAGES]
     {
-        point.into()
+        [point.into(); Self::NUM_IMAGES]
     }
 
     fn dynam_map(&self, point: Cplx) -> Self::Var
@@ -174,14 +178,17 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn compute_escape_times(&self) -> Array2<PointInfo<Self::Deriv>>
+    fn compute(&self) -> IterPlane<Self::Deriv, { Self::NUM_IMAGES }>
     {
-        let mut iter_counts = Array2::from_elem(self.point_grid().shape(), PointInfo::Bounded);
-        self.compute_escape_times_into(&mut iter_counts);
-        iter_counts
+        let mut iter_plane = IterPlane::new_default(self.point_grid().clone());
+        self.compute_into(&mut iter_plane);
+        iter_plane
     }
 
-    fn compute_escape_times_into(&self, iter_counts: &mut Array2<PointInfo<Self::Deriv>>)
+    fn compute_into(
+        &self,
+        iter_plane: &mut IterPlane<Self::Deriv, { Self::NUM_IMAGES }>,
+    )
     {
         if self.point_grid().is_nan()
         {
@@ -192,55 +199,46 @@ pub trait ParameterPlane: Sync + Send + Clone
 
         let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
 
-        iter_counts
-            .axis_chunks_iter_mut(Axis(1), chunk_size)
+        iter_plane
+            .iter_counts
+            .iter()
             .enumerate()
-            .par_bridge()
-            .for_each(|(chunk_idx, mut chunk)| {
-                let orbit_params = OrbitParams {
-                    max_iter: self.max_iter(),
-                    min_iter: self.min_iter(),
-                    periodicity_tolerance: self.periodicity_tolerance(),
-                    escape_radius: self.escape_radius(),
-                };
+            .for_each(|(i, arr)| {
+                arr.axis_chunks_iter_mut(Axis(1), chunk_size)
+                    .enumerate()
+                    .par_bridge()
+                    .for_each(|(chunk_idx, mut chunk)| {
+                        let orbit_params = OrbitParams {
+                            max_iter: self.max_iter(),
+                            min_iter: self.min_iter(),
+                            periodicity_tolerance: self.periodicity_tolerance(),
+                            escape_radius: self.escape_radius(),
+                        };
 
-                chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
-                    let y = chunk_idx * chunk_size + local_y;
-                    let point = self.point_grid().map_pixel(x, y);
-                    let param = self.param_map(point);
-                    let start = self.start_point(point, param);
-                    let mut orbit = orbits
-                        .get_or(|| {
-                            RefCell::new(CycleDetectedOrbitFloyd::new(
-                                |c, z| self.map(c, z),
-                                |c, z| self.map_and_multiplier(c, z),
-                                |c, z| self.early_bailout(c, z),
-                                start,
-                                param,
-                                &orbit_params,
-                            ))
-                        })
-                        .borrow_mut();
+                        chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
+                            let y = chunk_idx * chunk_size + local_y;
+                            let point = self.point_grid().map_pixel(x, y);
+                            let param = self.param_map(point)[i];
+                            let start = self.start_point(point, param)[i];
+                            let mut orbit = orbits
+                                .get_or(|| {
+                                    RefCell::new(CycleDetectedOrbitFloyd::new(
+                                        |c, z| self.map(c, z),
+                                        |c, z| self.map_and_multiplier(c, z),
+                                        |c, z| self.early_bailout(c, z),
+                                        start,
+                                        param,
+                                        &orbit_params,
+                                    ))
+                                })
+                                .borrow_mut();
 
-                    orbit.reset(param, start);
-                    let result = orbit.run_until_complete();
-                    *count = self.encode_escape_result(result, param);
-                });
+                            orbit.reset(param, start);
+                            let result = orbit.run_until_complete();
+                            *count = self.encode_escape_result(result, param);
+                        });
+                    });
             });
-    }
-
-    fn compute(&self) -> IterPlane<Self::Deriv>
-    {
-        let iter_counts = self.compute_escape_times();
-        IterPlane {
-            iter_counts,
-            point_grid: self.point_grid().clone(),
-        }
-    }
-
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
-    {
-        self.compute_escape_times_into(&mut iter_plane.iter_counts);
     }
 
     #[inline]
@@ -355,58 +353,6 @@ pub trait ParameterPlane: Sync + Send + Clone
         Some(c_list)
     }
 
-    // fn external_angle(&self, point: Cplx) -> Option<Real>
-    // {
-    //     let c = self.param_map(point);
-    //     let z = self.start_point(c);
-    //     if let EscapeState::Escaped { iters, final_value } =
-    //         self.run_until_escape(z, c, 10., self.max_iter())
-    //     {
-    //         let error = 1e-12;
-    //         let mut curr = c;
-    //         let mut difference: Cplx;
-    //         let mut target = final_value;
-    //         let r = final_value.norm_sqr();
-    //         while target.norm_sqr() <= r.powi(10)
-    //         {
-    //             target *= 1.01;
-    //             dbg!(target);
-    //             loop
-    //             {
-    //                 dbg!(curr);
-    //                 // Newton's method to try to approximate
-    //                 // outward points on external ray
-    //                 let mut z_k = self.start_point(curr);
-    //                 let mut d_k = ONE_COMPLEX;
-    //                 for _ in 0..iters
-    //                 {
-    //                     d_k = d_k * self.dynamical_derivative(z_k, curr)
-    //                         + self.parameter_derivative(z_k, curr);
-    //                     z_k = self.map(z_k, curr);
-    //                 }
-    //
-    //                 if z_k.is_nan()
-    //                 {
-    //                     println!("nan encountered!");
-    //                     return Some(curr.arg() / TAU);
-    //                     // break;
-    //                 }
-    //
-    //                 difference = (target - z_k) / d_k;
-    //                 curr += difference;
-    //                 dbg!(z_k, d_k, difference);
-    //
-    //                 if difference.norm_sqr() < error
-    //                 {
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //         return Some(curr.arg() / TAU);
-    //     }
-    //     None
-    // }
-
     fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeState<Self::Var, Self::Deriv>
     {
         let orbit_params = OrbitParams {
@@ -459,72 +405,97 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn get_orbit_vec(&self, point: Cplx) -> Vec<Self::Var>
+    fn get_orbit_vec(&self, point: Cplx) -> [Vec<Self::Var>; Self::NUM_IMAGES]
     {
-        let param = self.param_map(point);
-        let start = self.start_point(point, param);
-        let orbit = SimpleOrbit::new(
-            |z, c| self.map(z, c),
-            start,
-            param,
-            self.max_iter(),
-            self.escape_radius(),
-        );
-        orbit.map(|(z, _s)| z).collect()
+        let params = self.param_map(point);
+        let mut orbits: [Vec<Self::Var>; Self::NUM_IMAGES];
+
+        for i in 0..Self::NUM_IMAGES
+        {
+            let param = params[i];
+            let start = self.start_point(point, param)[i];
+            let orbit = SimpleOrbit::new(
+                |z, c| self.map(z, c),
+                start,
+                param,
+                self.max_iter(),
+                self.escape_radius(),
+            );
+            orbits[i] = orbit.map(|(z, _s)| z).collect()
+        }
+        orbits
     }
 
-    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Var, Self::Param, Self::Deriv>
+    fn get_orbit_info(
+        &self,
+        point: Cplx,
+    ) -> [OrbitInfo<Self::Var, Self::Param, Self::Deriv>; Self::NUM_IMAGES]
     {
-        let param = self.param_map(point);
-        let start = self.start_point(point, param);
-        let result = self.run_and_encode_point(start, param);
-        OrbitInfo {
-            start,
-            param,
-            result,
+        let params = self.param_map(point);
+        let mut orbits: [OrbitInfo<Self::Var, Self::Param, Self::Deriv>; Self::NUM_IMAGES];
+        for i in 0..Self::NUM_IMAGES
+        {
+            let param = params[i];
+            let start = self.start_point(point, param)[i];
+            let result = self.run_and_encode_point(start, param);
+            orbits[i] = OrbitInfo {
+                start,
+                param,
+                result,
+            }
         }
+        orbits
     }
 
     fn get_orbit_and_info(
         &self,
         point: Cplx,
-    ) -> (
+    ) -> [(
         Vec<Self::Var>,
         OrbitInfo<Self::Var, Self::Param, Self::Deriv>,
-    )
+    ); Self::NUM_IMAGES]
     {
-        let param = self.param_map(point);
-        let start = self.start_point(point, param);
+        let params = self.param_map(point);
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),
             min_iter: self.min_iter(),
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
-        let orbit = CycleDetectedOrbitFloyd::new(
-            |c, z| self.map(c, z),
-            |c, z| self.map_and_multiplier(c, z),
-            |c, z| self.early_bailout(c, z),
-            start,
-            param,
-            &orbit_params,
-        );
-        let mut final_state = EscapeState::Bounded;
-        let trajectory: Vec<Self::Var> = orbit
-            .map(|(z, s)| {
-                final_state = s;
-                z
-            })
-            .collect();
-        let result = self.encode_escape_result(final_state, param);
-        (
-            trajectory,
-            OrbitInfo {
+        let results: [(
+            Vec<Self::Var>,
+            OrbitInfo<Self::Var, Self::Param, Self::Deriv>,
+        ); Self::NUM_IMAGES];
+        for i in 0..Self::NUM_IMAGES
+        {
+            let param = params[i];
+            let start = self.start_point(point, param)[i];
+            let orbit = CycleDetectedOrbitFloyd::new(
+                |c, z| self.map(c, z),
+                |c, z| self.map_and_multiplier(c, z),
+                |c, z| self.early_bailout(c, z),
                 start,
                 param,
-                result,
-            },
-        )
+                &orbit_params,
+            );
+            let mut final_state = EscapeState::Bounded;
+            let trajectory: Vec<Self::Var> = orbit
+                .map(|(z, s)| {
+                    final_state = s;
+                    z
+                })
+                .collect();
+            let result = self.encode_escape_result(final_state, param);
+            results[i] = (
+                trajectory,
+                OrbitInfo {
+                    start,
+                    param,
+                    result,
+                },
+            )
+        }
+        results
     }
 
     fn default_bounds(&self) -> Bounds

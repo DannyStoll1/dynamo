@@ -73,6 +73,8 @@ where
     type MetaParam = ParamStack<T::MetaParam, T::Param>;
     type Deriv = T::Deriv;
     type Child = Self;
+    const NUM_IMAGES: usize = 1;
+
     basic_plane_impl!();
 
     #[inline]
@@ -112,9 +114,9 @@ where
     }
 
     #[inline]
-    fn param_map(&self, _z: Cplx) -> Self::Param
+    fn param_map(&self, _z: Cplx) -> [Self::Param; 1]
     {
-        self.local_param
+        [self.local_param]
     }
 
     #[inline]

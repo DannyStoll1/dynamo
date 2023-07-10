@@ -282,6 +282,7 @@ impl FractalTab
         });
     }
 
+    #[allow(clippy::identity_op)]
     fn polynomials_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Polynomials", |ui| {
