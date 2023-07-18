@@ -174,14 +174,14 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn compute_escape_times(&self) -> Array2<PointInfo<Self::Deriv>>
+    fn compute(&self) -> IterPlane<Self::Deriv>
     {
-        let mut iter_counts = Array2::from_elem(self.point_grid().shape(), PointInfo::Bounded);
-        self.compute_escape_times_into(&mut iter_counts);
-        iter_counts
+        let mut iter_plane = IterPlane::create(self.point_grid().clone());
+        self.compute_into(&mut iter_plane);
+        iter_plane
     }
 
-    fn compute_escape_times_into(&self, iter_counts: &mut Array2<PointInfo<Self::Deriv>>)
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
     {
         if self.point_grid().is_nan()
         {
@@ -192,7 +192,7 @@ pub trait ParameterPlane: Sync + Send + Clone
 
         let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
 
-        iter_counts
+        iter_plane.iter_counts
             .axis_chunks_iter_mut(Axis(1), chunk_size)
             .enumerate()
             .par_bridge()
@@ -227,20 +227,6 @@ pub trait ParameterPlane: Sync + Send + Clone
                     *count = self.encode_escape_result(result, param);
                 });
             });
-    }
-
-    fn compute(&self) -> IterPlane<Self::Deriv>
-    {
-        let iter_counts = self.compute_escape_times();
-        IterPlane {
-            iter_counts,
-            point_grid: self.point_grid().clone(),
-        }
-    }
-
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
-    {
-        self.compute_escape_times_into(&mut iter_plane.iter_counts);
     }
 
     #[inline]

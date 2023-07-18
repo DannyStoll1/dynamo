@@ -6,6 +6,7 @@ use fractal_common::types::param_stack::Summarize;
 use fractal_common::types::{ComplexVec, Cplx, OrbitInfo, ParamList, Real};
 use fractal_core::dynamics::ParameterPlane;
 use input_macro::input;
+use seq_macro::seq;
 
 use super::keyboard_shortcuts::*;
 use super::marked_points::MarkingMode;
@@ -1040,35 +1041,18 @@ where
             self.parent_mut().schedule_redraw();
         }
 
-        if shortcut_used!(ctx, &CTRL_1)
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(1);
-            self.child_mut().schedule_redraw();
-        }
-
-        if shortcut_used!(ctx, &CTRL_2)
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(2);
-            self.child_mut().schedule_redraw();
-        }
-
-        if shortcut_used!(ctx, &CTRL_3)
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(3);
-            self.child_mut().schedule_redraw();
-        }
-
-        if shortcut_used!(ctx, &CTRL_4)
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(4);
-            self.child_mut().schedule_redraw();
-        }
-
-        if shortcut_used!(ctx, &CTRL_5)
-        {
-            self.child_mut().marking_mode_mut().toggle_cycles(5);
-            self.child_mut().schedule_redraw();
-        }
+        seq!(n in 1..=6 {
+            if shortcut_used!(ctx, &CTRL_~n)
+            {
+                self.child_mut().marking_mode_mut().toggle_cycles(n);
+                self.child_mut().schedule_redraw();
+            }
+            if shortcut_used!(ctx, &CTRL_SHIFT_~n)
+            {
+                self.parent_mut().marking_mode_mut().toggle_cycles(n);
+                self.parent_mut().schedule_redraw();
+            }
+        });
 
         // if shortcut_used!(ctx, &KEY_E)
         // {

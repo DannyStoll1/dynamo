@@ -20,6 +20,21 @@ pub struct IterPlane<D>
     pub point_grid: PointGrid,
 }
 
+impl<D> IterPlane<D>
+where
+    D: Clone,
+{
+    #[must_use]
+    pub fn create(point_grid: PointGrid) -> Self
+    {
+        let iter_counts = Array2::from_elem(point_grid.shape(), PointInfo::Bounded);
+        Self {
+            iter_counts,
+            point_grid,
+        }
+    }
+}
+
 impl<D> FractalImage for IterPlane<D>
 where
     D: Norm<Real>,

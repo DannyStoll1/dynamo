@@ -60,4 +60,14 @@ macro_rules! parameter_plane_impl {
     };
 }
 
-pub(crate) use {parameter_plane_impl, profile_imports};
+macro_rules! cplx_arr {
+    ( [$($x:expr),*] ) => {
+        [
+            $(
+                Cplx::new($x as f64, 0.0),
+            )*
+        ]
+    };
+}
+
+pub(crate) use {parameter_plane_impl, profile_imports, cplx_arr};
