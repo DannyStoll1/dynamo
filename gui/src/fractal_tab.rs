@@ -421,6 +421,7 @@ impl FractalTab
                     fractal_menu_button!(self, ui, format!("Degree {}", D), Unicritical<D>);
                 });
             });
+            #[allow(clippy::identity_op)]
             ui.menu_button("Chebyshev family: z -> (-1)^k * c * cheb2k(z/2)", |ui| {
                 seq!(D in 1..=5 {
                     fractal_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);

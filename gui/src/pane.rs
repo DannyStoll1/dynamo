@@ -976,6 +976,7 @@ where
         }
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn handle_input(&mut self, ctx: &Context)
     {
         if let Some(save_dialog) = self.save_dialog.as_ref()
