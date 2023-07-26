@@ -670,7 +670,6 @@ impl ParameterPlane for CubicPer1_0
             }
             4 =>
             {
-                let c = Cplx::new(0., 2.2);
                 let c2 = c * c;
                 let c3 = c2 * c;
                 let coeffs = [
