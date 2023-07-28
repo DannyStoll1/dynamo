@@ -419,6 +419,7 @@ impl ParameterPlane for SineWander
         ONE
     }
 
+    #[inline]
     fn degree(&self) -> f64
     {
         f64::NAN

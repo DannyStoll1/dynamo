@@ -592,8 +592,16 @@ impl FractalTab
     fn non_analytic_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Non-analytic maps", |ui| {
-            fractal_menu_button!(self, ui, "Tricorne", Tricorne);
-            fractal_menu_button!(self, ui, "Burning Ship", BurningShip);
+            ui.menu_button("Tricorne", |ui| {
+                seq!(D in 2..=5 {
+                    fractal_menu_button!(self, ui, format!("Degree {}", D), Tricorne<D>);
+                });
+            });
+            ui.menu_button("Burning Ship", |ui| {
+                seq!(D in 2..=5 {
+                    fractal_menu_button!(self, ui, format!("Degree {}", D), BurningShip<D>);
+                });
+            });
             fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam);
             fractal_menu_button!(self, ui, "Rulkov Map", Rulkov);
         });

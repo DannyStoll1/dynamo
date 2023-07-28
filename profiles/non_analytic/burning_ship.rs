@@ -4,27 +4,33 @@ profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BurningShip
+pub struct BurningShip<const N: Period>
 {
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl BurningShip
+impl<const N: Period> BurningShip<N>
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.2,
-        max_x: 1.25,
-        min_y: -1.9,
-        max_y: 0.6,
+    const N_FLOAT: Real = N as Real;
+    const N_MINUS_1: Real = (N - 1) as Real;
+    const DEFAULT_BOUNDS: Bounds = match N
+    {
+        2 => Bounds {
+            min_x: -2.2,
+            max_x: 1.25,
+            min_y: -1.9,
+            max_y: 0.6,
+        },
+        _ => Bounds::centered_square(1.5),
     };
 }
-impl Default for BurningShip
+impl<const N: Period> Default for BurningShip<N>
 {
     fractal_impl!();
 }
 
-impl ParameterPlane for BurningShip
+impl<const N: Period> ParameterPlane for BurningShip<N>
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -34,6 +40,12 @@ impl ParameterPlane for BurningShip
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        Self::N_FLOAT
+    }
 
     fn encode_escaping_point(
         &self,
@@ -51,7 +63,7 @@ impl ParameterPlane for BurningShip
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let residual = (v / u).log2();
+        let residual = (v / u).log(Self::N_FLOAT);
         let potential = f64::from(iters) - (residual as IterCount);
         PointInfo::Escaping { potential }
     }
@@ -60,13 +72,13 @@ impl ParameterPlane for BurningShip
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let z = Cplx::new(z.re.abs(), z.im.abs());
-        z * z + c
+        z.powf(Self::N_FLOAT) + c
     }
 
     #[inline]
     fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Self::Deriv
     {
-        z + z
+        Self::N_FLOAT * z.powf(Self::N_MINUS_1)
     }
 
     #[inline]

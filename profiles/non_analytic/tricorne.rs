@@ -3,26 +3,56 @@ profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Tricorne
+pub struct Tricorne<const N: Period>
 {
     point_grid: PointGrid,
     max_iter: Period,
 }
 
-impl Default for Tricorne
+impl<const N: Period> Tricorne<N>
 {
-    fractal_impl!(-2.4, 1.5, -2.2, 2.2);
+    const N_FLOAT: Real = N as Real;
+    const N_MINUS_1: Real = (N - 1) as Real;
+    const DEFAULT_BOUNDS: Bounds = match N
+    {
+        2 => Bounds {
+            min_x: -2.4,
+            max_x: 1.5,
+            min_y: -2.2,
+            max_y: 2.2,
+        },
+        _ => Bounds::centered_square(1.4),
+    };
 }
 
-impl ParameterPlane for Tricorne
+impl<const N: Period> Default for Tricorne<N>
+{
+    fractal_impl!();
+}
+
+impl<const N: Period> ParameterPlane for Tricorne<N>
 {
     parameter_plane_impl!();
+    basic_escape_encoding!(Self::N_FLOAT);
     default_name!();
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        Self::N_FLOAT
+    }
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        (z * z).conj() + c
+        z.powf(Self::N_FLOAT).conj() + c
+    }
+
+    #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        let z_n_minus_1 = z.powf(Self::N_MINUS_1);
+        ((z_n_minus_1 * z).conj() + c, Self::N_FLOAT * z_n_minus_1.conj())
     }
 
     #[inline]
@@ -34,7 +64,7 @@ impl ParameterPlane for Tricorne
     #[inline]
     fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        (z + z).conj()
+        Self::N_FLOAT * z.powf(Self::N_MINUS_1)
     }
 
     #[inline]

@@ -505,6 +505,23 @@ impl HasDynamicalCovers for Mandelbrot
                 // };
                 // bounds = Bounds::square(16., 8.0.into());
             }
+            // 4 => {
+            //     param_map = |l| {
+            //         let u = 256.*l + 12288.;
+            //         let coeffs = [
+            //             -horner_monic!(l, -4096., 768., -48.),
+            //             ZERO,
+            //             horner!(l, 8192., -256., 48., -16.),
+            //             u,
+            //             u,
+            //             Cplx::new(12288., 0.),
+            //             Cplx::new(4096., 0.),
+            //         ];
+            //         let cs = solve_polynomial(&coeffs);
+            //         cs[0]
+            //     };
+            //     bounds = Bounds::centered_square(4.);
+            // }
             4 =>
             {
                 param_map = |c| {

@@ -28,6 +28,7 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
     parameter_plane_impl!();
     basic_escape_encoding!(Self::M_FLOAT, 1.);
 
+    #[inline]
     fn degree(&self) -> f64
     {
         Self::M_FLOAT
@@ -91,16 +92,19 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var> {
-        match period {
-            1 => {
-                let mut coeffs = vec![ZERO; (M+N+1).try_into().unwrap()];
-                coeffs[usize::try_from(M+N).unwrap()] = c;
-                coeffs[usize::try_from(N+1).unwrap()] = -c;
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 =>
+            {
+                let mut coeffs = vec![ZERO; (M + N + 1).try_into().unwrap()];
+                coeffs[usize::try_from(M + N).unwrap()] = c;
+                coeffs[usize::try_from(N + 1).unwrap()] = -c;
                 coeffs[0] = ONE;
                 solve_polynomial(&coeffs)
             }
-            _ => vec![]
+            _ => vec![],
         }
     }
 

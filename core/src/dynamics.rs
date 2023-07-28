@@ -192,7 +192,8 @@ pub trait ParameterPlane: Sync + Send + Clone
 
         let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
 
-        iter_plane.iter_counts
+        iter_plane
+            .iter_counts
             .axis_chunks_iter_mut(Axis(1), chunk_size)
             .enumerate()
             .par_bridge()

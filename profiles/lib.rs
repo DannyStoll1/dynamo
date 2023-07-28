@@ -19,8 +19,9 @@ mod tests
 {
     use crate::*;
     use fractal_common::point_grid::Bounds;
-    use fractal_common::types::Cplx;
+    use fractal_common::types::{Cplx, EscapeState};
     use fractal_core::dynamics::julia::JuliaSet;
+    use fractal_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
     use fractal_core::dynamics::ParameterPlane;
 
     #[test]
@@ -151,4 +152,35 @@ mod tests
     //     dbg!(err);
     //     assert!(err < 1e-11);
     // }
+
+    // Test the result of an orbit
+    // Failed cycle detection is often the result of
+    // conflicting `map` and `map_and_multiplier` implementations.
+    #[test]
+    fn orbit()
+    {
+        let plane: Tricorne<4> = Default::default();
+        let param = Cplx::new(0.3, 0.1);
+        let start = Cplx::from(0.0);
+
+        let orbit_params = OrbitParams {
+            max_iter: 256,
+            min_iter: 1,
+            periodicity_tolerance: 1e-12,
+            escape_radius: 1e6,
+        };
+
+        let mut orbit = CycleDetectedOrbitFloyd::new(
+            |z, c| plane.map(z, c),
+            |z, c| plane.map_and_multiplier(z, c),
+            |z, c| plane.early_bailout(z, c),
+            start,
+            param,
+            &orbit_params,
+        );
+
+        let result = orbit.run_until_complete();
+        dbg!(result);
+        assert!(matches!(result, EscapeState::Periodic { .. }));
+    }
 }
