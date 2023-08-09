@@ -357,10 +357,18 @@ impl FractalTab
                     fractal_menu_button!(
                         self,
                         ui,
-                        "λ=0.3",
-                        CubicPer1Lambda,
+                        "λ=0.3 moduli",
+                        CubicPer1LambdaModuli,
                         with_param,
                         Cplx::from(0.3)
+                    );
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.99 moduli",
+                        CubicPer1LambdaModuli,
+                        with_param,
+                        Cplx::from(0.99)
                     );
                     fractal_menu_button!(
                         self,
@@ -562,6 +570,7 @@ impl FractalTab
             });
 
             fractal_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
+            fractal_menu_button!(self, ui, "Newton Cubic", NewtonCubic);
             ui.menu_button("McMullen Family: z -> z^m + 1/(c*z^n)", |ui| {
                 seq!(N in 2..=8 {
                     fractal_menu_button!(self, ui, format!("(m=2, n={})", N), McMullenFamily<2, N>);

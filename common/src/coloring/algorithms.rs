@@ -1,13 +1,13 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
 use crate::consts::TAU;
-use crate::types::{IterCount, Norm, Period, Real};
+use crate::types::{IterCount, Norm, PointInfoPeriodic, Real};
 use egui::Color32;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ColoringAlgorithm
 {
@@ -26,6 +26,11 @@ pub enum ColoringAlgorithm
     },
     PreperiodPeriod,
     Multiplier,
+    // PointBased
+    // {
+    //     points: Vec<Cplx>,
+    //     tolerance: Real,
+    // },
 }
 impl ColoringAlgorithm
 {
@@ -44,13 +49,10 @@ impl ColoringAlgorithm
     }
 
     #[must_use]
-    pub fn color_periodic<D>(
+    pub fn color_periodic<V, D>(
         &self,
         palette: ColorPalette,
-        period: Period,
-        preperiod: Period,
-        multiplier: D,
-        final_error: Real,
+        point_info: PointInfoPeriodic<V, D>,
     ) -> Color32
     where
         D: Norm<Real>,
@@ -60,19 +62,19 @@ impl ColoringAlgorithm
             Self::Solid => palette.in_color,
             Self::Period =>
             {
-                let hue = period as f32;
+                let hue = point_info.period as f32;
                 palette.period_coloring.map_color32(hue, 0.75)
             }
             Self::PeriodMultiplier =>
             {
-                let hue = period as f32;
-                let luminosity = multiplier.norm() as f32;
+                let hue = point_info.period as f32;
+                let luminosity = point_info.multiplier.norm() as f32;
                 palette.period_coloring.map_color32(hue, luminosity)
             }
             Self::Preperiod =>
             {
-                let per = IterCount::from(period);
-                let val = IterCount::from(preperiod);
+                let per = IterCount::from(point_info.period);
+                let val = IterCount::from(point_info.preperiod);
 
                 palette.map_color32(val * val / per)
             }
@@ -80,8 +82,8 @@ impl ColoringAlgorithm
             {
                 let coloring_rate = 0.02;
 
-                let per = IterCount::from(period);
-                let val = IterCount::from(preperiod);
+                let per = IterCount::from(point_info.period);
+                let val = IterCount::from(point_info.preperiod);
 
                 let potential = (val * coloring_rate / per).tanh();
                 palette
@@ -92,33 +94,33 @@ impl ColoringAlgorithm
                 periodicity_tolerance,
             } =>
             {
-                let per = IterCount::from(period);
+                let per = IterCount::from(point_info.period);
                 let val: IterCount;
 
-                let mult_norm = multiplier.norm();
+                let mult_norm = point_info.multiplier.norm();
 
                 // Superattracting case
                 if mult_norm <= 1e-10
                 {
-                    let potential =
-                        2. * (final_error.log(*periodicity_tolerance)).log2() as IterCount;
-                    val = per.mul_add(-potential, IterCount::from(preperiod));
+                    let potential = 2.
+                        * (point_info.final_error.log(*periodicity_tolerance)).log2() as IterCount;
+                    val = per.mul_add(-potential, IterCount::from(point_info.preperiod));
                 }
                 // Parabolic case
                 else if 1. - mult_norm <= 1e-5
                 {
-                    let potential = final_error / periodicity_tolerance;
-                    val = per.mul_add(-potential, IterCount::from(preperiod));
+                    let potential = point_info.final_error / periodicity_tolerance;
+                    val = per.mul_add(-potential, IterCount::from(point_info.preperiod));
                 }
                 else
                 {
-                    let mut potential =
-                        -(final_error / periodicity_tolerance).log(mult_norm) as IterCount;
+                    let mut potential = -(point_info.final_error / periodicity_tolerance)
+                        .log(mult_norm) as IterCount;
                     if potential.is_infinite() || potential.is_nan()
                     {
                         potential = -0.2;
                     }
-                    val = per.mul_add(potential, f64::from(preperiod));
+                    val = per.mul_add(potential, f64::from(point_info.preperiod));
                 }
                 palette.map_color32(val * val / per)
             }
@@ -127,35 +129,37 @@ impl ColoringAlgorithm
                 fill_rate,
             } =>
             {
-                let hue = IterCount::from(period);
+                let hue = IterCount::from(point_info.period);
                 let luminosity: IterCount;
 
-                let mult_norm = multiplier.norm();
+                let mult_norm = point_info.multiplier.norm();
 
                 // Superattracting case
                 if mult_norm <= 1e-12
                 {
-                    let w = 2. * (final_error.log(*periodicity_tolerance)).log2() as IterCount;
-                    let v = hue.mul_add(-w, IterCount::from(preperiod));
+                    let w = 2.
+                        * (point_info.final_error.log(*periodicity_tolerance)).log2() as IterCount;
+                    let v = hue.mul_add(-w, IterCount::from(point_info.preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
                 // Parabolic case
                 else if 1. - mult_norm <= 1e-5
                 {
-                    let w = final_error / periodicity_tolerance;
-                    let v = hue.mul_add(-w, IterCount::from(preperiod));
+                    let w = point_info.final_error / periodicity_tolerance;
+                    let v = hue.mul_add(-w, IterCount::from(point_info.preperiod));
                     luminosity = (0.1 * v / hue).tanh();
                 }
                 else
                 {
                     let coloring_rate = Self::multiplier_coloring_rate(mult_norm, *fill_rate);
 
-                    let mut w = -(final_error / periodicity_tolerance).log(mult_norm) as IterCount;
+                    let mut w = -(point_info.final_error / periodicity_tolerance).log(mult_norm)
+                        as IterCount;
                     if w.is_infinite() || w.is_nan()
                     {
                         w = -0.2;
                     }
-                    let v = hue.mul_add(w, f64::from(preperiod));
+                    let v = hue.mul_add(w, f64::from(point_info.preperiod));
                     luminosity = (v * coloring_rate / hue).tanh();
                 }
                 palette
@@ -163,11 +167,27 @@ impl ColoringAlgorithm
                     .map_color32(hue as f32, luminosity as f32)
             }
             Self::Multiplier => Hsv::new(
-                (multiplier.arg() / TAU) as f32 + 0.5,
+                (point_info.multiplier.arg() / TAU) as f32 + 0.5,
                 1.,
-                multiplier.norm() as f32,
+                point_info.multiplier.norm() as f32,
             )
             .into(),
+            // Self::PointBased { points, tolerance } =>
+            // {
+            //     for (i, pt) in points.iter().enumerate()
+            //     {
+            //         if (point_info.value - pt).norm_sqr() < *tolerance
+            //         {
+            //             let hue = (i as f32) / (points.len() as f32);
+            //             return Hsv {
+            //                 hue,
+            //                 saturation: 0.8,
+            //                 luminosity: 1.0,
+            //             }.into();
+            //         }
+            //     }
+            //     palette.in_color
+            // }
         }
     }
 

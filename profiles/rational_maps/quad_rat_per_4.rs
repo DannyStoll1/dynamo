@@ -29,7 +29,7 @@ impl ParameterPlane for QuadRatPer4
     parameter_plane_impl!();
     default_name!();
 
-    fn encode_escaping_point(&self, iters: Period, z: Cplx, c: Cplx) -> PointInfo<Self::Deriv>
+    fn encode_escaping_point(&self, iters: Period, z: Cplx, c: Cplx) -> PointInfo<Self::Var, Self::Deriv>
     {
         {
             if z.is_nan()

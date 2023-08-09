@@ -17,6 +17,34 @@ pub type Cplx = Complex<Real>;
 pub type Period = u32;
 pub type ComplexVec = Vec<Cplx>;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct PointInfoPeriodic<V, D>
+{
+    pub value: V,
+    pub preperiod: Period,
+    pub period: Period,
+    pub multiplier: D,
+    pub final_error: Real,
+}
+impl<V, D> ToString for PointInfoPeriodic<V, D>
+where
+    V: Display,
+    D: Display,
+{
+    fn to_string(&self) -> String
+    {
+        format!(
+            "Cycle detected after {preperiod} iterations.\n\
+                Period: {period}\n\
+                Multiplier: {multiplier:.DISPLAY_PREC$}",
+            preperiod = self.preperiod,
+            period = self.period,
+            multiplier = self.multiplier
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EscapeState<V, D>
@@ -28,10 +56,7 @@ pub enum EscapeState<V, D>
     },
     Periodic
     {
-        preperiod: Period,
-        period: Period,
-        multiplier: D,
-        final_error: Real,
+        data: PointInfoPeriodic<V, D>,
     },
     NotYetEscaped,
     Bounded,
@@ -46,7 +71,7 @@ impl<V, D> Default for EscapeState<V, D>
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum PointInfo<D>
+pub enum PointInfo<V, D>
 {
     Escaping
     {
@@ -54,15 +79,18 @@ pub enum PointInfo<D>
     },
     Periodic
     {
-        preperiod: Period,
-        period: Period,
-        multiplier: D,
-        final_error: Real,
+        data: PointInfoPeriodic<V, D>,
     },
     Bounded,
     Wandering,
+    MarkedPoint
+    {
+        data: PointInfoPeriodic<V, D>,
+        point_id: usize,
+        num_points: usize,
+    },
 }
-impl<D> Default for PointInfo<D>
+impl<V, D> Default for PointInfo<V, D>
 {
     fn default() -> Self
     {
@@ -78,7 +106,7 @@ pub struct OrbitInfo<V, P, D>
 {
     pub start: V,
     pub param: P,
-    pub result: PointInfo<D>,
+    pub result: PointInfo<V, D>,
 }
 impl<V, P, D> ToString for OrbitInfo<V, P, D>
 where
@@ -89,20 +117,14 @@ where
     #[must_use]
     fn to_string(&self) -> String
     {
-        use PointInfo::{Bounded, Escaping, Periodic, Wandering};
+        use PointInfo::*;
         let result_summary = match &self.result
         {
             Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
-            Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error: _,
-            } => format!(
-                "Cycle detected after {preperiod} iterations.\n    Period: {period}\n    Multiplier: {multiplier:.DISPLAY_PREC$}"
-            ),
+            Periodic { data } => data.to_string(),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
+            MarkedPoint { data, .. } => data.to_string(),
         };
         format!(
             "Parameter: {:.*}\nStarting point: {:.*}\n{}",

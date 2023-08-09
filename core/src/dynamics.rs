@@ -4,7 +4,7 @@ use fractal_common::{
     iter_plane::IterPlane,
     math_utils::{newton_until_convergence, newton_until_convergence_d},
     point_grid::{self, Bounds, PointGrid},
-    types::param_stack::Summarize,
+    types::{param_stack::Summarize, PointInfoPeriodic},
     types::{
         Cplx, Dist, EscapeState, IterCount, Norm, OrbitInfo, ParamList, Period, PointInfo, Real,
     },
@@ -32,7 +32,7 @@ use self::orbit::OrbitParams;
 
 pub trait ParameterPlane: Sync + Send + Clone
 {
-    type Var: Norm<Real> + Dist<Real> + Send + Default + From<Cplx> + Into<Cplx> + Display;
+    type Var: Norm<Real> + Dist<Real> + Clone + Send + Default + From<Cplx> + Into<Cplx> + Display;
     type Param: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
     type Deriv: Norm<Real> + Send + Default + From<f64> + MulAssign + Display + Into<Cplx>;
@@ -80,6 +80,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     // Minimum iterations before cycle detection is allowed
+    #[inline]
     fn min_iter(&self) -> Period
     {
         0
@@ -104,11 +105,13 @@ pub trait ParameterPlane: Sync + Send + Clone
     //     c.into()
     // }
 
+    #[inline]
     fn param_map(&self, point: Cplx) -> Self::Param
     {
         point.into()
     }
 
+    #[inline]
     fn dynam_map(&self, point: Cplx) -> Self::Var
     {
         point.into()
@@ -129,22 +132,12 @@ pub trait ParameterPlane: Sync + Send + Clone
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
         c: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         match state
         {
             EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Bounded,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            } => PointInfo::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            },
+            EscapeState::Periodic { data } => self.identify_marked_points(c, data),
             EscapeState::Escaped { iters, final_value } =>
             {
                 self.encode_escaping_point(iters, final_value, c)
@@ -157,7 +150,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         iters: Period,
         z: Self::Var,
         _c: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -174,14 +167,14 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn compute(&self) -> IterPlane<Self::Deriv>
+    fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>
     {
         let mut iter_plane = IterPlane::create(self.point_grid().clone());
         self.compute_into(&mut iter_plane);
         iter_plane
     }
 
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Var, Self::Deriv>)
     {
         if self.point_grid().is_nan()
         {
@@ -268,11 +261,13 @@ pub trait ParameterPlane: Sync + Send + Clone
         vec![]
     }
 
+    #[inline]
     fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
 
+    #[inline]
     fn cycles(&self, _period: Period) -> Vec<Self::Var>
     {
         vec![]
@@ -420,7 +415,11 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
+    fn run_and_encode_point(
+        &self,
+        start: Self::Var,
+        c: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),
@@ -514,16 +513,19 @@ pub trait ParameterPlane: Sync + Send + Clone
         )
     }
 
+    #[inline]
     fn default_bounds(&self) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
 
+    #[inline]
     fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
 
+    #[inline]
     fn default_selection(&self) -> Cplx
     {
         Cplx::default()
@@ -531,11 +533,13 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     fn cycle_active_plane(&mut self) {}
 
+    #[inline]
     fn is_dynamical(&self) -> bool
     {
         false
     }
 
+    #[inline]
     fn degree(&self) -> f64
     {
         2.0f64
@@ -566,6 +570,36 @@ pub trait ParameterPlane: Sync + Send + Clone
         coloring
     }
 
+    #[inline]
+    fn get_marked_points(&self, _c: Self::Param) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    fn identify_marked_points(
+        &self,
+        c: Self::Param,
+        data: PointInfoPeriodic<Self::Var, Self::Deriv>,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if data.period == 1
+        {
+            let marked_points = self.get_marked_points(c);
+            for (i, zi) in marked_points.iter().enumerate()
+            {
+                if data.value.dist_sqr(*zi) < self.periodicity_tolerance()
+                {
+                    return PointInfo::MarkedPoint {
+                        data,
+                        point_id: i,
+                        num_points: marked_points.len(),
+                    };
+                }
+            }
+        }
+        PointInfo::Periodic { data }
+    }
+
     fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
     {
         ColoringAlgorithm::InternalPotential {
@@ -581,47 +615,42 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn internal_potential(&self, point_info: PointInfo<Self::Deriv>) -> IterCount
-    {
-        match point_info
-        {
-            PointInfo::Bounded | PointInfo::Wandering => 0.,
-            PointInfo::Escaping { potential } => potential,
-            PointInfo::Periodic {
-                preperiod,
-                period,
-                multiplier,
-                final_error,
-            } =>
-            {
-                let per = IterCount::from(period);
-
-                let mult_norm = multiplier.norm();
-
-                // Superattracting case
-                if mult_norm <= 1e-10
-                {
-                    let potential =
-                        2. * (final_error.log(self.periodicity_tolerance())).log2() as IterCount;
-                    per.mul_add(-potential, IterCount::from(preperiod))
-                }
-                // Parabolic case
-                else if 1. - mult_norm <= 1e-5
-                {
-                    let potential = final_error / self.periodicity_tolerance();
-                    per.mul_add(-potential, IterCount::from(preperiod))
-                }
-                else
-                {
-                    let mut potential =
-                        -(final_error / self.periodicity_tolerance()).log(mult_norm) as IterCount;
-                    if potential.is_infinite() || potential.is_nan()
-                    {
-                        potential = -0.2;
-                    }
-                    per.mul_add(potential, f64::from(preperiod))
-                }
-            }
-        }
-    }
+    // fn internal_potential(&self, point_info: PointInfo<Self::Var, Self::Deriv>) -> IterCount
+    // {
+    //     match point_info
+    //     {
+    //         PointInfo::Bounded | PointInfo::Wandering => 0.,
+    //         PointInfo::Escaping { potential } => potential,
+    //         PointInfo::Periodic { data } =>
+    //         {
+    //             let per = IterCount::from(data.period);
+    //
+    //             let mult_norm = data.multiplier.norm();
+    //
+    //             // Superattracting case
+    //             if mult_norm <= 1e-10
+    //             {
+    //                 let potential = 2.
+    //                     * (data.final_error.log(self.periodicity_tolerance())).log2() as IterCount;
+    //                 per.mul_add(-potential, IterCount::from(data.preperiod))
+    //             }
+    //             // Parabolic case
+    //             else if 1. - mult_norm <= 1e-5
+    //             {
+    //                 let potential = data.final_error / self.periodicity_tolerance();
+    //                 per.mul_add(-potential, IterCount::from(data.preperiod))
+    //             }
+    //             else
+    //             {
+    //                 let mut potential = -(data.final_error / self.periodicity_tolerance())
+    //                     .log(mult_norm) as IterCount;
+    //                 if potential.is_infinite() || potential.is_nan()
+    //                 {
+    //                     potential = -0.2;
+    //                 }
+    //                 per.mul_add(potential, f64::from(data.preperiod))
+    //             }
+    //         }
+    //     }
+    // }
 }

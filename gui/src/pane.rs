@@ -307,7 +307,7 @@ where
 {
     pub plane: P,
     pub coloring: Coloring,
-    iter_plane: IterPlane<P::Deriv>,
+    iter_plane: IterPlane<P::Var, P::Deriv>,
     pub image_frame: ImageFrame,
     task: ComputeTask,
     selection: Cplx,
@@ -850,7 +850,8 @@ where
 
     fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
     {
-        self.parent_mut().set_coloring_algorithm(coloring_algorithm);
+        self.parent_mut()
+            .set_coloring_algorithm(coloring_algorithm.clone());
         self.child_mut().set_coloring_algorithm(coloring_algorithm);
     }
 

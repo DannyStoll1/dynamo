@@ -39,7 +39,7 @@ impl ParameterPlane for QuadRatPer3
         iters: Period,
         z: Cplx,
         base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {

@@ -71,7 +71,7 @@ impl ParameterPlane for QuadRatPreper22
         iters: Period,
         z: Cplx,
         CplxPair { a: _, b }: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {

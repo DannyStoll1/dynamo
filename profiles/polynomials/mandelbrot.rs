@@ -76,10 +76,13 @@ impl ParameterPlane for Mandelbrot
             let potential = init_dist.log(decay_rate);
             let preperiod = potential as Period;
             return EscapeState::Periodic {
-                period: 1,
-                preperiod,
-                multiplier,
-                final_error: (1e-6),
+                data: PointInfoPeriodic {
+                    value: fixed_point,
+                    period: 1,
+                    preperiod,
+                    multiplier,
+                    final_error: (1e-6),
+                },
             };
         }
 
@@ -93,10 +96,13 @@ impl ParameterPlane for Mandelbrot
             let potential = 2. * init_dist.log(decay_rate);
             let preperiod = potential as Period;
             return EscapeState::Periodic {
-                period: 2,
-                preperiod,
-                multiplier: mu2,
-                final_error: (1e-6),
+                data: PointInfoPeriodic {
+                    value: fixed_point,
+                    period: 2,
+                    preperiod,
+                    multiplier: mu2,
+                    final_error: (1e-6),
+                },
             };
         }
 

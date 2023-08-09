@@ -183,7 +183,7 @@ where
         &self,
         state: EscapeState<C::Var, C::Deriv>,
         base_param: C::Param,
-    ) -> PointInfo<C::Deriv>
+    ) -> PointInfo<C::Var, C::Deriv>
     {
         self.base_curve.encode_escape_result(state, base_param)
     }

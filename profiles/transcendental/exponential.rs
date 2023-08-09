@@ -36,7 +36,7 @@ impl ParameterPlane for Exponential
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -151,7 +151,7 @@ impl ParameterPlane for CosineAdd
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -246,7 +246,7 @@ impl ParameterPlane for Cosine
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -341,22 +341,12 @@ impl ParameterPlane for SineWander
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
         base_param: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         match state
         {
             EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Wandering,
-            EscapeState::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            } => PointInfo::Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
-            },
+            EscapeState::Periodic { data } => PointInfo::Periodic { data },
             EscapeState::Escaped { iters, final_value } =>
             {
                 self.encode_escaping_point(iters, final_value, base_param)
@@ -369,7 +359,7 @@ impl ParameterPlane for SineWander
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {

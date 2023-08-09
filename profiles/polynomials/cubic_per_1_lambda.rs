@@ -465,7 +465,7 @@ impl ParameterPlane for CubicPer1_1
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1055,5 +1055,200 @@ impl HasDynamicalCovers for CubicPer1_1
         };
         let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
+    }
+}
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct CubicPer1LambdaModuli
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+    multiplier: Cplx,
+    starting_crit: PlaneID,
+}
+
+impl Default for CubicPer1LambdaModuli
+{
+    fn default() -> Self
+    {
+        const BOUNDS: Bounds = Bounds::centered_square(2.5);
+        let point_grid = PointGrid::new_by_res_y(1024, BOUNDS);
+        Self {
+            point_grid,
+            max_iter: 1024,
+            multiplier: ZERO,
+            starting_crit: PlaneID::ZPlane,
+        }
+    }
+}
+
+impl ParameterPlane for CubicPer1LambdaModuli
+{
+    type Var = Cplx;
+    type Param = CplxPair;
+    type MetaParam = Cplx;
+    type Deriv = Cplx;
+    type Child = JuliaSet<Self>;
+
+    basic_plane_impl!();
+    default_name!();
+
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        CplxPair { a, b: _ }: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let delta = 0.5 * a.norm().log2();
+        let residual = ((v + delta) / (u + delta)).log(3.);
+        let potential = IterCount::from(iters) - IterCount::from(residual);
+        PointInfo::Escaping { potential }
+    }
+
+    #[inline]
+    fn degree(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
+    fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
+    {
+        z * (a * z * z + b) + 1.
+    }
+
+    #[inline]
+    fn map_and_multiplier(
+        &self,
+        z: Self::Var,
+        CplxPair { a, b }: Self::Param,
+    ) -> (Self::Var, Self::Deriv)
+    {
+        let az2 = a * z * z;
+        (z * (az2 + b) + 1., 3. * az2 + b)
+    }
+
+    fn param_map(&self, t: Cplx) -> Self::Param
+    {
+        let l = self.multiplier;
+        const FOUR_27: Cplx = Cplx::new(0.148148148148148, 0.);
+
+        let u = t + 0.5 * (l - 3.);
+        let a = FOUR_27 * (l - t) * u * u;
+        CplxPair { a, b: t }
+    }
+
+    #[inline]
+    fn start_point(&self, point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
+    {
+        let u = b / (3. * a);
+        let crit = (-u).sqrt();
+        let sign = u.im.signum() * point.im.signum();
+        use PlaneID::*;
+        match self.starting_crit
+        {
+            ZPlane => sign * crit,
+            WPlane => -sign * crit,
+        }
+    }
+
+    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
+    {
+        let z2 = z * z;
+        3. * a * z2 + b
+    }
+
+    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
+    {
+        z * z
+    }
+
+    fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
+    {
+        let disc = (-b / (3. * a)).sqrt();
+        vec![disc, -disc]
+    }
+
+    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period
+        {
+            1 => solve_cubic(a.inv(), (b - 1.) / a, ZERO).to_vec(),
+            2 =>
+            {
+                let a2 = a * a;
+                let coeffs = [
+                    a + b + 1.,
+                    a * (2. * b + 1.),
+                    a * horner_monic!(b, 1., 1.),
+                    2. * a2,
+                    a2 * (2. * b + 1.),
+                    ZERO,
+                    a2 * a,
+                ];
+                solve_polynomial(&coeffs)
+            }
+            _ => vec![],
+        }
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_crit = self.starting_crit.swap()
+    }
+
+    fn get_meta_params(&self) -> Self::MetaParam
+    {
+        self.multiplier
+    }
+
+    fn get_param(&self) -> Cplx
+    {
+        self.multiplier
+    }
+
+    fn set_meta_param(&mut self, value: Self::MetaParam)
+    {
+        self.multiplier = value;
+    }
+
+    fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
+    {
+        self.multiplier = value;
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Bounds
+    {
+        let radius = (2. * (b / a).sqrt().norm()).max(6.0);
+        Bounds::centered_square(radius)
+    }
+}
+
+impl From<CubicPer1LambdaParam> for CubicPer1LambdaModuli
+{
+    fn from(parent: CubicPer1LambdaParam) -> Self
+    {
+        let point = parent.default_selection();
+        let param = parent.param_map(point);
+        let point_grid = parent
+            .point_grid()
+            .new_with_same_height(parent.default_julia_bounds(point, param));
+        Self {
+            point_grid,
+            max_iter: parent.max_iter(),
+            multiplier: param,
+            starting_crit: PlaneID::ZPlane,
+        }
     }
 }

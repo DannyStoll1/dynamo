@@ -24,3 +24,6 @@ pub use mcmullen_family::McMullenFamily;
 
 pub mod minsik_han_phi_a;
 pub use minsik_han_phi_a::MinsikHanPhi;
+
+pub mod newton_cubic;
+pub use newton_cubic::NewtonCubic;

@@ -14,7 +14,7 @@ use types::Hsv;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coloring
 {
@@ -24,50 +24,47 @@ pub struct Coloring
 impl Coloring
 {
     #[must_use]
-    pub fn map_color32<D>(&self, point_info: PointInfo<D>) -> Color32
+    pub fn map_color32<V, D>(&self, point_info: PointInfo<V, D>) -> Color32
     where
         D: Norm<Real>,
+        V: Clone,
     {
-        use PointInfo::{Bounded, Escaping, Periodic, Wandering};
+        use PointInfo::*;
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
             Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
+                data
             } => self.algorithm.color_periodic(
                 self.palette,
-                period,
-                preperiod,
-                multiplier,
-                final_error,
+                data
             ),
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
+            MarkedPoint { point_id, num_points, .. } => {
+                let hue = (point_id as f32) / (num_points as f32);
+                Hsv {hue, saturation: 0.8, luminosity: 1.0}.into()
+            }
         }
     }
 
     #[must_use]
-    pub fn map_rgb<D>(&self, point_info: PointInfo<D>) -> Rgb<u8>
+    pub fn map_rgb<V, D>(&self, point_info: PointInfo<V, D>) -> Rgb<u8>
     where
         D: Norm<Real>,
+        V: Clone,
     {
-        use PointInfo::{Bounded, Escaping, Periodic, Wandering};
+        use PointInfo::*;
         match point_info
         {
             Escaping { potential } => self.palette.map_rgb(potential),
             Periodic {
-                period,
-                preperiod,
-                multiplier,
-                final_error,
+                data
             } =>
             {
                 let (r, g, b, _) = self
                     .algorithm
-                    .color_periodic(self.palette, period, preperiod, multiplier, final_error)
+                    .color_periodic(self.palette, data)
                     .to_tuple();
                 Rgb([r, g, b])
             }
@@ -76,6 +73,10 @@ impl Coloring
             {
                 let (r, g, b, _a) = self.palette.wandering_color.to_tuple();
                 Rgb([r, g, b])
+            }
+            MarkedPoint { point_id, num_points, .. } => {
+                let hue = (point_id as f32) / (num_points as f32);
+                Hsv {hue, saturation: 0.8, luminosity: 1.0}.into()
             }
         }
     }

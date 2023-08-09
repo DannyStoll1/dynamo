@@ -133,7 +133,7 @@ where
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
         base_param: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         self.parent.encode_escape_result(state, base_param)
     }

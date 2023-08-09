@@ -1,4 +1,4 @@
-use fractal_common::types::{Dist, EscapeState, Norm, Period, Real};
+use fractal_common::types::{Dist, EscapeState, Norm, Period, PointInfoPeriodic, Real};
 
 pub struct OrbitParams
 {
@@ -291,10 +291,13 @@ where
             )
             {
                 EscapeState::Periodic {
-                    preperiod: iter,
-                    period,
-                    multiplier,
-                    final_error: z_fast.dist_sqr(z_slow),
+                    data: PointInfoPeriodic {
+                        value: z_fast,
+                        preperiod: iter,
+                        period,
+                        multiplier,
+                        final_error: z_fast.dist_sqr(z_slow),
+                    },
                 }
             }
             else

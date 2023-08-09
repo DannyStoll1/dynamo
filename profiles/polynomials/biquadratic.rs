@@ -47,7 +47,7 @@ impl ParameterPlane for Biquadratic
         iters: Period,
         z: Self::Var,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -169,7 +169,7 @@ impl ParameterPlane for BiquadraticMult
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -441,7 +441,7 @@ impl ParameterPlane for BiquadraticMultParam
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -599,7 +599,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {
@@ -740,7 +740,7 @@ impl ParameterPlane for BiquadraticMultSection
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
         {

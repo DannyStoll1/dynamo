@@ -14,15 +14,16 @@ pub trait FractalImage
 }
 
 #[derive(Clone)]
-pub struct IterPlane<D>
+pub struct IterPlane<V, D>
 {
-    pub iter_counts: Array2<PointInfo<D>>,
+    pub iter_counts: Array2<PointInfo<V, D>>,
     pub point_grid: PointGrid,
 }
 
-impl<D> IterPlane<D>
+impl<V, D> IterPlane<V, D>
 where
     D: Clone,
+    V: Clone,
 {
     #[must_use]
     pub fn create(point_grid: PointGrid) -> Self
@@ -35,9 +36,10 @@ where
     }
 }
 
-impl<D> FractalImage for IterPlane<D>
+impl<V, D> FractalImage for IterPlane<V, D>
 where
     D: Norm<Real>,
+    V: Clone
 {
     fn point_grid(&self) -> &PointGrid
     {
@@ -52,7 +54,7 @@ where
         self.iter_counts
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
-                img.pixels[x + (height - y - 1) * width] = coloring.map_color32(*point_info);
+                img.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info.clone());
             });
         img
     }
@@ -64,7 +66,7 @@ where
 
         for (x, y, pixel) in image.enumerate_pixels_mut()
         {
-            let iter_count = self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
+            let iter_count = self.iter_counts[(x as usize, (res_y - y - 1) as usize)].clone();
             *pixel = coloring.map_rgb(iter_count);
         }
         if let Err(e) = image.save(filename.clone())
