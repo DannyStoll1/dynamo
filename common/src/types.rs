@@ -100,6 +100,10 @@ impl<V, D> Default for PointInfo<V, D>
 
 const DISPLAY_PREC: usize = 16;
 
+pub fn format_complex(value: Cplx) -> String {
+    format!("{:.*}", DISPLAY_PREC, value)
+}
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitInfo<V, P, D>

@@ -2,6 +2,9 @@ use super::quad_rat_general::QuadRatGeneral;
 use crate::macros::{horner_monic, profile_imports};
 profile_imports!();
 
+// Maps of the form f_t(z) = (z^2+a_t)/(z^2+b_t),
+// with a fixed point at z0 = -t/2 of multiplier lambda
+// Critical points are 0 and infinity.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer1Lambda

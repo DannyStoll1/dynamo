@@ -295,6 +295,7 @@ impl FractalTab
                 });
                 ui.menu_button("Marked Periodic Point", |ui| {
                     fractal_menu_button_mc!(self, ui, Mandelbrot, 1);
+                    fractal_menu_button_dyn!(self, ui, Mandelbrot, 2);
                     fractal_menu_button_dyn!(self, ui, Mandelbrot, 3);
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
@@ -318,7 +319,7 @@ impl FractalTab
                         fractal_menu_button_mis!(self, ui, OddCubic, 1, 2);
                     });
                 });
-                ui.menu_button("Per(1)", |ui| {
+                ui.menu_button("Cubic Per(1)", |ui| {
                     fractal_menu_button!(self, ui, "Base Curve", CubicPer1_0);
                     ui.menu_button("Marked Cycle", |ui| {
                         fractal_menu_button_mc!(self, ui, CubicPer1_0, 1);
@@ -332,7 +333,7 @@ impl FractalTab
                         fractal_menu_button_mis!(self, ui, CubicPer1_0, 1, 1);
                     });
                 });
-                ui.menu_button("Per(2)", |ui| {
+                ui.menu_button("Cubic Per(2)", |ui| {
                     fractal_menu_button!(self, ui, "Base curve", CubicPer2CritMarked);
                     ui.menu_button("Marked Cycle", |ui| {
                         fractal_menu_button_mc!(self, ui, CubicPer2CritMarked, 1);
@@ -340,7 +341,7 @@ impl FractalTab
                     });
                 });
                 fractal_menu_button!(self, ui, "Per(3)", CubicPer3_0);
-                ui.menu_button("Per(1, 1)", |ui| {
+                ui.menu_button("Cubic Per(1, 1)", |ui| {
                     fractal_menu_button!(self, ui, "Base Curve", CubicPer1_1);
                     ui.menu_button("Marked Cycle", |ui| {
                         fractal_menu_button_mc!(self, ui, CubicPer1_1, 2);
@@ -352,8 +353,16 @@ impl FractalTab
                         fractal_menu_button_mis!(self, ui, CubicPer1_1, 1, 1);
                     });
                 });
-                ui.menu_button("Per(1, λ)", |ui| {
+                ui.menu_button("Cubic Per(1, λ)", |ui| {
                     fractal_menu_button!(self, ui, "λ-plane", CubicPer1LambdaParam);
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.3",
+                        CubicPer1Lambda,
+                        with_param,
+                        Cplx::from(0.3)
+                    );
                     fractal_menu_button!(
                         self,
                         ui,
@@ -361,6 +370,14 @@ impl FractalTab
                         CubicPer1LambdaModuli,
                         with_param,
                         Cplx::from(0.3)
+                    );
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ=0.2+0.7i moduli",
+                        CubicPer1LambdaModuli,
+                        with_param,
+                        Cplx::new(0.2, 0.7)
                     );
                     fractal_menu_button!(
                         self,
@@ -448,6 +465,14 @@ impl FractalTab
                 fractal_menu_button!(
                     self,
                     ui,
+                    "λ=0.2+0.7j",
+                    BiquadraticMult,
+                    with_param,
+                    Cplx::new(0.2, 0.7)
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
                     "λ=0.99i",
                     BiquadraticMult,
                     with_param,
@@ -470,6 +495,8 @@ impl FractalTab
                 });
                 ui.menu_button("Marked Periodic Point", |ui| {
                     fractal_menu_button_mc!(self, ui, QuadRatPer2, 1);
+                    fractal_menu_button_dyn!(self, ui, QuadRatPer2, 3);
+                    fractal_menu_button_dyn!(self, ui, QuadRatPer2, 4);
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
                     fractal_menu_button_mis!(self, ui, QuadRatPer2, 2, 1);

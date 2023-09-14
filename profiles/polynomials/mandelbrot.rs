@@ -568,6 +568,16 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 1.0,
                 };
             }
+            2 =>
+            {
+                param_map = |t| 9. * (t - 1.) / (t * t) - 3.;
+                bounds = Bounds {
+                    min_x: 0.5,
+                    max_x: 8.3,
+                    min_y: -2.7,
+                    max_y: 2.7,
+                };
+            }
             3 =>
             {
                 param_map = |c| {

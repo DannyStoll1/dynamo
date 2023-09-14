@@ -34,7 +34,7 @@ impl WebHandle {
             .start(
                 canvas_id,
                 WebOptions::default(),
-                Box::new(|cc| Box::new(FractalApp::default())),
+                Box::new(|_cc| Box::new(FractalApp::default())),
             )
             .await
     }

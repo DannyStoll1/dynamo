@@ -468,6 +468,90 @@ const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
 
 impl HasDynamicalCovers for QuadRatPer2
 {
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> Cplx;
+        let bounds: Bounds;
+
+        match period
+        {
+            1 =>
+            {
+                param_map = |c| (4. - c * (c + 2.)) * c / 8.;
+                bounds = Bounds {
+                    min_x: -5.0,
+                    max_x: 3.0,
+                    min_y: -3.0,
+                    max_y: 3.0,
+                };
+            }
+            3 =>
+            {
+                param_map = |t| -horner_monic!(t, -OMEGA, -1., 2. * OMEGA + 1.) / (OMEGA + 1.);
+                bounds = Bounds {
+                    min_x: -1.8,
+                    max_x: 1.8,
+                    min_y: -2.3,
+                    max_y: 1.2,
+                };
+            }
+            4 =>
+            {
+                const A0: Cplx = Cplx::new(-23.0000000000000, -14.0000000000000);
+                const A1: Cplx = Cplx::new(-43.5952148437500, -198.812988281250);
+                const A2: Cplx = Cplx::new(393.670501828194, -585.061190664768);
+                const A3: Cplx = Cplx::new(1459.26865290843, -251.041057291222);
+                const A4: Cplx = Cplx::new(1689.73657634438, 1253.11836853702);
+                const A5: Cplx = Cplx::new(263.170605532593, 2124.30689546928);
+                const A6: Cplx = Cplx::new(-1022.56887552264, 1244.03619728333);
+                const A7: Cplx = Cplx::new(-907.580743841250, 62.5812248360001);
+                const A8: Cplx = Cplx::new(-282.801070639887, -262.556139911993);
+                const A9: Cplx = Cplx::new(-0.301795185485805, -120.425962376276);
+                const A10: Cplx = Cplx::new(19.1705165819150, -17.9211712972486);
+                const A11: Cplx = Cplx::new(3.55738991578644, 0.247670436437753);
+                const A12: Cplx = Cplx::new(0.142742524186783, 0.175662128168037);
+
+                const B0: Cplx = Cplx::new(25.0000000000000, 50.0000000000000);
+                const B1: Cplx = Cplx::new(-142.712402343750, 397.741699218750);
+                const B2: Cplx = Cplx::new(-1337.90185153484, 594.505678117275);
+                const B3: Cplx = Cplx::new(-2843.31086660859, -1168.74148176612);
+                const B4: Cplx = Cplx::new(-1585.98927368805, -4058.84188445190);
+                const B5: Cplx = Cplx::new(1856.77078333192, -3982.88918800431);
+                const B6: Cplx = Cplx::new(3064.65024283614, -1032.41304011642);
+                const B7: Cplx = Cplx::new(1547.93271225278, 818.021881782741);
+                const B8: Cplx = Cplx::new(185.634744083957, 667.196208176713);
+                const B9: Cplx = Cplx::new(-101.261202462199, 167.059013936565);
+                const B10: Cplx = Cplx::new(-36.5500089943826, 7.62187524951790);
+                const B11: Cplx = Cplx::new(-3.53720886972747, -2.52453753137727);
+                const B12: Cplx = Cplx::new(-0.0276521249511676, -0.231588268174843);
+
+                // Mobius transformation to frame the image
+                const POLE: Cplx = Cplx::new(-0.93856601763702075, 2.1250254224644328);
+                const SHIFT: Cplx = Cplx::new(0.006285758096917293865, 0.69546218693638377);
+                const ANGLE: Cplx = Cplx::new(0.3016938919708282662, 0.1676310038253636);
+
+                param_map = |t| {
+                    let t = (t * ANGLE + SHIFT).inv() + POLE;
+                    let numer = horner!(t, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12);
+                    let denom = horner!(t, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12);
+                    -numer / denom
+                };
+                bounds = Bounds {
+                    min_x: -4.3,
+                    max_x: 3.4,
+                    min_y: -4.,
+                    max_y: 4.,
+                }
+            }
+            _ =>
+            {
+                param_map = |c| c;
+                bounds = self.point_grid.bounds.clone();
+            }
+        }
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> Cplx;

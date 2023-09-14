@@ -298,6 +298,7 @@ pub trait Pane
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx);
     fn mark_external_ray(&mut self, angle: Real);
+    fn describe_selection(&self) -> String;
     fn describe_marked_info(&self) -> String;
 }
 
@@ -600,6 +601,11 @@ where
         {
             self.mark_curve(cs, Color32::BLUE);
         }
+    }
+
+    fn describe_selection(&self) -> String {
+        use fractal_common::types::format_complex;
+        format!("Selection: {}", format_complex(self.selection))
     }
 
     fn describe_marked_info(&self) -> String
@@ -1341,11 +1347,15 @@ where
                 });
                 body.row(80., |mut row| {
                     row.col(|ui| {
+                        let selection_desc = self.parent.describe_selection();
                         let orbit_desc = self.parent.describe_marked_info();
+                        ui.label(selection_desc);
                         ui.label(orbit_desc);
                     });
                     row.col(|ui| {
+                        let selection_desc = self.child.describe_selection();
                         let orbit_desc = self.child.describe_marked_info();
+                        ui.label(selection_desc);
                         ui.label(orbit_desc);
                     });
                 });
