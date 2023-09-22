@@ -621,6 +621,18 @@ impl HasDynamicalCovers for QuadRatPer2
 
         match (preperiod, period)
         {
+            (1, 1) =>
+            {
+                param_map = |t| {
+                    t * (1. - t * (t + 1.))
+                };
+                bounds = Bounds {
+                    min_x: -3.4,
+                    max_x: 3.4,
+                    min_y: -3.1,
+                    max_y: 3.1,
+                };
+            }
             (2, 1) =>
             {
                 param_map = |c| {

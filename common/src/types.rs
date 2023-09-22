@@ -100,7 +100,8 @@ impl<V, D> Default for PointInfo<V, D>
 
 const DISPLAY_PREC: usize = 16;
 
-pub fn format_complex(value: Cplx) -> String {
+pub fn format_complex(value: Cplx) -> String
+{
     format!("{:.*}", DISPLAY_PREC, value)
 }
 
@@ -140,15 +141,19 @@ where
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[display(fmt = "[ a: {a}, b: {b} ] ")]
-pub struct CplxPair
+pub struct Pair<T>
+where
+    T: std::fmt::Display,
 {
-    pub a: Cplx,
-    pub b: Cplx,
+    pub a: T,
+    pub b: T,
 }
 
-impl Summarize for CplxPair {}
+impl<T> Summarize for Pair<T> where T: std::fmt::Display {}
 
-impl From<Cplx> for CplxPair
+impl<T> From<Cplx> for Pair<T>
+where
+    T: std::fmt::Display,
 {
     fn from(_z: Cplx) -> Self
     {
@@ -156,13 +161,18 @@ impl From<Cplx> for CplxPair
     }
 }
 
-impl From<CplxPair> for Cplx
+impl<T> From<Pair<T>> for Cplx
+where
+    T: std::fmt::Display,
 {
-    fn from(_value: CplxPair) -> Self
+    fn from(_value: Pair<T>) -> Self
     {
         unimplemented!()
     }
 }
+
+pub type RealPair = Pair<Real>;
+pub type CplxPair = Pair<Cplx>;
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

@@ -307,9 +307,14 @@ impl FractalTab
                 ui.menu_button("Marked Preperiodic Point", |ui| {
                     fractal_menu_button_mis!(self, ui, Mandelbrot, 2, 1);
                     fractal_menu_button_mis!(self, ui, Mandelbrot, 2, 2);
+                    // fractal_menu_button_mis!(self, ui, Mandelbrot, 3, 1);
                 });
             });
             ui.menu_button("Cubic Family", |ui| {
+                ui.menu_button("Real Slices", |ui| {
+                    fractal_menu_button!(self, ui, "Real critical point", RealCubicRealCrit);
+                    fractal_menu_button!(self, ui, "Imag critical point", RealCubicImagCrit);
+                });
                 ui.menu_button("Odd Cubics", |ui| {
                     fractal_menu_button!(self, ui, "Base curve", OddCubic);
                     ui.menu_button("Marked Cycle", |ui| {
@@ -505,6 +510,7 @@ impl FractalTab
                     fractal_menu_button_dyn!(self, ui, QuadRatPer2, 4);
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
+                    fractal_menu_button_mis!(self, ui, QuadRatPer2, 1, 1);
                     fractal_menu_button_mis!(self, ui, QuadRatPer2, 2, 1);
                     fractal_menu_button_mis!(self, ui, QuadRatPer2, 2, 2);
                 });
@@ -537,9 +543,7 @@ impl FractalTab
                     self,
                     ui,
                     "λ=1",
-                    QuadRatPer1Lambda,
-                    with_param,
-                    ONE
+                    QuadRatPer1_1
                 );
                 fractal_menu_button!(
                     self,
@@ -564,6 +568,14 @@ impl FractalTab
                     QuadRatPer1Lambda,
                     with_param,
                     Cplx::new(0., 1.)
+                );
+                fractal_menu_button!(
+                    self,
+                    ui,
+                    "λ=exp(φτi)",
+                    QuadRatPer1Lambda,
+                    with_param,
+                    Cplx::new(-0.737368878078320, 0.675490294261524)
                 );
             });
             ui.menu_button("QuadRat Per(2, λ)", |ui| {

@@ -69,7 +69,7 @@ impl ParameterPlane for QuadRatGeneral
 
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
-        ONE
+        ZERO
     }
 
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>

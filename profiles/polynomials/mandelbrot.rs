@@ -635,6 +635,20 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 2.5,
                 };
             }
+            // (3, 1) =>
+            // {
+            //     param_map = |t| {
+            //         let numer = horner_monic!(t, 301., 42., 252., 112., 21., 0.);
+            //         let denom = -36. * (t + 2.) * (t + 2.) * (t - 1.) * (t - 1.);
+            //         numer / denom
+            //     };
+            //     bounds = Bounds {
+            //         min_x: -4.,
+            //         max_x: 2.4,
+            //         min_y: -2.5,
+            //         max_y: 2.5,
+            //     };
+            // }
             (_, _) =>
             {
                 param_map = |c| c;

@@ -15,6 +15,10 @@ pub use cubic_per_3_0::CubicPer3_0;
 pub mod odd_cubic;
 pub use odd_cubic::OddCubic;
 
+pub mod real_cubic;
+pub use real_cubic::RealCubicRealCrit;
+pub use real_cubic::RealCubicImagCrit;
+
 pub mod cubic_marked_2_cycle;
 pub use cubic_marked_2_cycle::CubicMarked2Cycle;
 
