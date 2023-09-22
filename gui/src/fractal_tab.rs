@@ -3,7 +3,7 @@ use crate::macros::{
 };
 use crate::pane::{Interface, MainInterface, PaneID};
 use egui::Ui;
-use egui_dock::NodeIndex;
+use egui_dock::{NodeIndex, SurfaceIndex};
 use fractal_common::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette};
 use fractal_common::consts::{OMEGA, ONE};
 use fractal_common::types::{Cplx, ParamList};
@@ -16,6 +16,7 @@ use seq_macro::seq;
 pub struct FractalTab
 {
     pub interface: Box<dyn Interface>,
+    pub surface: SurfaceIndex,
     pub node: NodeIndex,
 }
 
@@ -23,8 +24,13 @@ pub struct FractalTab
 impl FractalTab
 {
     #[must_use]
-    pub const fn with_node_index(mut self, node: NodeIndex) -> Self
+    pub const fn with_surface_and_node_index(
+        mut self,
+        surface: SurfaceIndex,
+        node: NodeIndex,
+    ) -> Self
     {
+        self.surface = surface;
         self.node = node;
         self
     }
@@ -697,8 +703,8 @@ impl Default for FractalTab
 
         Self {
             interface,
+            surface: SurfaceIndex::main(),
             node: NodeIndex(0),
         }
     }
 }
-// (-1)^k * c * chebyshev(z/2k)

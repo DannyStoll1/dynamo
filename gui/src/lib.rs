@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use egui_dock::{DockArea, NodeIndex, Style, Tree};
+use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 pub mod fractal_tab;
 pub mod image_frame;
@@ -50,9 +50,9 @@ impl egui_dock::TabViewer for TabViewer<'_>
         format!("Tab {}", tab.interface.name()).into()
     }
 
-    fn on_add(&mut self, node: NodeIndex)
+    fn on_add(&mut self, surface: SurfaceIndex, node: NodeIndex)
     {
-        let tab = FractalTab::default().with_node_index(node);
+        let tab = FractalTab::default().with_surface_and_node_index(surface, node);
         self.added_nodes.push(tab);
     }
 
@@ -74,7 +74,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
 pub struct FractalApp
 {
-    tree: Tree<FractalTab>,
+    dock_state: DockState<FractalTab>,
     counter: usize,
 }
 
@@ -84,14 +84,17 @@ impl Default for FractalApp
     {
         let tab0 = FractalTab::default();
 
-        let tree = Tree::new(vec![tab0]);
+        let dock_state = DockState::new(vec![tab0]);
 
         // You can modify the tree before constructing the dock
         // let [_, _] = tree.split_right(NodeIndex::root(), 0.5, vec![1]);
         // let [_, _] = tree.split_below(a, 0.7, vec![4]);
         // let [_, _] = tree.split_below(b, 0.5, vec![5]);
 
-        Self { tree, counter: 1 }
+        Self {
+            dock_state,
+            counter: 1,
+        }
     }
 }
 
@@ -100,11 +103,11 @@ impl eframe::App for FractalApp
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
         let mut added_nodes = Vec::new();
-        DockArea::new(&mut self.tree)
+        DockArea::new(&mut self.dock_state)
             .show_add_buttons(true)
             .style({
                 let mut style = Style::from_egui(ctx.style().as_ref());
-                style.tabs.fill_tab_bar = true;
+                style.tab_bar.fill_tab_bar = true;
                 style
             })
             .show(
@@ -115,12 +118,13 @@ impl eframe::App for FractalApp
             );
         for tab in added_nodes
         {
-            self.tree.set_focused_node(tab.node);
+            self.dock_state
+                .set_focused_node_and_surface((tab.surface, tab.node));
             // self.tree.push_to_focused_leaf(FractalTab {
             //     interface: tab.interface,
             //     node: NodeIndex(self.counter),
             // });
-            self.tree.push_to_focused_leaf(FractalTab::default());
+            self.dock_state.push_to_focused_leaf(FractalTab::default());
             self.counter += 1;
         }
     }
