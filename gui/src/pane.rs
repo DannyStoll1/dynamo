@@ -1,3 +1,6 @@
+use crate::dialog::InputDialog;
+use crate::marked_points::MarkedData;
+
 use super::image_frame::ImageFrame;
 use fractal_common::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette, Coloring};
 use fractal_common::iter_plane::{FractalImage, IterPlane};
@@ -18,10 +21,6 @@ use epaint::{CircleShape, PathShape};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-pub type ColoredPoint = (Cplx, Color32);
-pub type ColoredPoints = Vec<ColoredPoint>;
-pub type ColoredCurve = (Vec<Cplx>, Color32);
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -64,71 +63,16 @@ pub trait Pane
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
 
-    fn get_marked_curves(&self) -> &Vec<ColoredCurve>;
-    fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>;
-
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
 
-    fn mark_curve(&mut self, zs: ComplexVec, color: Color32)
-    {
-        let curves = self.get_marked_curves_mut();
-        curves.push((zs, color));
-    }
-
-    fn clear_marked_curves(&mut self)
-    {
-        let curves = self.get_marked_curves_mut();
-        *curves = vec![];
-    }
-
-    fn put_marked_curves(&self, ui: &mut Ui)
-    {
-        let frame = self.get_frame();
-        let grid = self.grid();
-        let painter = ui.painter().with_clip_rect(frame.region);
-        for (zs, color) in self.get_marked_curves().iter()
-        {
-            let points = zs
-                .iter()
-                .map(|z| {
-                    let pt = grid.locate_point(*z);
-                    frame.to_global_coords(pt.to_vec2())
-                })
-                .collect();
-            let stroke = Stroke::new(1.0, *color);
-            let path = PathShape::line(points, stroke);
-            painter.add(path);
-        }
-    }
-
-    fn get_marked_points(&self) -> &ColoredPoints;
-    fn get_marked_points_mut(&mut self) -> &mut ColoredPoints;
-
-    fn mark_point(&mut self, z: Cplx, color: Color32)
-    {
-        let points = self.get_marked_points_mut();
-        points.push((z, color));
-    }
-
-    fn clear_marked_points(&mut self)
-    {
-        let points = self.get_marked_points_mut();
-        *points = vec![];
-    }
-
-    fn put_marked_points(&self, ui: &mut Ui)
-    {
-        let frame = self.get_frame();
-        let grid = self.grid();
-        let painter = ui.painter().with_clip_rect(frame.region);
-        for (z, color) in self.get_marked_points().iter()
-        {
-            let point = frame.to_global_coords(grid.locate_point(*z).to_vec2());
-            let patch = CircleShape::filled(point, 4., *color);
-            painter.add(patch);
-        }
-    }
+    fn get_marked_data_mut(&mut self) -> &mut MarkedData;
+    fn mark_point(&mut self, z: Cplx, color: Color32);
+    fn mark_curve(&mut self, zs: ComplexVec, color: Color32);
+    fn clear_marked_points(&mut self);
+    fn clear_marked_curves(&mut self);
+    fn put_marked_points(&self, ui: &mut Ui);
+    fn put_marked_curves(&self, ui: &mut Ui);
 
     fn name(&self) -> String;
 
@@ -291,7 +235,6 @@ pub trait Pane
     fn increase_max_iter(&mut self);
     fn decrease_max_iter(&mut self);
 
-    // TODO: remove unnecessry mutation
     fn save_image(&mut self, img_width: usize, filename: &str);
 
     fn change_height(&mut self, new_height: usize);
@@ -312,8 +255,7 @@ where
     pub image_frame: ImageFrame,
     task: ComputeTask,
     selection: Cplx,
-    marked_curves: Vec<ColoredCurve>,
-    marked_points: ColoredPoints,
+    marked_data: MarkedData,
     marked_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
     pub marking_mode: MarkingMode,
     pub zoom_factor: Real,
@@ -347,9 +289,6 @@ where
             region: Rect::NOTHING,
         };
 
-        let marked_curves = vec![];
-        let marked_points = vec![];
-
         Self {
             plane,
             coloring,
@@ -357,8 +296,7 @@ where
             image_frame: frame,
             task,
             selection,
-            marked_curves,
-            marked_points,
+            marked_data: MarkedData::default(),
             marked_info: None,
             marking_mode: MarkingMode::default(),
             zoom_factor: 1.,
@@ -444,26 +382,6 @@ where
         &mut self.image_frame
     }
     #[inline]
-    fn get_marked_curves(&self) -> &Vec<ColoredCurve>
-    {
-        &self.marked_curves
-    }
-    #[inline]
-    fn get_marked_curves_mut(&mut self) -> &mut Vec<ColoredCurve>
-    {
-        &mut self.marked_curves
-    }
-    #[inline]
-    fn get_marked_points(&self) -> &ColoredPoints
-    {
-        &self.marked_points
-    }
-    #[inline]
-    fn get_marked_points_mut(&mut self) -> &mut ColoredPoints
-    {
-        &mut self.marked_points
-    }
-    #[inline]
     fn get_coloring(&self) -> &Coloring
     {
         &self.coloring
@@ -534,7 +452,7 @@ where
     #[inline]
     fn redraw(&mut self)
     {
-        self.marked_points = self.marking_mode.compute(&self.plane, self.get_selection());
+        self.marked_data.points = self.marking_mode.compute(&self.plane, self.get_selection());
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
@@ -580,11 +498,9 @@ where
 
     fn save_image(&mut self, img_width: usize, filename: &str)
     {
-        let orig_width = self.grid().res_x;
-        self.grid_mut().resize_x(img_width);
-        let iter_plane = self.plane.compute();
+        let plane = self.plane.clone().with_res_x(img_width);
+        let iter_plane = plane.compute();
         iter_plane.save(self.get_coloring(), filename.to_owned());
-        self.grid_mut().resize_x(orig_width);
     }
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
@@ -603,7 +519,66 @@ where
         }
     }
 
-    fn describe_selection(&self) -> String {
+    fn mark_curve(&mut self, zs: ComplexVec, color: Color32)
+    {
+        self.marked_data.orbits.push((zs, color));
+    }
+
+    fn clear_marked_curves(&mut self)
+    {
+        self.marked_data.clear_orbits();
+    }
+
+    fn get_marked_data_mut(&mut self) -> &mut MarkedData
+    {
+        &mut self.marked_data
+    }
+
+    fn put_marked_curves(&self, ui: &mut Ui)
+    {
+        let frame = self.get_frame();
+        let grid = self.grid();
+        let painter = ui.painter().with_clip_rect(frame.region);
+        for (zs, color) in self.marked_data.iter_curves()
+        {
+            let points = zs
+                .iter()
+                .map(|z| {
+                    let pt = grid.locate_point(*z);
+                    frame.to_global_coords(pt.to_vec2())
+                })
+                .collect();
+            let stroke = Stroke::new(1.0, *color);
+            let path = PathShape::line(points, stroke);
+            painter.add(path);
+        }
+    }
+
+    fn mark_point(&mut self, z: Cplx, color: Color32)
+    {
+        self.marked_data.points.push((z, color));
+    }
+
+    fn clear_marked_points(&mut self)
+    {
+        self.marked_data.clear_points();
+    }
+
+    fn put_marked_points(&self, ui: &mut Ui)
+    {
+        let frame = self.get_frame();
+        let grid = self.grid();
+        let painter = ui.painter().with_clip_rect(frame.region);
+        for (z, color) in self.marked_data.points.iter()
+        {
+            let point = frame.to_global_coords(grid.locate_point(*z).to_vec2());
+            let patch = CircleShape::filled(point, 4., *color);
+            painter.add(patch);
+        }
+    }
+
+    fn describe_selection(&self) -> String
+    {
         use fractal_common::types::format_complex;
         format!("Selection: {}", format_complex(self.selection))
     }
@@ -668,7 +643,8 @@ pub trait Interactive
     fn handle_input(&mut self, ctx: &Context);
 
     fn toggle_live_mode(&mut self);
-    fn show_save_dialog(&mut self, ctx: &Context);
+    fn show_dialogs(&mut self, ctx: &Context);
+    fn has_visible_dialog(&self) -> bool;
     fn process_tasks(&mut self);
     fn show(&mut self, ui: &mut Ui);
     fn consume_click(&mut self);
@@ -691,6 +667,7 @@ where
     active_pane: Option<PaneID>,
     live_mode: bool,
     save_dialog: Option<FileDialog>,
+    input_dialog: Option<InputDialog>,
     pane_to_save: PaneID,
     click_used: bool,
     pub message: UIMessage,
@@ -713,6 +690,7 @@ where
             active_pane: Some(PaneID::Parent),
             live_mode: false,
             save_dialog: None,
+            input_dialog: None,
             pane_to_save: PaneID::Parent,
             click_used: false,
             message: UIMessage::default(),
@@ -746,11 +724,40 @@ where
         }
     }
 
-    // fn to_child(self) -> MainInterface<J, C> {
-    //     let new_parent = self.child.plane;
-    //     let new_child = C::from(new_parent.clone());
-    //     MainInterface::new(new_parent, new_child)
-    // }
+    fn show_save_dialog(&mut self, ctx: &Context)
+    {
+        let Some(save_dialog) = self.save_dialog.as_mut() else {return};
+
+        save_dialog.show(ctx); // show the dialog
+
+        // Check if a file has been selected
+        if save_dialog.selected()
+        {
+            if let Some(path) = save_dialog.path()
+            {
+                let filename = path.to_string_lossy().into_owned();
+
+                let image_width: usize = 4096;
+
+                // // Use a slider for image width input
+                // SidePanel::left("side_panel").show(ctx, |ui| {
+                //     ui.heading("Enter image width:");
+                //     ui.add(Slider::new(&mut image_width, 1..=1000));
+                // });
+
+                let pane = self.get_pane_mut(self.pane_to_save);
+                pane.save_image(image_width, &filename);
+                self.save_dialog = None;
+            }
+            self.set_active_pane(None);
+        }
+    }
+
+    fn show_input_dialog(&mut self, ctx: &Context)
+    {
+        let Some(input_dialog) = self.input_dialog.as_mut() else {return};
+        input_dialog.show(ctx);
+    }
 }
 
 impl<P, J, C, M, T> PanePair for MainInterface<P, J>
@@ -803,19 +810,6 @@ where
         }
     }
 
-    // fn save_active_pane(&mut self)
-    // {
-    //     if let Some(pane) = self.get_active_pane_mut() {
-    //     // Open a save file dialog if it's not already open
-    //     if self.save_dialog.is_none()
-    //     {
-    //         let dialog = FileDialog::save_file(None)
-    //             .default_filename("fractal.png")
-    //             .show_new_folder(true); // if you want to allow creating new folders
-    //         self.save_dialog = Some(dialog);
-    //     }
-    //
-    // }
     fn set_active_pane(&mut self, pane_id: Option<PaneID>)
     {
         self.active_pane = pane_id;
@@ -954,47 +948,21 @@ where
         self.child.process_task();
     }
 
-    fn show_save_dialog(&mut self, ctx: &Context)
+    fn show_dialogs(&mut self, ctx: &Context)
     {
-        let Some(save_dialog) = self.save_dialog.as_mut() else {return};
+        self.show_save_dialog(ctx);
+        self.show_input_dialog(ctx);
+    }
 
-        save_dialog.show(ctx); // show the dialog
-
-        // Check if a file has been selected
-        if save_dialog.selected()
-        {
-            if let Some(path) = save_dialog.path()
-            {
-                let filename = path.to_string_lossy().into_owned();
-
-                let image_width: usize = 4096;
-
-                // // Use a slider for image width input
-                // SidePanel::left("side_panel").show(ctx, |ui| {
-                //     ui.heading("Enter image width:");
-                //     ui.add(Slider::new(&mut image_width, 1..=1000));
-                // });
-
-                let pane = self.get_pane_mut(self.pane_to_save);
-                pane.save_image(image_width, &filename);
-                self.save_dialog = None;
-            }
-            self.set_active_pane(None);
-        }
+    fn has_visible_dialog(&self) -> bool
+    {
+        self.save_dialog.as_ref().map_or(false, |d| d.visible())
+            || self.input_dialog.as_ref().map_or(false, |d| d.visible())
     }
 
     #[allow(clippy::cognitive_complexity)]
     fn handle_input(&mut self, ctx: &Context)
     {
-        if let Some(save_dialog) = self.save_dialog.as_ref()
-        {
-            if save_dialog.visible()
-            {
-                ctx.set_cursor_icon(CursorIcon::Default);
-                return;
-            }
-        }
-
         if shortcut_used!(ctx, &CTRL_Q)
         {
             self.schedule_quit();
@@ -1003,6 +971,13 @@ where
         if shortcut_used!(ctx, &CTRL_W)
         {
             self.schedule_close();
+        }
+
+        // Don't process non-critical hotkeys if the user is in a dialog
+        if self.has_visible_dialog()
+        {
+            ctx.set_cursor_icon(CursorIcon::Default);
+            return;
         }
 
         if shortcut_used!(ctx, &KEY_R)
@@ -1286,17 +1261,6 @@ where
         if shortcut_used!(ctx, &CTRL_S)
         {
             self.save_active_pane();
-            // if let Some(pane) = self.get_active_pane_mut() {
-            // let filename = input!("Enter image filename to save: ");
-            // match input!("Enter width of image: ").parse::<usize>()
-            // {
-            //     Ok(width) =>
-            //     {
-            //         pane.save_image(width, &filename);
-            //         println!("Image saved to images/{}", &filename);
-            //     }
-            //     Err(e) => println!("Error parsing width: {e:?}"),
-            // }
         }
 
         if shortcut_used!(ctx, &KEY_EQUALS)

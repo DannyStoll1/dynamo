@@ -213,6 +213,12 @@ where
     }
 
     #[inline]
+    fn precycles_child(&self, c: Self::Param, preperiod: Period, period: Period) -> Vec<Self::Var>
+    {
+        self.base_curve.precycles_child(c, preperiod, period)
+    }
+
+    #[inline]
     fn default_julia_bounds(&self, point: Cplx, param: C::Param) -> Bounds
     {
         self.base_curve.default_julia_bounds(point, param)

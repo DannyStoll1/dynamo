@@ -222,6 +222,13 @@ where
     }
 
     #[inline]
+    fn precycles(&self, preperiod: Period, period: Period) -> Vec<Self::Var>
+    {
+        self.parent
+            .precycles_child(self.local_param, preperiod, period)
+    }
+
+    #[inline]
     fn name(&self) -> String
     {
         "JuliaSet".to_owned()

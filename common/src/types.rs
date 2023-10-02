@@ -1,6 +1,7 @@
 use self::param_stack::Summarize;
 use derive_more::{Add, Display, From};
 use num_complex::Complex;
+pub use num_rational::Rational32 as Rational;
 use std::fmt::Display;
 
 pub mod variables;

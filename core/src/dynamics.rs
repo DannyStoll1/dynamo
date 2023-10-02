@@ -51,10 +51,19 @@ pub trait ParameterPlane: Sync + Send + Clone
         self.with_point_grid(point_grid)
     }
 
+    /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio
     #[must_use]
     fn with_res_y(mut self, res_y: usize) -> Self
     {
         self.point_grid_mut().resize_y(res_y);
+        self
+    }
+
+    /// Modify and return self with a different image width, and with height scaled to preserve aspect ratio
+    #[must_use]
+    fn with_res_x(mut self, res_x: usize) -> Self
+    {
+        self.point_grid_mut().resize_x(res_x);
         self
     }
 
@@ -268,7 +277,28 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     #[inline]
+    fn precycles_child(
+        &self,
+        _c: Self::Param,
+        _preperiod: Period,
+        _period: Period,
+    ) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    #[inline]
     fn cycles(&self, _period: Period) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    #[inline]
+    fn precycles(
+        &self,
+        _preperiod: Period,
+        _period: Period,
+    ) -> Vec<Self::Var>
     {
         vec![]
     }

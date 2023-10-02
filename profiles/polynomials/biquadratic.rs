@@ -188,6 +188,7 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn param_map(&self, point: Cplx) -> Self::Param
     {
+        let point = -point.powf(ONE_THIRD);
         Self::Param {
             a: point,
             b: self.multiplier / point,

@@ -8,6 +8,8 @@ pub mod keyboard_shortcuts;
 pub mod macros;
 pub mod marked_points;
 pub mod pane;
+pub mod dialog;
+mod utils;
 use fractal_tab::FractalTab;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -41,7 +43,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
         tab.interface.handle_input(ui.ctx());
         tab.process_interface_message(ui);
         tab.interface.process_tasks();
-        tab.interface.show_save_dialog(ui.ctx());
+        tab.interface.show_dialogs(ui.ctx());
         tab.interface.show(ui);
     }
 
@@ -150,5 +152,29 @@ mod tests
         {
             pane_pair.child_mut().recompute();
         }
+    }
+
+    #[test]
+    fn parsing()
+    {
+        use crate::utils::parse_angle;
+        use fractal_common::types::Rational;
+
+        let str0 = "1/17";
+        let val0 = Rational::new(1, 17);
+
+        let str1 = "0110";
+        let val1 = Rational::new(3, 8);
+
+        let str2 = "011p10";
+        let val2 = Rational::new(11, 24);
+
+        let Some(out0) = parse_angle(str0) else {panic!("parse_angle returned None on input {}", str0)};
+        let Some(out1) = parse_angle(str1) else {panic!("parse_angle returned None on input {}", str1)};
+        let Some(out2) = parse_angle(str2) else {panic!("parse_angle returned None on input {}", str2)};
+
+        assert_eq!(out0, val0);
+        assert_eq!(out1, val1);
+        assert_eq!(out2, val2);
     }
 }

@@ -18,6 +18,8 @@ seq-macro = "0.3.5"
 fractal_core = { version = "*", path = "../core" }
 fractal_common = { version = "*", path = "../common" }
 fractal_profiles = { version = "*", path = "../profiles" }
+regex = "1.9.5"
+lazy_static = "1.4.0"
 
 [features]
 serde = ["dep:serde", "eframe/serde", "epaint/serde", "fractal_core/serde", "fractal_common/serde"]
