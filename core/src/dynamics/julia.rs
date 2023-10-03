@@ -88,9 +88,10 @@ where
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
+    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        self.parent.parameter_derivative(z, self.local_param)
+        Self::Deriv::from(0.0)
+        // self.parent.parameter_derivative(z, self.local_param)
     }
 
     #[inline]
@@ -102,7 +103,9 @@ where
     #[inline]
     fn gradient(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        self.parent.gradient(z, self.local_param)
+        let (f, df) = self.map_and_multiplier(z, self.local_param);
+        (f, df, 0.0.into())
+        // self.parent.gradient(z, self.local_param)
     }
 
     #[inline]
@@ -182,6 +185,11 @@ where
     fn degree(&self) -> f64
     {
         self.parent.degree()
+    }
+
+    #[inline]
+    fn escaping_period(&self) -> Period {
+        self.parent.escaping_period()
     }
 
     #[inline]

@@ -1,5 +1,5 @@
-use crate::dialog::InputDialog;
-use crate::marked_points::MarkedData;
+use crate::dialog::{InputDialog, InputDialogBuilder};
+use crate::marked_points::{ColoredCurve, ColoredPoint, MarkedData};
 
 use super::image_frame::ImageFrame;
 use fractal_common::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette, Coloring};
@@ -7,6 +7,7 @@ use fractal_common::iter_plane::{FractalImage, IterPlane};
 use fractal_common::point_grid::{Bounds, PointGrid};
 use fractal_common::types::param_stack::Summarize;
 use fractal_common::types::{ComplexVec, Cplx, OrbitInfo, ParamList, Real};
+use fractal_core::dynamics::symbolic::RationalAngle;
 use fractal_core::dynamics::ParameterPlane;
 use input_macro::input;
 use seq_macro::seq;
@@ -66,11 +67,13 @@ pub trait Pane
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
 
+    fn get_marked_data(&self) -> &MarkedData;
     fn get_marked_data_mut(&mut self) -> &mut MarkedData;
     fn mark_point(&mut self, z: Cplx, color: Color32);
     fn mark_curve(&mut self, zs: ComplexVec, color: Color32);
     fn clear_marked_points(&mut self);
-    fn clear_marked_curves(&mut self);
+    fn clear_marked_orbits(&mut self);
+    fn clear_marked_rays(&mut self);
     fn put_marked_points(&self, ui: &mut Ui);
     fn put_marked_curves(&self, ui: &mut Ui);
 
@@ -272,7 +275,7 @@ where
             self.plane.set_param(new_param);
             self.schedule_recompute();
         }
-        self.clear_marked_curves();
+        self.clear_marked_orbits();
     }
 
     #[must_use]
@@ -452,7 +455,11 @@ where
     #[inline]
     fn redraw(&mut self)
     {
-        self.marked_data.points = self.marking_mode.compute(&self.plane, self.get_selection());
+        self.marked_data.points = self
+            .marking_mode
+            .compute_points(&self.plane, self.get_selection());
+        self.marked_data.rays = self.marking_mode.compute_rays(&self.plane);
+
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
@@ -513,7 +520,7 @@ where
 
     fn mark_external_ray(&mut self, angle: Real)
     {
-        if let Some(cs) = self.plane.external_ray(angle, 50, 50, 128)
+        if let Some(cs) = self.plane.external_ray(angle, 50, 50)
         {
             self.mark_curve(cs, Color32::BLUE);
         }
@@ -521,12 +528,25 @@ where
 
     fn mark_curve(&mut self, zs: ComplexVec, color: Color32)
     {
-        self.marked_data.orbits.push((zs, color));
+        self.marked_data
+            .orbits
+            .push(ColoredCurve { curve: zs, color });
     }
 
-    fn clear_marked_curves(&mut self)
+    fn clear_marked_orbits(&mut self)
     {
         self.marked_data.clear_orbits();
+    }
+
+    fn clear_marked_rays(&mut self)
+    {
+        self.marking_mode.rays.clear();
+        self.marked_data.clear_rays();
+    }
+
+    fn get_marked_data(&self) -> &MarkedData
+    {
+        &self.marked_data
     }
 
     fn get_marked_data_mut(&mut self) -> &mut MarkedData
@@ -539,7 +559,7 @@ where
         let frame = self.get_frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
-        for (zs, color) in self.marked_data.iter_curves()
+        for ColoredCurve { curve: zs, color } in self.marked_data.iter_curves()
         {
             let points = zs
                 .iter()
@@ -556,7 +576,9 @@ where
 
     fn mark_point(&mut self, z: Cplx, color: Color32)
     {
-        self.marked_data.points.push((z, color));
+        self.marked_data
+            .points
+            .push(ColoredPoint { point: z, color });
     }
 
     fn clear_marked_points(&mut self)
@@ -569,7 +591,7 @@ where
         let frame = self.get_frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
-        for (z, color) in self.marked_data.points.iter()
+        for ColoredPoint { point: z, color } in self.marked_data.points.iter()
         {
             let point = frame.to_global_coords(grid.locate_point(*z).to_vec2());
             let patch = CircleShape::filled(point, 4., *color);
@@ -631,6 +653,7 @@ pub trait PanePair
     fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>;
     fn save_active_pane(&mut self);
     fn save_pane(&mut self, pane_id: PaneID);
+    fn prompt_external_ray(&mut self);
     fn get_image_height(&self) -> usize;
     fn change_height(&mut self, new_height: usize);
 
@@ -668,6 +691,7 @@ where
     live_mode: bool,
     save_dialog: Option<FileDialog>,
     input_dialog: Option<InputDialog>,
+    pane_for_next_external_ray: PaneID,
     pane_to_save: PaneID,
     click_used: bool,
     pub message: UIMessage,
@@ -691,6 +715,7 @@ where
             live_mode: false,
             save_dialog: None,
             input_dialog: None,
+            pane_for_next_external_ray: PaneID::Parent,
             pane_to_save: PaneID::Parent,
             click_used: false,
             message: UIMessage::default(),
@@ -756,7 +781,28 @@ where
     fn show_input_dialog(&mut self, ctx: &Context)
     {
         let Some(input_dialog) = self.input_dialog.as_mut() else {return};
-        input_dialog.show(ctx);
+        use crate::dialog::DialogState::*;
+        match input_dialog.state
+        {
+            Closed =>
+            {
+                self.input_dialog = None;
+            }
+            InProgress | JustOpened =>
+            {
+                input_dialog.show(ctx);
+            }
+            Completed =>
+            {
+                if let Ok(angle) = input_dialog.user_input.parse::<RationalAngle>()
+                {
+                    let pane = self.get_pane_mut(self.pane_for_next_external_ray);
+                    pane.marking_mode_mut().toggle_ray(angle);
+                    pane.schedule_redraw();
+                }
+                self.input_dialog = None;
+            }
+        }
     }
 }
 
@@ -789,6 +835,15 @@ where
         let palette = ColorPalette::new_random(0.45, 0.38);
         self.parent.change_palette(palette);
         self.child.change_palette(palette);
+    }
+
+    fn prompt_external_ray(&mut self)
+    {
+        let dialog = InputDialogBuilder::default()
+            .title("External ray angle input")
+            .prompt("Input an angle for the external ray: ")
+            .build();
+        self.input_dialog = Some(dialog);
     }
 
     fn save_pane(&mut self, pane_id: PaneID)
@@ -910,7 +965,7 @@ where
             if clicked
             {
                 self.consume_click();
-                self.child_mut().clear_marked_curves();
+                self.child_mut().clear_marked_orbits();
                 let param = self.parent.plane.param_map(pointer_value);
                 let start = self.parent.plane.start_point(pointer_value, param);
                 self.child_mut().mark_orbit_and_info(start.into());
@@ -927,7 +982,7 @@ where
             if clicked
             {
                 self.consume_click();
-                self.child_mut().clear_marked_curves();
+                self.child_mut().clear_marked_orbits();
                 self.child_mut().mark_orbit_and_info(pointer_value);
             }
         }
@@ -1044,6 +1099,27 @@ where
         //         pane.mark_external_ray(1./7.);
         //     }
         // }
+
+        if shortcut_used!(ctx, &KEY_E)
+        {
+            if let Some(pane_id) = self.active_pane
+            {
+                self.pane_for_next_external_ray = pane_id;
+                self.prompt_external_ray();
+            }
+        }
+
+        if shortcut_used!(ctx, &KEY_D)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                let ray_angles = &pane.marking_mode().rays;
+                let rays = &pane.get_marked_data().rays;
+                dbg!(rays);
+                dbg!(ray_angles);
+                dbg!(pane.get_selection());
+            }
+        }
 
         if shortcut_used!(ctx, &KEY_H)
         {
@@ -1189,7 +1265,7 @@ where
                 Some(PaneID::Child) =>
                 {
                     self.child.reset_selection();
-                    self.child.clear_marked_curves();
+                    self.child.clear_marked_orbits();
                 }
                 None =>
                 {}
@@ -1248,9 +1324,16 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.clear_marked_curves();
+                pane.clear_marked_orbits();
             }
-            // pane.clear_marked_points();
+        }
+
+        if shortcut_used!(ctx, &SHIFT_C)
+        {
+            if let Some(pane) = self.get_active_pane_mut()
+            {
+                pane.clear_marked_rays();
+            }
         }
 
         if shortcut_used!(ctx, &KEY_L)

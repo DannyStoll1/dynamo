@@ -1,32 +1,73 @@
-use egui;
+use egui::{self, Key};
 use egui::{vec2, Window};
+
+pub enum DialogState
+{
+    JustOpened,
+    InProgress,
+    Completed,
+    Closed,
+}
+impl DialogState
+{
+    fn visible(&self) -> bool
+    {
+        match self
+        {
+            Self::JustOpened | Self::InProgress => true,
+            _ => false,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct InputDialogBuilder
+{
+    title: String,
+    prompt: String,
+}
+impl InputDialogBuilder
+{
+    pub fn title(mut self, title: &str) -> Self
+    {
+        self.title = title.to_owned();
+        self
+    }
+    pub fn prompt(mut self, prompt: &str) -> Self
+    {
+        self.prompt = prompt.to_owned();
+        self
+    }
+    pub fn build(self) -> InputDialog
+    {
+        InputDialog::new(self.title, self.prompt)
+    }
+}
 
 pub struct InputDialog
 {
     pub title: String,
     pub prompt: String,
     pub user_input: String,
-    visible: bool,
-    on_ok: Box<dyn FnMut(String)>,
+    pub state: DialogState,
 }
 
 impl InputDialog
 {
     #[must_use]
-    pub fn new<F: FnMut(String) + 'static>(title: String, prompt: String, on_ok: F) -> Self
+    pub fn new(title: String, prompt: String) -> Self
     {
         Self {
             title,
             prompt,
             user_input: String::new(),
-            visible: false,
-            on_ok: Box::new(on_ok),
+            state: DialogState::JustOpened,
         }
     }
 
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        if self.visible
+        if self.visible()
         {
             Window::new(self.title.clone())
                 .title_bar(false)
@@ -35,15 +76,16 @@ impl InputDialog
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(&self.prompt);
-                        ui.text_edit_singleline(&mut self.user_input);
+                        let response = ui.text_edit_singleline(&mut self.user_input);
+                        ui.memory_mut(|mem| mem.request_focus(response.id));
                     });
 
-                    if ui.button("OK").clicked()
+                    if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter))
                     {
-                        self.visible = false;
-                        (self.on_ok)(self.user_input.clone());
+                        self.state = DialogState::Completed;
                     }
                     else if ui.button("Cancel").clicked()
+                        || ctx.input(|i| i.key_pressed(Key::Escape))
                     {
                         self.disable();
                     }
@@ -54,25 +96,19 @@ impl InputDialog
     #[inline]
     pub fn visible(&self) -> bool
     {
-        self.visible
-    }
-
-    #[inline]
-    fn hide(&mut self)
-    {
-        self.visible = false;
+        self.state.visible()
     }
 
     #[inline]
     pub fn enable(&mut self)
     {
-        self.visible = true
+        self.state = DialogState::InProgress;
     }
 
     #[inline]
     pub fn disable(&mut self)
     {
-        self.hide();
+        self.state = DialogState::Closed;
         self.reset_input();
     }
 

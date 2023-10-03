@@ -16,6 +16,9 @@ ndarray = ">=0.15.6"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 serde = { version = "1.0.166", features = ["derive"], optional = true }
 fractal_common = { version = "*", path = "../common" }
+num-traits = "0.2.16"
+lazy_static = "1.4.0"
+regex = "1.9.6"
 
 [features]
 serde = ["dep:serde", "fractal_common/serde"]

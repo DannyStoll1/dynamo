@@ -52,7 +52,10 @@ impl<const N: Period> ParameterPlane for Tricorne<N>
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z_n_minus_1 = z.powf(Self::N_MINUS_1);
-        ((z_n_minus_1 * z).conj() + c, Self::N_FLOAT * z_n_minus_1.conj())
+        (
+            (z_n_minus_1 * z).conj() + c,
+            Self::N_FLOAT * z_n_minus_1.conj(),
+        )
     }
 
     #[inline]

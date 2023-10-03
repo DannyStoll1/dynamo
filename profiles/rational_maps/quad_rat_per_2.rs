@@ -59,6 +59,16 @@ impl ParameterPlane for QuadRatPer2
         ((c + z2) / u, -2.0 * z * (c + 1.) / (u * u))
     }
 
+    fn degree(&self) -> f64
+    {
+        -2.0
+    }
+
+    fn escaping_period(&self) -> Period
+    {
+        2
+    }
+
     #[inline]
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
@@ -623,9 +633,7 @@ impl HasDynamicalCovers for QuadRatPer2
         {
             (1, 1) =>
             {
-                param_map = |t| {
-                    t * (1. - t * (t + 1.))
-                };
+                param_map = |t| t * (1. - t * (t + 1.));
                 bounds = Bounds {
                     min_x: -3.4,
                     max_x: 3.4,

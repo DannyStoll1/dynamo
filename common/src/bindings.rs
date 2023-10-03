@@ -4278,7 +4278,6 @@ extern "C" {
         __child: ::std::option::Option<unsafe extern "C" fn()>,
     ) -> ::std::os::raw::c_int;
 }
-#[doc = " @brief A thread safe version of mps_boolean.\n\n Must be accessed using the macro MPS_LOCK (x) and\n MPS_UNLOCK (x)."]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mps_boolean_mt
@@ -4322,7 +4321,6 @@ fn bindgen_test_layout_mps_boolean_mt()
         )
     );
 }
-#[doc = " @brief A thread safe version of mps_boolean.\n\n Must be accessed using the macro MPS_LOCK (x) and\n MPS_UNLOCK (x)."]
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct mps_long_int_mt
@@ -4526,7 +4524,6 @@ pub const mps_phase_no_phase: mps_phase = 0;
 pub const mps_phase_float_phase: mps_phase = 1;
 pub const mps_phase_dpe_phase: mps_phase = 2;
 pub const mps_phase_mp_phase: mps_phase = 3;
-#[doc = " @brief Type representing the computation phase\n of the algorithm we are in\n now. It can assume the values:\n - <code>no_phase</code>;\n - <code>float_phase</code>;\n - <code>dpe_phase</code>;\n - <code>mp_phase</code>;"]
 pub type mps_phase = i32;
 extern "C" {
     pub static mps_phase_string: [mps_string; 4usize];
@@ -4541,7 +4538,6 @@ pub const mps_operation_MPS_OPERATION_STARTING_POINTS_DPE: mps_operation = 6;
 pub const mps_operation_MPS_OPERATION_STARTING_POINTS_MP: mps_operation = 7;
 pub const mps_operation_MPS_OPERATION_SHIFT: mps_operation = 8;
 pub const mps_operation_MPS_OPERATION_REFINEMENT: mps_operation = 9;
-#[doc = " @brief Used to label different operation inside the various\n algorithms."]
 pub type mps_operation = i32;
 extern "C" {
     pub static mps_operation_string: [mps_string; 10usize];
@@ -4554,7 +4550,6 @@ pub const mps_root_status_MPS_ROOT_STATUS_APPROXIMATED_IN_CLUSTER: mps_root_stat
 pub const mps_root_status_MPS_ROOT_STATUS_NOT_FLOAT: mps_root_status = 5;
 pub const mps_root_status_MPS_ROOT_STATUS_NOT_DPE: mps_root_status = 6;
 pub const mps_root_status_MPS_ROOT_STATUS_MULTIPLE: mps_root_status = 7;
-#[doc = " @brief Status of approximation of the root."]
 pub type mps_root_status = i32;
 extern "C" {
     pub static mps_table_of_approximated_roots: [mps_boolean; 8usize];
@@ -4574,7 +4569,6 @@ pub const mps_root_attrs_MPS_ROOT_ATTRS_NOT_REAL: mps_root_attrs = 2;
 pub const mps_root_attrs_MPS_ROOT_ATTRS_IMAG: mps_root_attrs = 3;
 pub const mps_root_attrs_MPS_ROOT_ATTRS_NOT_IMAG: mps_root_attrs = 4;
 pub const mps_root_attrs_MPS_ROOT_ATTRS_NOT_REAL_AND_IMAG: mps_root_attrs = 5;
-#[doc = " @brief Attributes that can be attached to a root and\n are mostly aimed to detect reality or not."]
 pub type mps_root_attrs = i32;
 extern "C" {
     pub static mps_root_attrs_string: [mps_string; 6usize];
@@ -4582,16 +4576,12 @@ extern "C" {
 pub const mps_root_inclusion_MPS_ROOT_INCLUSION_UNKNOWN: mps_root_inclusion = 0;
 pub const mps_root_inclusion_MPS_ROOT_INCLUSION_IN: mps_root_inclusion = 1;
 pub const mps_root_inclusion_MPS_ROOT_INCLUSION_OUT: mps_root_inclusion = 2;
-#[doc = " @brief Status of inclusion of the root in the target\n set."]
 pub type mps_root_inclusion = i32;
 extern "C" {
     pub static mps_root_inclusion_string: [mps_string; 3usize];
 }
-#[doc = " @brief Standard MPsolve approach"]
 pub const mps_algorithm_MPS_ALGORITHM_STANDARD_MPSOLVE: mps_algorithm = 0;
-#[doc = " @brief Gemignani's approach applied to secular equations."]
 pub const mps_algorithm_MPS_ALGORITHM_SECULAR_GA: mps_algorithm = 1;
-#[doc = " @brief Algorithm used to find the solution of the polynomial,\n or of the secular equation."]
 pub type mps_algorithm = i32;
 pub const mps_option_key_MPS_FLAG_UNDEFINED: mps_option_key = 0;
 pub const mps_option_key_MPS_FLAG_INTEGER: mps_option_key = 1;
@@ -4606,7 +4596,6 @@ pub const mps_option_key_MPS_FLAG_SPARSE: mps_option_key = 9;
 pub const mps_option_key_MPS_KEY_DEGREE: mps_option_key = 10;
 pub const mps_option_key_MPS_KEY_PRECISION: mps_option_key = 11;
 pub const mps_option_key_MPS_FLAG_CHEBYSHEV: mps_option_key = 12;
-#[doc = " @brief Key for options parsed from the input source file.\n Key that don't need values could exists (these are boolean flags,\n actually)."]
 pub type mps_option_key = i32;
 pub const mps_structure_MPS_STRUCTURE_REAL_INTEGER: mps_structure = 0;
 pub const mps_structure_MPS_STRUCTURE_REAL_RATIONAL: mps_structure = 1;
@@ -4617,12 +4606,10 @@ pub const mps_structure_MPS_STRUCTURE_COMPLEX_RATIONAL: mps_structure = 5;
 pub const mps_structure_MPS_STRUCTURE_COMPLEX_FP: mps_structure = 6;
 pub const mps_structure_MPS_STRUCTURE_COMPLEX_BIGFLOAT: mps_structure = 7;
 pub const mps_structure_MPS_STRUCTURE_UNKNOWN: mps_structure = 8;
-#[doc = " @brief Definition of various algebraic structure that\n MPSolve can use as input.\n\n Precisely, integer, rational and floating point, either real or\n complex, can be treated in input."]
 pub type mps_structure = i32;
 pub const mps_density_MPS_DENSITY_DENSE: mps_density = 0;
 pub const mps_density_MPS_DENSITY_SPARSE: mps_density = 1;
 pub const mps_density_MPS_DENSITY_USER: mps_density = 2;
-#[doc = " @brief Density of the polynomial, or\n MPS_DENSITY_USER if density doesn't make sense\n since user routines are provided to compute\n the newton fraction."]
 pub type mps_density = i32;
 pub const mps_output_format_MPS_OUTPUT_FORMAT_COMPACT: mps_output_format = 0;
 pub const mps_output_format_MPS_OUTPUT_FORMAT_GNUPLOT: mps_output_format = 1;
@@ -4630,44 +4617,29 @@ pub const mps_output_format_MPS_OUTPUT_FORMAT_GNUPLOT_FULL: mps_output_format = 
 pub const mps_output_format_MPS_OUTPUT_FORMAT_BARE: mps_output_format = 3;
 pub const mps_output_format_MPS_OUTPUT_FORMAT_FULL: mps_output_format = 4;
 pub const mps_output_format_MPS_OUTPUT_FORMAT_VERBOSE: mps_output_format = 5;
-#[doc = " @brief Desired output format for the roots."]
 pub type mps_output_format = i32;
 pub const mps_output_goal_MPS_OUTPUT_GOAL_ISOLATE: mps_output_goal = 0;
 pub const mps_output_goal_MPS_OUTPUT_GOAL_APPROXIMATE: mps_output_goal = 1;
 pub const mps_output_goal_MPS_OUTPUT_GOAL_COUNT: mps_output_goal = 2;
-#[doc = " @brief Goal to reach before returning the result."]
 pub type mps_output_goal = i32;
-#[doc = " @brief The whole complex plane."]
 pub const mps_search_set_MPS_SEARCH_SET_COMPLEX_PLANE: mps_search_set = 0;
-#[doc = " @brief Complex numbers with a positive real part."]
 pub const mps_search_set_MPS_SEARCH_SET_POSITIVE_REAL_PART: mps_search_set = 1;
-#[doc = " @brief Complex numbers with a negative real part."]
 pub const mps_search_set_MPS_SEARCH_SET_NEGATIVE_REAL_PART: mps_search_set = 2;
-#[doc = " @brief Complex numbers with a positive imaginary part."]
 pub const mps_search_set_MPS_SEARCH_SET_POSITIVE_IMAG_PART: mps_search_set = 3;
-#[doc = " @brief Complex numbers with a negative real part."]
 pub const mps_search_set_MPS_SEARCH_SET_NEGATIVE_IMAG_PART: mps_search_set = 4;
-#[doc = " @brief Complex numbers in the unitary disc\n \\f$S = \\{ z \\: | \\: \\lvert z \\rvert \\leq 1 \\}\\f$"]
 pub const mps_search_set_MPS_SEARCH_SET_UNITARY_DISC: mps_search_set = 5;
-#[doc = " @brief Complex number out of the unitary disc\n \\f$S = \\{ z \\: | \\: \\lvert z \\rvert \\leq 1 \\}\\f$"]
 pub const mps_search_set_MPS_SEARCH_SET_UNITARY_DISC_COMPL: mps_search_set = 6;
-#[doc = " @brief Only real roots."]
 pub const mps_search_set_MPS_SEARCH_SET_REAL: mps_search_set = 7;
-#[doc = " @brief Only pure imaginary roots."]
 pub const mps_search_set_MPS_SEARCH_SET_IMAG: mps_search_set = 8;
-#[doc = " @brief Custom set specified by the user."]
 pub const mps_search_set_MPS_SEARCH_SET_CUSTOM: mps_search_set = 9;
-#[doc = " @brief Set in which the roots are searched."]
 pub type mps_search_set = i32;
 pub const mps_representation_MPS_REPRESENTATION_SECULAR: mps_representation = 0;
 pub const mps_representation_MPS_REPRESENTATION_MONOMIAL: mps_representation = 1;
 pub const mps_representation_MPS_REPRESENTATION_CHEBYSHEV: mps_representation = 2;
-#[doc = " @brief Representation chosen for the polynomial"]
 pub type mps_representation = i32;
 pub const mps_starting_strategy_MPS_STARTING_STRATEGY_DEFAULT: mps_starting_strategy = 0;
 pub const mps_starting_strategy_MPS_STARTING_STRATEGY_RECURSIVE: mps_starting_strategy = 1;
 pub const mps_starting_strategy_MPS_STARTING_STRATEGY_FILE: mps_starting_strategy = 2;
-#[doc = " @brief Strategy used to select the starting approximations."]
 pub type mps_starting_strategy = i32;
 pub type va_list = __builtin_va_list;
 pub type __gnuc_va_list = __builtin_va_list;
@@ -5845,7 +5817,6 @@ extern "C" {
 extern "C" {
     pub fn cplx_vinit(v: *mut cplx_t, size: ::std::os::raw::c_long);
 }
-#[doc = "              rdpe_t type                               **"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct __rdpe_struct
@@ -6119,7 +6090,6 @@ extern "C" {
 extern "C" {
     pub fn rdpe_vinit(v: *mut rdpe_t, size: ::std::os::raw::c_long);
 }
-#[doc = "              gdpe_t functions                          **"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct __gdpe_struct
@@ -6187,7 +6157,6 @@ extern "C" {
 extern "C" {
     pub fn gdpe_div(res: *mut __gdpe_struct, g1: *mut __gdpe_struct, g2: *mut __gdpe_struct);
 }
-#[doc = "              cdpe_t functions                          **"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct __cdpe_struct
@@ -8391,7 +8360,6 @@ extern "C" {
 extern "C" {
     pub fn mpf_vclear(v: *mut mpf_t, size: ::std::os::raw::c_ulong);
 }
-#[doc = " @cond PRIVATE"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct __mpc_struct
@@ -8435,10 +8403,8 @@ fn bindgen_test_layout___mpc_struct()
         )
     );
 }
-#[doc = " @endcond"]
 pub type mpc_t = [__mpc_struct; 1usize];
 extern "C" {
-    #[doc = "            mpc_t functions                             **"]
     pub fn mpc_init(c: *mut __mpc_struct);
 }
 extern "C" {
@@ -8684,30 +8650,23 @@ extern "C" {
     pub fn mpc_vclear(v: *mut mpc_t, size: ::std::os::raw::c_long);
 }
 extern "C" {
-    #[doc = " @brief Set the Multiprecision value <code>f</code> with the value\n stored in <code>e</code>.\n\n @param f The multiprecision floating point number to set.\n @param e The RDPE value to set in <code>f</code>."]
     pub fn mpf_set_rdpe(f: *mut __mpf_struct, e: *mut __rdpe_struct);
 }
 extern "C" {
-    #[doc = " @brief Get the RDPE version of the Multiprecision value <code>f</code>.\n\n @param e The RDPE where the value of <code>f</code> will be stored.\n @param f The multiprecision floating point number to extract the value from."]
     pub fn mpf_get_rdpe(e: *mut __rdpe_struct, f: *mut __mpf_struct);
 }
 extern "C" {
-    #[doc = " @brief Set the Multiprecision value <code>mc</code> with the value\n stored in <code>c</code>.\n\n @param mc The multiprecision complex number to set.\n @param c The <code>cplx_t</code> value to set in <code>mc</code>."]
     pub fn mpc_set_cplx(mc: *mut __mpc_struct, c: *mut __cplx_struct);
 }
 extern "C" {
-    #[doc = " @brief Get the <code>cplx_t</code> version of the Multiprecision value <code>mc</code>.\n\n @param c The <code>cplx_t</code> where the value of <code>mc</code> will be stored.\n @param mc The multiprecision complex number to extract the value from."]
     pub fn mpc_get_cplx(c: *mut __cplx_struct, mc: *mut __mpc_struct);
 }
 extern "C" {
-    #[doc = " @brief Set the Multiprecision value <code>mc</code> with the value\n stored in <code>c</code>.\n\n @param mc The multiprecision complex number to set.\n @param c The CDPE value to set in <code>mc</code>."]
     pub fn mpc_set_cdpe(mc: *mut __mpc_struct, c: *mut __cdpe_struct);
 }
 extern "C" {
-    #[doc = " @brief Get the CDPE version of the Multiprecision value <code>mc</code>.\n\n @param c The CDPE where the value of <code>mc</code> will be stored.\n @param mc The multiprecision complex number to extract the value from."]
     pub fn mpc_get_cdpe(c: *mut __cdpe_struct, mc: *mut __mpc_struct);
 }
-#[doc = " @brief The type of a function that evaluates the poynomial (Standard floating point version)."]
 pub type mps_polynomial_feval_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8717,7 +8676,6 @@ pub type mps_polynomial_feval_t = ::std::option::Option<
         error: *mut f64,
     ) -> mps_boolean,
 >;
-#[doc = " @brief The type of a function that evaluates the polynomial (CDPE version)."]
 pub type mps_polynomial_deval_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8727,7 +8685,6 @@ pub type mps_polynomial_deval_t = ::std::option::Option<
         error: *mut __rdpe_struct,
     ) -> mps_boolean,
 >;
-#[doc = " @brief The type of a function that evaluates the polynomial (MP version).\n The computation must be carried out with the precision of the value \\f$x\\f$."]
 pub type mps_polynomial_meval_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8737,10 +8694,8 @@ pub type mps_polynomial_meval_t = ::std::option::Option<
         error: *mut __rdpe_struct,
     ) -> mps_boolean,
 >;
-#[doc = " @brief Function that will be used to deallocate the polynomial on context destruction."]
 pub type mps_polynomial_free_t =
     ::std::option::Option<unsafe extern "C" fn(ctx: *mut mps_context, p: *mut mps_polynomial)>;
-#[doc = " @brief Function that will be used to raise the precision of the coefficients representing\n the polynomial to the working precision wp."]
 pub type mps_polynomial_raise_data_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8748,7 +8703,6 @@ pub type mps_polynomial_raise_data_t = ::std::option::Option<
         wp: ::std::os::raw::c_long,
     ) -> ::std::os::raw::c_long,
 >;
-#[doc = " @brief Function used to determine useful starting approximation.\n\n This is the floating point implementation."]
 pub type mps_polynomial_fstart_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8756,7 +8710,6 @@ pub type mps_polynomial_fstart_t = ::std::option::Option<
         approximations: *mut *mut mps_approximation,
     ),
 >;
-#[doc = " @brief Function used to determine useful starting approximation.\n\n This is the CDPE implementation."]
 pub type mps_polynomial_dstart_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8764,7 +8717,6 @@ pub type mps_polynomial_dstart_t = ::std::option::Option<
         approximations: *mut *mut mps_approximation,
     ),
 >;
-#[doc = " @brief Function used to determine useful starting approximation.\n\n This is the MP implementation."]
 pub type mps_polynomial_mstart_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8772,7 +8724,6 @@ pub type mps_polynomial_mstart_t = ::std::option::Option<
         approximations: *mut *mut mps_approximation,
     ),
 >;
-#[doc = " @brief Function that computes \\f$\\frac{p}{p'}\\f$ (floating point version)"]
 pub type mps_polynomial_fnewton_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8781,7 +8732,6 @@ pub type mps_polynomial_fnewton_t = ::std::option::Option<
         x: *mut __cplx_struct,
     ),
 >;
-#[doc = " @brief Function that computes \\f$\\frac{p}{p'}\\f$ (dpe version)"]
 pub type mps_polynomial_dnewton_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8790,7 +8740,6 @@ pub type mps_polynomial_dnewton_t = ::std::option::Option<
         corr: *mut __cdpe_struct,
     ),
 >;
-#[doc = " @brief Function that computes \\f$\\frac{p}{p'}\\f$ (multiprecision version)"]
 pub type mps_polynomial_mnewton_t = ::std::option::Option<
     unsafe extern "C" fn(
         ctx: *mut mps_context,
@@ -8800,50 +8749,30 @@ pub type mps_polynomial_mnewton_t = ::std::option::Option<
         wp: ::std::os::raw::c_long,
     ),
 >;
-#[doc = " @brief Function that returns the leading coefficient of the polynomial.\n This defaults to the function that returns one (i.e. the default polynomial\n is monic)."]
 pub type mps_polynomial_get_leading_coefficient_t = ::std::option::Option<
     unsafe extern "C" fn(ctx: *mut mps_context, p: *mut mps_polynomial, lc: *mut __mpc_struct),
 >;
-#[doc = " @brief Struct that represents an abstract polynomial. All the other\n real polynomial implementations (such as mps_monomial_poly, mps_secular_equation, ...)\n inherits from this."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mps_polynomial
 {
-    #[doc = " @brief Name of the type. This must be a global static string that\n can be used to check if a mps_polynomial is of a specific type.\n It can be NULL to leave the type vague."]
     pub type_name: *const ::std::os::raw::c_char,
-    #[doc = " @brief The degree of the polynomial."]
     pub degree: ::std::os::raw::c_int,
-    #[doc = " @brief Bits of precision of the coefficients.\n\n The precision used in computation can be adjusted with a call to mps_polynomial_raise_data()\n but can never be higher than the input precision."]
     pub prec: ::std::os::raw::c_long,
-    #[doc = " @brief Structure of the polynomial, i.e., the algebraic\n (or non-algebraic) structure where the coefficients\n are found."]
     pub structure: mps_structure,
-    #[doc = " @brief Density of the coefficients, or MPS_DENSITY_USER\n if the coefficients (or the newton fraction) is provided\n via a user routine"]
     pub density: mps_density,
-    #[doc = " @brief This is true if the polynomial has thread-safe methods. Note that\n this is the default assumption set by mps_polynomial_init(). You should\n overwrite after calling it if that's not the case."]
     pub thread_safe: mps_boolean,
-    #[doc = " @brief Method that evaluates the polynomial."]
     pub feval: mps_polynomial_feval_t,
-    #[doc = " @brief Method that evaluates the polynomial."]
     pub deval: mps_polynomial_deval_t,
-    #[doc = " @brief Method that evaluates the polynomial."]
     pub meval: mps_polynomial_meval_t,
-    #[doc = " @brief Method that collocate initial starting points."]
     pub fstart: mps_polynomial_fstart_t,
-    #[doc = " @brief Method that collocate initial starting points."]
     pub dstart: mps_polynomial_dstart_t,
-    #[doc = " @brief Method that collocate initial starting points."]
     pub mstart: mps_polynomial_mstart_t,
-    #[doc = " @brief Function used to release polynomial resources."]
     pub free: mps_polynomial_free_t,
-    #[doc = " @brief Function used to raise precision of the coefficients\n of the representation of the polynomial."]
     pub raise_data: mps_polynomial_raise_data_t,
-    #[doc = " @brief Function used to compute the Newton correction in a point."]
     pub fnewton: mps_polynomial_fnewton_t,
-    #[doc = " @brief Function used to compute the Newton correction in a point."]
     pub dnewton: mps_polynomial_dnewton_t,
-    #[doc = " @brief Function used to compute the Newton correction in a point."]
     pub mnewton: mps_polynomial_mnewton_t,
-    #[doc = " @brief Function used to retrieve the leading coefficient of the\n polynomial."]
     pub get_leading_coefficient: mps_polynomial_get_leading_coefficient_t,
 }
 #[test]
@@ -9182,21 +9111,13 @@ extern "C" {
 #[derive(Copy, Clone)]
 pub struct mps_chebyshev_poly
 {
-    #[doc = " @brief Base implementation of a polynomial."]
     pub super_: mps_polynomial,
-    #[doc = " @brief Floating point coefficients of the polynomial in the Chebyshev\n base"]
     pub fpc: *mut cplx_t,
-    #[doc = " @brief DPE floating point coefficients of the polynomial in the Chebyshev\n base."]
     pub dpc: *mut cdpe_t,
-    #[doc = " @brief Multiprecision complex coefficients of the polynomial in the Chebyshev\n base."]
     pub mfpc: *mut mpc_t,
-    #[doc = " @brief Rational coefficients of the polynomial. These are the real parts of the\n coefficients."]
     pub rational_real_coeffs: *mut mpq_t,
-    #[doc = " @brief Ratinonal coefficients of the polynomial. These are the imaginary parts\n of the coefficients."]
     pub rational_imag_coeffs: *mut mpq_t,
-    #[doc = " @brief Leading coefficient of the polynomial."]
     pub lc: mpc_t,
-    #[doc = " @brief Internal mutex used to manage the change of precision."]
     pub precision_mutex: pthread_mutex_t,
 }
 #[test]
@@ -9296,7 +9217,6 @@ fn bindgen_test_layout_mps_chebyshev_poly()
     );
 }
 extern "C" {
-    #[doc = " @brief Create a new polynomial represented in the Chebyshev base with\n degree set to n."]
     pub fn mps_chebyshev_poly_new(
         ctx: *mut mps_context,
         n: ::std::os::raw::c_int,
@@ -9304,7 +9224,6 @@ extern "C" {
     ) -> *mut mps_chebyshev_poly;
 }
 extern "C" {
-    #[doc = " @brief Set the coefficient relative to the i-th element of the Chebyshev\n base.\n\n This function takes a rational number as input, and is usable only if the\n Chebyshev polynomial is represented using rational coefficients."]
     pub fn mps_chebyshev_poly_set_coefficient_q(
         ctx: *mut mps_context,
         poly: *mut mps_chebyshev_poly,
@@ -9314,7 +9233,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " @brief Set the coefficient relative to the i-th element of the Chebyshev\n base.\n\n This function takes a multiprecision floating point number as input."]
     pub fn mps_chebyshev_poly_set_coefficient_f(
         ctx: *mut mps_context,
         poly: *mut mps_chebyshev_poly,
@@ -9323,7 +9241,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " @brief Set the coefficient of the i-th element of the Chebyshev base.\n\n This function takes an integer value as input.\n\n @param ctx The current mps_context\n @param poly The Chebyshev polynomial whose coefficient should be set.\n @param i The degree of the coefficient to set.\n @param real_coeff The real part of the new coefficient.\n @param imag_coeff The imaginary part of the new coefficient."]
     pub fn mps_chebyshev_poly_set_coefficient_i(
         ctx: *mut mps_context,
         poly: *mut mps_chebyshev_poly,
@@ -9342,7 +9259,6 @@ extern "C" {
     ) -> *mut mps_chebyshev_poly;
 }
 extern "C" {
-    #[doc = " @brief Create a new matrix polynomial of the given degree.\n\n @param ctx The current mps_context.\n @param degree The degree of the matrix polynomial.\n @param m The size of the matrices that compose the matrix polynomial.\n @param monic A boolean value that, if set to true, specify that the leading\n              coefficient of the polynomial is the identity matrix, and so\n              should not specified explicitely.\n @return A pointer to a newly allocated mps_monomial_matrix_poly that should\n be subsequently free with a call to mps_monomial_matrix_poly_free()."]
     pub fn mps_monomial_matrix_poly_new(
         ctx: *mut mps_context,
         degree: ::std::os::raw::c_int,
@@ -9351,11 +9267,9 @@ extern "C" {
     ) -> *mut mps_monomial_matrix_poly;
 }
 extern "C" {
-    #[doc = " @brief Free a matrix polynomial.\n\n @param ctx The current mps_context.\n @param poly The mps_monomial_matrix_poly that should be freed, casted to\n             a mps_polynomial* pointer."]
     pub fn mps_monomial_matrix_poly_free(ctx: *mut mps_context, poly: *mut mps_polynomial);
 }
 extern "C" {
-    #[doc = " @brief Add some flags (some properties) to this matrix polynomial.\n\n @param ctx The current mps_context\n @param mpoly The matrix polynomial.\n @param flag The flags to add."]
     pub fn mps_monomial_matrix_poly_add_flags(
         ctx: *mut mps_context,
         mpoly: *mut mps_monomial_matrix_poly,
@@ -9363,7 +9277,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " @brief Clear some flags (properties) of this matrix polynomial.\n\n @param ctx The current mps_context\n @param mpoly The matrix polynomial.\n @param flag The flags to clear."]
     pub fn mps_monomial_matrix_poly_clear_flags(
         ctx: *mut mps_context,
         mpoly: *mut mps_monomial_matrix_poly,
@@ -9371,7 +9284,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " @brief Set the coefficient of degree i of the matrix polynomial.\n\n @param ctx The current mps_context\n @param mpoly The mps_monomial_matrix_poly where the coefficients should be\n set.\n @param i The degree of the coeffient to set.\n @param matrix A pointer to the first element of the matrix stored in row-major order."]
     pub fn mps_monomial_matrix_poly_set_coefficient_d(
         ctx: *mut mps_context,
         mpoly: *mut mps_monomial_matrix_poly,
@@ -9380,7 +9292,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " @brief Set the coefficient of degree i of the matrix polynomial.\n\n @param ctx The current mps_context\n @param mpoly The mps_monomial_matrix_poly where the coefficients should be\n set.\n @param i The degree of the coeffient to set.\n @param matrix_r A pointer to the first element of the matrix of the real parts\n of the coefficients, stored in row-major order\n @param matrix_i A pointer to the first element of the matrix of the imaginary parts\n of the coefficients, stored in row-major order"]
     pub fn mps_monomial_matrix_poly_set_coefficient_q(
         ctx: *mut mps_context,
         mpoly: *mut mps_monomial_matrix_poly,
@@ -9390,7 +9301,6 @@ extern "C" {
     );
 }
 extern "C" {
-    #[doc = " @brief Evaluate a matrix polynomial at a point, in the sense of\n evaluating \\f$det(P(x))\\f$.\n\n @param ctx The current mps_context\n @param poly The matrix polynomial to evaluate\n @param x The point in which the evaluation is requested\n @param value The value of \\f$det(P(x))\\f$\n @param error An upper bound to the absolute error that affects the result.\n @return true if the evaluation was successful."]
     pub fn mps_monomial_matrix_poly_meval(
         ctx: *mut mps_context,
         poly: *mut mps_polynomial,
@@ -9400,7 +9310,6 @@ extern "C" {
     ) -> mps_boolean;
 }
 extern "C" {
-    #[doc = " @brief Raise the working precision of this monomial matrix polynomal\n to the required numnber of bits.\n\n @param ctx The current mps_context.\n @param p The polynomial whose working precision should be set.\n @param wp The bits of desired working precision.\n @return The precision set in the polynomial. Note that this value\n may be higher than wp due to the fact that, in general, not all\n the precisions are available on the system and the first higher precision\n of the value required will be used."]
     pub fn mps_monomial_matrix_poly_raise_data(
         ctx: *mut mps_context,
         p: *mut mps_polynomial,
@@ -9788,7 +9697,6 @@ extern "C" {
         precision: ::std::os::raw::c_long,
     ) -> *mut mps_secular_equation;
 }
-#[doc = " @brief This type represent an abstract implementation of a driver for the\n regeneration step of the main algorithm.\n\n A standard implementation is given for polynomals internally in the MPSolve\n code but a custom implementation may be given by the user by calling\n mps_context_set_regeneration_driver()."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct mps_regeneration_driver
@@ -9817,7 +9725,6 @@ pub struct mps_regeneration_driver
             old: *mut mps_secular_equation,
         ) -> mps_boolean,
     >,
-    #[doc = " @brief Optional function that is called by the mps_regeneration_driver_free()\n method. It is intended for custom regeneration driver that needs to free\n additional data before having the function destroyed."]
     pub free: ::std::option::Option<
         unsafe extern "C" fn(ctx: *mut mps_context, rd: *mut mps_regeneration_driver),
     >,
@@ -10020,9 +9927,7 @@ extern "C" {
         again: mps_boolean,
     );
 }
-#[doc = " @brief Routine that performs the computation loop to solve the polynomial\n or the secular equation"]
 pub type mps_mpsolve_ptr = ::std::option::Option<unsafe extern "C" fn(status: *mut mps_context)>;
-#[doc = " @brief Pointer to the callback for the async version of mpsolve"]
 pub type mps_callback = ::std::option::Option<
     unsafe extern "C" fn(
         status: *mut mps_context,
@@ -11905,7 +11810,6 @@ extern "C" {
         -> ::std::os::raw::c_int;
 }
 extern "C" {
-    #[doc = " @mainpage General documentation\n\n @section About What is MPSolve\n MPSolve is a C library that allow to find solution to univariate polynomial equations\n with arbitrary precision.\n\n More precisely, MPSolve can handle polynomials but not necessarly in their monomial\n form. Support is now given even for secular equation and more implicit representation\n are scheduled to be added later.\n\n @section Installation Installing MPSolve system-wide\n First, you need to get MPSolve. You can get the latest release via <code>git</code>\n or download it via <code>http</code> grabbing it at http://www.dm.unipi.it/...\n If you downloaded the source tarball this operation is pretty straightforward.\n You can simply unpack it and then\n @code\n   ./configure\n   make\n   [sudo] make install\n @endcode\n\n These commands will install the library <code>libmps.so</code> in your system library\n directory. In this way you will be able compile your source file using a command similar\n to\n @code\n gcc -o myprogram -lmps -lgmp -lm myprogram.c.\n @endcode\n\n @section ExtendedTypes MPSolve extended arithmetic types\n To perform its computations MPSolve uses some more types than standard C does.\n You will need to interact with these to give and obtain data from MPSolve.\n\n There are three main category of types that you will be required to deal with:\n -# Standard floating point doubles;\n -# DPE types;\n -# Multiprecision GMP types\n\n @subsection FloatingPoint Floating point simple types\n There is clearly nothing to explain about floating point doubles, but MPSolve needs to deal\n with complex floating point and it uses a type called <code>cplx_t</code> that is nothing\n more than a struct with two double field, <code>r</code> and <code>i</code> that represents\n the real and imaginary part of the given complex number.\n You should access these fields with macro provided in this way:\n @code\n cplx_t my_complex_number;\n double theta = 0.5;\n cplx_Re (my_complex_number) = cos (theta);\n cplx_Im (my_complex_number) = sin (theta);\n @endcode\n\n Some standard complex number are provided for convenicence, such as <code>cplx_one</code>\n and <code>cplx_zero</code>.\n\n To get an idea of all the routines that you can use you can read the <code>mt.h</code> header\n file. But for a simple start, the routines that you will need are cplx_add(),\n cplx_sub(), cplx_mul() and cplx_div(). I think that it's pretty clear what they do.\n\n @subsection DPE The DPE types\n The <code>DPE</code> are have the same precision of the <code>double</code>s but allow\n the exponent to be much larger; the exponent is stored as a <code>long</code> value so\n the maximum reachable one is <code>LONG_MAX</code>, while the minimum is <code>LONG_MIN</code>.\n\n In the <code>mt</code> library that is embedded in MPSolve two version of the <code>DPE</code>\n types are provided: the real and the complex one. They are called <code>RDPE</code> and <code>CDPE</code>,\n respectively.\n\n The function used to handle these types are almost the same of the complex one case, so we will\n not cover they extensively here.\n\n @subsection GMP GMP types\n GMP types are used to represent multiprecision data that is used to get arbitrary high precision\n approximation of the roots. See http://gmplib.org for details on the use of GMP.\n\n @section Interface Using the libmps interface\n\n The library provides some useful routine to interact with the polynomial solver. Most of\n them are designed to handle polynomial definition and are implemented in <code>interface.c</code>\n\n This is a typical example of how you'll be using MPSolve.\n\n @code\n // Select the degree\n int n = 4;\n\n // Allocate a new mps_context that hold the status of a computation.\n // Its field should never be accessed directly but only via appropriate\n //functions.\n mps_context * status = mps_context_new ();\n\n // Create a polynomial that will be solved\n mps_monomial_poly * poly = mps_monomial_poly_new (status, n);\n\n // Set the coefficients. We will solve x^n - 1 in here\n mps_monomial_poly_set_coefficient_int (status, poly, 0, -1, 0);\n mps_monomial_poly_set_coefficient_int (status, poly, n,  1, 0);\n\n // Select some common output options, i.e. 512 bits of precision\n // (more or less 200 digits guaranteed) and approximation goal.\n mps_context_set_output_prec (status, 512);\n mps_context_set_output_goal (status, MPS_OUTPUT_GOAL_APPROXIMATE);\n\n // Solve the polynomial\n mps_context_set_input_poly (status, poly);\n mps_mpsolve (status);\n\n // Get the roots in a <code>cplx_t</code> vector. Please note that\n // this make completely useless to have asked 512 bits of output\n // precision, and you should use mps_context_get_roots_m() to get\n // multiprecision approximation of the roots.\n cplx_t * results = cplx_valloc (n);\n mps_context_get_roots_d (status, &results, NULL);\n\n // Free the data used. This will free the monomial_poly if you have\n // not done it by yourself.\n mps_context_free (status);\n cplx_vfree (results);\n @endcode\n\n As pointed out in the comments, this piece of code is not that smart, since it asks\n for a lot of digits in output, but then discard all this good by copying the roots\n in floating point <code>cplx_t</code> types.\n\n Please see the documentation of mps_context_get_roots_m() for a better way to get\n the results. It was not used in example in order to keep it short and clear.\n\n @subsection inclusion How to include libmps\n\n In general libmps will be usable by including the header file <code>mps/mps.h</code>.\n Please note that almost all structures defined in MPSolve will be available only as\n incomplete declarations, so they should be used with pointers, and manipulated with available\n functions.\n\n Remember to include always <code>mps/mps.h</code> and not the other headers in the\n directory. This is not supported and not guaranteed to work.\n\n For example you can instantiate a pointer to a new <code>mps_context</code> with\n the function <code>mps_context_new()</code>, add the input to it, solve the polynoial\n with <code>mps_mpsolve()</code> and then free its resources with <code>mps_context_free()</code>.\n\n The data structures that will be mostly used are:\n -# <code>mps_context</code>: This structure holds the state of the computation and must\n be instanciated for every polynomial solving operation. After allocating a pointer to\n an <code>mps_context</code> you should, generally,:\n   -# Set the input data and output requirements (i.e. the input polynomial, the desired\n   output digits and goal, ...)\n   -# Ask libmps to solve the polynomial by calling <code>mps_mpsolve()</code>\n   -# Retrieve the computed data with the appropriate accessors functions\n <code>mps_context_get_roots_d()</code> or <code>mps_context_get_roots_m()</code>.\n All the functions usable on an <code>mps_context</code> pointer are available in\n status.h.\n\n -# <code>mps_monomial_poly</code>: A polynomial given by its coefficients. Can be allocated\n with <code>mps_monomial_poly_new()</code> and manipulated with the functions in\n monomial-poly.h. Once it is the desired polynomial to solve you can call\n <code>mps_context_set_input_poly()</code> to set it as the active polynomial to solve.\n\n -# <code>mps_secular_equation</code>: The same as the monomial poly, but for secular equations.\n See secular-equation.h for some functions to allocate, free and manipulate them.\n\n @subsection async Calling MPSolve asynchronously\n\n Desktop application using MPSolve to solve polynomials may want to call a\n non-blocking version of mps_mpsolve(). This is provided inside the package\n as mps_mpsolve_async().\n\n This routine will return a <code>mps_handle</code> pointer that can be used to wait\n for the result by calling mps_mpsolve_wait() on it."]
     pub fn mps_set_default_values(s: *mut mps_context);
 }
 extern "C" {

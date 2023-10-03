@@ -39,7 +39,7 @@ where
 impl<V, D> FractalImage for IterPlane<V, D>
 where
     D: Norm<Real>,
-    V: Clone
+    V: Clone,
 {
     fn point_grid(&self) -> &PointGrid
     {

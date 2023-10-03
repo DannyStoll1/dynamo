@@ -15,7 +15,7 @@ impl<const D: i32> Unicritical<D>
     const D_FLOAT: Real = D as Real;
     const CRIT: Cplx = Cplx::new(-Self::D_FLOAT, 0.0);
     const DEFAULT_BOUNDS: Bounds =
-        Bounds::square(-Self::D_FLOAT * 1.2, Cplx::new(-Self::D_FLOAT + 1.0, 0.0));
+        Bounds::square(Self::D_FLOAT * 1.2, Cplx::new(-Self::D_FLOAT + 1.0, 0.0));
 }
 
 impl<const D: i32> Default for Unicritical<D>
@@ -82,9 +82,8 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         {
             1 =>
             {
-                let mut coeffs: Vec<Cplx> = (0..=D)
-                    .map(|x| c * Real::from(binomial(D, x)))
-                    .collect();
+                let mut coeffs: Vec<Cplx> =
+                    (0..=D).map(|x| c * Real::from(binomial(D, x))).collect();
                 coeffs[1] -= Self::D_FLOAT;
                 solve_polynomial(&coeffs)
                     .iter()

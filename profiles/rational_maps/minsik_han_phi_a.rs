@@ -114,7 +114,6 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
                     .map(|z| (z * Self::D_MINUS_1))
                     .flat_map(|z| nth_roots(z, D))
                     .collect()
-
             }
             _ => vec![],
         }

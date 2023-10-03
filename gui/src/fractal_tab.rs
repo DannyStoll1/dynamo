@@ -203,8 +203,8 @@ impl FractalTab
         ui.menu_button("Annotations", |ui| {
             if ui.button("[C]lear marked curves").clicked()
             {
-                self.interface.child_mut().clear_marked_curves();
-                self.interface.parent_mut().clear_marked_curves();
+                self.interface.child_mut().clear_marked_orbits();
+                self.interface.parent_mut().clear_marked_orbits();
                 self.interface.child_mut().schedule_redraw();
                 self.interface.parent_mut().schedule_redraw();
                 self.interface.consume_click();

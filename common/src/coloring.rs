@@ -33,17 +33,22 @@ impl Coloring
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
-            Periodic {
-                data
-            } => self.algorithm.color_periodic(
-                self.palette,
-                data
-            ),
+            Periodic { data } => self.algorithm.color_periodic(self.palette, data),
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
-            MarkedPoint { point_id, num_points, .. } => {
+            MarkedPoint {
+                point_id,
+                num_points,
+                ..
+            } =>
+            {
                 let hue = (point_id as f32) / (num_points as f32);
-                Hsv {hue, saturation: 0.8, luminosity: 1.0}.into()
+                Hsv {
+                    hue,
+                    saturation: 0.8,
+                    luminosity: 1.0,
+                }
+                .into()
             }
         }
     }
@@ -58,14 +63,9 @@ impl Coloring
         match point_info
         {
             Escaping { potential } => self.palette.map_rgb(potential),
-            Periodic {
-                data
-            } =>
+            Periodic { data } =>
             {
-                let (r, g, b, _) = self
-                    .algorithm
-                    .color_periodic(self.palette, data)
-                    .to_tuple();
+                let (r, g, b, _) = self.algorithm.color_periodic(self.palette, data).to_tuple();
                 Rgb([r, g, b])
             }
             Bounded => self.palette.map_rgb(0.),
@@ -74,9 +74,19 @@ impl Coloring
                 let (r, g, b, _a) = self.palette.wandering_color.to_tuple();
                 Rgb([r, g, b])
             }
-            MarkedPoint { point_id, num_points, .. } => {
+            MarkedPoint {
+                point_id,
+                num_points,
+                ..
+            } =>
+            {
                 let hue = (point_id as f32) / (num_points as f32);
-                Hsv {hue, saturation: 0.8, luminosity: 1.0}.into()
+                Hsv {
+                    hue,
+                    saturation: 0.8,
+                    luminosity: 1.0,
+                }
+                .into()
             }
         }
     }

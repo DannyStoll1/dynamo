@@ -1,7 +1,7 @@
 use self::param_stack::Summarize;
 use derive_more::{Add, Display, From};
 use num_complex::Complex;
-pub use num_rational::Rational32 as Rational;
+use num_rational::Ratio;
 use std::fmt::Display;
 
 pub mod variables;
@@ -15,8 +15,10 @@ use serde::{Deserialize, Serialize};
 pub type IterCount = f64;
 pub type Real = f64;
 pub type Cplx = Complex<Real>;
-pub type Period = u32;
 pub type ComplexVec = Vec<Cplx>;
+pub type Period = u32;
+pub type AngleNum = i64;
+pub type Rational = Ratio<AngleNum>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

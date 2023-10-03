@@ -70,4 +70,4 @@ macro_rules! cplx_arr {
     };
 }
 
-pub(crate) use {parameter_plane_impl, profile_imports, cplx_arr};
+pub(crate) use {cplx_arr, parameter_plane_impl, profile_imports};

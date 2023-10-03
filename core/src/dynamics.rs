@@ -1,6 +1,6 @@
 use fractal_common::{
     coloring::{algorithms::ColoringAlgorithm, Coloring},
-    consts::ONE,
+    consts::{ONE, ZERO},
     iter_plane::IterPlane,
     math_utils::{newton_until_convergence, newton_until_convergence_d},
     point_grid::{self, Bounds, PointGrid},
@@ -20,6 +20,7 @@ pub mod covering_maps;
 pub mod julia;
 pub mod newton;
 pub mod orbit;
+pub mod symbolic;
 // pub mod simple_parameter_plane;
 // pub mod functions;
 
@@ -35,7 +36,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     type Var: Norm<Real> + Dist<Real> + Clone + Send + Default + From<Cplx> + Into<Cplx> + Display;
     type Param: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
-    type Deriv: Norm<Real> + Send + Default + From<f64> + MulAssign + Display + Into<Cplx>;
+    type Deriv: Norm<Real> + Send + Default + From<Real> + MulAssign + Display + Into<Cplx>;
     type Child: ParameterPlane + From<Self>;
 
     fn point_grid(&self) -> &PointGrid;
@@ -164,7 +165,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         if z.is_nan()
         {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: Real::from(iters) - 1.,
             };
         }
 
@@ -172,7 +173,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
         PointInfo::Escaping {
-            potential: f64::from(iters) - (residual as IterCount),
+            potential: IterCount::from(iters * self.escaping_period()) - (residual as IterCount),
         }
     }
 
@@ -294,58 +295,57 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     #[inline]
-    fn precycles(
-        &self,
-        _preperiod: Period,
-        _period: Period,
-    ) -> Vec<Self::Var>
+    fn precycles(&self, _preperiod: Period, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
 
-    fn external_ray(
-        &self,
-        theta: Real,
-        depth: u32,
-        sharpness: u32,
-        pixel_count: u32,
-    ) -> Option<Vec<Cplx>>
+    /// Compute an external ray for a given angle in [0,1).
+    /// depth: Controls how deep the ray goes. Higher values bring the landing point closer to the
+    /// bifurcation locus. [Suggested starting value: 25]
+    /// sharpness: Controls the density of points used to approxmate the external ray. [Suggested starting value: 20]
+    fn external_ray(&self, theta: Real, depth: u32, sharpness: u32) -> Option<Vec<Cplx>>
     {
         let escape_radius = 40.;
-        let deg = self.degree();
+        let deg = self.degree().powi(self.escaping_period() as i32);
         if deg.is_nan()
         {
             return None;
         }
+        let deg_log2 = deg.log2();
 
-        let pixel_width = self.point_grid().pixel_width();
-        let error = f64::from(pixel_count * pixel_count) * 1e-12;
+        let pixel_width = self.point_grid().pixel_width() * 0.3;
+        let error = self.point_grid().res_x as Real * 1e-8;
 
         let angle = theta * TAU;
         let base_point = escape_radius * Cplx::new(0., angle).exp();
         let mut c_list = vec![base_point];
 
+        // degree raised to the power k
+        let mut deg_k = 1.0;
+
         for k in 0..depth
         {
             let us = (0..sharpness).map(|j| {
-                escape_radius.ln() * ((-f64::from(j) * deg.log2()) / f64::from(sharpness)).exp2()
+                escape_radius.ln() * ((-Real::from(j) * deg_log2) / Real::from(sharpness)).exp2()
             });
-            let v = Cplx::new(0., angle * deg.powi(k as i32));
+            let v = Cplx::new(0., angle * deg_k);
+            deg_k *= deg;
             let targets = us.map(|u| (u + v).exp());
 
             let mut temp_c = *c_list.last()?;
-            let mut dist: f64;
+            let mut dist: Real;
 
-            let fk_and_dfk = |mut c_k: Cplx| {
+            let fk_and_dfk = |c: Cplx| {
                 let mut d_k = ONE;
-                let old_c = c_k;
-                for _ in 0..k
+                let mut z_k = c.into();
+                for _ in 0..k * self.escaping_period()
                 {
-                    let (f, df_dz, df_dc) = self.gradient(c_k.into(), old_c.into());
+                    let (f, df_dz, df_dc) = self.gradient(z_k, c.into());
                     d_k = d_k * df_dz.into() + df_dc.into();
-                    c_k = f.into();
+                    z_k = f;
                 }
-                (c_k, d_k)
+                (z_k.into(), d_k)
             };
 
             for target in targets
@@ -570,9 +570,17 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree(&self) -> Real
     {
-        2.0f64
+        2.0
+    }
+
+    /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps, this
+    /// is n. For polynomial families, this is always 1.
+    #[inline]
+    fn escaping_period(&self) -> Period
+    {
+        1
     }
 
     // fn julia_set(&self, point: Cplx) -> Option<Self::Child>
