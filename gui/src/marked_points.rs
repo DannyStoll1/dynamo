@@ -227,7 +227,6 @@ where
 
     fn process_task<P: ParameterPlane>(&mut self, task: MarkingTask<K>, e: &EnvironmentInfo<P>)
     {
-        dbg!(&task);
         match task
         {
             MarkingTask::Enable(key) =>
@@ -409,7 +408,6 @@ impl Marking
             visible: true,
         };
         self.curves.objects.insert(CurveKey::Orbit, col_obj);
-        dbg!(self.curves.objects.keys());
     }
 
     pub fn disable_all_rays(&mut self)

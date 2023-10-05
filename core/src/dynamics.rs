@@ -3,9 +3,11 @@ use fractal_common::{
     consts::{NAN, ONE, ZERO},
     globals::{RAY_DEPTH, RAY_SHARPNESS},
     iter_plane::IterPlane,
-    math_utils::{newton_until_convergence, newton_until_convergence_d},
+    math_utils::{
+        newton_until_convergence, newton_until_convergence_d, newton_until_convergence_safe,
+    },
     point_grid::{self, Bounds, PointGrid},
-    types::{param_stack::Summarize, MaybeNan, PointClassId, PointInfoPeriodic, Polar},
+    types::{param_stack::Summarize, AngleNum, MaybeNan, PointClassId, PointInfoPeriodic, Polar},
     types::{
         Cplx, Dist, EscapeState, IterCount, Norm, OrbitInfo, ParamList, Period, PointInfo, Real,
     },
@@ -27,13 +29,22 @@ pub mod symbolic;
 
 use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
-use std::ops::{MulAssign, Sub};
+use std::ops::{Mul, MulAssign, Sub};
 
 use self::{orbit::OrbitParams, symbolic::OrbitSchema};
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
 pub trait Variable:
-    Norm<Real> + Dist<Real> + MaybeNan + Clone + Send + Default + From<Cplx> + Into<Cplx> + Display
+    Norm<Real>
+    + Dist<Real>
+    + Sub<Output = Self>
+    + MaybeNan
+    + Clone
+    + Send
+    + Default
+    + From<Cplx>
+    + Into<Cplx>
+    + Display
 {
 }
 pub trait Parameter:
@@ -41,13 +52,22 @@ pub trait Parameter:
 {
 }
 pub trait Derivative:
-    Polar<Real> + Send + Default + From<Real> + MulAssign + Display + Into<Cplx>
+    Polar<Real>
+    + Send
+    + Default
+    + From<Real>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + MulAssign
+    + Display
+    + Into<Cplx>
 {
 }
 
 impl<V> Variable for V where
     V: Norm<Real>
         + Dist<Real>
+        + Sub<Output = Self>
         + MaybeNan
         + Clone
         + Send
@@ -62,7 +82,15 @@ impl<P> Parameter for P where
 {
 }
 impl<D> Derivative for D where
-    D: Polar<Real> + Send + Default + From<Real> + MulAssign + Display + Into<Cplx>
+    D: Polar<Real>
+        + Send
+        + Default
+        + From<Real>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + MulAssign
+        + Display
+        + Into<Cplx>
 {
 }
 
@@ -209,8 +237,16 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// For parameter planes, `start_point` needs to be implemented manually.
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var;
 
+    /// Start point and its derivative with respect to the parameter
+    /// TODO: implement this correctly
+    fn start_point_d(&self, point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        (self.start_point(point, c), Self::Deriv::from(1.0))
+    }
+
     /// Marked critical value and its derivative with respect to the parameter. Only needed for
     /// external rays in parameter planes.
+    /// TODO: implement this correctly
     fn critical_value_and_param_derivative(&self, _c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         (NAN.into(), Real::NAN.into())
@@ -224,6 +260,14 @@ pub trait ParameterPlane: Sync + Send + Clone
         point.into()
     }
 
+    /// param_map together with its derivative.
+    /// TODO: implement this correctly
+    #[inline]
+    fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
+    {
+        (point.into(), Self::Deriv::from(1.0))
+    }
+
     /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
     /// over existing dynamical planes.
     ///
@@ -232,6 +276,12 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn dynam_map(&self, point: Cplx) -> Self::Var
     {
         point.into()
+    }
+
+    #[inline]
+    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    {
+        (point.into(), Self::Deriv::from(1.0))
     }
 
     /// Map temporary `EscapeState` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
@@ -389,11 +439,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// will usually require the `mpsolve` feature until a complex polynomial solver is implemented
     /// in pure Rust.
     #[inline]
-    fn precycles_child(
-        &self,
-        _c: Self::Param,
-        _orbit_schema: OrbitSchema,
-    ) -> Vec<Self::Var>
+    fn precycles_child(&self, _c: Self::Param, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         vec![]
     }
@@ -425,6 +471,43 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn precycles(&self, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         vec![]
+    }
+
+    /// Try to find a (pre)periodic point near a given base point
+    fn find_nearby_preperiodic_point(
+        &self,
+        start_point: Cplx,
+        orbit_schema: OrbitSchema,
+    ) -> Option<Cplx>
+    {
+        let diff = |t| {
+            let (c, dc_dt) = self.param_map_d(t);
+            let (mut z, dz_dc) = self.start_point_d(t, c);
+
+            let mut dz_dt = dc_dt * dz_dc;
+            let mut df_dz: Self::Deriv;
+
+            for _ in 0..orbit_schema.preperiod
+            {
+                (z, df_dz) = self.map_and_multiplier(z, c);
+                dz_dt *= df_dz;
+            }
+
+            let mut w = z.clone();
+            let mut dw_dt = dz_dt.clone();
+
+            dbg!(z.into());
+            dbg!(dz_dt.into());
+
+            for _ in 0..orbit_schema.period
+            {
+                (w, df_dz) = self.map_and_multiplier(w, c);
+                dw_dt *= df_dz;
+            }
+            ((w - z).into(), (dw_dt - dz_dt).into())
+        };
+
+        newton_until_convergence_safe(diff, start_point)
     }
 
     /// Compute an external ray for a given angle in [0,1).
@@ -486,8 +569,9 @@ pub trait ParameterPlane: Sync + Send + Clone
 
                 dist = (2. * c_k.norm() * (c_k.norm()).log(deg)) / d_k.norm();
 
-                if temp_c.is_nan() {
-                    return Some(c_list)
+                if temp_c.is_nan()
+                {
+                    return Some(c_list);
                 }
 
                 c_list.push(temp_c);
@@ -748,6 +832,19 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn degree(&self) -> Real
     {
         2.0
+    }
+
+    #[inline]
+    fn degree_int(&self) -> AngleNum
+    {
+        if self.degree().is_nan()
+        {
+            0
+        }
+        else
+        {
+            self.degree() as AngleNum
+        }
     }
 
     /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps

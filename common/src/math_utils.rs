@@ -1,14 +1,15 @@
 pub use num::integer::binomial;
 
 use crate::consts::{LOG_PI, TAUI, ZERO};
-use crate::types::{Cplx, Norm, Real};
+use crate::globals::{NEWTON_ERR, NEWTON_MAX_ITERS};
+use crate::types::{Cplx, Dist, Norm, Real, MaybeNan};
 use num_complex::ComplexFloat;
 pub use spfunc::{
     gamma::{digamma, gamma, polygamma},
     zeta::zeta,
 };
 use std::f64::consts::PI;
-use std::ops::{AddAssign, Div, Sub};
+use std::ops::{AddAssign, Div, Sub, SubAssign};
 
 // pub mod erf;
 pub mod poly_solve;
@@ -392,4 +393,30 @@ where
         z_old = z;
     }
     (z, f, df)
+}
+
+pub fn newton_until_convergence_safe<T, F>(f_and_df: F, start: T) -> Option<T>
+where
+    F: Fn(T) -> (T, T),
+    T: Sub<Output = T> + Div<Output = T> + SubAssign + Dist<Real> + MaybeNan + Copy,
+{
+    let mut z = start;
+    let mut z_old = start;
+
+    for _ in 0..NEWTON_MAX_ITERS
+    {
+        let (f, df) = f_and_df(z);
+        z -= f / df;
+
+        if z.dist_sqr(z_old) < NEWTON_ERR
+        {
+            return Some(z);
+        }
+        else if z.is_nan()
+        {
+            return None;
+        }
+        z_old = z;
+    }
+    None
 }

@@ -131,9 +131,21 @@ where
     }
 
     #[inline]
+    fn param_map_d(&self, _z: Cplx) -> (Self::Param, Self::Deriv)
+    {
+        (NoParam, Self::Deriv::from(1.0))
+    }
+
+    #[inline]
     fn start_point(&self, point: Cplx, _param: Self::Param) -> Self::Var
     {
         self.parent.dynam_map(point)
+    }
+
+    #[inline]
+    fn start_point_d(&self, point: Cplx, _param: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        self.parent.dynam_map_d(point)
     }
 
     #[inline]
@@ -243,8 +255,7 @@ where
     #[inline]
     fn precycles(&self, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
-        self.parent
-            .precycles_child(self.local_param, orbit_schema)
+        self.parent.precycles_child(self.local_param, orbit_schema)
     }
 
     #[inline]

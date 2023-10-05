@@ -44,13 +44,21 @@ pub enum ResizeTask
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum RayTask
+pub enum UserInputState
 {
     Idle,
-    AwaitingInput
+    AwaitingRay
     {
         pane_id: PaneID,
         follow: bool,
+    },
+    AwaitingOrbitSchema
+    {
+        pane_id: PaneID,
+    },
+    AwaitingCoords
+    {
+        pane_id: PaneID,
     },
 }
 
@@ -501,9 +509,19 @@ where
 
     fn select_ray_landing_point(&mut self, angle: RationalAngle)
     {
-        if let Some(landing_point) = self.marking().ray_landing_point(angle)
+        if let Some(approx_landing_point) = self.marking().ray_landing_point(angle)
         {
-            self.select_point(landing_point);
+            let orbit_schema = angle.orbit_schema(self.plane.degree_int());
+            if let Some(landing_point) = self
+                .plane
+                .find_nearby_preperiodic_point(approx_landing_point, orbit_schema)
+            {
+                self.select_point(landing_point);
+            }
+            else
+            {
+                self.select_point(approx_landing_point);
+            }
         }
     }
 
@@ -766,7 +784,7 @@ where
     live_mode: bool,
     save_dialog: Option<FileDialog>,
     input_dialog: Option<InputDialog>,
-    ray_task: RayTask,
+    input_state: UserInputState,
     save_task: SaveTask,
     click_used: bool,
     pub message: UIMessage,
@@ -790,7 +808,7 @@ where
             live_mode: false,
             save_dialog: None,
             input_dialog: None,
-            ray_task: RayTask::Idle,
+            input_state: UserInputState::Idle,
             save_task: SaveTask::Idle,
             click_used: false,
             message: UIMessage::default(),
@@ -872,25 +890,51 @@ where
             }
             Completed =>
             {
-                if let Ok(angle) = input_dialog.user_input.parse::<RationalAngle>()
+                match self.input_state
                 {
-                    if let RayTask::AwaitingInput { pane_id, follow } = self.ray_task
+                    UserInputState::AwaitingRay { pane_id, follow } =>
                     {
-                        let pane = self.get_pane_mut(pane_id);
-                        pane.marking_mut().toggle_ray(angle);
-                        pane.schedule_redraw();
-
-                        if follow
+                        if let Ok(angle) = input_dialog.user_input.parse::<RationalAngle>()
                         {
-                            pane.follow_ray_landing_point(angle);
-                        }
-                        else
-                        {
-                            pane.reset_ray_state();
-                        }
+                            let pane = self.get_pane_mut(pane_id);
+                            pane.marking_mut().toggle_ray(angle);
+                            pane.schedule_redraw();
 
-                        self.ray_task = RayTask::Idle;
+                            if follow
+                            {
+                                pane.follow_ray_landing_point(angle);
+                            }
+                            else
+                            {
+                                pane.reset_ray_state();
+                            }
+
+                            self.input_state = UserInputState::Idle;
+                        }
                     }
+                    UserInputState::AwaitingOrbitSchema { pane_id } =>
+                    {
+                        unimplemented!()
+                        // if let Ok(angle) = input_dialog.user_input.parse::<OrbitSchema>()
+                        // {
+                        //     let pane = self.get_pane_mut(pane_id);
+                        //     let orbit_schema = self.get_plane_
+                        //     pane.schedule_redraw();
+                        //
+                        //     if follow
+                        //     {
+                        //         pane.follow_ray_landing_point(angle);
+                        //     }
+                        //     else
+                        //     {
+                        //         pane.reset_ray_state();
+                        //     }
+                        //
+                        //     self.input_state = UserInputState::Idle;
+                        // }
+                    }
+                    _ =>
+                    {}
                 }
                 self.input_dialog = None;
             }
@@ -1196,7 +1240,7 @@ where
         {
             if let Some(pane_id) = self.active_pane
             {
-                self.ray_task = RayTask::AwaitingInput {
+                self.input_state = UserInputState::AwaitingRay {
                     pane_id,
                     follow: false,
                 };
@@ -1209,7 +1253,20 @@ where
         {
             if let Some(pane_id) = self.active_pane
             {
-                self.ray_task = RayTask::AwaitingInput {
+                self.input_state = UserInputState::AwaitingRay {
+                    pane_id,
+                    follow: true,
+                };
+                self.prompt_external_ray();
+            }
+        }
+
+        // Find nearby periodic point
+        if shortcut_used!(ctx, &KEY_F)
+        {
+            if let Some(pane_id) = self.active_pane
+            {
+                self.input_state = UserInputState::AwaitingRay {
                     pane_id,
                     follow: true,
                 };
