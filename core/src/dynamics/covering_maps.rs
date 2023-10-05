@@ -1,4 +1,5 @@
 use super::julia::JuliaSet;
+use super::symbolic::OrbitSchema;
 use super::ParameterPlane;
 use fractal_common::point_grid::{Bounds, PointGrid};
 use fractal_common::types::param_stack::ParamList;
@@ -213,9 +214,9 @@ where
     }
 
     #[inline]
-    fn precycles_child(&self, c: Self::Param, preperiod: Period, period: Period) -> Vec<Self::Var>
+    fn precycles_child(&self, c: Self::Param, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
-        self.base_curve.precycles_child(c, preperiod, period)
+        self.base_curve.precycles_child(c, orbit_schema)
     }
 
     #[inline]

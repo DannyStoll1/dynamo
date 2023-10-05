@@ -73,8 +73,12 @@ impl ParameterPlane for NewtonCubic
         }
     }
 
-    fn get_marked_points(&self, c: Self::Param) -> Vec<Cplx>
+    fn get_marked_points(&self, c: Self::Param) -> Vec<(Cplx, PointClassId)>
     {
-        solve_cubic(-ONE, c, ZERO).to_vec()
+        solve_cubic(-ONE, c, ZERO)
+            .into_iter()
+            .enumerate()
+            .map(|(i, z)| (z, PointClassId::from(i)))
+            .collect()
     }
 }

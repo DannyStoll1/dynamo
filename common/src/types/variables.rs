@@ -8,9 +8,18 @@ pub trait Norm<R>: Copy
 {
     fn norm(&self) -> R;
     fn norm_sqr(&self) -> R;
+}
+pub trait Arg<R>: Copy
+{
     fn arg(&self) -> R;
+}
+pub trait MaybeNan
+{
     fn is_nan(&self) -> bool;
 }
+
+pub trait Polar<R>: Norm<R> + Arg<R> {}
+impl<T, R> Polar<R> for T where T: Norm<R> + Arg<R> {}
 
 impl Norm<Real> for Cplx
 {
@@ -24,11 +33,17 @@ impl Norm<Real> for Cplx
     {
         <Self>::norm_sqr(self)
     }
+}
+impl Arg<Real> for Cplx
+{
     #[inline]
     fn arg(&self) -> Real
     {
         <Self>::arg(*self)
     }
+}
+impl MaybeNan for Cplx
+{
     #[inline]
     fn is_nan(&self) -> bool
     {
@@ -47,12 +62,17 @@ impl Norm<Real> for Point
     {
         self.x.mul_add(self.x, self.y * self.y)
     }
+}
 
+impl Arg<Real> for Point
+{
     fn arg(&self) -> Real
     {
         self.y.atan2(self.x)
     }
-
+}
+impl MaybeNan for Point
+{
     fn is_nan(&self) -> bool
     {
         self.x.is_nan() || self.y.is_nan()
@@ -166,10 +186,16 @@ impl Norm<Real> for Matrix2x2
     {
         self.det().abs()
     }
+}
+impl Arg<Real> for Matrix2x2
+{
     fn arg(&self) -> Real
     {
         self.v0.arg()
     }
+}
+impl MaybeNan for Matrix2x2
+{
     fn is_nan(&self) -> bool
     {
         self.v0.is_nan() || self.v1.is_nan()
@@ -263,6 +289,9 @@ impl Norm<Real> for Bicomplex
             Self::PlaneA(z) | Self::PlaneB(z) => z.norm_sqr(),
         }
     }
+}
+impl Arg<Real> for Bicomplex
+{
     fn arg(&self) -> Real
     {
         match self
@@ -270,6 +299,9 @@ impl Norm<Real> for Bicomplex
             Self::PlaneA(z) | Self::PlaneB(z) => z.arg(),
         }
     }
+}
+impl MaybeNan for Bicomplex
+{
     fn is_nan(&self) -> bool
     {
         match self

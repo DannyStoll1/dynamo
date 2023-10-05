@@ -1,3 +1,5 @@
+use fractal_core::dynamics::symbolic::OrbitSchema;
+
 use crate::macros::{cplx_arr, horner, horner_monic, profile_imports};
 
 profile_imports!();
@@ -42,6 +44,12 @@ impl ParameterPlane for Mandelbrot
     {
         ZERO
     }
+
+    // #[inline]
+    // fn critical_value(&self, c: Self::Param) -> Self::Var
+    // {
+    //     c
+    // }
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
@@ -455,10 +463,10 @@ impl ParameterPlane for Mandelbrot
         }
     }
 
-    fn precycles_child(&self, c: Cplx, preperiod: Period, period: Period) -> ComplexVec
+    fn precycles_child(&self, c: Cplx, orbit_schema: OrbitSchema) -> ComplexVec
     {
         use fractal_common::math_utils::poly_solve::solve_polynomial;
-        match (preperiod, period)
+        match (orbit_schema.preperiod, orbit_schema.period)
         {
             (2, 1) =>
             {

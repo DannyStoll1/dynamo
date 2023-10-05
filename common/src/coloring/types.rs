@@ -15,6 +15,12 @@ pub struct Hsv
 }
 impl Hsv
 {
+    const WHITE: Self = Self {
+        hue: 0.,
+        saturation: 0.,
+        luminosity: 1.,
+    };
+
     #[must_use]
     pub const fn new(hue: f32, saturation: f32, luminosity: f32) -> Self
     {

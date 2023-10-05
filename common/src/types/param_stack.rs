@@ -3,7 +3,14 @@ use derive_more::Display;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
 #[display(fmt = "")]
-pub struct NoParam {}
+pub struct NoParam;
+impl From<Cplx> for NoParam
+{
+    fn from(_: Cplx) -> Self
+    {
+        NoParam
+    }
+}
 
 trait Float: std::fmt::Display {}
 impl Float for f32 {}

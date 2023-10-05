@@ -283,27 +283,27 @@ impl DiscretePalette
     const DEFAULT_NUM_COLORS: f32 = 7.;
 
     #[must_use]
-    pub fn map_hsv(&self, period: f32, preperiod: f32) -> Hsv
+    pub fn map_hsv(&self, period: f32, luminosity_modifier: f32) -> Hsv
     {
         let hue = (period / self.num_colors + self.base_hue) % 1.;
 
         Hsv {
             hue,
             saturation: self.saturation,
-            luminosity: self.luminosity * preperiod,
+            luminosity: self.luminosity * luminosity_modifier,
         }
     }
 
     #[must_use]
-    pub fn map_rgb(&self, period: f32, preperiod: f32) -> Rgb<u8>
+    pub fn map_rgb(&self, period: f32, luminosity_modifier: f32) -> Rgb<u8>
     {
-        self.map_hsv(period, preperiod).into()
+        self.map_hsv(period, luminosity_modifier).into()
     }
 
     #[must_use]
-    pub fn map_color32(&self, period: f32, preperiod: f32) -> Color32
+    pub fn map_color32(&self, period: f32, luminosity_modifier: f32) -> Color32
     {
-        self.map_hsv(period, preperiod).into()
+        self.map_hsv(period, luminosity_modifier).into()
     }
 
     #[must_use]

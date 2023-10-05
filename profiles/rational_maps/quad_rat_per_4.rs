@@ -126,6 +126,18 @@ impl ParameterPlane for QuadRatPer4
         )
     }
 
+    #[inline]
+    fn degree(&self) -> Real
+    {
+        2.0
+    }
+
+    #[inline]
+    fn escaping_period(&self) -> Period
+    {
+        3
+    }
+
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
         match period

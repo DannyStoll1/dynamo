@@ -1,200 +1,463 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use egui::Color32;
 use fractal_common::coloring::palette::DiscretePalette;
-use fractal_common::types::{Cplx, Period, Real};
-use fractal_core::dynamics::symbolic::RationalAngle;
+use fractal_common::types::{AngleNum, Cplx, Period, Real};
+use fractal_core::dynamics::symbolic::{OrbitSchema, RationalAngle};
 use fractal_core::dynamics::ParameterPlane;
 
-#[derive(Clone, Debug)]
-pub struct ColoredCurve
-{
-    pub curve: Vec<Cplx>,
-    pub color: Color32,
-}
-#[derive(Clone, Debug)]
+type Curve = Vec<Cplx>;
+
 pub struct ColoredPoint
 {
     pub point: Cplx,
     pub color: Color32,
 }
-pub type ColoredPoints = Vec<ColoredPoint>;
 
-#[derive(Clone, Debug, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct MarkingMode
+pub trait ObjectKey: Clone + std::hash::Hash + std::cmp::Eq + std::fmt::Debug
 {
-    pub selection_enabled: bool,
-    pub critical: bool,
-    pub cycles: Vec<bool>,
-    pub precycles: Vec<Vec<bool>>,
-    pub rays: HashMap<RationalAngle, Color32>,
-    pub palette: DiscretePalette,
+    type Object;
+    fn color_with(&self, palette: &DiscretePalette, degree: AngleNum) -> Color32;
+    fn compute<P: ParameterPlane>(&self, plane: &P, selection: Cplx) -> Self::Object;
 }
 
-impl MarkingMode
+/// Keys of point-set objects in the data store. Each key may be toggled by the API.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum PointSetKey
 {
-    pub fn toggle_selection(&mut self)
+    SelectedPoint,
+    CriticalPoints,
+    PeriodicPoints(Period),
+    PreperiodicPoints(OrbitSchema),
+}
+impl ObjectKey for PointSetKey
+{
+    type Object = Vec<Cplx>;
+    fn color_with(&self, palette: &DiscretePalette, _degree: AngleNum) -> Color32
     {
-        self.selection_enabled ^= true;
-    }
-
-    pub fn toggle_critical(&mut self)
-    {
-        self.critical ^= true;
-    }
-
-    pub fn toggle_cycles(&mut self, period: Period)
-    {
-        let p = period as usize;
-        if self.cycles.len() < p
+        match self
         {
-            self.cycles.resize(p, false);
-        }
-        self.cycles[p - 1] ^= true;
-    }
-
-    pub fn toggle_precycles(&mut self, preperiod: Period, period: Period)
-    {
-        let k = preperiod as usize;
-        let p = period as usize;
-
-        if self.precycles.len() < k
-        {
-            self.precycles.resize_with(k, || vec![]);
-        }
-
-        let k_precycles = &mut self.precycles[k - 1];
-        if k_precycles.len() < k
-        {
-            k_precycles.resize(p, false);
-        }
-        k_precycles[p - 1] ^= true;
-    }
-
-    pub fn toggle_ray(&mut self, angle: RationalAngle)
-    {
-        if self.rays.contains_key(&angle)
-        {
-            self.rays.remove(&angle);
-        }
-        else
-        {
-            // TODO: don't hardcode degree=2 here
-            let orbit_schema = angle.orbit_schema(2);
-            let luminosity = 1.0 - 0.5 * (orbit_schema.preperiod as f32).tanh();
-            let color = self
-                .palette
-                .map_color32(orbit_schema.period as f32, luminosity);
-            self.rays.insert(angle, color);
-        }
-    }
-
-    pub fn compute_points<P>(&self, plane: &P, selection: Cplx) -> ColoredPoints
-    where
-        P: ParameterPlane + 'static,
-    {
-        let mut points = vec![];
-
-        if self.selection_enabled
-        {
-            let color = Color32::WHITE;
-            points.push(ColoredPoint {
-                point: selection,
-                color,
-            });
-        }
-
-        if self.critical
-        {
-            let crit_pts = plane.critical_points();
-            let color = Color32::RED;
-            points.extend(crit_pts.iter().map(|z| ColoredPoint {
-                point: (*z).into(),
-                color,
-            }));
-        }
-
-        self.cycles.iter().enumerate().for_each(|(p, enabled)| {
-            if *enabled
+            Self::SelectedPoint => Color32::WHITE,
+            Self::CriticalPoints => Color32::RED,
+            Self::PeriodicPoints(period) => palette.map_color32(*period as f32, 1.),
+            Self::PreperiodicPoints(o) =>
             {
-                let per_pts = plane.cycles(1 + p as Period);
-                // let per_pts = plane.precycles(2, 1 + period as Period);
-                let color = self.palette.map_color32((1 + p) as f32, 1.);
-                points.extend(per_pts.iter().map(|z| ColoredPoint {
-                    point: (*z).into(),
-                    color,
-                }));
+                palette.map_color32(o.period as f32, 1.0 - 0.5 * (o.preperiod as f32).tanh())
             }
-        });
-
-        self.precycles.iter().enumerate().for_each(|(k, p)| {
-            p.iter().enumerate().for_each(|(period, enabled)| {
-                if *enabled
-                {
-                    let per_pts = plane.precycles(1 + k as Period, 1 + period as Period);
-                    // TODO: figure out a good way to color preperiodic points
-                    let color = self.palette.map_color32((1 + period) as f32, 1.);
-                    points.extend(per_pts.iter().map(|z| ColoredPoint {
-                        point: (*z).into(),
-                        color,
-                    }));
-                }
-            });
-        });
-
-        points
+        }
     }
 
-    pub fn compute_rays<P>(&self, plane: &P) -> Vec<ColoredCurve>
-    where
-        P: ParameterPlane + 'static,
+    fn compute<P: ParameterPlane>(&self, plane: &P, selection: Cplx) -> Vec<Cplx>
     {
-        self.rays
-            .iter()
-            .filter_map(|(angle, &color)| {
-                plane
-                    .external_ray(Real::from(*angle), 50, 120)
-                    .map(|curve| ColoredCurve { curve, color })
-            })
-            .collect()
+        match self
+        {
+            Self::SelectedPoint => vec![selection],
+            Self::CriticalPoints => plane
+                .critical_points()
+                .into_iter()
+                .map(|z| z.into())
+                .collect(),
+            Self::PeriodicPoints(period) => plane
+                .cycles(*period)
+                .into_iter()
+                .map(|z| z.into())
+                .collect(),
+            Self::PreperiodicPoints(o) =>
+            {
+                plane.precycles(*o).into_iter().map(|z| z.into()).collect()
+            }
+        }
+    }
+}
+
+/// Keys of curve objects in the data store. Each key may be toggled by the API.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum CurveKey
+{
+    Orbit,
+    Ray(RationalAngle),
+}
+impl ObjectKey for CurveKey
+{
+    type Object = Curve;
+    fn color_with(&self, palette: &DiscretePalette, degree: AngleNum) -> Color32
+    {
+        match self
+        {
+            Self::Orbit => Color32::GREEN,
+            Self::Ray(angle) =>
+            {
+                let o = angle.orbit_schema(degree);
+                palette.map_color32(o.period as f32, 1.0 - 0.5 * (o.preperiod as f32).tanh())
+            }
+        }
+    }
+
+    fn compute<P: ParameterPlane>(&self, plane: &P, selection: Cplx) -> Curve
+    {
+        match self
+        {
+            Self::Orbit => plane.iter_orbit(selection).map(|z| z.into()).collect(),
+            Self::Ray(angle) => plane
+                .external_ray(Real::from(*angle))
+                .unwrap_or_else(|| vec![]),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Colored<O>
+{
+    pub object: O,
+    pub color: Color32,
+    pub visible: bool,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum MarkingTask<K>
+{
+    Enable(K),
+    Disable(K),
+    Toggle(K),
+    Recompute(K),
+    Recolor(K),
+    RecomputeAll,
+    RecolorAll,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct EnvironmentInfo<'plane, 'palette, P: ParameterPlane>
+{
+    plane: &'plane P,
+    selection: Cplx,
+    palette: &'palette DiscretePalette,
+}
+
+#[derive(Clone, Debug)]
+pub struct MarkedObjectStore<K, O>
+where
+    K: ObjectKey<Object = O>,
+{
+    pub objects: HashMap<K, Colored<O>>,
+    tasks: VecDeque<MarkingTask<K>>,
+    pub degree: AngleNum,
+}
+impl<K, O> Default for MarkedObjectStore<K, O>
+where
+    K: ObjectKey<Object = O>,
+{
+    fn default() -> Self
+    {
+        Self {
+            objects: HashMap::new(),
+            tasks: VecDeque::new(),
+            degree: 0,
+        }
+    }
+}
+
+// #[derive(Default, Clone)]
+// pub struct Marking
+// {
+//     pub point_sets: HashMap<PointSetKey, ColoredPointSet>,
+//     pub curves: HashMap<CurveKey, ColoredCurve>,
+//     tasks: VecDeque<MarkingTask>,
+//     degree: AngleNum,
+// }
+//
+// #[must_use]
+// pub fn with_degree(mut self, degree: AngleNum) -> Self
+// {
+//     self.degree = degree;
+//     self
+// }
+//
+// pub fn toggle_selection(&mut self)
+// {
+//     self.sched_toggle(K::SelectedPoint);
+// }
+//
+// pub fn toggle_critical(&mut self)
+// {
+//     self.sched_toggle(K::SelectedPoint);
+// }
+//
+// pub fn toggle_cycles_of_period(&mut self, period: Period)
+// {
+//     self.sched_toggle(K::PeriodicPoints(period));
+// }
+//
+// pub fn toggle_ray(&mut self, angle: RationalAngle)
+// {
+//     self.sched_toggle_curve(CurveKey::Ray(angle));
+// }
+impl<K, O> MarkedObjectStore<K, O>
+where
+    K: ObjectKey<Object = O>,
+{
+    pub fn sched_toggle(&mut self, key: K)
+    {
+        self.tasks.push_back(MarkingTask::Toggle(key));
+    }
+    pub fn sched_enable(&mut self, key: K)
+    {
+        self.tasks.push_back(MarkingTask::Enable(key));
+    }
+    pub fn sched_disable(&mut self, key: K)
+    {
+        self.tasks.push_back(MarkingTask::Disable(key));
+    }
+    pub fn sched_recompute(&mut self, key: K)
+    {
+        self.tasks.push_back(MarkingTask::Recompute(key));
+    }
+    pub fn sched_recolor(&mut self, key: K)
+    {
+        self.tasks.push_back(MarkingTask::Recolor(key));
+    }
+
+    pub fn sched_recompute_all(&mut self)
+    {
+        self.tasks.push_back(MarkingTask::RecomputeAll);
+    }
+    pub fn sched_recolor_all(&mut self)
+    {
+        self.tasks.push_back(MarkingTask::RecolorAll);
+    }
+
+    fn process_task<P: ParameterPlane>(&mut self, task: MarkingTask<K>, e: &EnvironmentInfo<P>)
+    {
+        dbg!(&task);
+        match task
+        {
+            MarkingTask::Enable(key) =>
+            {
+                self.enable(key, e);
+            }
+            MarkingTask::Disable(key) =>
+            {
+                self.disable(key);
+            }
+            MarkingTask::Toggle(key) =>
+            {
+                if self.objects.contains_key(&key)
+                {
+                    self.disable(key);
+                }
+                else
+                {
+                    self.enable(key, e);
+                }
+            }
+            MarkingTask::Recompute(key) =>
+            {
+                if let Some(col_obj) = self.objects.get_mut(&key)
+                {
+                    col_obj.object = key.compute(e.plane, e.selection);
+                    col_obj.color = key.color_with(e.palette, self.degree);
+                }
+            }
+            MarkingTask::Recolor(key) =>
+            {
+                if let Some(col_obj) = self.objects.get_mut(&key)
+                {
+                    col_obj.color = key.color_with(e.palette, self.degree);
+                }
+            }
+            MarkingTask::RecomputeAll =>
+            {
+                self.recompute_all(e.plane, e.selection);
+            }
+            MarkingTask::RecolorAll =>
+            {
+                self.recolor_all(e.palette);
+            }
+        }
+    }
+
+    fn enable<P: ParameterPlane>(&mut self, key: K, e: &EnvironmentInfo<P>)
+    {
+        let col_obj = Colored {
+            object: key.compute(e.plane, e.selection),
+            color: key.color_with(e.palette, self.degree),
+            visible: true,
+        };
+        self.objects.insert(key, col_obj);
+    }
+
+    fn disable(&mut self, key: K)
+    {
+        self.objects.remove(&key);
+    }
+
+    pub fn recolor_all(&mut self, palette: &DiscretePalette)
+    {
+        self.objects.iter_mut().for_each(|(key, col_obj)| {
+            col_obj.color = key.color_with(palette, self.degree);
+        });
+    }
+
+    pub fn recompute_all<P: ParameterPlane>(&mut self, plane: &P, selection: Cplx)
+    {
+        self.objects.iter_mut().for_each(|(key, col_obj)| {
+            col_obj.object = key.compute(plane, selection);
+        });
+    }
+
+    fn process_all_tasks<P: ParameterPlane>(&mut self, env: &EnvironmentInfo<P>)
+    {
+        let tasks: Vec<_> = self.tasks.drain(..).collect();
+        tasks.iter().for_each(|task| {
+            self.process_task(task.clone(), env);
+        });
+    }
+
+    pub fn clear_all_tasks(&mut self)
+    {
+        self.tasks.clear();
+    }
+
+    pub fn disable_all(&mut self)
+    {
+        self.objects.clear();
     }
 }
 
 #[derive(Default, Clone)]
-pub struct MarkedData
+pub struct Marking
 {
-    pub orbits: Vec<ColoredCurve>,
-    pub rays: Vec<ColoredCurve>,
-    pub points: Vec<ColoredPoint>,
+    pub point_sets: MarkedObjectStore<PointSetKey, Vec<Cplx>>,
+    pub curves: MarkedObjectStore<CurveKey, Curve>,
 }
-
-impl MarkedData
+impl Marking
 {
-    pub fn clear_points(&mut self)
+    #[must_use]
+    pub fn with_degree(mut self, degree: AngleNum) -> Self
     {
-        self.points.clear();
+        self.point_sets.degree = degree;
+        self.curves.degree = degree;
+        self
     }
-    pub fn clear_orbits(&mut self)
+
+    pub fn toggle_selection(&mut self)
     {
-        self.orbits.clear();
+        self.point_sets.sched_toggle(PointSetKey::SelectedPoint);
     }
-    pub fn clear_rays(&mut self)
+
+    pub fn select_point(&mut self, point: Cplx)
     {
-        self.rays.clear();
+        if let Some(selection) = self.point_sets.objects.get_mut(&PointSetKey::SelectedPoint)
+        {
+            selection.object = vec![point];
+        }
     }
-    pub fn clear_all(&mut self)
+
+    pub fn toggle_critical(&mut self)
     {
-        self.clear_points();
-        self.clear_orbits();
-        self.clear_rays();
+        self.point_sets.sched_toggle(PointSetKey::CriticalPoints);
     }
-    pub fn iter_curves<'a>(&'a self) -> Box<dyn Iterator<Item = &ColoredCurve> + 'a>
+
+    pub fn toggle_cycles_of_period(&mut self, period: Period)
     {
-        Box::new(self.orbits.iter().chain(self.rays.iter()))
+        self.point_sets
+            .sched_toggle(PointSetKey::PeriodicPoints(period));
     }
-    pub fn iter_points<'a>(&'a self) -> Box<dyn Iterator<Item = &ColoredPoint> + 'a>
+
+    pub fn toggle_ray(&mut self, angle: RationalAngle)
     {
-        Box::new(self.points.iter())
+        self.curves.sched_toggle(CurveKey::Ray(angle));
+    }
+
+    pub fn sched_recompute_all(&mut self)
+    {
+        self.point_sets.sched_recompute_all();
+        self.curves.sched_recompute_all();
+    }
+    pub fn sched_recolor_all(&mut self)
+    {
+        self.point_sets.sched_recolor_all();
+        self.curves.sched_recolor_all();
+    }
+
+    pub fn remove_all_annotations(&mut self)
+    {
+        self.point_sets.disable_all();
+        self.curves.disable_all();
+    }
+
+    pub fn process_all_tasks<P: ParameterPlane>(
+        &mut self,
+        plane: &P,
+        selection: Cplx,
+        palette: &DiscretePalette,
+    )
+    {
+        let env = EnvironmentInfo {
+            plane,
+            selection,
+            palette,
+        };
+        self.point_sets.process_all_tasks(&env);
+        self.curves.process_all_tasks(&env);
+    }
+
+    pub fn mark_orbit_manually(&mut self, orbit: Curve, color: Color32)
+    {
+        let col_obj = Colored {
+            object: orbit,
+            color,
+            visible: true,
+        };
+        self.curves.objects.insert(CurveKey::Orbit, col_obj);
+        dbg!(self.curves.objects.keys());
+    }
+
+    pub fn disable_all_rays(&mut self)
+    {
+        let to_remove: Vec<_> = self
+            .curves
+            .objects
+            .keys()
+            .filter(|k| matches!(k, CurveKey::Ray(_)))
+            .cloned()
+            .collect();
+        to_remove.iter().for_each(|k| {
+            self.curves.objects.remove(k);
+        });
+    }
+
+    pub fn disable_all_points(&mut self)
+    {
+        self.point_sets.disable_all();
+    }
+
+    pub fn iter_visible_points(&self) -> impl Iterator<Item = ColoredPoint> + '_
+    {
+        self.point_sets
+            .objects
+            .values()
+            .filter(|o| o.visible)
+            .flat_map(
+                |Colored {
+                     object: point_set,
+                     color,
+                     ..
+                 }| {
+                    point_set.iter().map(|&point| ColoredPoint {
+                        point,
+                        color: *color,
+                    })
+                },
+            )
+    }
+
+    pub fn iter_visible_curves(&self) -> impl Iterator<Item = Colored<Curve>> + '_
+    {
+        self.curves.objects.values().filter(|o| o.visible).cloned()
+    }
+
+    pub fn ray_landing_point(&self, angle: RationalAngle) -> Option<Cplx> {
+        let col_ray = self.curves.objects.get(&CurveKey::Ray(angle))?;
+        col_ray.object.last().copied()
     }
 }

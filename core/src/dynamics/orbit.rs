@@ -1,4 +1,4 @@
-use fractal_common::types::{Dist, EscapeState, Norm, Period, PointInfoPeriodic, Real};
+use fractal_common::types::{Dist, EscapeState, MaybeNan, Norm, Period, PointInfoPeriodic, Real};
 
 pub struct OrbitParams
 {
@@ -27,7 +27,7 @@ impl<V, P, F> SimpleOrbit<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
-    V: Norm<Real>,
+    V: Norm<Real> + MaybeNan,
 {
     pub const fn new(f: F, z: V, param: P, max_iter: Period, escape_radius: Real) -> Self
     {
@@ -81,7 +81,7 @@ impl<V, P, F> Iterator for SimpleOrbit<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
-    V: Norm<Real>,
+    V: Norm<Real> + MaybeNan,
 {
     type Item = (V, EscapeState<V, V>);
 
@@ -138,7 +138,7 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<Real> + Dist<Real>,
+    V: Norm<Real> + Dist<Real> + MaybeNan,
     D: Norm<Real> + std::ops::MulAssign + From<f64>,
 {
     pub fn new(
@@ -340,7 +340,7 @@ where
     G: Fn(V, P) -> (V, D),
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
-    V: Norm<Real> + Dist<Real>,
+    V: Norm<Real> + Dist<Real> + MaybeNan,
     D: Norm<Real> + std::ops::MulAssign + From<f64>,
 {
     type Item = (V, EscapeState<V, D>);

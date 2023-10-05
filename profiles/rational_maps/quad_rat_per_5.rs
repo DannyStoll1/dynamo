@@ -201,4 +201,16 @@ impl ParameterPlane for QuadRatPer5
     {
         ONE
     }
+
+    #[inline]
+    fn degree(&self) -> Real
+    {
+        2.0
+    }
+
+    #[inline]
+    fn escaping_period(&self) -> Period
+    {
+        3
+    }
 }

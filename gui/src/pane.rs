@@ -1,19 +1,20 @@
-use crate::dialog::{InputDialog, InputDialogBuilder};
-use crate::marked_points::{ColoredCurve, ColoredPoint, MarkedData};
-
-use super::image_frame::ImageFrame;
-use fractal_common::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette, Coloring};
+use fractal_common::coloring::{
+    algorithms::InteriorColoringAlgorithm, palette::ColorPalette, Coloring,
+};
 use fractal_common::iter_plane::{FractalImage, IterPlane};
 use fractal_common::point_grid::{Bounds, PointGrid};
 use fractal_common::types::param_stack::Summarize;
-use fractal_common::types::{ComplexVec, Cplx, OrbitInfo, ParamList, Real};
+use fractal_common::types::{AngleNum, ComplexVec, Cplx, OrbitInfo, ParamList, Real};
 use fractal_core::dynamics::symbolic::RationalAngle;
 use fractal_core::dynamics::ParameterPlane;
 use input_macro::input;
 use seq_macro::seq;
 
+use super::image_frame::ImageFrame;
 use super::keyboard_shortcuts::*;
-use super::marked_points::MarkingMode;
+use super::marked_points::Marking;
+use crate::dialog::{InputDialog, InputDialogBuilder};
+use crate::marked_points::{Colored, ColoredPoint, CurveKey};
 
 use egui::{Color32, Context, CursorIcon, InputState, Pos2, Rect, Stroke, Ui};
 use egui_extras::{Column, RetainedImage, TableBuilder};
@@ -23,7 +24,7 @@ use epaint::{CircleShape, PathShape};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ComputeTask
 {
@@ -33,7 +34,7 @@ pub enum ComputeTask
     Compute,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ResizeTask
 {
@@ -41,12 +42,51 @@ pub enum ResizeTask
     ShowDialog,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum RayTask
+{
+    Idle,
+    AwaitingInput
+    {
+        pane_id: PaneID,
+        follow: bool,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ChildTask
+{
+    Idle,
+    UpdateParam,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PaneID
 {
     Parent,
     Child,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum RayState
+{
+    Idle,
+    Following(RationalAngle),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum SaveTask
+{
+    Idle,
+    AwaitingInput
+    {
+        pane_id: PaneID,
+    },
 }
 
 pub trait Pane
@@ -63,16 +103,16 @@ pub trait Pane
     fn select_point(&mut self, point: Cplx);
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
+    fn select_ray_landing_point(&mut self, angle: RationalAngle);
+    fn follow_ray_landing_point(&mut self, angle: RationalAngle);
+    fn reset_ray_state(&mut self);
 
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
 
-    fn get_marked_data(&self) -> &MarkedData;
-    fn get_marked_data_mut(&mut self) -> &mut MarkedData;
-    fn mark_point(&mut self, z: Cplx, color: Color32);
-    fn mark_curve(&mut self, zs: ComplexVec, color: Color32);
+    fn mark_orbit(&mut self, zs: ComplexVec, color: Color32);
     fn clear_marked_points(&mut self);
-    fn clear_marked_orbits(&mut self);
+    fn clear_marked_orbit(&mut self);
     fn clear_marked_rays(&mut self);
     fn put_marked_points(&self, ui: &mut Ui);
     fn put_marked_curves(&self, ui: &mut Ui);
@@ -125,6 +165,7 @@ pub trait Pane
     fn change_palette(&mut self, palette: ColorPalette)
     {
         self.get_coloring_mut().set_palette(palette);
+        self.marking_mut().sched_recolor_all();
         self.schedule_redraw();
     }
 
@@ -134,9 +175,10 @@ pub trait Pane
         self.schedule_redraw();
     }
 
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: InteriorColoringAlgorithm)
     {
-        self.get_coloring_mut().set_algorithm(coloring_algorithm);
+        self.get_coloring_mut()
+            .set_interior_algorithm(coloring_algorithm);
         self.schedule_redraw();
     }
 
@@ -151,6 +193,8 @@ pub trait Pane
     fn recompute(&mut self);
 
     fn redraw(&mut self);
+
+    fn process_marking_tasks(&mut self);
 
     fn zoom(&mut self, scale: Real, base_point: Cplx);
 
@@ -179,6 +223,8 @@ pub trait Pane
 
     fn process_task(&mut self)
     {
+        self.process_marking_tasks();
+
         let task = self.get_task();
         match task
         {
@@ -223,15 +269,14 @@ pub trait Pane
         if reselect_point
         {
             self.select_point(pointer_value);
-            self.schedule_redraw();
         }
     }
 
     fn select_preperiod_smooth_coloring(&mut self);
     fn select_preperiod_period_smooth_coloring(&mut self);
 
-    fn marking_mode(&self) -> &MarkingMode;
-    fn marking_mode_mut(&mut self) -> &mut MarkingMode;
+    fn marking(&self) -> &Marking;
+    fn marking_mut(&mut self) -> &mut Marking;
 
     fn cycle_active_plane(&mut self);
 
@@ -243,9 +288,9 @@ pub trait Pane
     fn change_height(&mut self, new_height: usize);
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx);
-    fn mark_external_ray(&mut self, angle: Real);
     fn describe_selection(&self) -> String;
-    fn describe_marked_info(&self) -> String;
+    fn describe_orbit_info(&self) -> String;
+    fn pop_child_task(&mut self) -> ChildTask;
 }
 
 pub(super) struct WindowPane<P>
@@ -258,10 +303,11 @@ where
     pub image_frame: ImageFrame,
     task: ComputeTask,
     selection: Cplx,
-    marked_data: MarkedData,
-    marked_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
-    pub marking_mode: MarkingMode,
+    orbit_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
+    pub marking: Marking,
     pub zoom_factor: Real,
+    pub ray_state: RayState,
+    pub child_task: ChildTask,
 }
 impl<P> WindowPane<P>
 where
@@ -275,7 +321,7 @@ where
             self.plane.set_param(new_param);
             self.schedule_recompute();
         }
-        self.clear_marked_orbits();
+        self.clear_marked_orbit();
     }
 
     #[must_use]
@@ -292,6 +338,17 @@ where
             region: Rect::NOTHING,
         };
 
+        let degree: AngleNum;
+        if plane.degree().is_finite() && plane.degree().abs() < AngleNum::MAX as f64
+        {
+            degree = plane.degree() as AngleNum;
+        }
+        else
+        {
+            degree = 2;
+        }
+        let marking = Marking::default().with_degree(degree);
+
         Self {
             plane,
             coloring,
@@ -299,10 +356,11 @@ where
             image_frame: frame,
             task,
             selection,
-            marked_data: MarkedData::default(),
-            marked_info: None,
-            marking_mode: MarkingMode::default(),
+            orbit_info: None,
+            marking,
             zoom_factor: 1.,
+            ray_state: RayState::Idle,
+            child_task: ChildTask::Idle,
         }
     }
 
@@ -318,24 +376,24 @@ where
     }
 
     #[inline]
-    const fn get_marked_info(&self) -> &Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    const fn get_orbit_info(&self) -> &Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
     {
-        &self.marked_info
+        &self.orbit_info
     }
     #[inline]
-    fn get_marked_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    fn get_orbit_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
     {
-        &mut self.marked_info
+        &mut self.orbit_info
     }
     #[inline]
-    fn set_marked_info(&mut self, info: OrbitInfo<P::Var, P::Param, P::Deriv>)
+    fn set_orbit_info(&mut self, info: OrbitInfo<P::Var, P::Param, P::Deriv>)
     {
-        self.marked_info = Some(info);
+        self.orbit_info = Some(info);
     }
     #[inline]
-    fn del_marked_info(&mut self)
+    fn del_orbit_info(&mut self)
     {
-        self.marked_info = None;
+        self.orbit_info = None;
     }
 }
 
@@ -415,22 +473,43 @@ where
         self.select_point(self.plane.default_selection());
     }
     #[inline]
-    fn marking_mode(&self) -> &MarkingMode
+    fn reset_ray_state(&mut self)
     {
-        &self.marking_mode
+        self.ray_state = RayState::Idle;
     }
     #[inline]
-    fn marking_mode_mut(&mut self) -> &mut MarkingMode
+    fn marking(&self) -> &Marking
     {
-        &mut self.marking_mode
+        &self.marking
+    }
+    #[inline]
+    fn marking_mut(&mut self) -> &mut Marking
+    {
+        &mut self.marking
     }
     #[inline]
     fn select_point(&mut self, point: Cplx)
     {
-        self.selection = point;
-        //
-        // #[cfg(not(target_arch = "wasm32"))]
-        // dbg!(self.selection);
+        if self.selection != point
+        {
+            self.selection = point;
+            self.marking.select_point(point);
+            self.child_task = ChildTask::UpdateParam;
+            self.schedule_redraw();
+        }
+    }
+
+    fn select_ray_landing_point(&mut self, angle: RationalAngle)
+    {
+        if let Some(landing_point) = self.marking().ray_landing_point(angle)
+        {
+            self.select_point(landing_point);
+        }
+    }
+
+    fn follow_ray_landing_point(&mut self, angle: RationalAngle)
+    {
+        self.ray_state = RayState::Following(angle);
     }
 
     #[inline]
@@ -438,6 +517,7 @@ where
     {
         self.plane.cycle_active_plane();
         self.schedule_recompute();
+        self.marking.sched_recompute_all();
     }
 
     fn increase_max_iter(&mut self)
@@ -452,17 +532,24 @@ where
         *iters /= 2;
         self.schedule_recompute();
     }
+
     #[inline]
     fn redraw(&mut self)
     {
-        self.marked_data.points = self
-            .marking_mode
-            .compute_points(&self.plane, self.get_selection());
-        self.marked_data.rays = self.marking_mode.compute_rays(&self.plane);
+        if let RayState::Following(angle) = self.ray_state
+        {
+            self.select_ray_landing_point(angle);
+        }
 
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
+    }
+    fn process_marking_tasks(&mut self)
+    {
+        let period_coloring = self.coloring.get_period_coloring();
+        self.marking
+            .process_all_tasks(&self.plane, self.selection, &period_coloring);
     }
 
     fn change_height(&mut self, new_height: usize)
@@ -481,6 +568,12 @@ where
     fn recompute(&mut self)
     {
         self.plane.compute_into(&mut self.iter_plane);
+        self.marking
+            .point_sets
+            .recompute_all(&self.plane, self.selection);
+        self.marking
+            .curves
+            .recompute_all(&self.plane, self.selection);
     }
 
     #[inline]
@@ -514,44 +607,23 @@ where
     {
         let (orbit, info) = self.plane.get_orbit_and_info(pointer_value);
         let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
-        self.mark_curve(orbit_pts, Color32::GREEN);
-        self.set_marked_info(info);
+        self.mark_orbit(orbit_pts, Color32::GREEN);
+        self.set_orbit_info(info);
     }
 
-    fn mark_external_ray(&mut self, angle: Real)
+    fn mark_orbit(&mut self, zs: ComplexVec, color: Color32)
     {
-        if let Some(cs) = self.plane.external_ray(angle, 50, 50)
-        {
-            self.mark_curve(cs, Color32::BLUE);
-        }
+        self.marking.mark_orbit_manually(zs, color);
     }
 
-    fn mark_curve(&mut self, zs: ComplexVec, color: Color32)
+    fn clear_marked_orbit(&mut self)
     {
-        self.marked_data
-            .orbits
-            .push(ColoredCurve { curve: zs, color });
-    }
-
-    fn clear_marked_orbits(&mut self)
-    {
-        self.marked_data.clear_orbits();
+        self.marking.curves.sched_disable(CurveKey::Orbit);
     }
 
     fn clear_marked_rays(&mut self)
     {
-        self.marking_mode.rays.clear();
-        self.marked_data.clear_rays();
-    }
-
-    fn get_marked_data(&self) -> &MarkedData
-    {
-        &self.marked_data
-    }
-
-    fn get_marked_data_mut(&mut self) -> &mut MarkedData
-    {
-        &mut self.marked_data
+        self.marking.disable_all_rays();
     }
 
     fn put_marked_curves(&self, ui: &mut Ui)
@@ -559,7 +631,10 @@ where
         let frame = self.get_frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
-        for ColoredCurve { curve: zs, color } in self.marked_data.iter_curves()
+
+        for Colored {
+            object: zs, color, ..
+        } in self.marking.iter_visible_curves()
         {
             let points = zs
                 .iter()
@@ -568,22 +643,15 @@ where
                     frame.to_global_coords(pt.to_vec2())
                 })
                 .collect();
-            let stroke = Stroke::new(1.0, *color);
+            let stroke = Stroke::new(1.0, color);
             let path = PathShape::line(points, stroke);
             painter.add(path);
         }
     }
 
-    fn mark_point(&mut self, z: Cplx, color: Color32)
-    {
-        self.marked_data
-            .points
-            .push(ColoredPoint { point: z, color });
-    }
-
     fn clear_marked_points(&mut self)
     {
-        self.marked_data.clear_points();
+        self.marking.disable_all_points();
     }
 
     fn put_marked_points(&self, ui: &mut Ui)
@@ -591,10 +659,10 @@ where
         let frame = self.get_frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
-        for ColoredPoint { point: z, color } in self.marked_data.points.iter()
+        for ColoredPoint { point: z, color } in self.marking.iter_visible_points()
         {
-            let point = frame.to_global_coords(grid.locate_point(*z).to_vec2());
-            let patch = CircleShape::filled(point, 4., *color);
+            let point = frame.to_global_coords(grid.locate_point(z).to_vec2());
+            let patch = CircleShape::filled(point, 4., color);
             painter.add(patch);
         }
     }
@@ -605,10 +673,17 @@ where
         format!("Selection: {}", format_complex(self.selection))
     }
 
-    fn describe_marked_info(&self) -> String
+    fn describe_orbit_info(&self) -> String
     {
-        self.get_marked_info()
+        self.get_orbit_info()
             .map_or_else(String::new, |orbit_info| orbit_info.to_string())
+    }
+
+    fn pop_child_task(&mut self) -> ChildTask
+    {
+        let res = self.child_task.clone();
+        self.child_task = ChildTask::Idle;
+        res
     }
 
     fn name(&self) -> String
@@ -644,7 +719,7 @@ pub trait PanePair
     fn child_mut(&mut self) -> &mut dyn Pane;
     fn randomize_palette(&mut self);
     fn set_palette(&mut self, palette: ColorPalette);
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm);
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: InteriorColoringAlgorithm);
 
     fn get_pane(&self, pane_id: PaneID) -> &dyn Pane;
     fn get_pane_mut(&mut self, pane_id: PaneID) -> &mut dyn Pane;
@@ -691,8 +766,8 @@ where
     live_mode: bool,
     save_dialog: Option<FileDialog>,
     input_dialog: Option<InputDialog>,
-    pane_for_next_external_ray: PaneID,
-    pane_to_save: PaneID,
+    ray_task: RayTask,
+    save_task: SaveTask,
     click_used: bool,
     pub message: UIMessage,
 }
@@ -715,8 +790,8 @@ where
             live_mode: false,
             save_dialog: None,
             input_dialog: None,
-            pane_for_next_external_ray: PaneID::Parent,
-            pane_to_save: PaneID::Parent,
+            ray_task: RayTask::Idle,
+            save_task: SaveTask::Idle,
             click_used: false,
             message: UIMessage::default(),
         }
@@ -760,19 +835,22 @@ where
         {
             if let Some(path) = save_dialog.path()
             {
-                let filename = path.to_string_lossy().into_owned();
+                if let SaveTask::AwaitingInput { pane_id } = self.save_task
+                {
+                    let filename = path.to_string_lossy().into_owned();
 
-                let image_width: usize = 4096;
+                    let image_width: usize = 4096;
 
-                // // Use a slider for image width input
-                // SidePanel::left("side_panel").show(ctx, |ui| {
-                //     ui.heading("Enter image width:");
-                //     ui.add(Slider::new(&mut image_width, 1..=1000));
-                // });
+                    // // Use a slider for image width input
+                    // SidePanel::left("side_panel").show(ctx, |ui| {
+                    //     ui.heading("Enter image width:");
+                    //     ui.add(Slider::new(&mut image_width, 1..=1000));
+                    // });
 
-                let pane = self.get_pane_mut(self.pane_to_save);
-                pane.save_image(image_width, &filename);
-                self.save_dialog = None;
+                    let pane = self.get_pane_mut(pane_id);
+                    pane.save_image(image_width, &filename);
+                    self.save_dialog = None;
+                }
             }
             self.set_active_pane(None);
         }
@@ -796,9 +874,23 @@ where
             {
                 if let Ok(angle) = input_dialog.user_input.parse::<RationalAngle>()
                 {
-                    let pane = self.get_pane_mut(self.pane_for_next_external_ray);
-                    pane.marking_mode_mut().toggle_ray(angle);
-                    pane.schedule_redraw();
+                    if let RayTask::AwaitingInput { pane_id, follow } = self.ray_task
+                    {
+                        let pane = self.get_pane_mut(pane_id);
+                        pane.marking_mut().toggle_ray(angle);
+                        pane.schedule_redraw();
+
+                        if follow
+                        {
+                            pane.follow_ray_landing_point(angle);
+                        }
+                        else
+                        {
+                            pane.reset_ray_state();
+                        }
+
+                        self.ray_task = RayTask::Idle;
+                    }
                 }
                 self.input_dialog = None;
             }
@@ -848,7 +940,7 @@ where
 
     fn save_pane(&mut self, pane_id: PaneID)
     {
-        self.pane_to_save = pane_id;
+        self.save_task = SaveTask::AwaitingInput { pane_id };
         let mut dialog = FileDialog::save_file(None)
             .default_filename(format!("{}.png", self.parent.name()))
             .show_rename(false)
@@ -903,7 +995,7 @@ where
         self.child.change_palette(palette);
     }
 
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: ColoringAlgorithm)
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: InteriorColoringAlgorithm)
     {
         self.parent_mut()
             .set_coloring_algorithm(coloring_algorithm.clone());
@@ -956,16 +1048,20 @@ where
             let pointer_value = self.parent().map_pixel(pointer_pos);
             self.parent_mut()
                 .process_mouse_input(pointer_value, zoom_factor, reselect_point);
-            if reselect_point
+            match self.parent_mut().pop_child_task()
             {
-                let child_param = self.parent.plane.param_map(pointer_value);
-                self.set_child_param(pointer_value, child_param);
+                ChildTask::UpdateParam =>
+                {
+                    let new_child_param = self.parent.plane.param_map(self.parent.selection);
+                    self.set_child_param(self.parent.selection, new_child_param);
+                }
+                _ =>
+                {}
             }
 
             if clicked
             {
                 self.consume_click();
-                self.child_mut().clear_marked_orbits();
                 let param = self.parent.plane.param_map(pointer_value);
                 let start = self.parent.plane.start_point(pointer_value, param);
                 self.child_mut().mark_orbit_and_info(start.into());
@@ -982,7 +1078,6 @@ where
             if clicked
             {
                 self.consume_click();
-                self.child_mut().clear_marked_orbits();
                 self.child_mut().mark_orbit_and_info(pointer_value);
             }
         }
@@ -995,6 +1090,10 @@ where
     fn toggle_live_mode(&mut self)
     {
         self.live_mode ^= true;
+        if self.live_mode
+        {
+            self.parent.reset_ray_state();
+        }
     }
 
     fn process_tasks(&mut self)
@@ -1062,62 +1161,59 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.marking_mode_mut().toggle_selection();
+                pane.marking_mut().toggle_selection();
                 pane.schedule_redraw();
             }
         }
 
         if shortcut_used!(ctx, &KEY_P)
         {
-            self.child_mut().marking_mode_mut().toggle_critical();
+            self.child_mut().marking_mut().toggle_critical();
             self.child_mut().schedule_redraw();
         }
 
         if shortcut_used!(ctx, &KEY_O)
         {
-            self.parent_mut().marking_mode_mut().toggle_critical();
+            self.parent_mut().marking_mut().toggle_critical();
             self.parent_mut().schedule_redraw();
         }
 
         seq!(n in 1..=6 {
             if shortcut_used!(ctx, &CTRL_~n)
             {
-                self.child_mut().marking_mode_mut().toggle_cycles(n);
+                self.child_mut().marking_mut().toggle_cycles_of_period(n);
                 self.child_mut().schedule_redraw();
             }
             if shortcut_used!(ctx, &CTRL_SHIFT_~n)
             {
-                self.parent_mut().marking_mode_mut().toggle_cycles(n);
+                self.parent_mut().marking_mut().toggle_cycles_of_period(n);
                 self.parent_mut().schedule_redraw();
             }
         });
 
-        // if shortcut_used!(ctx, &KEY_E)
-        // {
-        //     if let Some(pane) = self.get_active_pane_mut()
-        //     {
-        //         pane.mark_external_ray(1./7.);
-        //     }
-        // }
-
+        // External ray
         if shortcut_used!(ctx, &KEY_E)
         {
             if let Some(pane_id) = self.active_pane
             {
-                self.pane_for_next_external_ray = pane_id;
+                self.ray_task = RayTask::AwaitingInput {
+                    pane_id,
+                    follow: false,
+                };
                 self.prompt_external_ray();
             }
         }
 
-        if shortcut_used!(ctx, &KEY_D)
+        // External ray to point
+        if shortcut_used!(ctx, &CTRL_X)
         {
-            if let Some(pane) = self.get_active_pane_mut()
+            if let Some(pane_id) = self.active_pane
             {
-                let ray_angles = &pane.marking_mode().rays;
-                let rays = &pane.get_marked_data().rays;
-                dbg!(rays);
-                dbg!(ray_angles);
-                dbg!(pane.get_selection());
+                self.ray_task = RayTask::AwaitingInput {
+                    pane_id,
+                    follow: true,
+                };
+                self.prompt_external_ray();
             }
         }
 
@@ -1259,13 +1355,11 @@ where
                 Some(PaneID::Parent) =>
                 {
                     self.parent.reset_selection();
-                    let new_child_param = self.parent.plane.param_map(self.parent.selection);
-                    self.set_child_param(self.parent.selection, new_child_param);
                 }
                 Some(PaneID::Child) =>
                 {
                     self.child.reset_selection();
-                    self.child.clear_marked_orbits();
+                    self.child.clear_marked_orbit();
                 }
                 None =>
                 {}
@@ -1276,7 +1370,7 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.set_coloring_algorithm(ColoringAlgorithm::Solid);
+                pane.set_coloring_algorithm(InteriorColoringAlgorithm::Solid);
             }
         }
 
@@ -1284,7 +1378,7 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.set_coloring_algorithm(ColoringAlgorithm::Period);
+                pane.set_coloring_algorithm(InteriorColoringAlgorithm::Period);
             }
         }
 
@@ -1292,7 +1386,7 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+                pane.set_coloring_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
             }
         }
 
@@ -1300,7 +1394,7 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+                pane.set_coloring_algorithm(InteriorColoringAlgorithm::Multiplier);
             }
         }
 
@@ -1308,7 +1402,7 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+                pane.set_coloring_algorithm(InteriorColoringAlgorithm::Preperiod);
             }
         }
 
@@ -1324,7 +1418,7 @@ where
         {
             if let Some(pane) = self.get_active_pane_mut()
             {
-                pane.clear_marked_orbits();
+                pane.clear_marked_orbit();
             }
         }
 
@@ -1395,13 +1489,13 @@ where
                 body.row(80., |mut row| {
                     row.col(|ui| {
                         let selection_desc = self.parent.describe_selection();
-                        let orbit_desc = self.parent.describe_marked_info();
+                        let orbit_desc = self.parent.describe_orbit_info();
                         ui.label(selection_desc);
                         ui.label(orbit_desc);
                     });
                     row.col(|ui| {
                         let selection_desc = self.child.describe_selection();
-                        let orbit_desc = self.child.describe_marked_info();
+                        let orbit_desc = self.child.describe_orbit_info();
                         ui.label(selection_desc);
                         ui.label(orbit_desc);
                     });

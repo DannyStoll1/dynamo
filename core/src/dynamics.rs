@@ -1,10 +1,11 @@
 use fractal_common::{
-    coloring::{algorithms::ColoringAlgorithm, Coloring},
-    consts::{ONE, ZERO},
+    coloring::{algorithms::InteriorColoringAlgorithm, Coloring},
+    consts::{NAN, ONE, ZERO},
+    globals::{RAY_DEPTH, RAY_SHARPNESS},
     iter_plane::IterPlane,
     math_utils::{newton_until_convergence, newton_until_convergence_d},
     point_grid::{self, Bounds, PointGrid},
-    types::{param_stack::Summarize, PointInfoPeriodic},
+    types::{param_stack::Summarize, MaybeNan, PointClassId, PointInfoPeriodic, Polar},
     types::{
         Cplx, Dist, EscapeState, IterCount, Norm, OrbitInfo, ParamList, Period, PointInfo, Real,
     },
@@ -28,15 +29,49 @@ use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
 use std::ops::{MulAssign, Sub};
 
-use self::orbit::OrbitParams;
+use self::{orbit::OrbitParams, symbolic::OrbitSchema};
 // pub use simple_parameter_plane::SimpleParameterPlane;
+
+pub trait Variable:
+    Norm<Real> + Dist<Real> + MaybeNan + Clone + Send + Default + From<Cplx> + Into<Cplx> + Display
+{
+}
+pub trait Parameter:
+    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
+{
+}
+pub trait Derivative:
+    Polar<Real> + Send + Default + From<Real> + MulAssign + Display + Into<Cplx>
+{
+}
+
+impl<V> Variable for V where
+    V: Norm<Real>
+        + Dist<Real>
+        + MaybeNan
+        + Clone
+        + Send
+        + Default
+        + From<Cplx>
+        + Into<Cplx>
+        + Display
+{
+}
+impl<P> Parameter for P where
+    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
+{
+}
+impl<D> Derivative for D where
+    D: Polar<Real> + Send + Default + From<Real> + MulAssign + Display + Into<Cplx>
+{
+}
 
 pub trait ParameterPlane: Sync + Send + Clone
 {
-    type Var: Norm<Real> + Dist<Real> + Clone + Send + Default + From<Cplx> + Into<Cplx> + Display;
-    type Param: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize;
+    type Var: Variable;
+    type Param: Parameter;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
-    type Deriv: Norm<Real> + Send + Default + From<Real> + MulAssign + Display + Into<Cplx>;
+    type Deriv: Derivative;
     type Child: ParameterPlane + From<Self>;
 
     fn point_grid(&self) -> &PointGrid;
@@ -76,10 +111,39 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn with_max_iter(self, max_iter: Period) -> Self;
 
     fn name(&self) -> String;
+
+    /// The map defining the dynamical system.
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var;
+
+    /// Derivative of the map with respect to the dynamical variable. Used for smooth coloration.
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
+
+    /// Derivative of the map with respect to the paraameter. Used for external rays in parameter
+    /// planes.
     fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
 
+    /// The dynamical map, together with its derivative. This is the primary computational
+    /// bottleneck, and should usually be implemented manually for optimization purposes.
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        (self.map(z, c), self.dynamical_derivative(z, c))
+    }
+
+    /// The dynamical map, together with its derivative and parameter derivative. Used to compute
+    /// external rays in parameter planes.
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let (fz, df_dz) = self.map_and_multiplier(z, c);
+        (fz, df_dz, self.parameter_derivative(z, c))
+    }
+
+    /// If certain regions in parameter space are known (e.g. the main cardioid in the Mandelbrot set), we can
+    /// avoid having to compute orbits for parameters in those regions.
+    ///
+    /// This function returns an `EscapeState`, depending on the starting point and parameter.
+    /// It is called once before computing each orbit.
+    /// If this function returns `EscapeState::NotYetEscaped`, then the orbit is computed;
+    /// otherwise, the output of this function is forwarded to `encode_escape_result`.
     fn early_bailout(
         &self,
         _start: Self::Var,
@@ -89,55 +153,88 @@ pub trait ParameterPlane: Sync + Send + Clone
         EscapeState::NotYetEscaped
     }
 
-    // Minimum iterations before cycle detection is allowed
+    /// Minimum iterations before cycle detection is allowed.
+    ///
+    /// Useful for dynamical families with many parabolic systems, such as Cubic Per(1,1),
+    /// in which orbits on the repelling side of the parabolic cylinder will remain
+    /// near-periodic for a long time even if they will eventually escape.
+    /// For such families, it is recommended to set `min_iter` to some constant fraction of
+    /// `self.max_iter()`.
     #[inline]
     fn min_iter(&self) -> Period
     {
         0
     }
 
+    /// Upper bound on the norm-squared of the dynamical variable,
+    /// beyond which an orbit is considered to have escaped.
+    ///
+    /// Only relevant for maps with an attracting or parabolic cycle containing infinity. In the
+    /// latter case, it is recommended to set escape_radius to a much smaller value.
     #[inline]
     fn escape_radius(&self) -> Real
     {
         1e12
     }
 
+    /// Lower bound on distance-squared between fast and slow orbits. If the fast and slow
+    /// variables are closer than this bound, then orbit computation teminates, and a cycle is
+    /// detected.
+    ///
+    /// This value can be raised to save computational time, but this will increase the rate of
+    /// false positives. Conversely, it can be lowered to increase accuracy, at the cost of needing
+    /// more iterations to detect cycles.
+    ///
+    /// For dynamical families with many parabolic systems, such as Cubic Per(1,1),
+    /// it is recommended to set this value to something much larger (e.g. 1e-6),
+    /// since orbits take very long to converge toward parabolic cycles. This will lead to false
+    /// positives, which can be mitigated by increasing `self.min_iter`.
+    ///
+    /// This value can be set dynamically, for instance to shrink the radius as the image is zoomed
+    /// in. This is done in the default implementation.
+    ///
+    /// Setting this value to 0 disables cycle detection.
     #[inline]
     fn periodicity_tolerance(&self) -> Real
     {
-        // self.point_grid().bounds.area() * 1e-8
-        1e-14
+        self.point_grid().bounds.area() * 1e-14
     }
 
+    /// The starting value for the dynamical variable. Depends on two parameters: the raw point in
+    /// the image that is being computed, and the parameter value. Generally, for parameter planes,
+    /// `start_point` depends only on the parameter, and for dynamical planes, `start_point` depends
+    /// only on the point.
+    ///
+    /// For Julia sets, `start_point` is computed by applying `self.dynam_map` to the raw point.
+    /// For parameter planes, `start_point` needs to be implemented manually.
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var;
-    // fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
-    // {
-    //     c.into()
-    // }
 
+    /// Marked critical value and its derivative with respect to the parameter. Only needed for
+    /// external rays in parameter planes.
+    fn critical_value_and_param_derivative(&self, _c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        (NAN.into(), Real::NAN.into())
+    }
+
+    /// Map points in the image to parameters. Used for multi-parameter systems or covering maps
+    /// over existing parameter planes.
     #[inline]
     fn param_map(&self, point: Cplx) -> Self::Param
     {
         point.into()
     }
 
+    /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
+    /// over existing dynamical planes.
+    ///
+    /// Currently, this is only called in the implementation for `start_point` in Julia sets.
     #[inline]
     fn dynam_map(&self, point: Cplx) -> Self::Var
     {
         point.into()
     }
 
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        (self.map(z, c), self.dynamical_derivative(z, c))
-    }
-
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        let (fz, df_dz) = self.map_and_multiplier(z, c);
-        (fz, df_dz, self.parameter_derivative(z, c))
-    }
-
+    /// Map temporary `EscapeState` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
     fn encode_escape_result(
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
@@ -259,52 +356,80 @@ pub trait ParameterPlane: Sync + Send + Clone
         self
     }
 
+    /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
     #[inline]
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![]
     }
 
+    /// Critical points of the map, if the plane is dynamical.
     #[inline]
     fn critical_points(&self) -> Vec<Self::Var>
     {
         vec![]
     }
 
+    /// Implementation of `cycles` for Julia sets spawned from this parameter plane.
+    /// Used to mark selected periodic points on the dynamical plane.
+    ///
+    /// Since this often requires solving high-degree polynomials, periods beyond 1 or 2
+    /// will usually require the `mpsolve` feature until a complex polynomial solver is implemented
+    /// in pure Rust.
     #[inline]
     fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
 
+    /// Implementation of `precycles` for Julia sets spawned from this parameter plane.
+    /// Used to mark selected preperiodic points on the dynamical plane.
+    ///
+    /// Since this often requires solving high-degree polynomials, periods beyond 1 or 2
+    /// will usually require the `mpsolve` feature until a complex polynomial solver is implemented
+    /// in pure Rust.
     #[inline]
     fn precycles_child(
         &self,
         _c: Self::Param,
-        _preperiod: Period,
-        _period: Period,
+        _orbit_schema: OrbitSchema,
     ) -> Vec<Self::Var>
     {
         vec![]
     }
 
+    /// Parameter values known to yield periodic cycles of a given period.
+    /// These are drawn on the parameter plane despite having type `Self::Var`, since `Self::Param`
+    /// doesn't always implement `Into<Cplx>`. This only produces the correct result if `param_map`
+    /// is the identity.
+    /// FIXME: enforce types correctly here. This involves inverting the `param_map` to convert a
+    /// parameter back to a complex number.
+    ///
+    /// Generally used to mark post-critically finite parameters or centers of hyperbolic
+    /// components, or in Julia sets to mark periodic points.
     #[inline]
     fn cycles(&self, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
 
+    /// Parameter values known to yield preperiodic orbits of a given preperiod and period.
+    /// These are drawn on the parameter plane despite having type `Self::Var`, since `Self::Param`
+    /// doesn't always implement `Into<Cplx>`. This only produces the correct result if `param_map`
+    /// is the identity.
+    /// FIXME: enforce types correctly here. This involves inverting the `param_map` to convert a
+    /// parameter back to a complex number.
+    ///
+    /// Generally used to mark Misiurewicz points, or in Julia sets to mark preperiodic points.
     #[inline]
-    fn precycles(&self, _preperiod: Period, _period: Period) -> Vec<Self::Var>
+    fn precycles(&self, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         vec![]
     }
 
     /// Compute an external ray for a given angle in [0,1).
-    /// depth: Controls how deep the ray goes. Higher values bring the landing point closer to the
-    /// bifurcation locus. [Suggested starting value: 25]
-    /// sharpness: Controls the density of points used to approxmate the external ray. [Suggested starting value: 20]
-    fn external_ray(&self, theta: Real, depth: u32, sharpness: u32) -> Option<Vec<Cplx>>
+    /// Currently works correctly only for quadratic polynomials.
+    fn external_ray(&self, theta: Real) -> Option<Vec<Cplx>>
     {
         let escape_radius = 40.;
         let deg = self.degree().powi(self.escaping_period() as i32);
@@ -324,10 +449,11 @@ pub trait ParameterPlane: Sync + Send + Clone
         // degree raised to the power k
         let mut deg_k = 1.0;
 
-        for k in 0..depth
+        for k in 0..RAY_DEPTH
         {
-            let us = (0..sharpness).map(|j| {
-                escape_radius.ln() * ((-Real::from(j) * deg_log2) / Real::from(sharpness)).exp2()
+            let us = (0..RAY_SHARPNESS).map(|j| {
+                escape_radius.ln()
+                    * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
             });
             let v = Cplx::new(0., angle * deg_k);
             deg_k *= deg;
@@ -337,11 +463,15 @@ pub trait ParameterPlane: Sync + Send + Clone
             let mut dist: Real;
 
             let fk_and_dfk = |c: Cplx| {
-                let mut d_k = ONE;
+                let c_param = c.into();
+
+                // For general, we want the critical value and its c-derivative here
                 let mut z_k = c.into();
+                let mut d_k = ONE;
+
                 for _ in 0..k * self.escaping_period()
                 {
-                    let (f, df_dz, df_dc) = self.gradient(z_k, c.into());
+                    let (f, df_dz, df_dc) = self.gradient(z_k, c_param);
                     d_k = d_k * df_dz.into() + df_dc.into();
                     z_k = f;
                 }
@@ -356,12 +486,16 @@ pub trait ParameterPlane: Sync + Send + Clone
 
                 dist = (2. * c_k.norm() * (c_k.norm()).log(deg)) / d_k.norm();
 
+                if temp_c.is_nan() {
+                    return Some(c_list)
+                }
+
+                c_list.push(temp_c);
                 if dist < pixel_width
                 {
                     return Some(c_list);
                 }
             }
-            c_list.push(temp_c);
         }
 
         Some(c_list)
@@ -475,6 +609,22 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
+    fn iter_orbit(&self, point: Cplx) -> Box<dyn Iterator<Item = Self::Var> + '_>
+    {
+        let param = self.param_map(point);
+        let start = self.start_point(point, param);
+        Box::new(
+            SimpleOrbit::new(
+                |z, c| self.map(z, c),
+                start,
+                param,
+                self.max_iter(),
+                self.escape_radius(),
+            )
+            .map(|(z, _s)| z),
+        )
+    }
+
     fn get_orbit_vec(&self, point: Cplx) -> Vec<Self::Var>
     {
         let param = self.param_map(point);
@@ -543,40 +693,69 @@ pub trait ParameterPlane: Sync + Send + Clone
         )
     }
 
+    /// Default bounds for this plane
     #[inline]
     fn default_bounds(&self) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
 
+    /// Default bounds for Julia sets spawned from this plane. This is only called by Julia sets,
+    /// who reference the parent's `default_julia_bounds` in their `default_bounds`
+    /// implementations.
     #[inline]
     fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
 
+    /// Point to select when the plane is first created.
     #[inline]
     fn default_selection(&self) -> Cplx
     {
         Cplx::default()
     }
 
+    /// For some families (e.g. maps with multiple free critical points),
+    /// there are many possible starting points. In this case, we can maintain
+    /// a plane identifier in `self`, which can by cycled at runtime to switch
+    /// views.
+    ///
+    /// By itself, this function simply modifies `self` when the corresponding hotkey is pressed
+    /// (default: Ctrl-P).
+    ///
+    /// To have the desired effect, the implementation of `start_point` needs to
+    /// be set up to refer to the plane object's internal plane identifier, and
+    /// `cycle_active_plane` needs to be implemented to modify this identifier.
     fn cycle_active_plane(&mut self) {}
 
+    /// Whether or not the plane is considered "dynamical", in the sense that the dynamical map is
+    /// independent of the pixel being computed.
+    ///
+    /// Currently unused.
     #[inline]
     fn is_dynamical(&self) -> bool
     {
         false
     }
 
+    /// Order of vanishing of $1/f(1/z)$ at $z=0$, where $f$ is the dynamical map.
+    /// Can be negative, as in the case for many families of rational maps.
+    ///
+    /// Should be set to NAN if $f$ has an essential singularity at infinity.
+    /// In such cases, external rays are unsupported (unless manually implemented).
     #[inline]
     fn degree(&self) -> Real
     {
         2.0
     }
 
-    /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps, this
-    /// is n. For polynomial families, this is always 1.
+    /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps
+    /// (parameterized so that infinity belongs to the critical cycle), this has value n.
+    /// For polynomial families, this always equals 1.
+    ///
+    /// Used for computing external rays, for which we use an iterate of the map instead of the map
+    /// itself.
     #[inline]
     fn escaping_period(&self) -> Period
     {
@@ -601,53 +780,73 @@ pub trait ParameterPlane: Sync + Send + Clone
     //     })
     // }
 
+    /// Default coloring algorithm to apply when loading the parameter plane.
     fn default_coloring(&self) -> Coloring
     {
         let mut coloring = Coloring::default();
-        coloring.set_algorithm(ColoringAlgorithm::PeriodMultiplier);
+        coloring.set_interior_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
         coloring
     }
 
+    /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
+    /// color Newton parameter planes according to which root the critical orbit converges to.
     #[inline]
-    fn get_marked_points(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn get_marked_points(&self, _c: Self::Param) -> Vec<(Self::Var, PointClassId)>
     {
         vec![]
     }
 
+    /// Number of marked point classes.
+    #[inline]
+    fn num_marked_point_classes(&self) -> usize
+    {
+        0
+    }
+
+    /// Lower bound on norm-squared, below which an orbit is considered to have reached a marked
+    /// point.
+    #[inline]
+    fn marked_point_tolerance(&self) -> Real
+    {
+        self.periodicity_tolerance()
+    }
+
+    /// Internal: Detect if a periodic orbit has landed near a marked point.
     fn identify_marked_points(
         &self,
         c: Self::Param,
         data: PointInfoPeriodic<Self::Var, Self::Deriv>,
     ) -> PointInfo<Self::Var, Self::Deriv>
     {
-        if data.period == 1
+        let marked_points = self.get_marked_points(c);
+        for (zi, class_id) in marked_points.iter()
         {
-            let marked_points = self.get_marked_points(c);
-            for (i, zi) in marked_points.iter().enumerate()
+            if data.value.dist_sqr(*zi) < self.marked_point_tolerance()
             {
-                if data.value.dist_sqr(*zi) < self.periodicity_tolerance()
-                {
-                    return PointInfo::MarkedPoint {
-                        data,
-                        point_id: i,
-                        num_points: marked_points.len(),
-                    };
-                }
+                return PointInfo::MarkedPoint {
+                    data,
+                    class_id: *class_id,
+                    num_point_classes: marked_points.len(),
+                };
             }
         }
         PointInfo::Periodic { data }
     }
 
-    fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
+    /// Internal: Since the internal potential coloring algorithm depends on the periodicity
+    /// tolerance, we need to obtain it from this trait.
+    fn preperiod_smooth_coloring(&self) -> InteriorColoringAlgorithm
     {
-        ColoringAlgorithm::InternalPotential {
+        InteriorColoringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
         }
     }
 
-    fn preperiod_period_smooth_coloring(&self) -> ColoringAlgorithm
+    /// Internal: Since the period + internal potential coloring algorithm depends on the periodicity
+    /// tolerance, we need to obtain it from this trait.
+    fn preperiod_period_smooth_coloring(&self) -> InteriorColoringAlgorithm
     {
-        ColoringAlgorithm::PreperiodPeriodSmooth {
+        InteriorColoringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.04,
         }

@@ -1,7 +1,7 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
 use crate::consts::TAU;
-use crate::types::{IterCount, Norm, PointInfoPeriodic, Real};
+use crate::types::{IterCount, Polar, PointInfoPeriodic, Real};
 use egui::Color32;
 
 #[cfg(feature = "serde")]
@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum ColoringAlgorithm
+pub enum InteriorColoringAlgorithm
 {
     PeriodMultiplier,
     Period,
@@ -32,7 +32,7 @@ pub enum ColoringAlgorithm
     //     tolerance: Real,
     // },
 }
-impl ColoringAlgorithm
+impl InteriorColoringAlgorithm
 {
     fn multiplier_coloring_rate(mult_norm: Real, fill_rate: Real) -> f64
     {
@@ -55,7 +55,7 @@ impl ColoringAlgorithm
         point_info: PointInfoPeriodic<V, D>,
     ) -> Color32
     where
-        D: Norm<Real>,
+        D: Polar<Real>,
     {
         match self
         {
@@ -270,7 +270,7 @@ impl ColoringAlgorithm
     // }
 }
 
-impl Default for ColoringAlgorithm
+impl Default for InteriorColoringAlgorithm
 {
     fn default() -> Self
     {

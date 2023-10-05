@@ -4,7 +4,7 @@ use crate::macros::{
 use crate::pane::{Interface, MainInterface, PaneID};
 use egui::Ui;
 use egui_dock::{NodeIndex, SurfaceIndex};
-use fractal_common::coloring::{algorithms::ColoringAlgorithm, palette::ColorPalette};
+use fractal_common::coloring::{algorithms::InteriorColoringAlgorithm, palette::ColorPalette};
 use fractal_common::consts::{OMEGA, ONE};
 use fractal_common::types::{Cplx, ParamList};
 use fractal_core::dynamics::covering_maps::HasDynamicalCovers;
@@ -103,27 +103,27 @@ impl FractalTab
                 if ui.button("[0] Solid").clicked()
                 {
                     self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Solid);
+                        .set_coloring_algorithm(InteriorColoringAlgorithm::Solid);
                 }
                 else if ui.button("[1] Period").clicked()
                 {
                     self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Period);
+                        .set_coloring_algorithm(InteriorColoringAlgorithm::Period);
                 }
                 else if ui.button("[2] Period and Multiplier").clicked()
                 {
                     self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::PeriodMultiplier);
+                        .set_coloring_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
                 }
                 else if ui.button("[3] Multiplier").clicked()
                 {
                     self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Multiplier);
+                        .set_coloring_algorithm(InteriorColoringAlgorithm::Multiplier);
                 }
                 else if ui.button("[4] Preperiod").clicked()
                 {
                     self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::Preperiod);
+                        .set_coloring_algorithm(InteriorColoringAlgorithm::Preperiod);
                 }
                 else if ui.button("[5] Internal potential").clicked()
                 {
@@ -137,7 +137,7 @@ impl FractalTab
                 else if ui.button("Preperiod and Period").clicked()
                 {
                     self.interface
-                        .set_coloring_algorithm(ColoringAlgorithm::PreperiodPeriod);
+                        .set_coloring_algorithm(InteriorColoringAlgorithm::PreperiodPeriod);
                 }
                 else if ui.button("Internal potential and Period").clicked()
                 {
@@ -203,8 +203,8 @@ impl FractalTab
         ui.menu_button("Annotations", |ui| {
             if ui.button("[C]lear marked curves").clicked()
             {
-                self.interface.child_mut().clear_marked_orbits();
-                self.interface.parent_mut().clear_marked_orbits();
+                self.interface.child_mut().clear_marked_orbit();
+                self.interface.parent_mut().clear_marked_orbit();
                 self.interface.child_mut().schedule_redraw();
                 self.interface.parent_mut().schedule_redraw();
                 self.interface.consume_click();
@@ -214,11 +214,11 @@ impl FractalTab
             {
                 self.interface
                     .child_mut()
-                    .marking_mode_mut()
+                    .marking_mut()
                     .toggle_selection();
                 self.interface
                     .parent_mut()
-                    .marking_mode_mut()
+                    .marking_mut()
                     .toggle_selection();
                 self.interface.child_mut().schedule_redraw();
                 self.interface.parent_mut().schedule_redraw();
@@ -229,7 +229,7 @@ impl FractalTab
             {
                 self.interface
                     .child_mut()
-                    .marking_mode_mut()
+                    .marking_mut()
                     .toggle_critical();
                 self.interface.child_mut().schedule_redraw();
                 self.interface.consume_click();
@@ -239,7 +239,7 @@ impl FractalTab
             {
                 self.interface
                     .parent_mut()
-                    .marking_mode_mut()
+                    .marking_mut()
                     .toggle_critical();
                 self.interface.parent_mut().schedule_redraw();
                 self.interface.consume_click();
@@ -249,8 +249,8 @@ impl FractalTab
             {
                 self.interface
                     .child_mut()
-                    .marking_mode_mut()
-                    .toggle_cycles(1);
+                    .marking_mut()
+                    .toggle_cycles_of_period(1);
                 self.interface.child_mut().schedule_redraw();
                 self.interface.consume_click();
                 ui.close_menu();
@@ -259,8 +259,8 @@ impl FractalTab
             {
                 self.interface
                     .child_mut()
-                    .marking_mode_mut()
-                    .toggle_cycles(2);
+                    .marking_mut()
+                    .toggle_cycles_of_period(2);
                 self.interface.child_mut().schedule_redraw();
                 self.interface.consume_click();
                 ui.close_menu();
@@ -269,8 +269,8 @@ impl FractalTab
             {
                 self.interface
                     .child_mut()
-                    .marking_mode_mut()
-                    .toggle_cycles(3);
+                    .marking_mut()
+                    .toggle_cycles_of_period(3);
                 self.interface.child_mut().schedule_redraw();
                 self.interface.consume_click();
                 ui.close_menu();
@@ -279,8 +279,8 @@ impl FractalTab
             {
                 self.interface
                     .child_mut()
-                    .marking_mode_mut()
-                    .toggle_cycles(4);
+                    .marking_mut()
+                    .toggle_cycles_of_period(4);
                 self.interface.child_mut().schedule_redraw();
                 self.interface.consume_click();
                 ui.close_menu();

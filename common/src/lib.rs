@@ -3,6 +3,7 @@
 
 pub mod coloring;
 pub mod consts;
+pub mod globals;
 pub mod iter_plane;
 pub mod macros;
 pub mod math_utils;

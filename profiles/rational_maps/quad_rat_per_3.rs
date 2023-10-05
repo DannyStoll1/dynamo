@@ -107,6 +107,18 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
+    fn degree(&self) -> Real
+    {
+        2.0
+    }
+
+    #[inline]
+    fn escaping_period(&self) -> Period
+    {
+        3
+    }
+
+    #[inline]
     fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
         vec![(0.).into()]

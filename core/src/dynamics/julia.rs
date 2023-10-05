@@ -1,8 +1,15 @@
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
-use fractal_common::coloring::{algorithms::ColoringAlgorithm, Coloring};
+use fractal_common::coloring::{algorithms::InteriorColoringAlgorithm, Coloring};
+use fractal_common::consts::{ONE, TAU, ZERO};
+use fractal_common::globals::{RAY_DEPTH, RAY_SHARPNESS};
+use fractal_common::math_utils::newton_until_convergence_d;
 use fractal_common::point_grid::{Bounds, PointGrid};
-use fractal_common::types::{Cplx, EscapeState, ParamList, ParamStack, Period, PointInfo, Real};
+use fractal_common::types::{
+    Cplx, EscapeState, NoParam, ParamList, ParamStack, Period, PointInfo, Real,
+};
+
+use super::symbolic::OrbitSchema;
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
@@ -39,6 +46,11 @@ where
             parent_selection,
         }
     }
+
+    pub fn map_and_multiplier_lazy(&self, z: T::Var) -> (T::Var, T::Deriv)
+    {
+        self.parent.map_and_multiplier(z, self.local_param)
+    }
 }
 
 impl<T> From<T> for JuliaSet<T>
@@ -69,7 +81,7 @@ where
     T: ParameterPlane,
 {
     type Var = T::Var;
-    type Param = T::Param;
+    type Param = NoParam;
     type MetaParam = ParamStack<T::MetaParam, T::Param>;
     type Deriv = T::Deriv;
     type Child = Self;
@@ -103,9 +115,7 @@ where
     #[inline]
     fn gradient(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let (f, df) = self.map_and_multiplier(z, self.local_param);
-        (f, df, 0.0.into())
-        // self.parent.gradient(z, self.local_param)
+        self.parent.gradient(z, self.local_param)
     }
 
     #[inline]
@@ -117,7 +127,7 @@ where
     #[inline]
     fn param_map(&self, _z: Cplx) -> Self::Param
     {
-        self.local_param
+        NoParam
     }
 
     #[inline]
@@ -135,10 +145,10 @@ where
     fn encode_escape_result(
         &self,
         state: EscapeState<Self::Var, Self::Deriv>,
-        base_param: Self::Param,
+        _base_param: Self::Param,
     ) -> PointInfo<Self::Var, Self::Deriv>
     {
-        self.parent.encode_escape_result(state, base_param)
+        self.parent.encode_escape_result(state, self.local_param)
     }
 
     #[inline]
@@ -155,7 +165,7 @@ where
     }
 
     #[inline]
-    fn set_param(&mut self, local_param: Self::Param)
+    fn set_param(&mut self, local_param: T::Param)
     {
         self.local_param = local_param;
     }
@@ -170,7 +180,7 @@ where
     }
 
     #[inline]
-    fn get_param(&self) -> Self::Param
+    fn get_param(&self) -> T::Param
     {
         self.local_param
     }
@@ -188,7 +198,8 @@ where
     }
 
     #[inline]
-    fn escaping_period(&self) -> Period {
+    fn escaping_period(&self) -> Period
+    {
         self.parent.escaping_period()
     }
 
@@ -230,10 +241,10 @@ where
     }
 
     #[inline]
-    fn precycles(&self, preperiod: Period, period: Period) -> Vec<Self::Var>
+    fn precycles(&self, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         self.parent
-            .precycles_child(self.local_param, preperiod, period)
+            .precycles_child(self.local_param, orbit_schema)
     }
 
     #[inline]
@@ -252,20 +263,20 @@ where
     {
         let mut coloring = Coloring::default();
         let _periodicity_tolerance = self.periodicity_tolerance();
-        coloring.set_algorithm(self.preperiod_smooth_coloring());
+        coloring.set_interior_algorithm(self.preperiod_smooth_coloring());
         coloring
     }
 
-    fn preperiod_smooth_coloring(&self) -> ColoringAlgorithm
+    fn preperiod_smooth_coloring(&self) -> InteriorColoringAlgorithm
     {
-        ColoringAlgorithm::InternalPotential {
+        InteriorColoringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
         }
     }
 
-    fn preperiod_period_smooth_coloring(&self) -> ColoringAlgorithm
+    fn preperiod_period_smooth_coloring(&self) -> InteriorColoringAlgorithm
     {
-        ColoringAlgorithm::PreperiodPeriodSmooth {
+        InteriorColoringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.015,
         }
@@ -274,5 +285,73 @@ where
     fn is_dynamical(&self) -> bool
     {
         true
+    }
+
+    /// Compute an external ray for a given angle in [0,1).
+    /// depth: Controls how deep the ray goes. Higher values bring the landing point closer to the
+    /// bifurcation locus. [Suggested starting value: 25]
+    /// sharpness: Controls the density of points used to approxmate the external ray. [Suggested starting value: 20]
+    fn external_ray(&self, theta: Real) -> Option<Vec<Cplx>>
+    {
+        let escape_radius = 400.;
+        let deg = self.degree().powi(self.escaping_period() as i32);
+        if deg.is_nan()
+        {
+            return None;
+        }
+        let deg_log2 = deg.log2();
+
+        let pixel_width = self.point_grid().pixel_width() * 0.3;
+        let error = self.point_grid().res_x as Real * 1e-8;
+
+        let angle = theta * TAU;
+        let base_point = escape_radius * Cplx::new(0., angle).exp();
+        let mut z_list = vec![base_point];
+
+        // degree raised to the power k
+        let mut deg_k = 1.0;
+
+        for k in 0..RAY_DEPTH
+        {
+            let us = (0..RAY_SHARPNESS).map(|j| {
+                escape_radius.ln()
+                    * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
+            });
+            let v = Cplx::new(0., angle * deg_k);
+            deg_k *= deg;
+            let targets = us.map(|u| (u + v).exp());
+
+            let mut temp_z = *z_list.last()?;
+            let mut dist: Real;
+
+            let fk_and_dfk = |z: Cplx| {
+                let mut z_k = z.into();
+                let mut d_k = ONE;
+                for _ in 0..k * self.escaping_period()
+                {
+                    let (f, df_dz) = self.map_and_multiplier_lazy(z_k);
+                    d_k *= df_dz.into();
+                    z_k = f;
+                }
+                (z_k.into(), d_k)
+            };
+
+            for target in targets
+            {
+                let (sol, z_k, d_k) = newton_until_convergence_d(fk_and_dfk, temp_z, target, error);
+
+                temp_z = sol;
+
+                dist = (2. * z_k.norm() * (z_k.norm()).log(deg)) / d_k.norm();
+
+                z_list.push(temp_z);
+                if dist < pixel_width
+                {
+                    return Some(z_list);
+                }
+            }
+        }
+
+        Some(z_list)
     }
 }

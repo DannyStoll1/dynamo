@@ -1,7 +1,7 @@
 use crate::coloring::Coloring;
 use crate::point_grid::PointGrid;
 
-use crate::types::{Norm, PointInfo, Real};
+use crate::types::{PointInfo, Polar, Real};
 use egui::{Color32, ColorImage};
 use image::ImageBuffer;
 use ndarray::Array2;
@@ -38,7 +38,7 @@ where
 
 impl<V, D> FractalImage for IterPlane<V, D>
 where
-    D: Norm<Real>,
+    D: Polar<Real>,
     V: Clone,
 {
     fn point_grid(&self) -> &PointGrid

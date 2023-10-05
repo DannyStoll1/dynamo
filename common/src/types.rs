@@ -5,7 +5,7 @@ use num_rational::Ratio;
 use std::fmt::Display;
 
 pub mod variables;
-pub use variables::{Dist, Norm};
+pub use variables::{Dist, Norm, Polar, MaybeNan};
 pub mod param_stack;
 pub use param_stack::{NoParam, ParamList, ParamStack};
 
@@ -72,6 +72,25 @@ impl<V, D> Default for EscapeState<V, D>
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct PointClassId(pub u8);
+
+impl From<usize> for PointClassId
+{
+    fn from(n: usize) -> Self {
+        Self(n as u8)
+    }
+}
+
+impl From<PointClassId> for f32
+{
+    fn from(id: PointClassId) -> Self
+    {
+        id.0 as f32
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PointInfo<V, D>
@@ -89,8 +108,8 @@ pub enum PointInfo<V, D>
     MarkedPoint
     {
         data: PointInfoPeriodic<V, D>,
-        point_id: usize,
-        num_points: usize,
+        class_id: PointClassId,
+        num_point_classes: usize,
     },
 }
 impl<V, D> Default for PointInfo<V, D>
