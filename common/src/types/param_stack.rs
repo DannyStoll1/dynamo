@@ -1,4 +1,5 @@
 use super::Cplx;
+use crate::traits::{Describe, Summarize};
 use derive_more::Display;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
@@ -12,59 +13,14 @@ impl From<Cplx> for NoParam
     }
 }
 
-trait Float: std::fmt::Display {}
-impl Float for f32 {}
-impl Float for f64 {}
-
-pub trait Summarize: std::fmt::Display
+impl Describe for NoParam
 {
-    fn summarize(&self) -> Option<String>
-    {
-        Some(format!("{self}"))
-    }
-}
-
-impl Summarize for NoParam
-{
-    fn summarize(&self) -> Option<String>
+    fn describe(&self) -> Option<String>
     {
         None
     }
 }
-
-impl<T: Float> Summarize for T
-{
-    fn summarize(&self) -> Option<String>
-    {
-        Some(format!("c = {self:.14}"))
-    }
-}
-
-impl Summarize for Cplx
-{
-    fn summarize(&self) -> Option<String>
-    {
-        Some(format!("c = {self:.14}"))
-    }
-}
-
-impl Summarize for i32
-{
-    fn summarize(&self) -> Option<String>
-    {
-        Some(format!("c = {self}"))
-    }
-}
-
-// impl<T> Summarize for T
-// where
-//     T: num::Num + std::fmt::Display,
-// {
-//     fn summarize(&self) -> Option<String>
-//     {
-//         Some(format!("c = {self}"))
-//     }
-// }
+impl Summarize for NoParam {}
 
 pub trait ParamList: Clone
 {
@@ -137,6 +93,29 @@ where
 {
     pub meta_params: T,
     pub local_param: H,
+}
+
+impl<T, H> Describe for ParamStack<T, H>
+where
+    T: Clone + Default + Summarize + Describe,
+    H: Clone + Default + PartialEq + Summarize + Describe,
+{
+    fn describe(&self) -> Option<String>
+    {
+        self.meta_params.describe().map_or_else(
+            || self.local_param.describe(),
+            |meta| {
+                if let Some(local) = self.local_param.describe()
+                {
+                    Some(format!("[{}, {}]", meta, local))
+                }
+                else
+                {
+                    Some(meta)
+                }
+            },
+        )
+    }
 }
 
 impl<T, H> Summarize for ParamStack<T, H>

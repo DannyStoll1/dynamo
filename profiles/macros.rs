@@ -7,7 +7,7 @@ macro_rules! profile_imports {
         use fractal_common::consts::*;
         use fractal_common::math_utils::poly_solve::*;
         use fractal_common::point_grid::{Bounds, PointGrid};
-        use fractal_common::types::*;
+        use fractal_common::prelude::*;
         use fractal_core::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
         use fractal_core::dynamics::julia::JuliaSet;
         use fractal_core::dynamics::ParameterPlane;

@@ -19,9 +19,10 @@ mod tests
 {
     use crate::*;
     use fractal_common::point_grid::Bounds;
-    use fractal_common::types::{Cplx, EscapeState};
+    use fractal_common::prelude::{Cplx, Dist, EscapeState};
     use fractal_core::dynamics::julia::JuliaSet;
     use fractal_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
+    use fractal_core::dynamics::symbolic::OrbitSchema;
     use fractal_core::dynamics::ParameterPlane;
 
     #[test]
@@ -182,5 +183,43 @@ mod tests
         let result = orbit.run_until_complete();
         dbg!(result);
         assert!(matches!(result, EscapeState::Periodic { .. }));
+    }
+
+    #[test]
+    fn find_nearby_preperiodic()
+    {
+        let param_plane = Mandelbrot::default();
+
+        // Parameter plane
+        {
+            let o = OrbitSchema {
+                period: 2,
+                preperiod: 2,
+            };
+            let start = Cplx::new(0.2, 1.2);
+            let target = Cplx::new(0., 1.);
+            let approx = param_plane.find_nearby_preperiodic_point(start, o);
+
+            let error = approx.unwrap().dist_sqr(target);
+            println!("Parameter error: {:.4e}", approx.unwrap().dist_sqr(target));
+            assert!(error < 1e-5);
+        }
+
+        // Dynamical plane
+        {
+            let c = Cplx::new(-1.75, 0.);
+            let dynam_plane = JuliaSet::from(param_plane).with_param(c);
+            let o = OrbitSchema {
+                preperiod: 0,
+                period: 3,
+            };
+            let start = Cplx::new(1.5, 0.1);
+            let target = Cplx::new(1.30193773580484, 0.);
+            let approx = dynam_plane.find_nearby_preperiodic_point(start, o);
+
+            let error = approx.unwrap().dist_sqr(target);
+            println!("Dynamical error: {:.4e}", approx.unwrap().dist_sqr(target));
+            assert!(error < 1e-5);
+        }
     }
 }

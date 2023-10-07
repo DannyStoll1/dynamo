@@ -1,6 +1,8 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::types::{Polar, PointInfo, Real};
+use crate::traits::Polar;
+use crate::types::{PointInfo, Real};
+
 pub mod algorithms;
 pub mod palette;
 pub mod types;

@@ -16,6 +16,17 @@ pub struct OrbitSchema
     pub preperiod: Period,
 }
 
+impl From<Period> for OrbitSchema
+{
+    fn from(period: Period) -> Self
+    {
+        Self {
+            period,
+            preperiod: 0,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KneadingSymbol
 {
@@ -385,9 +396,9 @@ impl std::error::Error for DivisionByZeroError {}
 pub enum ParseAngleError
 {
     UnrecognizedFormat,
-    ErrorParsingFraction(Box<dyn Error>),
-    ErrorParsingDyadic(Box<dyn Error>),
-    ErrorParsingPreperiodic(Box<dyn Error>),
+    Fraction(Box<dyn Error>),
+    Dyadic(Box<dyn Error>),
+    Preperiodic(Box<dyn Error>),
 }
 
 impl std::fmt::Display for ParseAngleError
@@ -397,12 +408,12 @@ impl std::fmt::Display for ParseAngleError
         match self
         {
             Self::UnrecognizedFormat => write!(f, "Unrecognized angle format."),
-            Self::ErrorParsingFraction(cause) =>
+            Self::Fraction(cause) =>
             {
                 write!(f, "Error parsing fraction string: {}", cause)
             }
-            Self::ErrorParsingDyadic(cause) => write!(f, "Error parsing dyadic string: {}", cause),
-            Self::ErrorParsingPreperiodic(cause) =>
+            Self::Dyadic(cause) => write!(f, "Error parsing dyadic string: {}", cause),
+            Self::Preperiodic(cause) =>
             {
                 write!(f, "Error parsing preperiodic string: {}", cause)
             }
@@ -417,30 +428,11 @@ impl std::error::Error for ParseAngleError
         match self
         {
             Self::UnrecognizedFormat => None,
-            Self::ErrorParsingFraction(cause) => Some(&**cause),
-            Self::ErrorParsingDyadic(cause) => Some(&**cause),
-            Self::ErrorParsingPreperiodic(cause) => Some(&**cause),
+            Self::Fraction(cause) => Some(&**cause),
+            Self::Dyadic(cause) => Some(&**cause),
+            Self::Preperiodic(cause) => Some(&**cause),
         }
     }
-    // fn description(&self) -> &str
-    // {
-    //     match self {
-    //         Self::UnrecognizedFormat => "Acceptable formats are binary strings (e.g. `01101`) for dyadic angles, binary (pre)periodic strings (e.g. `10p1001`), and integer ratios (e.g. `17/168`).",
-    //         Self::ErrorParsingFraction(cause) => &format!("Error parsing fraction string: {}", cause.description()),
-    //         Self::ErrorParsingDyadic(cause) => &format!("Error parsing dyadic string: {}", cause.description()),
-    //         Self::ErrorParsingPreperiodic(cause) => &format!("Error parsing preperiodic string: {}", cause.description()),
-    //     }
-    // }
-    // fn cause(&self) -> Option<&dyn Error>
-    // {
-    //     match self
-    //     {
-    //         Self::UnrecognizedFormat => None,
-    //         Self::ErrorParsingFraction(cause) => Some(cause),
-    //         Self::ErrorParsingDyadic(cause) => Some(cause),
-    //         Self::ErrorParsingPreperiodic(cause) => Some(cause),
-    //     }
-    // }
 }
 
 pub fn parse_angle(text: &str) -> Result<RationalAngle, ParseAngleError>
@@ -474,14 +466,14 @@ fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
                     }
                     else
                     {
-                        return Some(Err(ParseAngleError::ErrorParsingFraction(Box::new(
+                        return Some(Err(ParseAngleError::Fraction(Box::new(
                             DivisionByZeroError,
                         ))));
                     }
                 }
                 (Err(e), _) | (_, Err(e)) =>
                 {
-                    return Some(Err(ParseAngleError::ErrorParsingFraction(Box::new(e))));
+                    return Some(Err(ParseAngleError::Fraction(Box::new(e))));
                 }
             }
         }
@@ -501,7 +493,7 @@ fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
     Some(
         AngleNum::from_str_radix(bin_str.as_str(), 2)
             .map(|numer| RationalAngle::new(numer, 1 << bin_str.as_str().len()))
-            .map_err(|x| ParseAngleError::ErrorParsingDyadic(Box::new(x))),
+            .map_err(|x| ParseAngleError::Dyadic(Box::new(x))),
     )
 }
 
@@ -529,7 +521,7 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
                 }
                 Err(e) =>
                 {
-                    return Some(Err(ParseAngleError::ErrorParsingPreperiodic(Box::new(e))));
+                    return Some(Err(ParseAngleError::Preperiodic(Box::new(e))));
                 }
             }
         }
@@ -550,7 +542,7 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
             }
             (Err(e), _) | (_, Err(e)) =>
             {
-                return Some(Err(ParseAngleError::ErrorParsingPreperiodic(Box::new(e))));
+                return Some(Err(ParseAngleError::Preperiodic(Box::new(e))));
             }
         }
     }
@@ -575,5 +567,84 @@ impl FromStr for RationalAngle
             return result;
         }
         Err(ParseAngleError::UnrecognizedFormat)
+    }
+}
+
+//
+#[derive(Debug)]
+pub enum ParseOrbitSchemaError
+{
+    UnrecognizedFormat,
+    Preperiodic(ParseIntError),
+    Periodic(ParseIntError),
+}
+
+impl std::fmt::Display for ParseOrbitSchemaError
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        match self
+        {
+            Self::UnrecognizedFormat => write!(f, "Unrecognized angle format."),
+            Self::Periodic(cause) =>
+            {
+                write!(f, "Error parsing periodic string: {}", cause)
+            }
+            Self::Preperiodic(cause) =>
+            {
+                write!(f, "Error parsing preperiodic string: {}", cause)
+            }
+        }
+    }
+}
+
+impl std::error::Error for ParseOrbitSchemaError
+{
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)>
+    {
+        match self
+        {
+            Self::UnrecognizedFormat => None,
+            Self::Periodic(cause) => Some(cause),
+            Self::Preperiodic(cause) => Some(cause),
+        }
+    }
+}
+
+impl FromStr for OrbitSchema
+{
+    type Err = ParseOrbitSchemaError;
+
+    /// Parse text representing a period and preperiod into an OrbitSchema.
+    /// Acceptable input formats: <period> or <period, preperiod>
+    fn from_str(text: &str) -> Result<Self, Self::Err>
+    {
+        use ParseOrbitSchemaError as Err;
+        lazy_static! {
+            static ref PREPERIOD: Regex = Regex::new(r"^\s*(\d+)\s*,\s*(\d+)\s*$").unwrap();
+        }
+
+        if let Some(captures) = PREPERIOD.captures(&text)
+        {
+            let preperiod = captures
+                .get(1)
+                .ok_or(Err::UnrecognizedFormat)?
+                .as_str()
+                .parse()
+                .map_err(|e| Err::Preperiodic(e))?;
+            let period = captures
+                .get(2)
+                .ok_or(Err::UnrecognizedFormat)?
+                .as_str()
+                .parse()
+                .map_err(|e| Err::Preperiodic(e))?;
+            Ok(Self { preperiod, period })
+        }
+        else
+        {
+            text.parse::<Period>()
+                .map(|p| p.into())
+                .map_err(|e| Err::Periodic(e))
+        }
     }
 }

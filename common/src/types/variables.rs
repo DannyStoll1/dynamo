@@ -1,29 +1,87 @@
 use super::{Cplx, Real};
 use crate::consts::ZERO;
-use derive_more::Display;
+use crate::traits::{Arg, Describe, MaybeNan, Norm, Summarize};
+use derive_more::{Add, Display, From};
 
 pub mod matrix;
-pub use matrix::{Point, Matrix2x2};
+pub use matrix::{Matrix2x2, Point};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-pub trait Norm<R>: Copy
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[display(fmt = "[ a: {a}, b: {b} ] ")]
+pub struct Pair<T>
+where
+    T: std::fmt::Display,
 {
-    fn norm(&self) -> R;
-    fn norm_sqr(&self) -> R;
-}
-pub trait Arg<R>: Copy
-{
-    fn arg(&self) -> R;
-}
-pub trait MaybeNan
-{
-    fn is_nan(&self) -> bool;
+    pub a: T,
+    pub b: T,
 }
 
-pub trait Polar<R>: Norm<R> + Arg<R> {}
-impl<T, R> Polar<R> for T where T: Norm<R> + Arg<R> {}
+impl<T> Describe for Pair<T>
+where
+    T: std::fmt::Display,
+{
+    fn describe(&self) -> Option<String>
+    {
+        Some(self.to_string())
+    }
+}
+impl<T> Summarize for Pair<T> where T: std::fmt::Display {}
+
+impl<T> From<Cplx> for Pair<T>
+where
+    T: std::fmt::Display,
+{
+    fn from(_z: Cplx) -> Self
+    {
+        unimplemented!()
+    }
+}
+
+impl<T> From<Pair<T>> for Cplx
+where
+    T: std::fmt::Display,
+{
+    fn from(_value: Pair<T>) -> Self
+    {
+        unimplemented!()
+    }
+}
+
+pub type RealPair = Pair<Real>;
+pub type CplxPair = Pair<Cplx>;
+
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[display(fmt = "[ a: {a}, b: {b}, c: {c}, d: {d} ] ")]
+pub struct ComplexQuad
+{
+    pub a: Cplx,
+    pub b: Cplx,
+    pub c: Cplx,
+    pub d: Cplx,
+}
+
+impl Summarize for ComplexQuad {}
+
+impl From<Cplx> for ComplexQuad
+{
+    fn from(_z: Cplx) -> Self
+    {
+        unimplemented!()
+    }
+}
+
+impl From<ComplexQuad> for Cplx
+{
+    fn from(_value: ComplexQuad) -> Self
+    {
+        unimplemented!()
+    }
+}
 
 impl Norm<Real> for Cplx
 {
@@ -52,26 +110,6 @@ impl MaybeNan for Cplx
     fn is_nan(&self) -> bool
     {
         <Self>::is_nan(*self)
-    }
-}
-
-pub trait Dist<R>
-{
-    fn dist(&self, other: Self) -> R;
-    fn dist_sqr(&self, other: Self) -> R;
-}
-
-impl<R, T> Dist<R> for T
-where
-    T: Norm<R> + std::ops::Sub<Output = T>,
-{
-    fn dist(&self, other: Self) -> R
-    {
-        (*self - other).norm()
-    }
-    fn dist_sqr(&self, other: Self) -> R
-    {
-        (*self - other).norm_sqr()
     }
 }
 

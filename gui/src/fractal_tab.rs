@@ -1,10 +1,14 @@
+use crate::actions::Action;
+use crate::hotkeys::{
+    Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS,
+    SELECTION_HOTKEYS,
+};
+use crate::interface::{Interface, MainInterface};
 use crate::macros::{
     fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
 };
-use crate::pane::{Interface, MainInterface, PaneID};
 use egui::Ui;
 use egui_dock::{NodeIndex, SurfaceIndex};
-use fractal_common::coloring::{algorithms::InteriorColoringAlgorithm, palette::ColorPalette};
 use fractal_common::consts::{OMEGA, ONE};
 use fractal_common::types::{Cplx, ParamList};
 use fractal_core::dynamics::covering_maps::HasDynamicalCovers;
@@ -40,27 +44,19 @@ impl FractalTab
         egui::menu::bar(ui, |ui| {
             self.file_menu(ui);
             self.fractal_menu(ui);
-            self.coloring_menu(ui);
             self.image_menu(ui);
+            self.selection_menu(ui);
             self.annotations_menu(ui);
+            self.coloring_menu(ui);
         });
     }
 
     fn file_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("File", |ui| {
-            if ui.button("Save Parent").clicked()
-            {
-                self.interface.save_pane(PaneID::Parent);
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("Save Child").clicked()
-            {
-                self.interface.save_pane(PaneID::Child);
-                self.interface.consume_click();
-                ui.close_menu();
-            }
+            FILE_HOTKEYS.iter().for_each(|hotkey| {
+                self.hotkey_button(ui, hotkey);
+            });
         });
     }
 
@@ -78,95 +74,78 @@ impl FractalTab
     {
         ui.menu_button("Coloring", |ui| {
             ui.menu_button("Palette", |ui| {
-                if ui.button("[B]lack").clicked()
-                {
-                    let black_palette = ColorPalette::black(32.);
-                    self.interface.set_palette(black_palette);
-                }
-                else if ui.button("[W]hite").clicked()
-                {
-                    let white_palette = ColorPalette::white(32.);
-                    self.interface.set_palette(white_palette);
-                }
-                else if ui.button("[R]andom").clicked()
-                {
-                    self.interface.randomize_palette();
-                }
-                else
-                {
-                    return;
-                }
-                self.interface.consume_click();
-                ui.close_menu();
+                PALETTE_HOTKEYS.iter().for_each(|hotkey| {
+                    self.hotkey_button(ui, hotkey);
+                });
             });
-            ui.menu_button("Algorithm", |ui| {
-                if ui.button("[0] Solid").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(InteriorColoringAlgorithm::Solid);
-                }
-                else if ui.button("[1] Period").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(InteriorColoringAlgorithm::Period);
-                }
-                else if ui.button("[2] Period and Multiplier").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
-                }
-                else if ui.button("[3] Multiplier").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(InteriorColoringAlgorithm::Multiplier);
-                }
-                else if ui.button("[4] Preperiod").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(InteriorColoringAlgorithm::Preperiod);
-                }
-                else if ui.button("[5] Internal potential").clicked()
-                {
-                    self.interface
-                        .parent_mut()
-                        .select_preperiod_smooth_coloring();
-                    self.interface
-                        .child_mut()
-                        .select_preperiod_smooth_coloring();
-                }
-                else if ui.button("Preperiod and Period").clicked()
-                {
-                    self.interface
-                        .set_coloring_algorithm(InteriorColoringAlgorithm::PreperiodPeriod);
-                }
-                else if ui.button("Internal potential and Period").clicked()
-                {
-                    self.interface
-                        .parent_mut()
-                        .select_preperiod_period_smooth_coloring();
-                    self.interface
-                        .child_mut()
-                        .select_preperiod_period_smooth_coloring();
-                }
-                else
-                {
-                    return;
-                }
-                self.interface.consume_click();
-                ui.close_menu();
+
+            ui.menu_button("Incoloring", |ui| {
+                INCOLORING_HOTKEYS.iter().for_each(|hotkey| {
+                    self.hotkey_button(ui, hotkey);
+                });
             });
+            // ui.menu_button("Algorithm", |ui| {
+            //     if ui.button("[0] Solid").clicked()
+            //     {
+            //         self.interface
+            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Solid);
+            //     }
+            //     else if ui.button("[1] Period").clicked()
+            //     {
+            //         self.interface
+            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Period);
+            //     }
+            //     else if ui.button("[2] Period and Multiplier").clicked()
+            //     {
+            //         self.interface
+            //             .set_coloring_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
+            //     }
+            //     else if ui.button("[3] Multiplier").clicked()
+            //     {
+            //         self.interface
+            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Multiplier);
+            //     }
+            //     else if ui.button("[4] Preperiod").clicked()
+            //     {
+            //         self.interface
+            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Preperiod);
+            //     }
+            //     else if ui.button("[5] Internal potential").clicked()
+            //     {
+            //         self.interface
+            //             .parent_mut()
+            //             .select_preperiod_smooth_coloring();
+            //         self.interface
+            //             .child_mut()
+            //             .select_preperiod_smooth_coloring();
+            //     }
+            //     else if ui.button("Preperiod and Period").clicked()
+            //     {
+            //         self.interface
+            //             .set_coloring_algorithm(InteriorColoringAlgorithm::PreperiodPeriod);
+            //     }
+            //     else if ui.button("Internal potential and Period").clicked()
+            //     {
+            //         self.interface
+            //             .parent_mut()
+            //             .select_preperiod_period_smooth_coloring();
+            //         self.interface
+            //             .child_mut()
+            //             .select_preperiod_period_smooth_coloring();
+            //     }
+            //     else
+            //     {
+            //         return;
+            //     }
+            //     self.interface.consume_click();
+            //     ui.close_menu();
+            // });
         });
     }
 
     fn image_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Image", |ui| {
-            if ui.button("Toggle [L]ive Julia").clicked()
-            {
-                self.interface.toggle_live_mode();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
             ui.menu_button("Set height", |ui| {
                 if ui.button("256").clicked()
                 {
@@ -195,96 +174,28 @@ impl FractalTab
                 self.interface.consume_click();
                 ui.close_menu();
             });
+
+            IMAGE_HOTKEYS.iter().for_each(|hotkey| {
+                self.hotkey_button(ui, hotkey);
+            });
+        });
+    }
+
+    fn selection_menu(&mut self, ui: &mut Ui)
+    {
+        ui.menu_button("Selection", |ui| {
+            SELECTION_HOTKEYS.iter().for_each(|hotkey| {
+                self.hotkey_button(ui, hotkey);
+            });
         });
     }
 
     fn annotations_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Annotations", |ui| {
-            if ui.button("[C]lear marked curves").clicked()
-            {
-                self.interface.child_mut().clear_marked_orbit();
-                self.interface.parent_mut().clear_marked_orbit();
-                self.interface.child_mut().schedule_redraw();
-                self.interface.parent_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[I] Toggle selection").clicked()
-            {
-                self.interface
-                    .child_mut()
-                    .marking_mut()
-                    .toggle_selection();
-                self.interface
-                    .parent_mut()
-                    .marking_mut()
-                    .toggle_selection();
-                self.interface.child_mut().schedule_redraw();
-                self.interface.parent_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[P] Toggle critical points (Julia)").clicked()
-            {
-                self.interface
-                    .child_mut()
-                    .marking_mut()
-                    .toggle_critical();
-                self.interface.child_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[O] Toggle marked points (Param)").clicked()
-            {
-                self.interface
-                    .parent_mut()
-                    .marking_mut()
-                    .toggle_critical();
-                self.interface.parent_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[^1] Toggle fixed points (Julia)").clicked()
-            {
-                self.interface
-                    .child_mut()
-                    .marking_mut()
-                    .toggle_cycles_of_period(1);
-                self.interface.child_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[^2] Toggle 2-cycles (Julia)").clicked()
-            {
-                self.interface
-                    .child_mut()
-                    .marking_mut()
-                    .toggle_cycles_of_period(2);
-                self.interface.child_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[^3] Toggle 3-cycles (Julia)").clicked()
-            {
-                self.interface
-                    .child_mut()
-                    .marking_mut()
-                    .toggle_cycles_of_period(3);
-                self.interface.child_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
-            else if ui.button("[^4] Toggle 4-cycles (Julia)").clicked()
-            {
-                self.interface
-                    .child_mut()
-                    .marking_mut()
-                    .toggle_cycles_of_period(4);
-                self.interface.child_mut().schedule_redraw();
-                self.interface.consume_click();
-                ui.close_menu();
-            }
+            ANNOTATION_HOTKEYS.iter().for_each(|hotkey| {
+                self.hotkey_button(ui, hotkey);
+            });
         });
     }
 
@@ -682,7 +593,7 @@ impl FractalTab
 
     pub fn process_interface_message(&mut self, _ui: &mut Ui)
     {
-        use super::pane::UIMessage::{CloseWindow, DoNothing, Quit};
+        use super::interface::UIMessage::{CloseWindow, DoNothing, Quit};
         match self.interface.pop_message()
         {
             DoNothing =>
@@ -694,6 +605,24 @@ impl FractalTab
             Quit =>
             {
                 std::process::exit(0);
+            }
+        }
+    }
+
+    fn hotkey_button(&mut self, ui: &mut Ui, hotkey: &Hotkey)
+    {
+        if let Some(action) = hotkey.menu_action()
+        {
+            if ui
+                .add(
+                    egui::Button::new(action.short_description())
+                        .shortcut_text(hotkey.shortcut_text().unwrap_or(egui::RichText::default())),
+                )
+                .clicked()
+            {
+                self.interface.process_action(action);
+                self.interface.consume_click();
+                ui.close_menu();
             }
         }
     }

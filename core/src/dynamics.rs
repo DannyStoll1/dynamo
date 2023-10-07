@@ -4,19 +4,20 @@ use fractal_common::{
     globals::{RAY_DEPTH, RAY_SHARPNESS},
     iter_plane::IterPlane,
     math_utils::{
-        newton_until_convergence, newton_until_convergence_d, newton_until_convergence_safe,
+        arithmetic::{div_rem, divisors, gcd, moebius, Integer},
+        newton::{find_root_newton, newton_until_convergence, newton_until_convergence_d},
     },
     point_grid::{self, Bounds, PointGrid},
-    types::{param_stack::Summarize, AngleNum, MaybeNan, PointClassId, PointInfoPeriodic, Polar},
-    types::{
-        Cplx, Dist, EscapeState, IterCount, Norm, OrbitInfo, ParamList, Period, PointInfo, Real,
-    },
+    traits::{Dist, MaybeNan, Norm, Polar, Summarize},
+    types::{AngleNum, PointClassId, PointInfoPeriodic},
+    types::{Cplx, EscapeState, IterCount, OrbitInfo, ParamList, Period, PointInfo, Real},
 };
 use ndarray::{Array2, Axis};
 use num_cpus;
+use num_traits::{One, Zero};
 use rayon::iter::{ParallelBridge, ParallelIterator};
-use std::fmt::Display;
 use std::{cell::RefCell, f64::consts::TAU};
+use std::{fmt::Display, ops::AddAssign};
 use thread_local::ThreadLocal;
 
 pub mod covering_maps;
@@ -29,7 +30,7 @@ pub mod symbolic;
 
 use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
-use std::ops::{Mul, MulAssign, Sub};
+use std::ops::{Add, Mul, MulAssign, Sub};
 
 use self::{orbit::OrbitParams, symbolic::OrbitSchema};
 // pub use simple_parameter_plane::SimpleParameterPlane;
@@ -55,9 +56,12 @@ pub trait Derivative:
     Polar<Real>
     + Send
     + Default
-    + From<Real>
+    + Zero
+    + One
+    + Add<Output = Self>
     + Sub<Output = Self>
     + Mul<Output = Self>
+    + AddAssign
     + MulAssign
     + Display
     + Into<Cplx>
@@ -85,9 +89,12 @@ impl<D> Derivative for D where
     D: Polar<Real>
         + Send
         + Default
-        + From<Real>
+        + Zero
+        + One
+        + Add<Output = Self>
         + Sub<Output = Self>
         + Mul<Output = Self>
+        + AddAssign
         + MulAssign
         + Display
         + Into<Cplx>
@@ -237,11 +244,15 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// For parameter planes, `start_point` needs to be implemented manually.
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var;
 
-    /// Start point and its derivative with respect to the parameter
-    /// TODO: implement this correctly
-    fn start_point_d(&self, point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv)
+    /// Start point, its partial derivative with respect to the point,
+    /// and its partial derivative with respect to the parameter
+    fn start_point_d(&self, point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        (self.start_point(point, c), Self::Deriv::from(1.0))
+        (
+            self.start_point(point, c),
+            Self::Deriv::zero(),
+            Self::Deriv::zero(),
+        )
     }
 
     /// Marked critical value and its derivative with respect to the parameter. Only needed for
@@ -249,7 +260,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// TODO: implement this correctly
     fn critical_value_and_param_derivative(&self, _c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        (NAN.into(), Real::NAN.into())
+        (NAN.into(), Self::Deriv::zero())
     }
 
     /// Map points in the image to parameters. Used for multi-parameter systems or covering maps
@@ -265,7 +276,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     #[inline]
     fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
     {
-        (point.into(), Self::Deriv::from(1.0))
+        (point.into(), Self::Deriv::one())
     }
 
     /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
@@ -281,7 +292,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     #[inline]
     fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
     {
-        (point.into(), Self::Deriv::from(1.0))
+        (point.into(), Self::Deriv::one())
     }
 
     /// Map temporary `EscapeState` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
@@ -477,37 +488,122 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn find_nearby_preperiodic_point(
         &self,
         start_point: Cplx,
-        orbit_schema: OrbitSchema,
+        OrbitSchema {
+            period: n,
+            preperiod: k,
+        }: OrbitSchema,
     ) -> Option<Cplx>
     {
+        if n == 0
+        {
+            return None;
+        }
+
+        // Number of unitary divisors of n
+        let num_factors = divisors(n).filter(|d| gcd(n / d, *d) == 1).count();
+
+        // Values and derivatives of (f^{m+k}(z0) - f^k(z0))^(mu(n/m)) for m a unitary divisor of n
+        let mut values = vec![ONE; num_factors];
+        let mut derivs = vec![ZERO; num_factors];
+
         let diff = |t| {
+            // Initial coordinates
             let (c, dc_dt) = self.param_map_d(t);
-            let (mut z, dz_dc) = self.start_point_d(t, c);
+            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
 
-            let mut dz_dt = dc_dt * dz_dc;
+            // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
+            dz_dt += dc_dt * dz_dc;
+
             let mut df_dz: Self::Deriv;
+            let mut df_dc: Self::Deriv;
 
-            for _ in 0..orbit_schema.preperiod
+            // f^(k-1)(z) and its derivative with respect to t
+            let (mut zk1, mut zk1_dt) = (ZERO, ZERO);
+
+            // If k > 0, these will become 1/(f^(k+n-1) - f^(k-1)(z)) and its derivative with respect to t
+            // We initialize them so as to have no effect if k = 0
+            let mut early_cycle = ONE;
+            let mut early_cycle_dt = ZERO;
+
+            let mut term_count: usize = 0;
+
+            // Preperiodic part
+            if k > 0
             {
-                (z, df_dz) = self.map_and_multiplier(z, c);
-                dz_dt *= df_dz;
+                for _ in 0..k - 1
+                {
+                    (z, df_dz, df_dc) = self.gradient(z, c);
+                    dz_dt = dz_dt * df_dz + df_dc;
+                }
+
+                zk1 = z.into();
+                zk1_dt = dz_dt.into();
+                (z, df_dz, df_dc) = self.gradient(z, c);
+                dz_dt = dz_dt * df_dz + df_dc;
             }
 
             let mut w = z.clone();
             let mut dw_dt = dz_dt.clone();
 
-            dbg!(z.into());
-            dbg!(dz_dt.into());
+            // Periodic part
 
-            for _ in 0..orbit_schema.period
+            for i in 1..n
             {
-                (w, df_dz) = self.map_and_multiplier(w, c);
-                dw_dt *= df_dz;
+                (w, df_dz, df_dc) = self.gradient(w, c);
+                dw_dt = dw_dt * df_dz + df_dc;
+
+                // Divide out lower order periods
+                let (q, r) = n.div_rem(&i);
+                if r == 0
+                {
+                    let mu = moebius(q);
+                    if mu == 1
+                    {
+                        values[term_count] = (w - z).into();
+                        derivs[term_count] = (dw_dt - dz_dt).into();
+                        term_count += 1;
+                    }
+                    else if mu == -1
+                    {
+                        let dg = (dz_dt - dw_dt).into();
+                        let val = (w - z).into().inv();
+                        values[term_count] = val;
+                        derivs[term_count] = dg * val * val;
+                        term_count += 1;
+                    }
+                }
             }
-            ((w - z).into(), (dw_dt - dz_dt).into())
+
+            // At this point we have done k+n-1 iterations
+            if k > 0
+            {
+                // f^(k+n-1)(z) and its derivative with respect to t
+                let zkn1 = w.into();
+                let zkn1_dt = dw_dt.into();
+
+                // 1/(f^(k+n-1)(z) - f^(k-1)(z)) and its derivative with respect to t
+                early_cycle = (zkn1 - zk1).inv();
+                early_cycle_dt = early_cycle * early_cycle * (zk1_dt - zkn1_dt);
+            }
+
+            // Perform final iteration manually
+            (w, df_dz, df_dc) = self.gradient(w, c);
+            dw_dt = dw_dt * df_dz + df_dc;
+
+            values[term_count] = (w - z).into();
+            derivs[term_count] = (dw_dt - dz_dt).into();
+
+            // Iteratively apply product rule to compute derivative
+            let out = values
+                .iter()
+                .zip(derivs.iter())
+                .fold((early_cycle, early_cycle_dt), |(u, du), (v, dv)| {
+                    (u * v, u * dv + v * du)
+                });
+            out
         };
 
-        newton_until_convergence_safe(diff, start_point)
+        find_root_newton(diff, start_point)
     }
 
     /// Compute an external ray for a given angle in [0,1).

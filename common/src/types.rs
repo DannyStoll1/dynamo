@@ -1,11 +1,10 @@
-use self::param_stack::Summarize;
-use derive_more::{Add, Display, From};
+use crate::globals::DISPLAY_PREC;
 use num_complex::Complex;
 use num_rational::Ratio;
 use std::fmt::Display;
 
 pub mod variables;
-pub use variables::{Dist, Norm, Polar, MaybeNan};
+pub use variables::*;
 pub mod param_stack;
 pub use param_stack::{NoParam, ParamList, ParamStack};
 
@@ -17,6 +16,7 @@ pub type Real = f64;
 pub type Cplx = Complex<Real>;
 pub type ComplexVec = Vec<Cplx>;
 pub type Period = u32;
+pub type SignedPeriod = i32;
 pub type AngleNum = i64;
 pub type Rational = Ratio<AngleNum>;
 
@@ -78,7 +78,8 @@ pub struct PointClassId(pub u8);
 
 impl From<usize> for PointClassId
 {
-    fn from(n: usize) -> Self {
+    fn from(n: usize) -> Self
+    {
         Self(n as u8)
     }
 }
@@ -120,13 +121,6 @@ impl<V, D> Default for PointInfo<V, D>
     }
 }
 
-const DISPLAY_PREC: usize = 16;
-
-pub fn format_complex(value: Cplx) -> String
-{
-    format!("{:.*}", DISPLAY_PREC, value)
-}
-
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitInfo<V, P, D>
@@ -157,70 +151,5 @@ where
             "Parameter: {:.*}\nStarting point: {:.*}\n{}",
             DISPLAY_PREC, self.param, DISPLAY_PREC, self.start, result_summary
         )
-    }
-}
-
-#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {a}, b: {b} ] ")]
-pub struct Pair<T>
-where
-    T: std::fmt::Display,
-{
-    pub a: T,
-    pub b: T,
-}
-
-impl<T> Summarize for Pair<T> where T: std::fmt::Display {}
-
-impl<T> From<Cplx> for Pair<T>
-where
-    T: std::fmt::Display,
-{
-    fn from(_z: Cplx) -> Self
-    {
-        unimplemented!()
-    }
-}
-
-impl<T> From<Pair<T>> for Cplx
-where
-    T: std::fmt::Display,
-{
-    fn from(_value: Pair<T>) -> Self
-    {
-        unimplemented!()
-    }
-}
-
-pub type RealPair = Pair<Real>;
-pub type CplxPair = Pair<Cplx>;
-
-#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {a}, b: {b}, c: {c}, d: {d} ] ")]
-pub struct ComplexQuad
-{
-    pub a: Cplx,
-    pub b: Cplx,
-    pub c: Cplx,
-    pub d: Cplx,
-}
-
-impl Summarize for ComplexQuad {}
-
-impl From<Cplx> for ComplexQuad
-{
-    fn from(_z: Cplx) -> Self
-    {
-        unimplemented!()
-    }
-}
-
-impl From<ComplexQuad> for Cplx
-{
-    fn from(_value: ComplexQuad) -> Self
-    {
-        unimplemented!()
     }
 }

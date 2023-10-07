@@ -1,8 +1,9 @@
-use super::{Arg, Dist, MaybeNan, Norm};
-use crate::types::{Cplx, Real, Summarize};
-use derive_more::{Add, Display, From, Sub};
+use crate::traits::{Arg, FloatLike, MaybeNan, Named, Norm};
+use crate::types::{Cplx, Real};
+use derive_more::{Add, AddAssign, Display, From, Sub};
+use num_traits::{One, Zero};
 
-#[derive(Default, Clone, Copy, Debug, Add, Sub, Display, From, PartialEq)]
+#[derive(Default, Clone, Copy, Debug, Add, Sub, AddAssign, Display, From, PartialEq)]
 #[display(fmt = "({x}, {y})")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point
@@ -10,13 +11,31 @@ pub struct Point
     pub x: Real,
     pub y: Real,
 }
-impl Summarize for Point {}
+impl Named for Point
+{
+    fn name(&self) -> &str
+    {
+        "p"
+    }
+}
+impl FloatLike for Point {}
 
 impl Point
 {
     fn dot(&self, other: &Self) -> Real
     {
         self.x.mul_add(other.x, self.y * other.y)
+    }
+}
+impl Zero for Point
+{
+    fn zero() -> Self
+    {
+        Self { x: 0., y: 0. }
+    }
+    fn is_zero(&self) -> bool
+    {
+        self.x.is_zero() && self.y.is_zero()
     }
 }
 impl Norm<Real> for Point
@@ -64,7 +83,7 @@ impl From<Point> for Cplx
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, Add, Sub, Display, From, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, Add, Sub, AddAssign, Display, From, PartialEq)]
 #[display(fmt = "[{v0}, {v1}]")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Matrix2x2
@@ -109,11 +128,22 @@ impl From<Matrix2x2> for Cplx
         Self::new(value.v0.x * value.v1.y, value.v0.y * value.v1.x)
     }
 }
-impl From<Real> for Matrix2x2
+impl Zero for Matrix2x2
 {
-    fn from(value: Real) -> Self
+    fn zero() -> Self
     {
-        Self::new(value, 0., 0., value)
+        Self::new(0., 0., 0., 0.)
+    }
+    fn is_zero(&self) -> bool
+    {
+        self.v0.is_zero() && self.v1.is_zero()
+    }
+}
+impl One for Matrix2x2
+{
+    fn one() -> Self
+    {
+        Self::new(1., 0., 0., 1.)
     }
 }
 impl std::ops::Mul for Matrix2x2

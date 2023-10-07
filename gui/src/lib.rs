@@ -1,15 +1,15 @@
 #![allow(dead_code)]
-
 use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
+pub mod actions;
 pub mod dialog;
 pub mod fractal_tab;
+pub mod hotkeys;
 pub mod image_frame;
-pub mod keyboard_shortcuts;
+pub mod interface;
 pub mod macros;
 pub mod marked_points;
 pub mod pane;
-// mod utils;
 use fractal_tab::FractalTab;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -42,8 +42,8 @@ impl egui_dock::TabViewer for TabViewer<'_>
         tab.show_menu(ui);
         tab.interface.handle_input(ui.ctx());
         tab.process_interface_message(ui);
-        tab.interface.process_tasks();
-        tab.interface.show_dialogs(ui.ctx());
+        tab.interface.update_panes();
+        tab.interface.show_dialog(ui.ctx());
         tab.interface.show(ui);
     }
 
@@ -57,21 +57,6 @@ impl egui_dock::TabViewer for TabViewer<'_>
         let tab = FractalTab::default().with_surface_and_node_index(surface, node);
         self.added_nodes.push(tab);
     }
-
-    // fn add_popup(&mut self, ui: &mut egui::Ui, node: NodeIndex) {
-    //     ui.set_min_width(120.0);
-    //     ui.style_mut().visuals.button_frame = false;
-    //
-    //     if ui.button("Mandelbrot").clicked() {
-    //         let tab = FractalTab::default().with_node_index(node);
-    //         self.added_nodes.push(tab);
-    //     }
-    //
-    //     if ui.button("QuadRatPer2").clicked() {
-    //         let tab = FractalTab::default().with_node_index(node);
-    //         self.added_nodes.push(tab);
-    //     }
-    // }
 }
 
 pub struct FractalApp
@@ -140,17 +125,17 @@ mod tests
     {
         use fractal_core::dynamics::{julia::JuliaSet, ParameterPlane};
         let height = 1024;
-        use crate::pane::{MainInterface, PanePair};
+        use crate::interface::{MainInterface, PanePair};
         let parameter_plane = fractal_profiles::QuadRatPer2::default()
             .with_res_y(height)
             .with_max_iter(2048);
 
         let dynamical_plane = JuliaSet::from(parameter_plane.clone());
 
-        let mut pane_pair = Box::new(MainInterface::new(parameter_plane, dynamical_plane, height));
+        let mut interface = Box::new(MainInterface::new(parameter_plane, dynamical_plane, height));
         for _ in 0..10
         {
-            pane_pair.child_mut().recompute();
+            interface.child_mut().recompute();
         }
     }
 }

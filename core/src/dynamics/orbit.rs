@@ -1,4 +1,6 @@
-use fractal_common::types::{Dist, EscapeState, MaybeNan, Norm, Period, PointInfoPeriodic, Real};
+use fractal_common::traits::{Dist, MaybeNan, Norm};
+use fractal_common::types::{EscapeState, Period, PointInfoPeriodic, Real};
+use num_traits::One;
 
 pub struct OrbitParams
 {
@@ -115,7 +117,7 @@ where
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
     V: Norm<Real> + Dist<Real>,
-    D: Norm<Real> + std::ops::MulAssign + From<f64>,
+    D: Norm<Real> + std::ops::MulAssign + One,
 {
     f: F,
     map_and_multiplier: G,
@@ -139,7 +141,7 @@ where
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
     V: Norm<Real> + Dist<Real> + MaybeNan,
-    D: Norm<Real> + std::ops::MulAssign + From<f64>,
+    D: Norm<Real> + std::ops::MulAssign + One,
 {
     pub fn new(
         f: F,
@@ -157,7 +159,7 @@ where
             param,
             z_slow: z,
             z_fast: z,
-            multiplier: (1.).into(),
+            multiplier: D::one(),
             iter: 0,
             state: EscapeState::NotYetEscaped,
             max_iter: orbit_params.max_iter,
@@ -199,7 +201,7 @@ where
         self.param = param;
         self.z_slow = start_point;
         self.z_fast = start_point;
-        self.multiplier = (1.).into();
+        self.multiplier = D::one();
         self.iter = 0;
         self.state = EscapeState::NotYetEscaped;
     }
@@ -316,7 +318,7 @@ where
     {
         let mut z = z0;
         let mut dz: D;
-        let mut mult = D::from(1.);
+        let mut mult = D::one();
         for i in 1..=patience
         {
             (z, dz) = self.get_map_value_and_derivative(z);
@@ -341,7 +343,7 @@ where
     B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
     V: Norm<Real> + Dist<Real> + MaybeNan,
-    D: Norm<Real> + std::ops::MulAssign + From<f64>,
+    D: Norm<Real> + std::ops::MulAssign + One,
 {
     type Item = (V, EscapeState<V, D>);
 

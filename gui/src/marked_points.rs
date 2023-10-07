@@ -454,7 +454,8 @@ impl Marking
         self.curves.objects.values().filter(|o| o.visible).cloned()
     }
 
-    pub fn ray_landing_point(&self, angle: RationalAngle) -> Option<Cplx> {
+    pub fn ray_landing_point(&self, angle: RationalAngle) -> Option<Cplx>
+    {
         let col_ray = self.curves.objects.get(&CurveKey::Ray(angle))?;
         col_ray.object.last().copied()
     }

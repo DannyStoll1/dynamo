@@ -1,7 +1,8 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
 use crate::consts::TAU;
-use crate::types::{IterCount, Polar, PointInfoPeriodic, Real};
+use crate::traits::Polar;
+use crate::types::{IterCount, PointInfoPeriodic, Real};
 use egui::Color32;
 
 #[cfg(feature = "serde")]

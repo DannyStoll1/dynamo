@@ -3,11 +3,13 @@ use crate::macros::basic_plane_impl;
 use fractal_common::coloring::{algorithms::InteriorColoringAlgorithm, Coloring};
 use fractal_common::consts::{ONE, TAU, ZERO};
 use fractal_common::globals::{RAY_DEPTH, RAY_SHARPNESS};
-use fractal_common::math_utils::newton_until_convergence_d;
+use fractal_common::math_utils::arithmetic::{divisors, gcd, moebius, Integer};
+use fractal_common::math_utils::newton::{find_root_newton, newton_until_convergence_d};
 use fractal_common::point_grid::{Bounds, PointGrid};
 use fractal_common::types::{
     Cplx, EscapeState, NoParam, ParamList, ParamStack, Period, PointInfo, Real,
 };
+use num_traits::{One, Zero};
 
 use super::symbolic::OrbitSchema;
 
@@ -45,6 +47,13 @@ where
             local_param,
             parent_selection,
         }
+    }
+
+    #[must_use]
+    pub fn with_param(mut self, c: T::Param) -> Self
+    {
+        self.set_param(c);
+        self
     }
 
     pub fn map_and_multiplier_lazy(&self, z: T::Var) -> (T::Var, T::Deriv)
@@ -102,7 +111,7 @@ where
     #[inline]
     fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        Self::Deriv::from(0.0)
+        Self::Deriv::zero()
         // self.parent.parameter_derivative(z, self.local_param)
     }
 
@@ -115,7 +124,8 @@ where
     #[inline]
     fn gradient(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        self.parent.gradient(z, self.local_param)
+        let (f, df_dz) = self.map_and_multiplier(z, NoParam);
+        (f, df_dz, Self::Deriv::zero())
     }
 
     #[inline]
@@ -133,7 +143,7 @@ where
     #[inline]
     fn param_map_d(&self, _z: Cplx) -> (Self::Param, Self::Deriv)
     {
-        (NoParam, Self::Deriv::from(1.0))
+        (NoParam, Self::Deriv::zero())
     }
 
     #[inline]
@@ -143,9 +153,14 @@ where
     }
 
     #[inline]
-    fn start_point_d(&self, point: Cplx, _param: Self::Param) -> (Self::Var, Self::Deriv)
+    fn start_point_d(
+        &self,
+        point: Cplx,
+        _param: Self::Param,
+    ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        self.parent.dynam_map_d(point)
+        let (z, dz_dt) = self.parent.dynam_map_d(point);
+        (z, dz_dt, Self::Deriv::zero())
     }
 
     #[inline]
@@ -365,4 +380,84 @@ where
 
         Some(z_list)
     }
+
+    // Try to find a (pre)periodic point near a given base point
+    // fn find_nearby_preperiodic_point(
+    //     &self,
+    //     start_point: Cplx,
+    //     OrbitSchema {
+    //         period: n,
+    //         preperiod: k,
+    //     }: OrbitSchema,
+    // ) -> Option<Cplx>
+    // {
+    //     if n == 0
+    //     {
+    //         return None;
+    //     }
+    //
+    //     // Number of unitary divisors of n
+    //     let num_factors = divisors(n).filter(|d| gcd(n / d, *d) == 1).count();
+    //
+    //     // Values and derivatives of (f^{m+k}(z0) - f^k(z0))^(mu(n/m)) for m a proper unitary divisor of n
+    //     let mut values = vec![ZERO; num_factors - 1];
+    //     let mut derivs = vec![ONE; num_factors - 1];
+    //
+    //     let diff = |t| {
+    //         let c = NoParam;
+    //         let (mut z, mut dz_dt) = self.start_point_d(t, c);
+    //         let mut df_dz: Self::Deriv;
+    //
+    //         let mut term_count: usize = 0;
+    //
+    //         for _ in 0..k
+    //         {
+    //             (z, df_dz) = self.map_and_multiplier(z, c);
+    //             dz_dt *= df_dz;
+    //         }
+    //
+    //         let mut w = z.clone();
+    //         let mut dw_dt = dz_dt.clone();
+    //
+    //         // Do first iteration manually to avoid division by zero
+    //         (w, df_dz) = self.map_and_multiplier(w, c);
+    //         dw_dt = dw_dt * df_dz;
+    //
+    //         for i in 1..n
+    //         {
+    //             let (q, r) = n.div_rem(&i);
+    //             if r == 0
+    //             {
+    //                 let mu = moebius(q);
+    //                 if mu == 1
+    //                 {
+    //                     values[term_count] = (w - z).into();
+    //                     derivs[term_count] = (dw_dt - dz_dt).into();
+    //                     term_count += 1;
+    //                 }
+    //                 else if mu == -1
+    //                 {
+    //                     let dg = (dz_dt - dw_dt).into();
+    //                     let val = (w - z).into().inv();
+    //                     values[term_count] = val;
+    //                     derivs[term_count] = dg * val * val;
+    //                     term_count += 1;
+    //                 }
+    //             }
+    //
+    //             (w, df_dz) = self.map_and_multiplier(w, c);
+    //             dw_dt *= df_dz;
+    //         }
+    //         let val_n = (w - z).into();
+    //         let dif_n = (dw_dt - dz_dt).into();
+    //
+    //         // Iteratively apply product rule to compute derivative
+    //         values
+    //             .iter()
+    //             .zip(derivs.iter())
+    //             .fold((val_n, dif_n), |(u, du), (v, dv)| (u * v, u * dv + v * du))
+    //     };
+    //
+    //     find_root_newton(diff, start_point)
+    // }
 }

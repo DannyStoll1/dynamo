@@ -100,34 +100,34 @@ pub struct ColorPalette
 impl ColorPalette
 {
     #[must_use]
-    pub fn new(period_r: f64, period_g: f64, period_b: f64) -> Self
+    pub const fn new(period_r: f64, period_g: f64, period_b: f64) -> Self
     {
         Self {
             color_map_r: Sinusoid::new(period_r),
             color_map_g: Sinusoid::new(period_g),
             color_map_b: Sinusoid::new(period_b),
-            period_coloring: DiscretePalette::default(),
+            period_coloring: DiscretePalette::standard(),
             in_color: Color32::BLACK,
             wandering_color: Color32::WHITE,
         }
     }
 
     #[must_use]
-    pub fn white(period: f64) -> Self
+    pub const fn white(period: f64) -> Self
     {
         let color_map = Sinusoid::new(period);
         Self {
             color_map_r: color_map,
             color_map_g: color_map,
             color_map_b: color_map,
-            period_coloring: DiscretePalette::default(),
+            period_coloring: DiscretePalette::standard(),
             in_color: Color32::BLACK,
             wandering_color: Color32::BROWN,
         }
     }
 
     #[must_use]
-    pub fn black(period: f64) -> Self
+    pub const fn black(period: f64) -> Self
     {
         let color_map = Sinusoid {
             period,
@@ -139,7 +139,7 @@ impl ColorPalette
             color_map_r: color_map,
             color_map_g: color_map,
             color_map_b: color_map,
-            period_coloring: DiscretePalette::default(),
+            period_coloring: DiscretePalette::standard(),
             in_color: Color32::WHITE,
             wandering_color: Color32::BROWN,
         }
@@ -283,6 +283,17 @@ impl DiscretePalette
     const DEFAULT_NUM_COLORS: f32 = 7.;
 
     #[must_use]
+    pub const fn standard() -> Self
+    {
+        Self {
+            num_colors: Self::DEFAULT_NUM_COLORS,
+            base_hue: Self::DEFAULT_BASE_HUE,
+            saturation: Self::DEFAULT_SATURATION,
+            luminosity: Self::DEFAULT_LUMINOSITY,
+        }
+    }
+
+    #[must_use]
     pub fn map_hsv(&self, period: f32, luminosity_modifier: f32) -> Hsv
     {
         let hue = (period / self.num_colors + self.base_hue) % 1.;
@@ -333,11 +344,6 @@ impl Default for DiscretePalette
 {
     fn default() -> Self
     {
-        Self {
-            num_colors: Self::DEFAULT_NUM_COLORS,
-            base_hue: Self::DEFAULT_BASE_HUE,
-            saturation: Self::DEFAULT_SATURATION,
-            luminosity: Self::DEFAULT_LUMINOSITY,
-        }
+        Self::standard()
     }
 }

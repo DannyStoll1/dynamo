@@ -1,16 +1,87 @@
 use egui::{self, Key};
 use egui::{vec2, Window};
+use egui_file::FileDialog;
 
-pub enum DialogState
+use crate::interface::PaneID;
+
+pub enum Dialog
+{
+    Save
+    {
+        pane_id: PaneID,
+        file_dialog: FileDialog,
+    },
+    Text(StructuredTextDialog),
+}
+
+pub enum State
 {
     JustOpened,
     InProgress,
     Completed,
     Closed,
 }
-impl DialogState
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum TextInputType
 {
-    fn visible(&self) -> bool
+    ExternalRay
+    {
+        pane_id: PaneID, follow: bool
+    },
+    FindPeriodic
+    {
+        pane_id: PaneID
+    },
+    Coordinates
+    {
+        pane_id: PaneID
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum Response
+{
+    Cancelled,
+    InProgress,
+    Complete
+    {
+        text: String,
+    },
+}
+
+pub struct TextDialogBuilder
+{
+    input_type: TextInputType,
+    title: String,
+    prompt: String,
+}
+
+pub struct StructuredTextDialog
+{
+    pub input_type: TextInputType,
+    pub dialog: TextDialog,
+}
+
+pub struct StructuredFileDialog
+{
+    pub input_type: TextInputType,
+    pub dialog: TextDialog,
+}
+
+pub struct TextDialog
+{
+    pub title: String,
+    pub prompt: String,
+    pub user_input: String,
+    pub state: State,
+}
+
+impl State
+{
+    fn is_open(&self) -> bool
     {
         match self
         {
@@ -20,14 +91,17 @@ impl DialogState
     }
 }
 
-#[derive(Default)]
-pub struct InputDialogBuilder
+impl TextDialogBuilder
 {
-    title: String,
-    prompt: String,
-}
-impl InputDialogBuilder
-{
+    #[must_use]
+    pub fn new(input_type: TextInputType) -> Self
+    {
+        Self {
+            input_type,
+            title: String::new(),
+            prompt: String::new(),
+        }
+    }
     pub fn title(mut self, title: &str) -> Self
     {
         self.title = title.to_owned();
@@ -38,21 +112,35 @@ impl InputDialogBuilder
         self.prompt = prompt.to_owned();
         self
     }
-    pub fn build(self) -> InputDialog
+    pub fn build(self) -> StructuredTextDialog
     {
-        InputDialog::new(self.title, self.prompt)
+        let dialog = TextDialog::new(self.title, self.prompt);
+        StructuredTextDialog {
+            input_type: self.input_type,
+            dialog,
+        }
     }
 }
 
-pub struct InputDialog
+impl std::ops::Deref for StructuredTextDialog
 {
-    pub title: String,
-    pub prompt: String,
-    pub user_input: String,
-    pub state: DialogState,
+    type Target = TextDialog;
+
+    fn deref(&self) -> &Self::Target
+    {
+        &self.dialog
+    }
 }
 
-impl InputDialog
+impl std::ops::DerefMut for StructuredTextDialog
+{
+    fn deref_mut(&mut self) -> &mut Self::Target
+    {
+        &mut self.dialog
+    }
+}
+
+impl TextDialog
 {
     #[must_use]
     pub fn new(title: String, prompt: String) -> Self
@@ -61,7 +149,7 @@ impl InputDialog
             title,
             prompt,
             user_input: String::new(),
-            state: DialogState::JustOpened,
+            state: State::JustOpened,
         }
     }
 
@@ -72,7 +160,9 @@ impl InputDialog
             Window::new(self.title.clone())
                 .title_bar(false)
                 .collapsible(false)
-                .fixed_size(vec2(300.0, 100.0))
+                .fixed_size(vec2(440.0, 250.0))
+                .pivot(egui::Align2::CENTER_CENTER)
+                .default_pos(ctx.screen_rect().center())
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(&self.prompt);
@@ -82,7 +172,7 @@ impl InputDialog
 
                     if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter))
                     {
-                        self.state = DialogState::Completed;
+                        self.state = State::Completed;
                     }
                     else if ui.button("Cancel").clicked()
                         || ctx.input(|i| i.key_pressed(Key::Escape))
@@ -96,19 +186,19 @@ impl InputDialog
     #[inline]
     pub fn visible(&self) -> bool
     {
-        self.state.visible()
+        self.state.is_open()
     }
 
     #[inline]
     pub fn enable(&mut self)
     {
-        self.state = DialogState::InProgress;
+        self.state = State::InProgress;
     }
 
     #[inline]
     pub fn disable(&mut self)
     {
-        self.state = DialogState::Closed;
+        self.state = State::Closed;
         self.reset_input();
     }
 
@@ -128,5 +218,46 @@ impl InputDialog
     pub fn reset_input(&mut self)
     {
         self.user_input = "".to_owned();
+    }
+
+    pub fn get_response(&mut self) -> Response
+    {
+        match self.state
+        {
+            State::InProgress | State::JustOpened => Response::InProgress,
+            State::Closed => Response::Cancelled,
+            State::Completed =>
+            {
+                let text = std::mem::take(&mut self.user_input);
+                Response::Complete { text }
+            }
+        }
+    }
+}
+
+impl Dialog
+{
+    pub fn show(&mut self, ctx: &egui::Context)
+    {
+        match self
+        {
+            Self::Save { file_dialog, .. } =>
+            {
+                file_dialog.show(ctx);
+            }
+            Self::Text(text_dialog) =>
+            {
+                text_dialog.show(ctx);
+            }
+        }
+    }
+
+    pub fn visible(&self) -> bool
+    {
+        match self
+        {
+            Self::Save { file_dialog, .. } => file_dialog.visible(),
+            Self::Text(text_dialog) => text_dialog.visible(),
+        }
     }
 }
