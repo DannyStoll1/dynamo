@@ -83,9 +83,21 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
-        c
+        ZERO
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (ZERO, ZERO, ZERO)
+    }
+
+    #[inline]
+    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    {
+        (point, ONE)
     }
 
     #[inline]
