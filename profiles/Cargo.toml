@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 fractal_common = {version = "*", path = "../common"}
 fractal_core = {version = "*", path = "../core"}
+seq-macro = "0.3.5"
 
 [lib]
 name = "fractal_profiles"

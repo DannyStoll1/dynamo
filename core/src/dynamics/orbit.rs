@@ -1,5 +1,4 @@
-use fractal_common::traits::{Dist, MaybeNan, Norm};
-use fractal_common::types::{EscapeState, Period, PointInfoPeriodic, Real};
+use fractal_common::prelude::*;
 use num_traits::One;
 
 pub struct OrbitParams

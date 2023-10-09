@@ -37,7 +37,7 @@ impl QuadRatPer1Lambda
             return 1e-12;
         }
         let err2 = -1e8 * err * err;
-        1e-12 + 1e-8 * err2.exp2()
+        err2.exp2().mul_add(1e-8, 1e-12)
     }
 }
 

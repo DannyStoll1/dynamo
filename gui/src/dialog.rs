@@ -81,20 +81,16 @@ pub struct TextDialog
 
 impl State
 {
-    fn is_open(&self) -> bool
+    const fn is_open(&self) -> bool
     {
-        match self
-        {
-            Self::JustOpened | Self::InProgress => true,
-            _ => false,
-        }
+        matches!(self, Self::JustOpened | Self::InProgress)
     }
 }
 
 impl TextDialogBuilder
 {
     #[must_use]
-    pub fn new(input_type: TextInputType) -> Self
+    pub const fn new(input_type: TextInputType) -> Self
     {
         Self {
             input_type,
@@ -112,6 +108,7 @@ impl TextDialogBuilder
         self.prompt = prompt.to_owned();
         self
     }
+    #[allow(clippy::missing_const_for_fn)]
     pub fn build(self) -> StructuredTextDialog
     {
         let dialog = TextDialog::new(self.title, self.prompt);
@@ -143,7 +140,7 @@ impl std::ops::DerefMut for StructuredTextDialog
 impl TextDialog
 {
     #[must_use]
-    pub fn new(title: String, prompt: String) -> Self
+    pub const fn new(title: String, prompt: String) -> Self
     {
         Self {
             title,
@@ -184,7 +181,7 @@ impl TextDialog
     }
 
     #[inline]
-    pub fn visible(&self) -> bool
+    pub const fn visible(&self) -> bool
     {
         self.state.is_open()
     }

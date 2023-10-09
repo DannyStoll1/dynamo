@@ -1,4 +1,4 @@
-use fractal_core::dynamics::symbolic::OrbitSchema;
+use fractal_common::symbolic_dynamics::OrbitSchema;
 
 use crate::macros::{cplx_arr, horner, horner_monic, profile_imports};
 
@@ -630,14 +630,14 @@ impl HasDynamicalCovers for Mandelbrot
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |c| 0.25 - c * c;
+                param_map = |c| (0.25 - c * c, -2. * c);
                 bounds = Bounds {
                     min_x: -1.8,
                     max_x: 1.8,
@@ -665,7 +665,7 @@ impl HasDynamicalCovers for Mandelbrot
             }
             3 =>
             {
-                param_map = |c| -1.75 * (1. + 7. * c * c);
+                param_map = |t| (-1.75 * (1. + 7. * t * t), -24.5 * t);
                 bounds = Bounds {
                     min_x: -0.3,
                     max_x: 0.3,
@@ -700,9 +700,9 @@ impl HasDynamicalCovers for Mandelbrot
             // }
             4 =>
             {
-                param_map = |c| {
-                    let u = c * c;
-                    -0.25 * u - 0.75 - 1. / c
+                param_map = |t| {
+                    let t2 = t * t;
+                    (-0.25 * t2 - 0.75 - t.inv(), 0.5 * t - t2.inv())
                 };
                 bounds = Bounds {
                     min_x: -2.9,
@@ -713,7 +713,7 @@ impl HasDynamicalCovers for Mandelbrot
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -723,14 +723,14 @@ impl HasDynamicalCovers for Mandelbrot
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |c| 0.25 - c * c;
+                param_map = |c| (0.25 - c * c, -2. * c);
                 bounds = Bounds {
                     min_x: -1.8,
                     max_x: 1.8,
@@ -740,7 +740,10 @@ impl HasDynamicalCovers for Mandelbrot
             }
             2 =>
             {
-                param_map = |t| 9. * (t - 1.) / (t * t) - 3.;
+                param_map = |t| {
+                    let u = 9. / (t * t);
+                    ((t - 1.) * u - 3., (t - 2.) * u / t)
+                };
                 bounds = Bounds {
                     min_x: 0.5,
                     max_x: 8.3,
@@ -750,11 +753,18 @@ impl HasDynamicalCovers for Mandelbrot
             }
             3 =>
             {
-                param_map = |c| {
-                    let c2 = c * c;
-                    let v = c2 * (c2 - 3. * c + 6.) - c - c + 2.;
-                    let u = v + 1. / (c2 - c);
-                    -0.25 * u / (c2 - c)
+                param_map = |t| {
+                    let t2 = t * t;
+
+                    let v = t2 * (t2 - 3. * t + 6.) - t - t + 2.;
+                    let dv_dt = horner!(t, -2., 12., -9., 4.);
+
+                    let w = (t2 - t).inv();
+                    let dw_dt = (1. - 2. * t) * w * w;
+
+                    let u = v + w;
+                    let du_dt = dv_dt + dw_dt;
+                    (-0.25 * u * w, -0.25 * (du_dt * w + u * dw_dt))
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -765,7 +775,7 @@ impl HasDynamicalCovers for Mandelbrot
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -774,16 +784,18 @@ impl HasDynamicalCovers for Mandelbrot
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match (preperiod, period)
         {
             (2, 1) =>
             {
-                param_map = |c| {
-                    let c2 = c * c;
-                    -2. * (c2 + 1.) / ((c2 - 1.) * (c2 - 1.))
+                param_map = |t| {
+                    let t2 = t * t;
+                    let u = (t2 - 1.).inv();
+                    let u2 = u * u;
+                    (-2. * (t2 + 1.) * u2, 4. * t * (t2 + 3.) * u2 * u)
                 };
                 bounds = Bounds {
                     min_x: -3.5,
@@ -796,7 +808,10 @@ impl HasDynamicalCovers for Mandelbrot
             {
                 param_map = |c| {
                     let c2 = c * c;
-                    -(c2 * (c2 + c + c + 2.) - c - c + 1.) / (4. * c2)
+                    (
+                        -(c2 * (c2 + c + c + 2.) - c - c + 1.) / (4. * c2),
+                        -0.5 * (c2 + c - 1.) * (c2 + 1.) / (c2 * c),
+                    )
                 };
                 bounds = Bounds {
                     min_x: -4.,
@@ -821,7 +836,7 @@ impl HasDynamicalCovers for Mandelbrot
             // }
             (_, _) =>
             {
-                param_map = |c| c;
+                param_map = |c| (c, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

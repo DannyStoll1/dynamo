@@ -100,7 +100,7 @@ impl ParameterPlane for QuadRatPer3
         let u2 = u * u;
         let v = c + 1.;
 
-        let f = u * (z2 + c2 * c - v);
+        let f = u * (v - z2 - c2 * c);
         let df_dz = 2. * (1. - c) * v * v * z * u2;
         let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z * z)));
         (f, df_dz, df_dc)
@@ -190,19 +190,27 @@ impl HasDynamicalCovers for QuadRatPer3
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |c| {
+                param_map = |t| {
                     let pole = 1.324_717_957_244_75;
-                    let c = 1. / c + pole;
-                    let c2 = c * c;
-                    let c3 = c2 * c;
-                    (c3 - c + 1.) / (c3 - c2 - c2 + c + c + c - 1.)
+                    let u = 1. / t + pole;
+                    let u2 = u * u;
+                    let u3 = u2 * u;
+
+                    let du = -u2.inv();
+
+                    let num = u3 - u + 1.;
+                    let dnum = 3. * u2 - 1.;
+                    let den = u3 - u2 - u2 + 3. * u - 1.;
+                    let dden = dnum - 4. * u + 4.;
+
+                    (num / den, du*(den * dnum - num * dden) / (den * den))
                 };
                 bounds = Bounds {
                     min_x: -5.75,
@@ -231,7 +239,8 @@ impl HasDynamicalCovers for QuadRatPer3
                     let s0 = xx / zz;
                     let s1 = zz / yy;
 
-                    s0 * s1 + s1 + (t + 4.)
+                    // TODO: derivative
+                    (s0 * s1 + s1 + (t + 4.), ONE)
                     // let l = s0^2*s1 + s0*s1 + (2*t)*s0 + (t - 1);
                 };
                 bounds = Bounds {
@@ -243,7 +252,7 @@ impl HasDynamicalCovers for QuadRatPer3
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

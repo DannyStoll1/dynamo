@@ -171,6 +171,7 @@ impl ParameterPlane for QuadRatPer2LambdaParam
         1. + a / (z * z)
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
     {

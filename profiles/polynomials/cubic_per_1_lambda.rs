@@ -4,9 +4,14 @@ profile_imports!();
 
 const I: Cplx = Cplx::new(0., 1.);
 const I2: Cplx = Cplx::new(0., 2.);
+const I10: Cplx = Cplx::new(0., 10.);
 const A0: Cplx = Cplx::new(0., 27. / 64.);
 const A2: Cplx = Cplx::new(0., -21. / 16.);
 const A4: Cplx = Cplx::new(0., -7. / 4.);
+
+const B2: Cplx = Cplx::new(0., -21. / 8.);
+const B4: Cplx = Cplx::new(0., -7.);
+const I6: Cplx = Cplx::new(0., 6.);
 
 #[derive(Clone, Debug)]
 pub struct CubicPer1Lambda
@@ -595,6 +600,7 @@ impl ParameterPlane for CubicPer1_0
         3.0
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         z * z * (z + c)
@@ -849,7 +855,14 @@ impl ParameterPlane for CubicPer1_0
 
     fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
     {
-        Bounds::square(2.5, -ONE_THIRD * c)
+        if c.is_nan()
+        {
+            Bounds::centered_square(2.5)
+        }
+        else
+        {
+            Bounds::square(2.5, -ONE_THIRD * c)
+        }
     }
 }
 
@@ -857,14 +870,17 @@ impl HasDynamicalCovers for CubicPer1_0
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| t.inv() - t;
+                param_map = |t| {
+                    let u = t.inv();
+                    (u - t, -u * u - 1.)
+                };
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -876,7 +892,8 @@ impl HasDynamicalCovers for CubicPer1_0
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    (t2 + 2.) * t / (t2 + 1.)
+                    let u = (t2 + 1.).inv();
+                    ((t2 + 2.) * t * u, (2. + t2 + t2 * t2) * u * u)
                 };
                 bounds = Bounds {
                     min_x: -1.5,
@@ -887,7 +904,7 @@ impl HasDynamicalCovers for CubicPer1_0
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -895,16 +912,20 @@ impl HasDynamicalCovers for CubicPer1_0
         CoveringMap::new(self, param_map, grid)
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| t.inv() - t;
+                param_map = |t| {
+                    let u = t.inv();
+                    (u - t, -u * u - 1.)
+                };
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -916,9 +937,11 @@ impl HasDynamicalCovers for CubicPer1_0
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    let numer = t * horner!(t2, 2.25, -2., 4.);
-                    let denom = horner!(t2, A0, A2, A4, I);
-                    numer / denom
+                    let u = t * horner!(t2, 2.25, -2., 4.);
+                    let du = horner!(t2, 2.25, -6., 20.);
+                    let v = horner!(t2, A0, A2, A4, I);
+                    let dv = t * horner!(t2, B2, B4, I6);
+                    (u / v, (du * v - u * dv) / (dv * dv))
                 };
                 bounds = Bounds {
                     min_x: -3.2,
@@ -929,7 +952,7 @@ impl HasDynamicalCovers for CubicPer1_0
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -938,7 +961,7 @@ impl HasDynamicalCovers for CubicPer1_0
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match (preperiod, period)
@@ -947,7 +970,10 @@ impl HasDynamicalCovers for CubicPer1_0
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    -(t2 * t2 + t2 + 1.) / (t * t2 + t)
+                    (
+                        -(t2 * t2 + t2 + 1.) / (t * t2 + t),
+                        -horner_monic!(t2, -1., -2., 2.) / (t2 * horner_monic!(t2, 1., 2.)),
+                    )
                 };
                 bounds = Bounds {
                     min_x: -2.0,
@@ -958,7 +984,7 @@ impl HasDynamicalCovers for CubicPer1_0
             }
             (_, _) =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -971,7 +997,7 @@ impl HasDynamicalCovers for CubicPer1_1
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
@@ -980,7 +1006,8 @@ impl HasDynamicalCovers for CubicPer1_1
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    (t2 + 3.) * t / (t2 + 1.)
+                    let u = t2 + 1.;
+                    ((t2 + 3.) * t / (t2 + 1.), (t2 * t2 + 3.) / (u * u))
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -991,7 +1018,7 @@ impl HasDynamicalCovers for CubicPer1_1
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -1001,7 +1028,7 @@ impl HasDynamicalCovers for CubicPer1_1
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
@@ -1010,9 +1037,12 @@ impl HasDynamicalCovers for CubicPer1_1
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    let numer = -1. + t2 * (3. - t * (8. + t * (3. - t2)));
-                    let denom = t * I2 * (t2 * t2 - 1.);
-                    numer / denom
+                    let t4 = t2 * t2;
+                    let u = -1. + t2 * (3. - t * (8. + t * (3. - t2)));
+                    let du = 6. * t * (1. - 4. * t + (t2 - 2.) * t2);
+                    let v = t * I2 * (t4 - 1.);
+                    let dv = I10 * t4 - I2;
+                    (u / v, (du * v - u * dv) / (v * v))
                 };
                 bounds = Bounds {
                     min_x: -4.8,
@@ -1023,7 +1053,7 @@ impl HasDynamicalCovers for CubicPer1_1
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -1032,14 +1062,17 @@ impl HasDynamicalCovers for CubicPer1_1
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match (preperiod, period)
         {
             (1, 1) =>
             {
-                param_map = |t| t + t.inv();
+                param_map = |t| {
+                    let u = t.inv();
+                    (t + u, 1. - u * u)
+                };
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -1049,7 +1082,7 @@ impl HasDynamicalCovers for CubicPer1_1
             }
             (_, _) =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

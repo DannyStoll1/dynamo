@@ -8,7 +8,7 @@ pub mod macros;
 #[cfg(test)]
 mod tests
 {
-    use crate::dynamics::symbolic::{OrbitSchema, RationalAngle};
+    use fractal_common::prelude::{OrbitSchema, RationalAngle};
 
     #[test]
     fn angle_period()
@@ -55,8 +55,6 @@ mod tests
     #[test]
     fn parsing()
     {
-        use crate::dynamics::symbolic::RationalAngle;
-
         let str0 = "1/17";
         let val0 = RationalAngle::new(1, 17);
 

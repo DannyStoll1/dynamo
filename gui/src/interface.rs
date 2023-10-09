@@ -3,13 +3,11 @@ use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
 
 use fractal_common::{
-    coloring::{algorithms::InteriorColoringAlgorithm, palette::ColorPalette},
+    coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
+    symbolic_dynamics::*,
     types::{Cplx, ParamList},
 };
-use fractal_core::dynamics::{
-    symbolic::{OrbitSchema, RationalAngle},
-    ParameterPlane,
-};
+use fractal_core::dynamics::ParameterPlane;
 
 use crate::hotkeys::keyboard_shortcuts::*;
 use crate::{
@@ -85,7 +83,7 @@ pub trait PanePair
     fn child_mut(&mut self) -> &mut dyn Pane;
     fn randomize_palette(&mut self);
     fn set_palette(&mut self, palette: ColorPalette);
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: InteriorColoringAlgorithm);
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm);
 
     fn get_pane(&self, pane_id: PaneID) -> &dyn Pane;
     fn get_pane_mut(&mut self, pane_id: PaneID) -> &mut dyn Pane;
@@ -404,16 +402,16 @@ where
         self.child.change_palette(palette);
     }
 
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: InteriorColoringAlgorithm)
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm)
     {
         match coloring_algorithm
         {
-            InteriorColoringAlgorithm::InternalPotential { .. } =>
+            IncoloringAlgorithm::InternalPotential { .. } =>
             {
                 self.parent_mut().select_preperiod_smooth_coloring();
                 self.child_mut().select_preperiod_smooth_coloring();
             }
-            InteriorColoringAlgorithm::PreperiodPeriodSmooth { .. } =>
+            IncoloringAlgorithm::PreperiodPeriodSmooth { .. } =>
             {
                 self.parent_mut().select_preperiod_period_smooth_coloring();
                 self.child_mut().select_preperiod_period_smooth_coloring();
@@ -473,16 +471,11 @@ where
             let pointer_value = self.parent().map_pixel(pointer_pos);
             self.parent_mut()
                 .process_mouse_input(pointer_value, zoom_factor, reselect_point);
-            match self.parent_mut().pop_child_task()
+            if self.parent_mut().pop_child_task() == ChildTask::UpdateParam
             {
-                ChildTask::UpdateParam =>
-                {
-                    let parent_selection = self.parent.get_selection();
-                    let new_child_param = self.parent.plane.param_map(parent_selection);
-                    self.set_child_param(parent_selection, new_child_param);
-                }
-                _ =>
-                {}
+                let parent_selection = self.parent.get_selection();
+                let new_child_param = self.parent.plane.param_map(parent_selection);
+                self.set_child_param(parent_selection, new_child_param);
             }
 
             if clicked
@@ -581,16 +574,18 @@ where
             .chain(INCOLORING_HOTKEYS.iter())
             .chain(PALETTE_HOTKEYS.iter())
         {
-            shortcut.as_ref().map(|s| {
+            if let Some(s) = shortcut.as_ref()
+            {
                 if shortcut_used!(ctx, s)
                 {
                     self.process_action(action);
                 }
-            });
+            }
         }
         self.handle_mouse(ctx);
     }
 
+    #[allow(clippy::option_map_unit_fn)]
     fn process_action(&mut self, action: &Action)
     {
         match action

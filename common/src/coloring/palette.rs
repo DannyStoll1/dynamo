@@ -1,4 +1,5 @@
 use super::Hsv;
+use crate::symbolic_dynamics::OrbitSchema;
 use crate::types::IterCount;
 use egui::Color32;
 use image::Rgb;
@@ -294,7 +295,7 @@ impl DiscretePalette
     }
 
     #[must_use]
-    pub fn map_hsv(&self, period: f32, luminosity_modifier: f32) -> Hsv
+    fn map_hsv(&self, period: f32, luminosity_modifier: f32) -> Hsv
     {
         let hue = (period / self.num_colors + self.base_hue) % 1.;
 
@@ -306,15 +307,24 @@ impl DiscretePalette
     }
 
     #[must_use]
-    pub fn map_rgb(&self, period: f32, luminosity_modifier: f32) -> Rgb<u8>
+    fn map_preperiodic_hsv(&self, o: &OrbitSchema) -> Hsv
+    {
+        self.map_hsv(
+            o.period as f32,
+            0.5f32.mul_add((o.preperiod as f32).tanh(), 1.),
+        )
+    }
+
+    #[must_use]
+    pub fn map<T: From<Hsv>>(&self, period: f32, luminosity_modifier: f32) -> T
     {
         self.map_hsv(period, luminosity_modifier).into()
     }
 
     #[must_use]
-    pub fn map_color32(&self, period: f32, luminosity_modifier: f32) -> Color32
+    pub fn map_preperiodic<T: From<Hsv>>(&self, orbit_schema: &OrbitSchema) -> T
     {
-        self.map_hsv(period, luminosity_modifier).into()
+        self.map_preperiodic_hsv(orbit_schema).into()
     }
 
     #[must_use]

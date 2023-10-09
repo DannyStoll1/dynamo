@@ -1,8 +1,5 @@
-use fractal_common::coloring::{
-    algorithms::InteriorColoringAlgorithm, palette::ColorPalette, Coloring,
-};
+use fractal_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
 use fractal_common::prelude::*;
-use fractal_core::dynamics::symbolic::{OrbitSchema, RationalAngle};
 use fractal_core::dynamics::ParameterPlane;
 
 use super::image_frame::ImageFrame;
@@ -16,36 +13,40 @@ use epaint::{CircleShape, PathShape};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ComputeTask
 {
+    #[default]
     DoNothing,
     Redraw,
     Recompute,
     Compute,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ResizeTask
 {
+    #[default]
     DoNothing,
     ShowDialog,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ChildTask
 {
+    #[default]
     Idle,
     UpdateParam,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum RayState
 {
+    #[default]
     Idle,
     Following(RationalAngle),
 }
@@ -150,7 +151,7 @@ pub trait Pane
         self.schedule_redraw();
     }
 
-    fn set_coloring_algorithm(&mut self, coloring_algorithm: InteriorColoringAlgorithm)
+    fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm)
     {
         self.get_coloring_mut()
             .set_interior_algorithm(coloring_algorithm);
@@ -322,15 +323,7 @@ where
             region: Rect::NOTHING,
         };
 
-        let degree: AngleNum;
-        if plane.degree().is_finite() && plane.degree().abs() < AngleNum::MAX as f64
-        {
-            degree = plane.degree() as AngleNum;
-        }
-        else
-        {
-            degree = 2;
-        }
+        let degree = plane.degree().try_round().unwrap_or(2);
         let marking = Marking::default().with_degree(degree);
 
         Self {
@@ -564,7 +557,7 @@ where
     {
         let period_coloring = self.coloring.get_period_coloring();
         self.marking
-            .process_all_tasks(&self.plane, self.selection, &period_coloring);
+            .process_all_tasks(&self.plane, self.selection, period_coloring);
     }
 
     fn change_height(&mut self, new_height: usize)
@@ -614,7 +607,7 @@ where
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
     {
-        let (orbit, info) = self.plane.get_orbit_and_info(pointer_value);
+        let OrbitAndInfo { orbit, info } = self.plane.get_orbit_and_info(pointer_value);
         let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
         self.mark_orbit(orbit_pts, Color32::GREEN);
         self.set_orbit_info(info);
@@ -688,14 +681,11 @@ where
 
     fn describe_selection(&self) -> String
     {
-        if let Some(description) = self.selection.describe()
-        {
-            format!("Selection: {}", description)
-        }
-        else
-        {
-            String::new()
-        }
+        self.selection
+            .describe()
+            .map_or_else(String::new, |description| {
+                format!("Selection: {}", description)
+            })
     }
 
     fn describe_orbit_info(&self) -> String
@@ -706,7 +696,7 @@ where
 
     fn pop_child_task(&mut self) -> ChildTask
     {
-        let res = self.child_task.clone();
+        let res = self.child_task;
         self.child_task = ChildTask::Idle;
         res
     }

@@ -2,11 +2,8 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::{error::Error, num::ParseIntError, str::FromStr};
 
+use crate::prelude::*;
 use derive_more::{From, Into};
-use fractal_common::{
-    consts::TAUI,
-    types::{AngleNum, Cplx, Period, Rational, Real},
-};
 use num_traits::sign::Signed;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -27,6 +24,45 @@ impl From<Period> for OrbitSchema
     }
 }
 
+impl FromStr for OrbitSchema
+{
+    type Err = ParseOrbitSchemaError;
+
+    /// Parse text representing a period and preperiod into an OrbitSchema.
+    /// Acceptable input formats: <period> or <period, preperiod>
+    #[allow(clippy::unwrap_used)]
+    fn from_str(text: &str) -> Result<Self, Self::Err>
+    {
+        use ParseOrbitSchemaError as Err;
+        lazy_static! {
+            static ref PREPERIOD: Regex = Regex::new(r"^\s*(\d+)\s*,\s*(\d+)\s*$").unwrap();
+        }
+
+        if let Some(captures) = PREPERIOD.captures(text)
+        {
+            let preperiod = captures
+                .get(1)
+                .ok_or(Err::UnrecognizedFormat)?
+                .as_str()
+                .parse()
+                .map_err(Err::Preperiodic)?;
+            let period = captures
+                .get(2)
+                .ok_or(Err::UnrecognizedFormat)?
+                .as_str()
+                .parse()
+                .map_err(Err::Preperiodic)?;
+            Ok(Self { preperiod, period })
+        }
+        else
+        {
+            text.parse::<Period>()
+                .map(|p| p.into())
+                .map_err(Err::Periodic)
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KneadingSymbol
 {
@@ -35,7 +71,7 @@ pub enum KneadingSymbol
 }
 impl KneadingSymbol
 {
-    fn to_string(&self, partition_size: usize) -> String
+    fn to_string(self, partition_size: usize) -> String
     {
         match self
         {
@@ -43,7 +79,7 @@ impl KneadingSymbol
             Self::Boundary(x) => format!("[{}|{}]", x, (x + 1) % partition_size),
         }
     }
-    fn to_string_kneading(&self) -> String
+    fn to_string_kneading(self) -> String
     {
         match self
         {
@@ -97,24 +133,31 @@ pub struct CirclePartition
 }
 impl CirclePartition
 {
-    /// Asssumes angles are in circular order
     #[must_use]
-    pub fn new(angles: Vec<RationalAngle>) -> CirclePartition
+    pub fn new(mut angles: Vec<RationalAngle>) -> Self
+    {
+        angles.sort();
+        Self { angles }
+    }
+
+    /// Assumes angles are sorted
+    #[must_use]
+    pub fn new_raw(angles: Vec<RationalAngle>) -> Self
     {
         Self { angles }
     }
 
     pub fn identify(&self, theta: RationalAngle) -> KneadingSymbol
     {
+        use std::cmp::Ordering;
         for (i, x) in self.angles.iter().enumerate()
         {
-            if *x > theta
+            match theta.cmp(x)
             {
-                return KneadingSymbol::Interior(i);
-            }
-            else if *x == theta
-            {
-                return KneadingSymbol::Boundary(i);
+                Ordering::Less => return KneadingSymbol::Interior(i),
+                Ordering::Equal => return KneadingSymbol::Boundary(i),
+                _ =>
+                {}
             }
         }
         KneadingSymbol::Interior(0)
@@ -192,7 +235,7 @@ impl RationalAngle
         }
 
         let mut period = 1;
-        slow = slow * degree;
+        slow *= degree;
 
         while slow != fast
         {
@@ -216,7 +259,7 @@ impl RationalAngle
     {
         let orbit_schema = self.orbit_schema(degree);
 
-        let mut x = self.clone();
+        let mut x = *self;
 
         let preperiodic_part = (0..orbit_schema.preperiod)
             .map(|_i| {
@@ -245,9 +288,9 @@ impl RationalAngle
     {
         let theta_over_n = *self / degree;
         let partition_angles = (0..degree)
-            .map(|x| theta_over_n + RationalAngle::new_raw(x, degree))
+            .map(|x| theta_over_n + Self::new_raw(x, degree))
             .collect();
-        let partition = CirclePartition::new(partition_angles);
+        let partition = CirclePartition::new_raw(partition_angles);
         self.itinerary(degree, partition)
     }
 
@@ -265,7 +308,7 @@ impl RationalAngle
     fn reduce_mod_1(&mut self)
     {
         self.0 = self.0.fract();
-        if self.0.numer().clone() < 0
+        if *self.0.numer() < 0
         {
             self.0 += 1;
         }
@@ -357,6 +400,7 @@ impl std::ops::Div<AngleNum> for RationalAngle
 {
     type Output = Self;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn div(self, rhs: AngleNum) -> Self
     {
         Self::new(*self.0.numer(), *self.0.denom() * rhs)
@@ -375,7 +419,7 @@ impl From<RationalAngle> for Real
 {
     fn from(angle: RationalAngle) -> Self
     {
-        (*angle.0.numer() as Real) / (*angle.0.denom() as Real)
+        (*angle.0.numer() as Self) / (*angle.0.denom() as Self)
     }
 }
 
@@ -443,13 +487,14 @@ pub fn parse_angle(text: &str) -> Result<RationalAngle, ParseAngleError>
         .unwrap_or(Err(ParseAngleError::UnrecognizedFormat))
 }
 
+#[allow(clippy::unwrap_used)]
 fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
     lazy_static! {
         static ref FRACTION: Regex = Regex::new(r"^(-?\d+)/(\d+)$").unwrap();
     }
 
-    if let Some(captures) = FRACTION.captures(&text)
+    if let Some(captures) = FRACTION.captures(text)
     {
         if let (Some(num_str), Some(den_str)) = (captures.get(1), captures.get(2))
         {
@@ -481,13 +526,14 @@ fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
     None
 }
 
+#[allow(clippy::unwrap_used)]
 fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
     lazy_static! {
         static ref BIN_ANGLE: Regex = Regex::new(r"^(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_ANGLE.captures(&text) else {return None};
+    let Some(captures) = BIN_ANGLE.captures(text) else {return None};
     let Some(bin_str) = captures.get(1) else {return None};
 
     Some(
@@ -497,19 +543,20 @@ fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
     )
 }
 
+#[allow(clippy::unwrap_used)]
 fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
     lazy_static! {
         static ref BIN_PREPER: Regex = Regex::new(r"^(\d*)p(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_PREPER.captures(&text) else {return None};
+    let Some(captures) = BIN_PREPER.captures(text) else {return None};
     if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2))
     {
         let per_str = per_match.as_str();
         let pre_str = pre_match.as_str();
 
-        if pre_str.len() == 0
+        if pre_str.is_empty()
         {
             match AngleNum::from_str_radix(per_str, 2)
             {
@@ -607,44 +654,6 @@ impl std::error::Error for ParseOrbitSchemaError
             Self::UnrecognizedFormat => None,
             Self::Periodic(cause) => Some(cause),
             Self::Preperiodic(cause) => Some(cause),
-        }
-    }
-}
-
-impl FromStr for OrbitSchema
-{
-    type Err = ParseOrbitSchemaError;
-
-    /// Parse text representing a period and preperiod into an OrbitSchema.
-    /// Acceptable input formats: <period> or <period, preperiod>
-    fn from_str(text: &str) -> Result<Self, Self::Err>
-    {
-        use ParseOrbitSchemaError as Err;
-        lazy_static! {
-            static ref PREPERIOD: Regex = Regex::new(r"^\s*(\d+)\s*,\s*(\d+)\s*$").unwrap();
-        }
-
-        if let Some(captures) = PREPERIOD.captures(&text)
-        {
-            let preperiod = captures
-                .get(1)
-                .ok_or(Err::UnrecognizedFormat)?
-                .as_str()
-                .parse()
-                .map_err(|e| Err::Preperiodic(e))?;
-            let period = captures
-                .get(2)
-                .ok_or(Err::UnrecognizedFormat)?
-                .as_str()
-                .parse()
-                .map_err(|e| Err::Preperiodic(e))?;
-            Ok(Self { preperiod, period })
-        }
-        else
-        {
-            text.parse::<Period>()
-                .map(|p| p.into())
-                .map_err(|e| Err::Periodic(e))
         }
     }
 }

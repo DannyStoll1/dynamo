@@ -1,8 +1,9 @@
 use crate::coloring::Coloring;
 use crate::point_grid::PointGrid;
 
+use crate::orbit_info::PointInfo;
 use crate::traits::Polar;
-use crate::types::{PointInfo, Real};
+use crate::types::Real;
 use egui::{Color32, ColorImage};
 use image::ImageBuffer;
 use ndarray::Array2;

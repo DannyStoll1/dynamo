@@ -1,15 +1,15 @@
-macro_rules! action_buttons {
-    ($self: expr, $ui: expr $(, $actions: expr)+ $(,)?) => {
-        $(
-            if $ui.button($actions.short_description()).clicked()
-            {
-                $self.interface.process_action(&$actions);
-                $self.interface.consume_click();
-                $ui.close_menu();
-            }
-        )+
-    };
-}
+// macro_rules! action_buttons {
+//     ($self: expr, $ui: expr $(, $actions: expr)+ $(,)?) => {
+//         $(
+//             if $ui.button($actions.short_description()).clicked()
+//             {
+//                 $self.interface.process_action(&$actions);
+//                 $self.interface.consume_click();
+//                 $ui.close_menu();
+//             }
+//         )+
+//     };
+// }
 
 // macro_rules! hotkey_buttons {
 //     ($self: expr, $ui: expr $(, $hotkey: expr)+ $(,)?) => {
@@ -100,5 +100,5 @@ macro_rules! fractal_menu_button_mis {
 }
 
 pub(crate) use {
-    action_buttons, fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
+    fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
 };

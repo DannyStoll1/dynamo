@@ -1,4 +1,3 @@
-use crate::actions::Action;
 use crate::hotkeys::{
     Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS,
     SELECTION_HOTKEYS,
@@ -616,7 +615,7 @@ impl FractalTab
             if ui
                 .add(
                     egui::Button::new(action.short_description())
-                        .shortcut_text(hotkey.shortcut_text().unwrap_or(egui::RichText::default())),
+                        .shortcut_text(hotkey.shortcut_text().unwrap_or_default()),
                 )
                 .clicked()
             {

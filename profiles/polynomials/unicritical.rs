@@ -1,5 +1,5 @@
 use crate::macros::{horner_monic, profile_imports};
-use fractal_common::math_utils::roots_of_unity;
+use fractal_common::{horner, math_utils::roots_of_unity};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -23,6 +23,7 @@ impl<const D: i32> Default for Unicritical<D>
     fractal_impl!();
 }
 
+#[allow(clippy::suspicious_operation_groupings)]
 impl<const D: i32> ParameterPlane for Unicritical<D>
 {
     parameter_plane_impl!();
@@ -111,23 +112,6 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     }
 }
 
-const U3_MC_3_DEN_0_0: Cplx = Cplx::new(15.019_639_247_721_374, 48.282_356_214_136_12);
-const U3_MC_3_DEN_0_1: Cplx = Cplx::new(11.411_649_536_823_681, 8.425_252_873_580_56);
-const U3_MC_3_DEN_1_0: Cplx = Cplx::new(14.056_957_561_484_392, 50.196_352_118_588_65);
-const U3_MC_3_DEN_1_1: Cplx = Cplx::new(11.541_242_409_948_602, 8.708_125_782_110_49);
-const U3_MC_3_NUM_0: Cplx = Cplx::new(-1_744.408_589_013_732_4, 1_473.740_602_292_486_8);
-const U3_MC_3_NUM_1: Cplx = Cplx::new(-343.849_951_900_078, 1_273.100_690_510_641);
-const U3_MC_3_NUM_2: Cplx = Cplx::new(96.708_321_954_359_62, 269.238_722_028_364_3);
-const U3_MC_3_NUM_3: Cplx = Cplx::new(22.564_029_832_221_34, 15.916_865_188_953_581);
-
-const U3_MC_3_CONST: Cplx = Cplx::new(-2.216_531_263_344_174, 0.388_928_257_728_017_26);
-
-const U3_MC_3_POLE_0: Cplx = Cplx::new(-5.914_015_205_273_233, -3.709_866_341_074_397_5);
-
-const U3_MC_3_POLE_1: Cplx = Cplx::new(-5.497_634_331_550_449, -4.715_386_532_506_162);
-
-const U3_MC_3_ANGLE: Cplx = Cplx::new(0.5 * SQRT_3, -0.5);
-
 // const U3_MC_3_POLE_0: Cplx = Cplx::new(
 //     -6.3071559227053154449928460559449771172,
 //     -4.4052647736416225259941095453003318476,
@@ -142,14 +126,14 @@ impl HasDynamicalCovers for Unicritical<3>
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| 3. * (t + 1.) * t * t;
+                param_map = |t| (3. * (t + 1.) * t * t, 3. * t * (3. * t + 2.));
                 bounds = Bounds {
                     min_x: -1.8,
                     max_x: 0.9,
@@ -159,7 +143,7 @@ impl HasDynamicalCovers for Unicritical<3>
             }
             2 =>
             {
-                param_map = |t| 3. * (t - 2.) * t * t;
+                param_map = |t| (3. * (t - 2.) * t * t, 3. * t * (3. * t - 4.));
                 bounds = Bounds {
                     min_x: -1.,
                     max_x: 2.5,
@@ -169,19 +153,54 @@ impl HasDynamicalCovers for Unicritical<3>
             }
             3 =>
             {
+                const DEN_0_0: Cplx = Cplx::new(15.019_639_247_721_374, 48.282_356_214_136_12);
+                const DEN_0_1: Cplx = Cplx::new(11.411_649_536_823_681, 8.425_252_873_580_56);
+                const DEN_1_0: Cplx = Cplx::new(14.056_957_561_484_392, 50.196_352_118_588_65);
+                const DEN_1_1: Cplx = Cplx::new(11.541_242_409_948_602, 8.708_125_782_110_49);
+
+                const NUM_0: Cplx = Cplx::new(-1_744.408_589_013_732_4, 1_473.740_602_292_486_8);
+                const NUM_1: Cplx = Cplx::new(-343.849_951_900_078, 1_273.100_690_510_641);
+                const NUM_2: Cplx = Cplx::new(96.708_321_954_359_62, 269.238_722_028_364_3);
+                const NUM_3: Cplx = Cplx::new(22.564_029_832_221_34, 15.916_865_188_953_581);
+                const NUM_COEF: Cplx = Cplx::new(-2.216_531_263_344_174, 0.388_928_257_728_017_26);
+
+                const DNUM_2: Cplx = Cplx::new(2. * NUM_2.re, 2. * NUM_2.im);
+                const DNUM_3: Cplx = Cplx::new(3. * NUM_3.re, 3. * NUM_3.im);
+
+                const POLE_0: Cplx = Cplx::new(-5.914_015_205_273_233, -3.709_866_341_074_397_5);
+
+                const POLE_1: Cplx = Cplx::new(-5.497_634_331_550_449, -4.715_386_532_506_162);
+
+                const ANGLE: Cplx = Cplx::new(0.5 * SQRT_3, -0.5);
+
+                // ANGLE * (POLE_1 - POLE_0)
+                const VECT: Cplx = Cplx::new(-0.14216368142199037, -1.0789964666594938);
+
                 param_map = |t| {
-                    let t = t * U3_MC_3_ANGLE;
-                    let t = (U3_MC_3_POLE_1 * t + U3_MC_3_POLE_0) / (t + 1.);
-                    let num0 = horner_monic!(
-                        t,
-                        U3_MC_3_NUM_0,
-                        U3_MC_3_NUM_1,
-                        U3_MC_3_NUM_2,
-                        U3_MC_3_NUM_3
-                    );
-                    let den0 = horner_monic!(t, U3_MC_3_DEN_0_0, U3_MC_3_DEN_0_1);
-                    let den1 = horner_monic!(t, U3_MC_3_DEN_1_0, U3_MC_3_DEN_1_1);
-                    U3_MC_3_CONST * num0 * num0 / (den0 * den0 * den0 * den1)
+                    let u = t * ANGLE;
+                    let v = u + 1.;
+                    let w = (POLE_1 * u + POLE_0) / v;
+
+                    let dw = VECT / (v * v);
+
+                    let num0 = horner_monic!(w, NUM_0, NUM_1, NUM_2, NUM_3);
+                    let num0_d = horner!(w, NUM_1, DNUM_2, DNUM_3, 4.);
+
+                    let den0 = horner_monic!(w, DEN_0_0, DEN_0_1);
+                    let den1 = horner_monic!(w, DEN_1_0, DEN_1_1);
+                    let den0_d = horner!(w, DEN_0_1, 2.);
+                    let den1_d = horner!(w, DEN_1_1, 2.);
+
+                    let den0_2 = den0 * den0;
+                    let den0_3 = den0_2 * den0;
+
+                    let num = NUM_COEF * num0 * num0;
+                    let num_d = 2. * NUM_COEF * num0 * num0_d;
+
+                    let den = den0_3 * den1;
+                    let den_d = 3. * den0_2 * den0_d * den1 + den0_3 * den1_d;
+
+                    (num / den, dw * (den * num_d - num * den_d) / (den * den))
                 };
                 bounds = Bounds {
                     min_x: -2.,
@@ -192,7 +211,7 @@ impl HasDynamicalCovers for Unicritical<3>
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -202,7 +221,7 @@ impl HasDynamicalCovers for Unicritical<3>
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
@@ -215,7 +234,19 @@ impl HasDynamicalCovers for Unicritical<3>
                     let num1 = t2 + t + 1.25;
                     let den0 = t2 + 0.75;
                     let num01 = num0 * num1;
-                    -3. * num01 * num01 / (den0 * den0 * den0)
+
+                    let d_den0 = 2. * t;
+                    let d_num01 = num0 * (d_den0 + 1.) + num1;
+
+                    let den0_2 = den0 * den0;
+
+                    let num = -3. * num01 * num01;
+                    let den = den0 * den0_2;
+
+                    let d_num = -3. * num01 * d_num01;
+                    let d_den = 3. * den0_2 * d_den0;
+
+                    (num / den, (den * d_num - num * d_den) / (den * den))
                 };
                 bounds = Bounds {
                     min_x: -3.5,
@@ -226,7 +257,7 @@ impl HasDynamicalCovers for Unicritical<3>
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

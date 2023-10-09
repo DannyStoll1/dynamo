@@ -166,7 +166,7 @@ impl HasDynamicalCovers for QuadRatPreper21
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let grid: PointGrid;
         let bounds: Bounds;
 
@@ -176,7 +176,7 @@ impl HasDynamicalCovers for QuadRatPreper21
             {
                 param_map = |c| {
                     let u = c + 4.;
-                    u * u / 4.
+                    (0.25 * u * u, 0.5 * u)
                 };
                 bounds = Bounds {
                     min_x: -6.2,
@@ -204,7 +204,8 @@ impl HasDynamicalCovers for QuadRatPreper21
                     y /= x;
                     // e2 = 256*x*y^2 + 8*x^2 + 32*x*y - y
 
-                    y / x
+                    // derivative unimplemented
+                    (y / x, ONE)
                 };
                 bounds = Bounds {
                     min_x: -16.,
@@ -216,7 +217,7 @@ impl HasDynamicalCovers for QuadRatPreper21
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 grid = self.point_grid.clone();
             }
         }

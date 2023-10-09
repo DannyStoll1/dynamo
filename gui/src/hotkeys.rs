@@ -1,10 +1,10 @@
 pub mod keyboard_shortcuts;
 use crate::{actions::Action, interface::PaneID};
-use fractal_common::coloring::algorithms::InteriorColoringAlgorithm;
+use fractal_common::coloring::algorithms::IncoloringAlgorithm;
 use keyboard_shortcuts::*;
 use seq_macro::seq;
 
-use egui::{KeyboardShortcut, ModifierNames, RichText, Ui};
+use egui::{KeyboardShortcut, ModifierNames, RichText};
 
 pub struct Hotkey
 {
@@ -17,7 +17,7 @@ pub struct Hotkey
 }
 impl Hotkey
 {
-    pub fn action(&self) -> &Action
+    pub const fn action(&self) -> &Action
     {
         &self.action
     }
@@ -314,37 +314,37 @@ pub static IMAGE_HOTKEYS: [Hotkey; 13] = [
 pub static INCOLORING_HOTKEYS: [Hotkey; 8] = [
     Hotkey {
         shortcut: Some(KEY_0),
-        action: SetColoring(InteriorColoringAlgorithm::Solid),
+        action: SetColoring(IncoloringAlgorithm::Solid),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_1),
-        action: SetColoring(InteriorColoringAlgorithm::Period),
+        action: SetColoring(IncoloringAlgorithm::Period),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_2),
-        action: SetColoring(InteriorColoringAlgorithm::PeriodMultiplier),
+        action: SetColoring(IncoloringAlgorithm::PeriodMultiplier),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_3),
-        action: SetColoring(InteriorColoringAlgorithm::Multiplier),
+        action: SetColoring(IncoloringAlgorithm::Multiplier),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_4),
-        action: SetColoring(InteriorColoringAlgorithm::Preperiod),
+        action: SetColoring(IncoloringAlgorithm::Preperiod),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_5),
-        action: SetColoring(InteriorColoringAlgorithm::InternalPotential {
+        action: SetColoring(IncoloringAlgorithm::InternalPotential {
             periodicity_tolerance: 1e-14,
         }),
         show_in_menu: true,
@@ -352,13 +352,13 @@ pub static INCOLORING_HOTKEYS: [Hotkey; 8] = [
     },
     Hotkey {
         shortcut: None,
-        action: SetColoring(InteriorColoringAlgorithm::PreperiodPeriod),
+        action: SetColoring(IncoloringAlgorithm::PreperiodPeriod),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: None,
-        action: SetColoring(InteriorColoringAlgorithm::PreperiodPeriodSmooth {
+        action: SetColoring(IncoloringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: 1e-4,
             fill_rate: 0.04,
         }),

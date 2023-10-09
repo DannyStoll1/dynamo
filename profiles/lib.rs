@@ -19,10 +19,10 @@ mod tests
 {
     use crate::*;
     use fractal_common::point_grid::Bounds;
-    use fractal_common::prelude::{Cplx, Dist, EscapeState};
+    use fractal_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema};
+    use fractal_core::dynamics::covering_maps::HasDynamicalCovers;
     use fractal_core::dynamics::julia::JuliaSet;
     use fractal_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
-    use fractal_core::dynamics::symbolic::OrbitSchema;
     use fractal_core::dynamics::ParameterPlane;
 
     #[test]
@@ -221,5 +221,40 @@ mod tests
             println!("Dynamical error: {:.4e}", approx.unwrap().dist_sqr(target));
             assert!(error < 1e-5);
         }
+    }
+
+    #[test]
+    fn debug_find_point() {
+        let param_plane = QuadRatPer4::default();
+        {
+            let o = OrbitSchema {
+                period: 3,
+                preperiod: 0,
+            };
+            let start = Cplx::new(0.2, 1.2);
+            let target = Cplx::new(0., 1.);
+            let approx = param_plane.find_nearby_preperiodic_point(start, o);
+
+            let error = approx.unwrap().dist_sqr(target);
+            println!("Parameter error: {:.4e}", approx.unwrap().dist_sqr(target));
+            assert!(error < 1e-5);
+        }
+    }
+
+    #[test]
+    fn equipotential() {
+        let param_plane = Mandelbrot::default();
+        {
+            let t = Cplx::new(-1.4, 0.5);
+            param_plane.equipotential(t);
+        }
+    }
+
+    #[test]
+    fn per10_debug() {
+        let param_plane = CubicPer1_0::default().marked_cycle_curve(1);
+        dbg!(param_plane.point_grid());
+        let julia  = JuliaSet::from(param_plane);
+        dbg!(julia.point_grid());
     }
 }

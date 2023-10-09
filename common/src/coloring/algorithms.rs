@@ -1,8 +1,9 @@
 use super::palette::ColorPalette;
 use super::types::Hsv;
 use crate::consts::TAU;
+use crate::orbit_info::PointInfoPeriodic;
 use crate::traits::Polar;
-use crate::types::{IterCount, PointInfoPeriodic, Real};
+use crate::types::{IterCount, Real};
 use egui::Color32;
 
 #[cfg(feature = "serde")]
@@ -10,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum InteriorColoringAlgorithm
+pub enum IncoloringAlgorithm
 {
     PeriodMultiplier,
     Period,
@@ -33,7 +34,7 @@ pub enum InteriorColoringAlgorithm
     //     tolerance: Real,
     // },
 }
-impl InteriorColoringAlgorithm
+impl IncoloringAlgorithm
 {
     fn multiplier_coloring_rate(mult_norm: Real, fill_rate: Real) -> f64
     {
@@ -63,14 +64,14 @@ impl InteriorColoringAlgorithm
             Self::Solid => palette.in_color,
             Self::Period =>
             {
-                let hue = point_info.period as f32;
-                palette.period_coloring.map_color32(hue, 0.75)
+                let hue_id = point_info.period as f32;
+                palette.period_coloring.map(hue_id, 0.75)
             }
             Self::PeriodMultiplier =>
             {
-                let hue = point_info.period as f32;
-                let luminosity = point_info.multiplier.norm() as f32;
-                palette.period_coloring.map_color32(hue, luminosity)
+                let hue_id = point_info.period as f32;
+                let luminosity_modifier = point_info.multiplier.norm() as f32;
+                palette.period_coloring.map(hue_id, luminosity_modifier)
             }
             Self::Preperiod =>
             {
@@ -89,7 +90,7 @@ impl InteriorColoringAlgorithm
                 let potential = (val * coloring_rate / per).tanh();
                 palette
                     .period_coloring
-                    .map_color32(per as f32, potential as f32)
+                    .map(per as f32, potential as f32)
             }
             Self::InternalPotential {
                 periodicity_tolerance,
@@ -130,8 +131,8 @@ impl InteriorColoringAlgorithm
                 fill_rate,
             } =>
             {
-                let hue = IterCount::from(point_info.period);
-                let luminosity: IterCount;
+                let hue_id = IterCount::from(point_info.period);
+                let luminosity_modifier: IterCount;
 
                 let mult_norm = point_info.multiplier.norm();
 
@@ -140,15 +141,15 @@ impl InteriorColoringAlgorithm
                 {
                     let w = 2.
                         * (point_info.final_error.log(*periodicity_tolerance)).log2() as IterCount;
-                    let v = hue.mul_add(-w, IterCount::from(point_info.preperiod));
-                    luminosity = (0.1 * v / hue).tanh();
+                    let v = hue_id.mul_add(-w, IterCount::from(point_info.preperiod));
+                    luminosity_modifier = (0.1 * v / hue_id).tanh();
                 }
                 // Parabolic case
                 else if 1. - mult_norm <= 1e-5
                 {
                     let w = point_info.final_error / periodicity_tolerance;
-                    let v = hue.mul_add(-w, IterCount::from(point_info.preperiod));
-                    luminosity = (0.1 * v / hue).tanh();
+                    let v = hue_id.mul_add(-w, IterCount::from(point_info.preperiod));
+                    luminosity_modifier = (0.1 * v / hue_id).tanh();
                 }
                 else
                 {
@@ -160,12 +161,12 @@ impl InteriorColoringAlgorithm
                     {
                         w = -0.2;
                     }
-                    let v = hue.mul_add(w, f64::from(point_info.preperiod));
-                    luminosity = (v * coloring_rate / hue).tanh();
+                    let v = hue_id.mul_add(w, f64::from(point_info.preperiod));
+                    luminosity_modifier = (v * coloring_rate / hue_id).tanh();
                 }
                 palette
                     .period_coloring
-                    .map_color32(hue as f32, luminosity as f32)
+                    .map(hue_id as f32, luminosity_modifier as f32)
             }
             Self::Multiplier => Hsv::new(
                 (point_info.multiplier.arg() / TAU) as f32 + 0.5,
@@ -271,7 +272,7 @@ impl InteriorColoringAlgorithm
     // }
 }
 
-impl Default for InteriorColoringAlgorithm
+impl Default for IncoloringAlgorithm
 {
     fn default() -> Self
     {

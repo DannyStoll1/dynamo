@@ -23,6 +23,7 @@ impl Default for OddCubic
     fractal_impl!();
 }
 
+#[allow(clippy::suspicious_operation_groupings)]
 impl ParameterPlane for OddCubic
 {
     parameter_plane_impl!();
@@ -143,18 +144,19 @@ impl ParameterPlane for OddCubic
     }
 }
 
+#[allow(clippy::suspicious_operation_groupings)]
 impl HasDynamicalCovers for OddCubic
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| ONE_THIRD * t * t - 0.5;
+                param_map = |t| (ONE_THIRD * t * t - 0.5, TWO_THIRDS * t);
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -164,7 +166,7 @@ impl HasDynamicalCovers for OddCubic
             }
             2 =>
             {
-                param_map = |t| ONE_THIRD * t * t + 1.;
+                param_map = |t| (ONE_THIRD * t * t + 1., TWO_THIRDS * t);
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -174,7 +176,7 @@ impl HasDynamicalCovers for OddCubic
             }
             _ =>
             {
-                param_map = |t| t;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -184,14 +186,14 @@ impl HasDynamicalCovers for OddCubic
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| ONE_THIRD * t * t - 0.5;
+                param_map = |t| (ONE_THIRD * t * t - 0.5, TWO_THIRDS * t);
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -203,7 +205,7 @@ impl HasDynamicalCovers for OddCubic
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    0.75 * t2 + ONE_THIRD / t2
+                    (0.75 * t2 + ONE_THIRD / t2, 1.5 * t - TWO_THIRDS / (t * t2))
                 };
                 bounds = Bounds {
                     min_x: -1.5,
@@ -214,7 +216,7 @@ impl HasDynamicalCovers for OddCubic
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -223,7 +225,7 @@ impl HasDynamicalCovers for OddCubic
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match (preperiod, period)
@@ -232,7 +234,10 @@ impl HasDynamicalCovers for OddCubic
             {
                 param_map = |t| {
                     let t2 = t * t;
-                    0.75 * t2 + 0.5 + ONE_THIRD / t2
+                    (
+                        0.75 * t2 + 0.5 + ONE_THIRD / t2,
+                        1.5 * t - TWO_THIRDS / (t * t2),
+                    )
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -268,7 +273,7 @@ impl HasDynamicalCovers for OddCubic
                     let u5_2 = u5 * u5;
                     let v = u3_2 * u3_2 / (u5 * u5_2) + 3. * u3_2 / u5_2;
 
-                    v.inv()
+                    (v.inv(), ONE)
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -279,7 +284,7 @@ impl HasDynamicalCovers for OddCubic
             }
             (_, _) =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

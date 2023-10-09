@@ -30,6 +30,7 @@ pub fn solve_cubic(a: Cplx, b: Cplx, c: Cplx) -> [Cplx; 3]
 }
 
 // Roots of the polynomial a + bx + cx^2 + dx^3 + x^4
+#[allow(clippy::suspicious_operation_groupings)]
 #[must_use]
 pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx) -> [Cplx; 4]
 {
@@ -113,7 +114,7 @@ pub fn solve_polynomial(coeffs: &[Cplx]) -> Vec<Cplx>
 
 #[cfg(not(feature = "mpsolve"))]
 #[must_use]
-pub fn solve_polynomial(_coeffs: &[Cplx]) -> Vec<Cplx>
+pub const fn solve_polynomial(_coeffs: &[Cplx]) -> Vec<Cplx>
 {
-    vec![]
+    Vec::new()
 }

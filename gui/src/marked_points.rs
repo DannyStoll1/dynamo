@@ -2,8 +2,7 @@ use std::collections::{HashMap, VecDeque};
 
 use egui::Color32;
 use fractal_common::coloring::palette::DiscretePalette;
-use fractal_common::types::{AngleNum, Cplx, Period, Real};
-use fractal_core::dynamics::symbolic::{OrbitSchema, RationalAngle};
+use fractal_common::prelude::*;
 use fractal_core::dynamics::ParameterPlane;
 
 type Curve = Vec<Cplx>;
@@ -39,11 +38,8 @@ impl ObjectKey for PointSetKey
         {
             Self::SelectedPoint => Color32::WHITE,
             Self::CriticalPoints => Color32::RED,
-            Self::PeriodicPoints(period) => palette.map_color32(*period as f32, 1.),
-            Self::PreperiodicPoints(o) =>
-            {
-                palette.map_color32(o.period as f32, 1.0 - 0.5 * (o.preperiod as f32).tanh())
-            }
+            Self::PeriodicPoints(period) => palette.map(*period as f32, 1.),
+            Self::PreperiodicPoints(o) => palette.map_preperiodic(o),
         }
     }
 
@@ -89,7 +85,7 @@ impl ObjectKey for CurveKey
             Self::Ray(angle) =>
             {
                 let o = angle.orbit_schema(degree);
-                palette.map_color32(o.period as f32, 1.0 - 0.5 * (o.preperiod as f32).tanh())
+                palette.map_preperiodic(&o)
             }
             Self::Equipotential(_) => Color32::YELLOW,
         }
@@ -100,12 +96,11 @@ impl ObjectKey for CurveKey
         match self
         {
             Self::Orbit => plane.iter_orbit(selection).map(|z| z.into()).collect(),
-            Self::Ray(angle) => plane
-                .external_ray(Real::from(*angle))
-                .unwrap_or_else(|| vec![]),
-            Self::Equipotential(point) => plane
-                .equipotential(Cplx::from(*point))
-                .unwrap_or_else(|| vec![]),
+            Self::Ray(angle) => plane.external_ray(Real::from(*angle)).unwrap_or_default(),
+            Self::Equipotential(point) =>
+            {
+                plane.equipotential(Cplx::from(*point)).unwrap_or_default()
+            }
         }
     }
 }
@@ -336,7 +331,7 @@ pub struct Marking
 impl Marking
 {
     #[must_use]
-    pub fn with_degree(mut self, degree: AngleNum) -> Self
+    pub const fn with_degree(mut self, degree: AngleNum) -> Self
     {
         self.point_sets.degree = degree;
         self.curves.degree = degree;
@@ -500,25 +495,6 @@ mod hashing
 {
 
     use fractal_common::types::{Cplx, Real};
-    use std::mem;
-
-    fn integer_decode(val: f64) -> (u64, i16, i8)
-    {
-        let bits: u64 = unsafe { mem::transmute(val) };
-        let sign: i8 = if bits >> 63 == 0 { 1 } else { -1 };
-        let mut exponent: i16 = ((bits >> 52) & 0x7ff) as i16;
-        let mantissa = if exponent == 0
-        {
-            (bits & 0xfffffffffffff) << 1
-        }
-        else
-        {
-            (bits & 0xfffffffffffff) | 0x10000000000000
-        };
-
-        exponent -= 1023 + 52;
-        (mantissa, exponent, sign)
-    }
 
     #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
     pub(super) struct HashedReal(u64);
@@ -535,7 +511,7 @@ mod hashing
     {
         fn from(encoded: HashedReal) -> Self
         {
-            Real::from_bits(encoded.0)
+            Self::from_bits(encoded.0)
         }
     }
 

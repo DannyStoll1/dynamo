@@ -436,7 +436,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
@@ -449,7 +449,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                     let (mut x, y) = weierstrass_p(g2, g3, t, 0.01);
 
                     x += x;
-                    x * (x - 1.) / (y + y - x + 0.5)
+                    (x * (x - 1.) / (y + y - x + 0.5), ONE)
                 };
                 bounds = Bounds {
                     min_x: -3.5,
@@ -460,7 +460,10 @@ impl HasDynamicalCovers for CubicPer2CritMarked
             }
             2 =>
             {
-                param_map = |t| t + t.inv();
+                param_map = |t| {
+                    let u = t.inv();
+                    (t + u, 1. - u * u)
+                };
                 bounds = Bounds {
                     min_x: -2.2,
                     max_x: 2.2,
@@ -470,7 +473,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -480,7 +483,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
@@ -493,7 +496,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                     let (mut x, y) = weierstrass_p(g2, g3, t, 0.01);
 
                     x += x;
-                    x * (x - 1.) / (y + y - x + 0.5)
+                    (x * (x - 1.) / (y + y - x + 0.5), ONE)
                 };
                 bounds = Bounds {
                     min_x: -3.5,
@@ -504,7 +507,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

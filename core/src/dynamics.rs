@@ -1,20 +1,10 @@
-use fractal_common::{
-    coloring::{algorithms::InteriorColoringAlgorithm, Coloring},
-    consts::{NAN, ONE, TAUI, ZERO},
-    globals::{RAY_DEPTH, RAY_SHARPNESS},
-    iter_plane::IterPlane,
-    math_utils::{
-        arithmetic::{div_rem, divisors, gcd, moebius, Integer},
-        newton::{
-            find_root_newton, find_target_newton, newton_until_convergence,
-            newton_until_convergence_d, find_target_newton_relative,
-        },
-    },
-    point_grid::{self, Bounds, PointGrid},
-    traits::{Dist, MaybeNan, Norm, Polar, Summarize},
-    types::{AngleNum, PointClassId, PointInfoPeriodic},
-    types::{Cplx, EscapeState, IterCount, OrbitInfo, ParamList, Period, PointInfo, Real},
+use fractal_common::prelude::*;
+use fractal_common::coloring::*;
+use fractal_common::math_utils::{
+    newton::*,
+    arithmetic::*,
 };
+use fractal_common::symbolic_dynamics::OrbitSchema;
 use ndarray::{Array2, Axis};
 use num_cpus;
 use num_traits::{One, Zero};
@@ -27,7 +17,6 @@ pub mod covering_maps;
 pub mod julia;
 pub mod newton;
 pub mod orbit;
-pub mod symbolic;
 // pub mod simple_parameter_plane;
 // pub mod functions;
 
@@ -35,7 +24,7 @@ use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
 use std::ops::{Add, Mul, MulAssign, Sub};
 
-use self::{orbit::OrbitParams, symbolic::OrbitSchema};
+use self::orbit::OrbitParams;
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
 pub trait Variable:
@@ -82,12 +71,10 @@ impl<V> Variable for V where
         + From<Cplx>
         + Into<Cplx>
         + Display
-{
-}
+{}
 impl<P> Parameter for P where
     P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
-{
-}
+{}
 impl<D> Derivative for D where
     D: Polar<Real>
         + Send
@@ -101,8 +88,7 @@ impl<D> Derivative for D where
         + MulAssign
         + Display
         + Into<Cplx>
-{
-}
+{}
 
 pub trait ParameterPlane: Sync + Send + Clone
 {
@@ -545,8 +531,8 @@ pub trait ParameterPlane: Sync + Send + Clone
                 dz_dt = dz_dt * df_dz + df_dc;
             }
 
-            let mut w = z.clone();
-            let mut dw_dt = dz_dt.clone();
+            let mut w = z;
+            let mut dw_dt = dz_dt;
 
             // Periodic part
 
@@ -888,10 +874,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn get_orbit_and_info(
         &self,
         point: Cplx,
-    ) -> (
-        Vec<Self::Var>,
-        OrbitInfo<Self::Var, Self::Param, Self::Deriv>,
-    )
+        ) -> OrbitAndInfo<Self::Var, Self::Param, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
@@ -917,14 +900,14 @@ pub trait ParameterPlane: Sync + Send + Clone
             })
             .collect();
         let result = self.encode_escape_result(final_state, param);
-        (
-            trajectory,
-            OrbitInfo {
+        OrbitAndInfo {
+            orbit: trajectory,
+            info: OrbitInfo {
                 start,
                 param,
                 result,
             },
-        )
+        }
     }
 
     /// Default bounds for this plane
@@ -1031,7 +1014,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn default_coloring(&self) -> Coloring
     {
         let mut coloring = Coloring::default();
-        coloring.set_interior_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
+        coloring.set_interior_algorithm(IncoloringAlgorithm::PeriodMultiplier);
         coloring
     }
 
@@ -1082,18 +1065,18 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     /// Internal: Since the internal potential coloring algorithm depends on the periodicity
     /// tolerance, we need to obtain it from this trait.
-    fn preperiod_smooth_coloring(&self) -> InteriorColoringAlgorithm
+    fn preperiod_smooth_coloring(&self) -> IncoloringAlgorithm
     {
-        InteriorColoringAlgorithm::InternalPotential {
+        IncoloringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
         }
     }
 
     /// Internal: Since the period + internal potential coloring algorithm depends on the periodicity
     /// tolerance, we need to obtain it from this trait.
-    fn preperiod_period_smooth_coloring(&self) -> InteriorColoringAlgorithm
+    fn preperiod_period_smooth_coloring(&self) -> IncoloringAlgorithm
     {
-        InteriorColoringAlgorithm::PreperiodPeriodSmooth {
+        IncoloringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.04,
         }

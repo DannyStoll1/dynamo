@@ -167,14 +167,18 @@ impl HasDynamicalCovers for CubicMarked2Cycle
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| (t * t * (t - 3.) + 1.) / (t * (t - 1.));
+                param_map = |t| {
+                    let v = t * (t - 1.);
+                    let u = (v + 1.) / v;
+                    ((t * t * (t - 3.) + 1.) / v, u * u)
+                };
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -184,7 +188,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -194,14 +198,18 @@ impl HasDynamicalCovers for CubicMarked2Cycle
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |t| (t * t * (t - 3.) + 1.) / (t * (t - 1.));
+                param_map = |t| {
+                    let v = t * (t - 1.);
+                    let u = (v + 1.) / v;
+                    ((t * t * (t - 3.) + 1.) / v, u * u)
+                };
                 bounds = Bounds {
                     min_x: -2.5,
                     max_x: 2.5,
@@ -213,8 +221,11 @@ impl HasDynamicalCovers for CubicMarked2Cycle
             {
                 param_map = |t| {
                     let l = t + 0.5;
-                    let numer = horner_monic!(l, OMEGA - 1., OMEGA + 1.);
-                    -numer / (OMEGA + l)
+                    let v = horner_monic!(l, OMEGA - 1., OMEGA + 1.);
+                    let dv = horner!(l, OMEGA - 1., 2.);
+                    let u = -(OMEGA + l).inv();
+                    let du = -u * u;
+                    (v * u, v * du + u * dv)
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -225,7 +236,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -234,7 +245,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match (preperiod, period)
@@ -258,7 +269,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
 
                     y = horner!(x, -1., -1., 1., y);
 
-                    y / x
+                    (y / x, ONE)
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -273,7 +284,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                     let l = t + 0.5;
                     let numer = horner_monic!(l, OMEGA + 1., 1. - 3. * OMEGA, -3., OMEGA);
                     let denom = l * (1. - l) * (OMEGA + l);
-                    numer / denom
+                    (numer / denom, ONE) //TODO
                 };
                 bounds = Bounds {
                     min_x: -3.0,
@@ -284,7 +295,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
             }
             (_, _) =>
             {
-                param_map = |t| t;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

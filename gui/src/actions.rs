@@ -1,5 +1,5 @@
 use fractal_common::{
-    coloring::{algorithms::InteriorColoringAlgorithm, palette::ColorPalette},
+    coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
     types::{IterCount, Period},
 };
 
@@ -44,7 +44,7 @@ pub enum Action
     SetPalette(ColorPalette),
     SetPaletteWhite,
     SetPaletteBlack,
-    SetColoring(InteriorColoringAlgorithm),
+    SetColoring(IncoloringAlgorithm),
     ScalePalettePeriod(f64),
     ShiftPalettePhase(f64),
 }
@@ -55,38 +55,38 @@ impl Action
         match self
         {
             // UI Control
-            Action::Quit => "Exit the application.".to_owned(),
-            Action::Close => "Close the current tab.".to_owned(),
-            Action::SaveImage(pane_id) => format!("Save the {} active image to a file.", pane_id),
-            Action::SaveActiveImage => "Save the active image to a file.".to_owned(),
+            Self::Quit => "Exit the application.".to_owned(),
+            Self::Close => "Close the current tab.".to_owned(),
+            Self::SaveImage(pane_id) => format!("Save the {} active image to a file.", pane_id),
+            Self::SaveActiveImage => "Save the active image to a file.".to_owned(),
 
             // Annotation Toggles
-            Action::ToggleSelectionMarker => "Toggle selection marker on active image.".to_owned(),
-            Action::ToggleCritical(pane_id) =>
+            Self::ToggleSelectionMarker => "Toggle selection marker on active image.".to_owned(),
+            Self::ToggleCritical(pane_id) =>
             {
                 format!("Toggle critical points on {pane_id} image.")
             }
-            Action::ToggleCycles(pane_id, period) =>
+            Self::ToggleCycles(pane_id, period) =>
             {
                 format!("Toggle known cycles (or component centers) of period {period} on {pane_id} image.")
             }
 
             // Dynamics
-            Action::FindPeriodicPoint =>
+            Self::FindPeriodicPoint =>
             {
                 "Find and select a nearby preperiodic/periodic/pcf point on the active image."
                     .to_owned()
             }
-            Action::MapSelection =>
+            Self::MapSelection =>
             {
                 "Apply dynamical map to current selection on dynamical plane.".to_owned()
             }
-            Action::DrawOrbit =>
+            Self::DrawOrbit =>
             {
                 "Draw the orbit of currently selected point on dynamical plane.".to_owned()
             }
-            Action::ClearOrbit => "Hide orbit from active plane.".to_owned(),
-            Action::DrawExternalRay {
+            Self::ClearOrbit => "Hide orbit from active plane.".to_owned(),
+            Self::DrawExternalRay {
                 select_landing_point,
             } =>
             {
@@ -100,24 +100,24 @@ impl Action
                     "Draw/hide an external ray on active image.".to_owned()
                 }
             }
-            Action::DrawEquipotential => "Draw equipotential through selection.".to_owned(),
-            Action::ClearRays => "Clear all external rays on active image.".to_owned(),
-            Action::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
-            Action::ClearCurves => "Clear all curves on active image.".to_owned(),
-            Action::ResetSelection => "Reset selection to default on active image.".to_owned(),
+            Self::DrawEquipotential => "Draw equipotential through selection.".to_owned(),
+            Self::ClearRays => "Clear all external rays on active image.".to_owned(),
+            Self::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
+            Self::ClearCurves => "Clear all curves on active image.".to_owned(),
+            Self::ResetSelection => "Reset selection to default on active image.".to_owned(),
 
             // Image Controls
-            Action::ToggleLiveMode =>
+            Self::ToggleLiveMode =>
             {
                 "Toggle \"live Julia mode\", in which child plane changes with cursor movement."
                     .to_owned()
             }
-            Action::CycleActivePlane => "Cycle through different planes of the fractal.".to_owned(),
-            Action::PromptImageHeight =>
+            Self::CycleActivePlane => "Cycle through different planes of the fractal.".to_owned(),
+            Self::PromptImageHeight =>
             {
                 "Prompt to set the height of the fractal image.".to_owned()
             }
-            Action::Pan(x, y) =>
+            Self::Pan(x, y) =>
             {
                 if *x == 0.
                 {
@@ -146,12 +146,12 @@ impl Action
                     format!("Pan the view (x: {x}, y: {y}))")
                 }
             }
-            Action::Zoom(scale) =>
+            Self::Zoom(scale) =>
             {
                 format!("Zoom {} (scale: {:.2})", in_or_out(*scale), *scale)
             }
-            Action::CenterOnSelection => "Center view on selected point.".to_owned(),
-            Action::ScaleMaxIter(scale) =>
+            Self::CenterOnSelection => "Center view on selected point.".to_owned(),
+            Self::ScaleMaxIter(scale) =>
             {
                 format!(
                     "{} max iterations on active image (factor: {scale})",
@@ -160,13 +160,13 @@ impl Action
             }
 
             // Coloring
-            Action::RandomizePalette => "Randomize the color palette.".to_owned(),
-            Action::SetPalette(_) => "Set the color palette.".to_owned(),
-            Action::SetPaletteWhite => "Use black on white palette.".to_owned(),
-            Action::SetPaletteBlack => "Use white on black palette.".to_owned(),
-            Action::SetColoring(algorithm) =>
+            Self::RandomizePalette => "Randomize the color palette.".to_owned(),
+            Self::SetPalette(_) => "Set the color palette.".to_owned(),
+            Self::SetPaletteWhite => "Use black on white palette.".to_owned(),
+            Self::SetPaletteBlack => "Use white on black palette.".to_owned(),
+            Self::SetColoring(algorithm) =>
             {
-                use InteriorColoringAlgorithm::*;
+                use IncoloringAlgorithm::*;
                 let desc = match algorithm
                 {
                     Solid => "Color bounded components black.",
@@ -186,11 +186,11 @@ impl Action
                 };
                 desc.to_owned()
             }
-            Action::ScalePalettePeriod(scale) =>
+            Self::ScalePalettePeriod(scale) =>
             {
                 format!("{} the period of the color palette.", inc_or_dec(*scale))
             }
-            Action::ShiftPalettePhase(_) => "Shift the phase of the color palette.".to_owned(),
+            Self::ShiftPalettePhase(_) => "Shift the phase of the color palette.".to_owned(),
         }
     }
 
@@ -199,26 +199,26 @@ impl Action
         match self
         {
             // UI Control
-            Action::Quit => "Exit".to_owned(),
-            Action::Close => "Close Tab".to_owned(),
-            Action::SaveActiveImage => "Save Image".to_owned(),
-            Action::SaveImage(pane_id) => format!("Save {:#}", pane_id),
+            Self::Quit => "Exit".to_owned(),
+            Self::Close => "Close Tab".to_owned(),
+            Self::SaveActiveImage => "Save Image".to_owned(),
+            Self::SaveImage(pane_id) => format!("Save {:#}", pane_id),
 
             // Annotation Toggles
-            Action::ToggleSelectionMarker => "Toggle Selection".to_owned(),
-            Action::ToggleCritical(pane_id) => match pane_id
+            Self::ToggleSelectionMarker => "Toggle Selection".to_owned(),
+            Self::ToggleCritical(pane_id) => match pane_id
             {
                 PaneID::Parent => "Toggle marked pts (parent)".to_owned(),
                 PaneID::Child => "Toggle Critical".to_owned(),
             },
-            Action::ToggleCycles(_, p) => format!("Toggle {p}-cycles"),
+            Self::ToggleCycles(_, p) => format!("Toggle {p}-cycles"),
 
             // Dynamics
-            Action::FindPeriodicPoint => "Find Point".to_owned(),
-            Action::MapSelection => "Map Selection".to_owned(),
-            Action::DrawOrbit => "Draw Orbit".to_owned(),
-            Action::ClearOrbit => "Clear Orbit".to_owned(),
-            Action::DrawExternalRay {
+            Self::FindPeriodicPoint => "Find Point".to_owned(),
+            Self::MapSelection => "Map Selection".to_owned(),
+            Self::DrawOrbit => "Draw Orbit".to_owned(),
+            Self::ClearOrbit => "Clear Orbit".to_owned(),
+            Self::DrawExternalRay {
                 select_landing_point,
             } =>
             {
@@ -231,29 +231,29 @@ impl Action
                     "Draw Ray".to_owned()
                 }
             }
-            Action::DrawEquipotential => "Equipotential".to_owned(),
-            Action::ClearRays => "Clear Rays".to_owned(),
-            Action::ClearEquipotentials => "Clear Equipotentials".to_owned(),
-            Action::ClearCurves => "Clear Curves".to_owned(),
-            Action::ResetSelection => "Reset Selection".to_owned(),
+            Self::DrawEquipotential => "Equipotential".to_owned(),
+            Self::ClearRays => "Clear Rays".to_owned(),
+            Self::ClearEquipotentials => "Clear Equipotentials".to_owned(),
+            Self::ClearCurves => "Clear Curves".to_owned(),
+            Self::ResetSelection => "Reset Selection".to_owned(),
 
             // Image Controls
-            Action::ToggleLiveMode => "Toggle Live Mode".to_owned(),
-            Action::CycleActivePlane => "Cycle Plane".to_owned(),
-            Action::PromptImageHeight => "Set Height".to_owned(),
-            Action::Pan(_, _) => "Pan View".to_owned(),
-            Action::Zoom(scale) => format!("Zoom {}", in_or_out(*scale)),
-            Action::CenterOnSelection => "Center View".to_owned(),
-            Action::ScaleMaxIter(scale) => format!("{} iters", inc_or_dec(*scale)),
+            Self::ToggleLiveMode => "Toggle Live Mode".to_owned(),
+            Self::CycleActivePlane => "Cycle Plane".to_owned(),
+            Self::PromptImageHeight => "Set Height".to_owned(),
+            Self::Pan(_, _) => "Pan View".to_owned(),
+            Self::Zoom(scale) => format!("Zoom {}", in_or_out(*scale)),
+            Self::CenterOnSelection => "Center View".to_owned(),
+            Self::ScaleMaxIter(scale) => format!("{} iters", inc_or_dec(*scale)),
 
             // Coloring
-            Action::RandomizePalette => "Random".to_owned(),
-            Action::SetPalette(_) => "Custom".to_owned(),
-            Action::SetPaletteWhite => "White".to_owned(),
-            Action::SetPaletteBlack => "Black".to_owned(),
-            Action::SetColoring(algorithm) =>
+            Self::RandomizePalette => "Random".to_owned(),
+            Self::SetPalette(_) => "Custom".to_owned(),
+            Self::SetPaletteWhite => "White".to_owned(),
+            Self::SetPaletteBlack => "Black".to_owned(),
+            Self::SetColoring(algorithm) =>
             {
-                use InteriorColoringAlgorithm::*;
+                use IncoloringAlgorithm::*;
                 let desc = match algorithm
                 {
                     Solid => "Black",
@@ -267,8 +267,8 @@ impl Action
                 };
                 desc.to_owned()
             }
-            Action::ScalePalettePeriod(scale) => format!("{} density", inc_or_dec(1.0 / scale)),
-            Action::ShiftPalettePhase(_) => "Adjust Phase".to_owned(),
+            Self::ScalePalettePeriod(scale) => format!("{} density", inc_or_dec(1.0 / scale)),
+            Self::ShiftPalettePhase(_) => "Adjust Phase".to_owned(),
         }
     }
 }

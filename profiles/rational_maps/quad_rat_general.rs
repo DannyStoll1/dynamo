@@ -53,7 +53,7 @@ impl ParameterPlane for QuadRatGeneral
     {
         let z2 = z * z;
         let denom = (z2 + b).inv();
-        ((z2 + a) * denom, (z + z) * (b - a) * denom * denom)
+        ((z2 + a) * denom, 2. * z * (b - a) * denom * denom)
     }
 
     fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv

@@ -1,13 +1,14 @@
 use std::ops::{Deref, DerefMut};
 
+use crate::orbit_info::PointInfo;
 use crate::traits::Polar;
-use crate::types::{PointInfo, Real};
+use crate::types::Real;
 
 pub mod algorithms;
 pub mod palette;
 pub mod types;
 
-use algorithms::InteriorColoringAlgorithm;
+pub use algorithms::IncoloringAlgorithm;
 use egui::Color32;
 use image::Rgb;
 use palette::ColorPalette;
@@ -22,7 +23,7 @@ use self::palette::DiscretePalette;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coloring
 {
-    algorithm: InteriorColoringAlgorithm,
+    algorithm: IncoloringAlgorithm,
     palette: ColorPalette,
 }
 impl Coloring
@@ -99,24 +100,26 @@ impl Coloring
     {
         self.palette = palette;
     }
-    #[must_use] pub fn get_palette(&self) -> &ColorPalette
+    #[must_use]
+    pub const fn get_palette(&self) -> &ColorPalette
     {
         &self.palette
     }
-    #[must_use] pub fn get_period_coloring(&self) -> &DiscretePalette
+    #[must_use]
+    pub const fn get_period_coloring(&self) -> &DiscretePalette
     {
         &self.palette.period_coloring
     }
     #[must_use]
-    pub const fn get_algorithm(&self) -> &InteriorColoringAlgorithm
+    pub const fn get_algorithm(&self) -> &IncoloringAlgorithm
     {
         &self.algorithm
     }
-    pub fn get_algorithm_mut(&mut self) -> &mut InteriorColoringAlgorithm
+    pub fn get_algorithm_mut(&mut self) -> &mut IncoloringAlgorithm
     {
         &mut self.algorithm
     }
-    pub fn set_interior_algorithm(&mut self, algorithm: InteriorColoringAlgorithm)
+    pub fn set_interior_algorithm(&mut self, algorithm: IncoloringAlgorithm)
     {
         self.algorithm = algorithm;
     }

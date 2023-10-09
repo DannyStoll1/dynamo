@@ -1,9 +1,8 @@
 use super::julia::JuliaSet;
-use super::symbolic::OrbitSchema;
 use super::ParameterPlane;
-use fractal_common::point_grid::{Bounds, PointGrid};
-use fractal_common::types::param_stack::ParamList;
-use fractal_common::types::*;
+use fractal_common::prelude::*;
+use fractal_common::symbolic_dynamics::OrbitSchema;
+use num_traits::One;
 
 #[derive(Clone)]
 pub struct CoveringMap<C>
@@ -11,9 +10,8 @@ where
     C: ParameterPlane + Clone,
 {
     base_curve: C,
-    covering_map: fn(Cplx) -> Cplx,
+    covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
     point_grid: PointGrid,
-    compose_parameterizations: bool,
 }
 
 impl<C> CoveringMap<C>
@@ -21,28 +19,16 @@ where
     C: ParameterPlane + Clone,
 {
     #[must_use]
-    pub fn new(base_curve: C, covering_map: fn(Cplx) -> Cplx, point_grid: PointGrid) -> Self
-    {
-        Self {
-            base_curve,
-            covering_map,
-            point_grid,
-            compose_parameterizations: false,
-        }
-    }
-
-    #[must_use]
-    pub fn without_base_parameterization(
+    pub fn new(
         base_curve: C,
-        covering_map: fn(Cplx) -> Cplx,
+        covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
         point_grid: PointGrid,
     ) -> Self
     {
         Self {
             base_curve,
-            covering_map,
+            covering_map_d,
             point_grid,
-            compose_parameterizations: true,
         }
     }
 }
@@ -118,23 +104,26 @@ where
         self
     }
 
-    fn param_map(&self, c: Cplx) -> C::Param
+    fn param_map(&self, t: Cplx) -> C::Param
     {
-        if self.compose_parameterizations
-        {
-            let u = (self.covering_map)(c);
-            self.base_curve.param_map(u)
-        }
-        else
-        {
-            (self.covering_map)(c).into()
-        }
+        (self.covering_map_d)(t).0
+    }
+
+    fn param_map_d(&self, t: Cplx) -> (C::Param, C::Deriv)
+    {
+        (self.covering_map_d)(t)
     }
 
     #[inline]
-    fn start_point(&self, p: Cplx, c: C::Param) -> C::Var
+    fn start_point(&self, t: Cplx, c: C::Param) -> C::Var
     {
-        self.base_curve.start_point(p, c)
+        self.base_curve.start_point(t, c)
+    }
+
+    #[inline]
+    fn start_point_d(&self, t: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        self.base_curve.start_point_d(t, c)
     }
 
     #[inline]
@@ -254,23 +243,23 @@ pub trait HasDynamicalCovers: super::ParameterPlane + Clone
 {
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
     {
-        let param_map = |c| c;
+        let param_map_d = |t| (Self::Param::from(t), Self::Deriv::one());
         let bounds = self.point_grid().clone();
 
         println!("Marked cycle has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map, bounds)
+        CoveringMap::new(self, param_map_d, bounds)
     }
     fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
     {
-        let param_map = |c| c;
+        let param_map_d = |t| (Self::Param::from(t), Self::Deriv::one());
         let bounds = self.point_grid().clone();
 
         println!("Dynatomic curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map, bounds)
+        CoveringMap::new(self, param_map_d, bounds)
     }
     fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
     {
-        let param_map = |c| c;
+        let param_map = |t| (Self::Param::from(t), Self::Deriv::one());
         let bounds = self.point_grid().clone();
 
         println!("Misiurewicz curve has not been implemented; falling back to base curve!");

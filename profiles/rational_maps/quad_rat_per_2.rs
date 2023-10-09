@@ -1,4 +1,5 @@
 use crate::macros::{cplx_arr, horner, horner_monic, profile_imports};
+use seq_macro::seq;
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -89,7 +90,8 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
     }
@@ -472,34 +474,23 @@ impl ParameterPlane for QuadRatPer2
     }
 }
 
-const A0: Cplx = Cplx::new(-5448., 6_051.300_686_629_28);
-const A1: Cplx = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
-const A2: Cplx = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
-const A3: Cplx = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
-const A4: Cplx = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
-const A5: Cplx = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
-const A6: Cplx = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
-
-const B0: Cplx = Cplx::new(-6174., 0.);
-const B1: Cplx = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
-const B2: Cplx = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
-const B3: Cplx = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
-const B4: Cplx = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
-const B5: Cplx = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
-const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
-
 impl HasDynamicalCovers for QuadRatPer2
 {
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |c| (4. - c * (c + 2.)) * c / 8.;
+                param_map = |t| {
+                    (
+                        0.125 * (4. - t * (t + 2.)) * t,
+                        -0.125 * (3. * t - 2.) * (t + 2.),
+                    )
+                };
                 bounds = Bounds {
                     min_x: -5.0,
                     max_x: 3.0,
@@ -509,7 +500,11 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             3 =>
             {
-                param_map = |t| -horner_monic!(t, -OMEGA, -1., 2. * OMEGA + 1.) / (OMEGA + 1.);
+                const A0: Cplx = Cplx::new(1. + OMEGA.re, OMEGA.im);
+                const A1: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
+                const A2: Cplx = Cplx::new(-OMEGA.re - 2., -OMEGA.im);
+                const B2: Cplx = Cplx::new(-2. * OMEGA.re - 4., -2. * OMEGA.im);
+                param_map = |t| (horner!(t, A0, A1, A2), horner!(t, A1, B2));
                 bounds = Bounds {
                     min_x: -1.8,
                     max_x: 1.8,
@@ -547,16 +542,28 @@ impl HasDynamicalCovers for QuadRatPer2
                 const B11: Cplx = Cplx::new(-3.53720886972747, -2.52453753137727);
                 const B12: Cplx = Cplx::new(-0.0276521249511676, -0.231588268174843);
 
+                seq!(N in 2..=12 {
+                    const DA~N: Cplx = Cplx::new((N as f64) * A~N.re, (N as f64) * A~N.im);
+                    const DB~N: Cplx = Cplx::new((N as f64) * B~N.re, (N as f64) * B~N.im);
+                });
+
                 // Mobius transformation to frame the image
-                const POLE: Cplx = Cplx::new(-0.93856601763702075, 2.1250254224644328);
-                const SHIFT: Cplx = Cplx::new(0.006285758096917293865, 0.69546218693638377);
-                const ANGLE: Cplx = Cplx::new(0.3016938919708282662, 0.1676310038253636);
+                const POLE: Cplx = Cplx::new(-0.938_566_017_637_020_7, 2.1250254224644328);
+                const SHIFT: Cplx = Cplx::new(0.006_285_758_096_917_293, 0.695_462_186_936_383_7);
+                const ANGLE: Cplx = Cplx::new(0.301_693_891_970_828_24, 0.1676310038253636);
 
                 param_map = |t| {
                     let t = (t * ANGLE + SHIFT).inv() + POLE;
                     let numer = horner!(t, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12);
                     let denom = horner!(t, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12);
-                    -numer / denom
+                    let numer_d =
+                        horner!(t, A1, DA2, DA3, DA4, DA5, DA6, DA7, DA8, DA9, DA10, DA11, DA12);
+                    let denom_d =
+                        horner!(t, B1, DB2, DB3, DB4, DB5, DB6, DB7, DB8, DB9, DB10, DB11, DB12);
+                    (
+                        -numer / denom,
+                        (numer * denom_d - numer_d * denom) / (denom * denom),
+                    )
                 };
                 bounds = Bounds {
                     min_x: -4.3,
@@ -567,7 +574,7 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         }
@@ -576,14 +583,47 @@ impl HasDynamicalCovers for QuadRatPer2
     }
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        const A0: Cplx = Cplx::new(-5448., 6_051.300_686_629_28);
+        const A1: Cplx = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
+        const A2: Cplx = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
+        const A3: Cplx = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
+        const A4: Cplx = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
+        const A5: Cplx = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
+        const A6: Cplx = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
+
+        const B0: Cplx = Cplx::new(-6174., 0.);
+        const B1: Cplx = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
+        const B2: Cplx = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
+        const B3: Cplx = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
+        const B4: Cplx = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
+        const B5: Cplx = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
+        const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
+
+        const A2D: Cplx = Cplx::new(2. * A2.re, 2. * A2.im);
+        const A3D: Cplx = Cplx::new(3. * A3.re, 3. * A3.im);
+        const A4D: Cplx = Cplx::new(4. * A4.re, 4. * A4.im);
+        const A5D: Cplx = Cplx::new(5. * A5.re, 5. * A5.im);
+        const A6D: Cplx = Cplx::new(6. * A6.re, 6. * A6.im);
+
+        const B2D: Cplx = Cplx::new(2. * B2.re, 2. * B2.im);
+        const B3D: Cplx = Cplx::new(3. * B3.re, 3. * B3.im);
+        const B4D: Cplx = Cplx::new(4. * B4.re, 4. * B4.im);
+        const B5D: Cplx = Cplx::new(5. * B5.re, 5. * B5.im);
+        const B6D: Cplx = Cplx::new(6. * B6.re, 6. * B6.im);
+
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period
         {
             1 =>
             {
-                param_map = |c| (4. - c * (c + 2.)) * c / 8.;
+                param_map = |t| {
+                    (
+                        0.125 * (4. - t * (t + 2.)) * t,
+                        -0.125 * (3. * t - 2.) * (t + 2.),
+                    )
+                };
                 bounds = Bounds {
                     min_x: -5.0,
                     max_x: 3.0,
@@ -593,9 +633,9 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             4 =>
             {
-                param_map = |c| {
-                    let u = c * c;
-                    u * c - 2. * u + 4. * c - 1.
+                param_map = |t| {
+                    let t2 = t * t;
+                    (t2 * t - 2. * t2 + 4. * t - 1., 3. * t2 - 4. * t - 4.)
                 };
                 bounds = Bounds {
                     min_x: -1.,
@@ -606,18 +646,24 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             5 =>
             {
-                param_map = |c| {
+                param_map = |t| {
                     // t = sqrt(-2235)
                     // ((-2043332879690812551104*t + 322671215001188162496)*c^6 + (-7211787718815174272*t + 38457203855637713472)*c^5 + (-10445615819508480*t + 113836835145028800)*c^4 + (-7931553616080*t + 135137329840080)*c^3 + (-3321323160*t + 79799557200)*c^2 + (-724598*t + 23400162)*c + (-64*t + 2724))/((-165726073638468871360*t + 59671792608719217337728)*c^6 + (-532082528560799520*t + 218792941658814953376)*c^5 + (-681491680626360*t + 334169395252260120)*c^4 + (-435333784880*t + 272101938829200)*c^3 + (-138715290*t + 124564255830)*c^2 + (-17640*t + 30391956)*c + 3087)
                     let pole = Cplx::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
                     let angle = Cplx::new(1., 0.);
 
-                    let c = angle / c + pole;
+                    let u = angle / t + pole;
+                    let du = -angle / (t * t);
 
-                    let numer = A0 + c * (A1 + c * (A2 + c * (A3 + c * (A4 + c * (A5 + c * A6)))));
-                    let denom = B0 + c * (B1 + c * (B2 + c * (B3 + c * (B4 + c * (B5 + c * B6)))));
+                    let numer = horner!(u, A0, A1, A2, A3, A4, A5, A6);
+                    let d_numer = horner!(u, A1, A2D, A3D, A4D, A5D, A6D);
+                    let denom = horner!(u, B0, B1, B2, B3, B4, B5, B6);
+                    let d_denom = horner!(u, B1, B2D, B3D, B4D, B5D, B6D);
 
-                    -numer / denom
+                    (
+                        -numer / denom,
+                        du * (numer * d_denom - denom * d_numer) / (denom * denom),
+                    )
                 };
                 bounds = Bounds {
                     min_x: -8.,
@@ -628,7 +674,7 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |c| (c, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -638,14 +684,14 @@ impl HasDynamicalCovers for QuadRatPer2
 
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match (preperiod, period)
         {
             (1, 1) =>
             {
-                param_map = |t| t * (1. - t * (t + 1.));
+                param_map = |t| (t * (1. - t * (t + 1.)), (t + 1.) * (1. - 3. * t));
                 bounds = Bounds {
                     min_x: -3.4,
                     max_x: 3.4,
@@ -655,12 +701,22 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             (2, 1) =>
             {
-                param_map = |c| {
-                    let c2 = c * c;
+                param_map = |t| {
+                    let t2 = t * t;
                     // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
-                    let denom = 13. * c2 + c + c + 2.;
-                    let numer = c2 * (131. * c2 - 102. * c - 106.) - 8. * c - 4.;
-                    25. * c2 * numer / (denom * denom * denom)
+                    let u = t2 * (131. * t2 - 102. * t - 106.) - 8. * t - 4.;
+                    let du = t2 * (524. * t - 306.) - 212. * t - 8.;
+                    let v = 13. * t2 + t + t + 2.;
+                    let dv = 26. * t + 2.;
+
+                    let num = 25. * t2 * u;
+                    let d_num = 50. * t * u + 25. * t2 * du;
+
+                    let v2 = v * v;
+                    let den = (v2 * v).inv();
+                    let d_den = -3. * v2 * v2 * dv;
+
+                    (num * den, num * d_den + d_num * den)
                 };
                 bounds = Bounds {
                     min_x: -3.4,
@@ -671,10 +727,11 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             (2, 2) =>
             {
-                param_map = |c| {
+                param_map = |t| {
                     //(-t^4 + 2*t^2 + 1)/(2*t^4)
-                    let c2 = c * c;
-                    0.5 - (c2 + 0.5) / (c2 * c2)
+                    let t2 = t * t;
+                    let t4 = t2 * t2;
+                    (0.5 - (t2 + 0.5) / t4, 2. * (t2 + 1.) / (t4 * t))
                 };
                 bounds = Bounds {
                     min_x: -4.,
@@ -685,7 +742,7 @@ impl HasDynamicalCovers for QuadRatPer2
             }
             (_, _) =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };

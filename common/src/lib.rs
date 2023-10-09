@@ -7,6 +7,8 @@ pub mod globals;
 pub mod iter_plane;
 pub mod macros;
 pub mod math_utils;
+pub mod orbit_info;
+pub mod symbolic_dynamics;
 pub mod point_grid;
 pub mod prelude;
 pub mod traits;

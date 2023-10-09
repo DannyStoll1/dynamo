@@ -109,3 +109,43 @@ impl Describe for i32
         Some(format!("{self}"))
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FloatToIntError;
+
+impl std::fmt::Display for FloatToIntError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error converting float to integer")
+    }
+}
+
+impl std::error::Error for FloatToIntError {}
+
+pub trait TryRound<T>
+{
+    fn try_round(self) -> Result<T, FloatToIntError>;
+}
+
+macro_rules! try_round_impl {
+    ($float: ty, $int: ty) => {
+        impl TryRound<$int> for $float
+        {
+            fn try_round(self) -> Result<$int, FloatToIntError>
+            {
+                if self.is_finite() && self > <$int>::MIN as $float && self < <$int>::MAX as $float
+                {
+                    Ok(self.round() as $int)
+                }
+                else
+                {
+                    Err(FloatToIntError)
+                }
+            }
+        }
+    };
+}
+
+try_round_impl!(f64, i64);
+try_round_impl!(f64, i32);
+try_round_impl!(f32, i64);
+try_round_impl!(f32, i32);

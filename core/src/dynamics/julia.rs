@@ -1,17 +1,10 @@
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
-use fractal_common::coloring::{algorithms::InteriorColoringAlgorithm, Coloring};
-use fractal_common::consts::{ONE, TAU, ZERO};
-use fractal_common::globals::{RAY_DEPTH, RAY_SHARPNESS};
-use fractal_common::math_utils::arithmetic::{divisors, gcd, moebius, Integer};
-use fractal_common::math_utils::newton::{find_root_newton, newton_until_convergence_d};
-use fractal_common::point_grid::{Bounds, PointGrid};
-use fractal_common::types::{
-    Cplx, EscapeState, NoParam, ParamList, ParamStack, Period, PointInfo, Real,
-};
+use fractal_common::prelude::*;
+use fractal_common::coloring::*;
+use fractal_common::math_utils::newton::newton_until_convergence_d;
+use fractal_common::symbolic_dynamics::OrbitSchema;
 use num_traits::{One, Zero};
-
-use super::symbolic::OrbitSchema;
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
@@ -293,16 +286,16 @@ where
         coloring
     }
 
-    fn preperiod_smooth_coloring(&self) -> InteriorColoringAlgorithm
+    fn preperiod_smooth_coloring(&self) -> IncoloringAlgorithm
     {
-        InteriorColoringAlgorithm::InternalPotential {
+        IncoloringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
         }
     }
 
-    fn preperiod_period_smooth_coloring(&self) -> InteriorColoringAlgorithm
+    fn preperiod_period_smooth_coloring(&self) -> IncoloringAlgorithm
     {
-        InteriorColoringAlgorithm::PreperiodPeriodSmooth {
+        IncoloringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.015,
         }

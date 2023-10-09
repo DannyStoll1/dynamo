@@ -65,16 +65,35 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn param_map(&self, c: Cplx) -> Cplx
+    fn param_map(&self, t: Cplx) -> Cplx
     {
         let pole = 2.618_033_988_749_89;
-        1. / c + pole
+        1. / t + pole
+    }
+
+    #[inline]
+    fn param_map_d(&self, t: Cplx) -> (Cplx, Cplx)
+    {
+        let pole = 2.618_033_988_749_89;
+        let u = t.inv();
+        (u + pole, -u * u)
     }
 
     #[inline]
     fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
     {
         (c + c) * (c + c - 1.) / (c * (c + 1.) - 1.)
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, c: Cplx) -> (Cplx, Cplx, Cplx)
+    {
+        let denom = (c * (c + 1.) - 1.).inv();
+        (
+            2. * c * (2. * c - 1.) * denom,
+            ZERO,
+            2. * (c - 1.) * (3. * c - 1.) * denom * denom,
+        )
     }
 
     #[inline]
@@ -93,7 +112,7 @@ impl ParameterPlane for QuadRatPer4
 
         (
             (z - c) * (c * z - z - two_c + 1.) * u,
-            ((4. * c2 - two_c) / z - (c2 + c_minus_1)) * u,
+            (c2 + c_minus_1 - (4. * c2 - two_c) / z) * u,
         )
     }
 
@@ -107,8 +126,8 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let v = c - 1.;
-        (2. - c) * c * (z - 2.) / (v * v * z * z)
+        let v = (c - 1.) * z;
+        (1. + (2. - c) * c * (z - 2.)) / (v * v)
     }
 
     #[inline]
@@ -121,8 +140,8 @@ impl ParameterPlane for QuadRatPer4
         let two_c = c + c;
         (
             (z - c) * (c * z - z - two_c + 1.) * u,
-            (4. * c2 - (c2 + v) * z - two_c) * u / z,
-            (two_c - c2) * (z - 2.) * u / v,
+            (c2 + v - (4. * c2 - two_c) / z) * u,
+            (1. + (two_c - c2) * (z - 2.)) * u / v,
         )
     }
 
@@ -135,7 +154,7 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn escaping_period(&self) -> Period
     {
-        3
+        4
     }
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
@@ -237,7 +256,7 @@ impl HasDynamicalCovers for QuadRatPer4
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> Cplx;
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
         let grid: PointGrid;
         let bounds: Bounds;
 
@@ -255,7 +274,8 @@ impl HasDynamicalCovers for QuadRatPer4
                     let x = (alpha * p + 1.) / 3.;
                     // let y = (dp - 1.5) / x;
 
-                    x / (x + 1.)
+                    // TODO: derivative
+                    (x / (x + 1.), ONE)
                     // let xx = x + 1.;
                     // let yy = y - 3. * x - 3.;
                     //
@@ -274,7 +294,7 @@ impl HasDynamicalCovers for QuadRatPer4
             }
             _ =>
             {
-                param_map = |c| c;
+                param_map = |t| (t, ONE);
                 grid = self.point_grid.clone();
             }
         };

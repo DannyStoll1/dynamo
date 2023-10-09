@@ -98,9 +98,9 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         {
             1 =>
             {
-                let mut coeffs = vec![ZERO; (M + N + 1).try_into().unwrap()];
-                coeffs[usize::try_from(M + N).unwrap()] = c;
-                coeffs[usize::try_from(N + 1).unwrap()] = -c;
+                let mut coeffs = vec![ZERO; (M + N + 1).try_into().unwrap_or(3)];
+                coeffs[usize::try_from(M + N).unwrap_or(2)] = c;
+                coeffs[usize::try_from(N + 1).unwrap_or(1)] = -c;
                 coeffs[0] = ONE;
                 solve_polynomial(&coeffs)
             }
