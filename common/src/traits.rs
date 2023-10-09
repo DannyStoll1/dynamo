@@ -90,7 +90,7 @@ where
 {
     fn describe(&self) -> Option<String>
     {
-        Some(format!("{self:.*}", DISPLAY_PREC))
+        Some(format!("{self:.DISPLAY_PREC$}"))
     }
 }
 

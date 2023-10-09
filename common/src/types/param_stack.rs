@@ -9,7 +9,7 @@ impl From<Cplx> for NoParam
 {
     fn from(_: Cplx) -> Self
     {
-        NoParam
+        Self
     }
 }
 

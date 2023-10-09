@@ -35,7 +35,7 @@ mod tests
         let d = Cplx::new(7., 0.);
 
         let roots = solve_quartic(a, b, c, d);
-        for r in roots.iter()
+        for r in &roots
         {
             let val = horner_monic!(r, a, b, c, d);
             assert!(val.norm() < 1e-13);
@@ -76,7 +76,7 @@ mod tests
         }
 
         let val1_true = Cplx::new(0.783_296_511_867_031, 0.124_699_829_748_171_09);
-        let val2_true = Cplx::new(-0.614409794662293, -0.229783642987604);
+        let val2_true = Cplx::new(-0.614_409_794_662_293, -0.229_783_642_987_604);
 
         let err0 = val0.norm();
         let err1 = (val1 - val1_true).norm();
@@ -101,8 +101,8 @@ mod tests
             [val0, val1, val2] = riemann_xi_d2(s);
         }
 
-        let val1_true = Cplx::new(0., 0.00138271908921625);
-        let val2_true = Cplx::new(-0.00160293252834422, 0.);
+        let val1_true = Cplx::new(0., 0.001_382_719_089_216_25);
+        let val2_true = Cplx::new(-0.001_602_932_528_344_22, 0.);
 
         let err0 = val0.norm();
         let err1 = (val1 - val1_true).norm();

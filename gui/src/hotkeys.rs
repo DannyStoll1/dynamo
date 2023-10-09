@@ -122,13 +122,20 @@ pub static PALETTE_HOTKEYS: [Hotkey; 7] = [
     },
 ];
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 19] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 20] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
         action: DrawExternalRay {
             select_landing_point: false,
         },
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // External ray
+    Hotkey {
+        shortcut: Some(CTRL_E),
+        action: DrawEquipotential,
         show_in_menu: true,
         menu_action_override: None,
     },
@@ -181,7 +188,7 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 19] = [
     },
     Hotkey {
         shortcut: Some(SHIFT_C),
-        action: ClearRays,
+        action: ClearCurves,
         show_in_menu: true,
         menu_action_override: None,
     },
@@ -217,13 +224,13 @@ pub static SELECTION_HOTKEYS: [Hotkey; 4] = [
     },
 ];
 
-pub static IMAGE_HOTKEYS: [Hotkey; 14] = [
-    Hotkey {
-        shortcut: Some(KEY_H),
-        action: PromptImageHeight,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+pub static IMAGE_HOTKEYS: [Hotkey; 13] = [
+    // Hotkey {
+    //     shortcut: Some(KEY_H),
+    //     action: PromptImageHeight,
+    //     show_in_menu: true,
+    //     menu_action_override: None,
+    // },
     Hotkey {
         shortcut: Some(KEY_L),
         action: ToggleLiveMode,

@@ -9,7 +9,7 @@ pub use matrix::{Matrix2x2, Point};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
+#[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Eq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[display(fmt = "[ a: {a}, b: {b} ] ")]
 pub struct Pair<T>

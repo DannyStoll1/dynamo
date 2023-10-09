@@ -7,7 +7,7 @@ use fractal_core::dynamics::ParameterPlane;
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
-use crate::marked_points::{Colored, ColoredPoint, CurveKey};
+use crate::marked_points::{Colored, ColoredPoint};
 
 use egui::{Color32, Pos2, Rect, Stroke, Ui};
 use egui_extras::RetainedImage;
@@ -70,6 +70,8 @@ pub trait Pane
     fn follow_ray_landing_point(&mut self, angle: RationalAngle);
     fn reset_ray_state(&mut self);
 
+    fn draw_equipotential(&mut self);
+
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
 
@@ -77,6 +79,8 @@ pub trait Pane
     fn clear_marked_points(&mut self);
     fn clear_marked_orbit(&mut self);
     fn clear_marked_rays(&mut self);
+    fn clear_equipotentials(&mut self);
+    fn clear_curves(&mut self);
     fn put_marked_points(&self, ui: &mut Ui);
     fn put_marked_curves(&self, ui: &mut Ui);
 
@@ -101,9 +105,15 @@ pub trait Pane
 
     fn schedule_recompute(&mut self)
     {
-        if !matches!(self.get_task(), ComputeTask::Compute)
+        match self.get_task()
         {
-            self.set_task(ComputeTask::Recompute);
+            ComputeTask::Compute | ComputeTask::Recompute =>
+            {}
+            _ =>
+            {
+                self.set_task(ComputeTask::Recompute);
+                self.marking_mut().sched_recompute_all();
+            }
         }
     }
 
@@ -295,6 +305,7 @@ where
             self.schedule_recompute();
         }
         self.clear_marked_orbit();
+        self.clear_equipotentials();
     }
 
     #[must_use]
@@ -450,6 +461,14 @@ where
     {
         self.ray_state = RayState::Idle;
     }
+
+    #[inline]
+    fn draw_equipotential(&mut self)
+    {
+        let selection = self.get_selection();
+        self.marking_mut().toggle_equipotential(selection)
+    }
+
     #[inline]
     fn marking(&self) -> &Marking
     {
@@ -564,12 +583,6 @@ where
     fn recompute(&mut self)
     {
         self.plane.compute_into(&mut self.iter_plane);
-        self.marking
-            .point_sets
-            .recompute_all(&self.plane, self.selection);
-        self.marking
-            .curves
-            .recompute_all(&self.plane, self.selection);
     }
 
     #[inline]
@@ -614,12 +627,22 @@ where
 
     fn clear_marked_orbit(&mut self)
     {
-        self.marking.curves.sched_disable(CurveKey::Orbit);
+        self.marking.disable_orbit();
     }
 
     fn clear_marked_rays(&mut self)
     {
         self.marking.disable_all_rays();
+    }
+
+    fn clear_equipotentials(&mut self)
+    {
+        self.marking.disable_all_equipotentials();
+    }
+
+    fn clear_curves(&mut self)
+    {
+        self.marking.disable_all_curves();
     }
 
     fn put_marked_curves(&self, ui: &mut Ui)

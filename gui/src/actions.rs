@@ -26,7 +26,10 @@ pub enum Action
     {
         select_landing_point: bool,
     },
+    DrawEquipotential,
     ClearRays,
+    ClearEquipotentials,
+    ClearCurves,
     ResetSelection,
     // Image controls
     ToggleLiveMode,
@@ -97,7 +100,10 @@ impl Action
                     "Draw/hide an external ray on active image.".to_owned()
                 }
             }
+            Action::DrawEquipotential => "Draw equipotential through selection.".to_owned(),
             Action::ClearRays => "Clear all external rays on active image.".to_owned(),
+            Action::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
+            Action::ClearCurves => "Clear all curves on active image.".to_owned(),
             Action::ResetSelection => "Reset selection to default on active image.".to_owned(),
 
             // Image Controls
@@ -200,7 +206,8 @@ impl Action
 
             // Annotation Toggles
             Action::ToggleSelectionMarker => "Toggle Selection".to_owned(),
-            Action::ToggleCritical(pane_id) => match pane_id {
+            Action::ToggleCritical(pane_id) => match pane_id
+            {
                 PaneID::Parent => "Toggle marked pts (parent)".to_owned(),
                 PaneID::Child => "Toggle Critical".to_owned(),
             },
@@ -224,7 +231,10 @@ impl Action
                     "Draw Ray".to_owned()
                 }
             }
+            Action::DrawEquipotential => "Equipotential".to_owned(),
             Action::ClearRays => "Clear Rays".to_owned(),
+            Action::ClearEquipotentials => "Clear Equipotentials".to_owned(),
+            Action::ClearCurves => "Clear Curves".to_owned(),
             Action::ResetSelection => "Reset Selection".to_owned(),
 
             // Image Controls

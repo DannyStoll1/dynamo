@@ -1,11 +1,14 @@
 use fractal_common::{
     coloring::{algorithms::InteriorColoringAlgorithm, Coloring},
-    consts::{NAN, ONE, ZERO},
+    consts::{NAN, ONE, TAUI, ZERO},
     globals::{RAY_DEPTH, RAY_SHARPNESS},
     iter_plane::IterPlane,
     math_utils::{
         arithmetic::{div_rem, divisors, gcd, moebius, Integer},
-        newton::{find_root_newton, newton_until_convergence, newton_until_convergence_d},
+        newton::{
+            find_root_newton, find_target_newton, newton_until_convergence,
+            newton_until_convergence_d, find_target_newton_relative,
+        },
     },
     point_grid::{self, Bounds, PointGrid},
     traits::{Dist, MaybeNan, Norm, Polar, Summarize},
@@ -679,6 +682,57 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
 
         Some(c_list)
+    }
+
+    /// Compute an equipotential curve through a given point.
+    fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    {
+        let c0 = self.param_map(t0);
+        let z0 = self.start_point(t0, c0);
+
+        // Computation time is exponential in iteration count, so we limit ourselves to 13.
+        let max_iter = 13;
+        let escape_radius = 30.;
+        let theta0 = 0.02;
+
+        let orbit = SimpleOrbit::new(|z,c|self.map(z,c), z0, c0, max_iter, escape_radius);
+        let state = orbit.last()?.1;
+        let EscapeState::Escaped { iters, final_value } = state else {return None};
+
+        let mut target = final_value.into();
+
+        let compute = |t| {
+            let (c, dc_dt) = self.param_map_d(t);
+            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+
+            // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
+            dz_dt += dc_dt * dz_dc;
+
+            let mut df_dz: Self::Deriv;
+            let mut df_dc: Self::Deriv;
+
+            for _ in 0..iters
+            {
+                (z, df_dz, df_dc) = self.gradient(z, c);
+                dz_dt = dz_dt * df_dz + df_dc;
+            }
+            (z.into(), dz_dt.into())
+        };
+
+        let num_points = (self.degree().powi(iters as i32) / theta0) as usize;
+        let rotate = (theta0 * TAUI).exp();
+
+        // let mut result = vec![t0; num_points];
+        let mut t = t0;
+
+        let result = std::iter::once(t).chain((0..num_points).map(|_|
+        {
+            target *= rotate;
+            t = find_target_newton_relative(compute, t, target).unwrap_or(t);
+            t
+        })).collect();
+
+        Some(result)
     }
 
     // fn external_angle(&self, point: Cplx) -> Option<Real>

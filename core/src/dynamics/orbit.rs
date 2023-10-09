@@ -91,16 +91,16 @@ where
     {
         if self.iter == 0
         {
-            self.iter = 1;
             self.state = self.stop_condition(self.iter, self.z);
+            self.iter = 1;
             return Some((self.z, self.state));
         }
 
         if matches!(self.state, EscapeState::NotYetEscaped)
         {
             self.z = self.apply_map(self.z);
-            self.iter += 1;
             self.state = self.stop_condition(self.iter, self.z);
+            self.iter += 1;
             Some((self.z, self.state))
         }
         else

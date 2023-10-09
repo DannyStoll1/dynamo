@@ -16,8 +16,8 @@ use crate::{
     actions::Action,
     dialog::{Dialog, StructuredTextDialog, TextDialogBuilder, TextInputType},
     hotkeys::{
-        Hotkey, ANNOTATION_HOTKEYS, INCOLORING_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, PALETTE_HOTKEYS,
-        SELECTION_HOTKEYS,
+        Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
+        PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
     pane::{ChildTask, ComputeTask, Pane, WindowPane},
 };
@@ -658,12 +658,21 @@ where
                     self.prompt_text(input_type);
                 }
             }
+            Action::DrawEquipotential =>
+            {
+                self.get_active_pane_mut().map(|p| p.draw_equipotential());
+            }
             Action::ClearRays =>
             {
-                if let Some(pane) = self.get_active_pane_mut()
-                {
-                    pane.clear_marked_rays();
-                }
+                self.get_active_pane_mut().map(|p| p.clear_marked_rays());
+            }
+            Action::ClearEquipotentials =>
+            {
+                self.get_active_pane_mut().map(|p| p.clear_equipotentials());
+            }
+            Action::ClearCurves =>
+            {
+                self.get_active_pane_mut().map(|p| p.clear_curves());
             }
             Action::ResetSelection => match self.active_pane
             {

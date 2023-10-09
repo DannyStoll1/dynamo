@@ -33,7 +33,7 @@ impl Coloring
         D: Polar<Real>,
         V: Clone,
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, MarkedPoint, Periodic, Wandering};
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
@@ -63,7 +63,7 @@ impl Coloring
         D: Polar<Real>,
         V: Clone,
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, MarkedPoint, Periodic, Wandering};
         match point_info
         {
             Escaping { potential } => self.palette.map_rgb(potential),
@@ -99,11 +99,11 @@ impl Coloring
     {
         self.palette = palette;
     }
-    pub fn get_palette(&self) -> &ColorPalette
+    #[must_use] pub fn get_palette(&self) -> &ColorPalette
     {
         &self.palette
     }
-    pub fn get_period_coloring(&self) -> &DiscretePalette
+    #[must_use] pub fn get_period_coloring(&self) -> &DiscretePalette
     {
         &self.palette.period_coloring
     }

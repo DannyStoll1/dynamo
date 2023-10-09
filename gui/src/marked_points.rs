@@ -72,10 +72,11 @@ impl ObjectKey for PointSetKey
 
 /// Keys of curve objects in the data store. Each key may be toggled by the API.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum CurveKey
+enum CurveKey
 {
     Orbit,
     Ray(RationalAngle),
+    Equipotential(hashing::HashedCplx),
 }
 impl ObjectKey for CurveKey
 {
@@ -90,6 +91,7 @@ impl ObjectKey for CurveKey
                 let o = angle.orbit_schema(degree);
                 palette.map_color32(o.period as f32, 1.0 - 0.5 * (o.preperiod as f32).tanh())
             }
+            Self::Equipotential(_) => Color32::YELLOW,
         }
     }
 
@@ -100,6 +102,9 @@ impl ObjectKey for CurveKey
             Self::Orbit => plane.iter_orbit(selection).map(|z| z.into()).collect(),
             Self::Ray(angle) => plane
                 .external_ray(Real::from(*angle))
+                .unwrap_or_else(|| vec![]),
+            Self::Equipotential(point) => plane
+                .equipotential(Cplx::from(*point))
                 .unwrap_or_else(|| vec![]),
         }
     }
@@ -325,8 +330,8 @@ where
 #[derive(Default, Clone)]
 pub struct Marking
 {
-    pub point_sets: MarkedObjectStore<PointSetKey, Vec<Cplx>>,
-    pub curves: MarkedObjectStore<CurveKey, Curve>,
+    point_sets: MarkedObjectStore<PointSetKey, Vec<Cplx>>,
+    curves: MarkedObjectStore<CurveKey, Curve>,
 }
 impl Marking
 {
@@ -365,6 +370,12 @@ impl Marking
     pub fn toggle_ray(&mut self, angle: RationalAngle)
     {
         self.curves.sched_toggle(CurveKey::Ray(angle));
+    }
+
+    pub fn toggle_equipotential(&mut self, base_point: Cplx)
+    {
+        self.curves
+            .sched_toggle(CurveKey::Equipotential(base_point.into()));
     }
 
     pub fn sched_recompute_all(&mut self)
@@ -410,6 +421,25 @@ impl Marking
         self.curves.objects.insert(CurveKey::Orbit, col_obj);
     }
 
+    pub fn disable_orbit(&mut self)
+    {
+        self.curves.sched_disable(CurveKey::Orbit);
+    }
+
+    pub fn disable_all_equipotentials(&mut self)
+    {
+        let to_remove: Vec<_> = self
+            .curves
+            .objects
+            .keys()
+            .filter(|k| matches!(k, CurveKey::Equipotential(_)))
+            .cloned()
+            .collect();
+        to_remove.iter().for_each(|k| {
+            self.curves.objects.remove(k);
+        });
+    }
+
     pub fn disable_all_rays(&mut self)
     {
         let to_remove: Vec<_> = self
@@ -427,6 +457,11 @@ impl Marking
     pub fn disable_all_points(&mut self)
     {
         self.point_sets.disable_all();
+    }
+
+    pub fn disable_all_curves(&mut self)
+    {
+        self.curves.disable_all();
     }
 
     pub fn iter_visible_points(&self) -> impl Iterator<Item = ColoredPoint> + '_
@@ -458,5 +493,78 @@ impl Marking
     {
         let col_ray = self.curves.objects.get(&CurveKey::Ray(angle))?;
         col_ray.object.last().copied()
+    }
+}
+
+mod hashing
+{
+
+    use fractal_common::types::{Cplx, Real};
+    use std::mem;
+
+    fn integer_decode(val: f64) -> (u64, i16, i8)
+    {
+        let bits: u64 = unsafe { mem::transmute(val) };
+        let sign: i8 = if bits >> 63 == 0 { 1 } else { -1 };
+        let mut exponent: i16 = ((bits >> 52) & 0x7ff) as i16;
+        let mantissa = if exponent == 0
+        {
+            (bits & 0xfffffffffffff) << 1
+        }
+        else
+        {
+            (bits & 0xfffffffffffff) | 0x10000000000000
+        };
+
+        exponent -= 1023 + 52;
+        (mantissa, exponent, sign)
+    }
+
+    #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+    pub(super) struct HashedReal(u64);
+
+    impl From<Real> for HashedReal
+    {
+        fn from(real: Real) -> Self
+        {
+            Self(real.to_bits())
+        }
+    }
+
+    impl From<HashedReal> for Real
+    {
+        fn from(encoded: HashedReal) -> Self
+        {
+            Real::from_bits(encoded.0)
+        }
+    }
+
+    #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+    pub(super) struct HashedCplx
+    {
+        re: HashedReal,
+        im: HashedReal,
+    }
+
+    impl From<Cplx> for HashedCplx
+    {
+        fn from(value: Cplx) -> Self
+        {
+            Self {
+                re: value.re.into(),
+                im: value.im.into(),
+            }
+        }
+    }
+
+    impl From<HashedCplx> for Cplx
+    {
+        fn from(value: HashedCplx) -> Self
+        {
+            Self {
+                re: value.re.into(),
+                im: value.im.into(),
+            }
+        }
     }
 }

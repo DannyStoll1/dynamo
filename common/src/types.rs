@@ -88,7 +88,7 @@ impl From<PointClassId> for f32
 {
     fn from(id: PointClassId) -> Self
     {
-        id.0 as f32
+        Self::from(id.0)
     }
 }
 
@@ -138,7 +138,7 @@ where
     #[must_use]
     fn to_string(&self) -> String
     {
-        use PointInfo::*;
+        use PointInfo::{Bounded, Escaping, MarkedPoint, Periodic, Wandering};
         let result_summary = match &self.result
         {
             Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),

@@ -20,6 +20,7 @@ derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 libc = {version = "0.2.147", optional = true}
 serde = { version = "1.0.166", features = ["derive"], optional = true }
 num-rational = "0.4.1"
+num-traits = "0.2.16"
 
 [features]
 serde = ["dep:serde", "num-complex/serde"]

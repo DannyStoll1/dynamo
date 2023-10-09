@@ -1,7 +1,7 @@
 use crate::types::{Period, SignedPeriod};
 pub use num::{integer::gcd, Integer};
 
-pub fn div_rem(a: Period, b: Period) -> Option<(Period, Period)>
+#[must_use] pub fn div_rem(a: Period, b: Period) -> Option<(Period, Period)>
 {
     if b == 0
     {
@@ -34,12 +34,12 @@ pub fn divisors(n: Period) -> impl Iterator<Item = Period>
     })
 }
 
-pub fn euler_totient(n: Period) -> Period
+#[must_use] pub fn euler_totient(n: Period) -> Period
 {
     (1..=n).filter(|&x| gcd(x, n) == 1).count() as Period
 }
 
-pub fn moebius(n: Period) -> SignedPeriod
+#[must_use] pub fn moebius(n: Period) -> SignedPeriod
 {
     if n == 1
     {
@@ -89,5 +89,5 @@ fn moebius_inversion<F>(f: F, n: Period) -> SignedPeriod
 where
     F: Fn(Period) -> SignedPeriod,
 {
-    dirichlet_convolution(|d| moebius(d), |d| f(d), n)
+    dirichlet_convolution(moebius, f, n)
 }
