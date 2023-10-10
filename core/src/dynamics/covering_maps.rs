@@ -184,6 +184,15 @@ where
         format!("Cover over {}", self.base_curve.name())
     }
 
+    fn description(&self) -> String
+    {
+        format!(
+            "A dynamical cover over {}. Description of base curve: \n{}",
+            self.base_curve.name(),
+            self.base_curve.description()
+        )
+    }
+
     #[inline]
     fn default_coloring(&self) -> fractal_common::coloring::Coloring
     {

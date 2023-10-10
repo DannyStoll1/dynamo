@@ -1,18 +1,32 @@
 use egui::{Pos2, Rect, Ui, Vec2};
-use egui_extras::RetainedImage;
+use epaint::{ColorImage, TextureHandle};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 pub struct ImageFrame
 {
-    pub image: RetainedImage,
+    pub image: ColorImage,
     pub region: Rect,
+    texture_id: Option<TextureHandle>,
 }
 impl ImageFrame
 {
-    pub fn show(&self, ui: &mut Ui)
+    #[must_use]
+    pub fn new(image: ColorImage) -> Self
     {
-        self.image.show(ui);
+        Self {
+            image,
+            region: Rect::NOTHING,
+            texture_id: None,
+        }
+    }
+    fn show(&mut self, ui: &mut Ui)
+    {
+        let texture_id = self.texture_id.get_or_insert_with(|| {
+            ui.ctx()
+                .load_texture("fractal", self.image.clone(), Default::default())
+        });
+        ui.image(&*texture_id);
     }
     pub fn height(&self) -> usize
     {
@@ -20,14 +34,12 @@ impl ImageFrame
     }
     pub fn width(&self) -> usize
     {
-        self.image.height()
+        self.image.width()
     }
     pub fn image_dims(&self) -> Vec2
     {
-        Vec2 {
-            x: self.image.width() as f32,
-            y: self.image.height() as f32,
-        }
+        let [x, y] = self.image.size;
+        Vec2::from([x as f32, y as f32])
     }
     pub fn set_position(&mut self, anchor: Pos2)
     {
@@ -47,5 +59,10 @@ impl ImageFrame
     pub fn to_global_coords(&self, local_pos: Vec2) -> Pos2
     {
         self.region.min + local_pos
+    }
+    pub fn update_texture(&mut self) {
+        if let Some(handle) = self.texture_id.as_mut() {
+            handle.set(self.image.clone(), Default::default());
+        }
     }
 }

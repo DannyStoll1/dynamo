@@ -12,6 +12,7 @@ pub trait FractalImage
 {
     fn point_grid(&self) -> &PointGrid;
     fn render(&self, coloring: &Coloring) -> ColorImage;
+    fn render_into(&self, image: &mut ColorImage, coloring: &Coloring);
     fn save(&self, coloring: &Coloring, filename: String);
 }
 
@@ -51,7 +52,7 @@ where
     {
         let width = self.point_grid().res_x;
         let height = self.point_grid().res_y;
-        let mut img = ColorImage::new([width, self.point_grid().res_y], Color32::default());
+        let mut img = ColorImage::new([width, height], Color32::default());
 
         self.iter_counts
             .indexed_iter()
@@ -59,6 +60,17 @@ where
                 img.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info.clone());
             });
         img
+    }
+    fn render_into(&self, image: &mut ColorImage, coloring: &Coloring)
+    {
+        let width = self.point_grid().res_x;
+        let height = self.point_grid().res_y;
+
+        self.iter_counts
+            .indexed_iter()
+            .for_each(|((x, y), point_info)| {
+                image.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info.clone());
+            });
     }
     fn save(&self, coloring: &Coloring, filename: String)
     {

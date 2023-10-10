@@ -1,3 +1,4 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![allow(dead_code)]
 use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
@@ -23,7 +24,10 @@ pub fn run_app() -> Result<(), eframe::Error>
     eframe::run_native(
         "Run complex dynamics simulations",
         options,
-        Box::new(|_cc| Box::<FractalApp>::default()),
+        Box::new(|cc| {
+            egui_extras::install_image_loaders(&cc.egui_ctx);
+            Box::<FractalApp>::default()
+        }),
     )
 }
 

@@ -129,6 +129,17 @@ impl ParameterPlane for Mandelbrot
         Bounds::centered_square(2.2)
     }
 
+    fn description(&self) -> String
+    {
+        "The moduli space of quadratic polynomials, \
+            parameterized in the coordinates $f_c(z) = z^2 + c$, \
+            All such maps have a fixed critical point at infinity \
+            and a free critical point at 0. A given parameter $c$ is \
+            colored according to the activity of the free critical point \
+            under forward iteration of $f_c$."
+            .to_owned()
+    }
+
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
         match period

@@ -6,8 +6,7 @@ use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
 use crate::marked_points::ColoredPoint;
 
-use egui::{Color32, Pos2, Rect, Ui};
-use egui_extras::RetainedImage;
+use egui::{Color32, Pos2, Ui};
 use epaint::CircleShape;
 
 #[cfg(feature = "serde")]
@@ -15,13 +14,62 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum ComputeTask
+pub enum RepeatableTask
 {
     #[default]
     DoNothing,
-    Redraw,
-    Recompute,
-    Compute,
+    Rerun,
+    InitRun,
+}
+impl RepeatableTask
+{
+    fn schedule_init_run(&mut self)
+    {
+        *self = Self::InitRun;
+    }
+    fn schedule_rerun(&mut self)
+    {
+        if matches!(self, Self::DoNothing)
+        {
+            *self = Self::Rerun;
+        }
+    }
+    fn pop(&mut self) -> RepeatableTask
+    {
+        let task = self.clone();
+        *self = Self::DoNothing;
+        task
+    }
+    fn clear(&mut self)
+    {
+        *self = Self::DoNothing;
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct PaneTasks
+{
+    pub compute: RepeatableTask,
+    pub draw: RepeatableTask,
+}
+
+impl PaneTasks
+{
+    #[must_use]
+    pub const fn init_tasks() -> Self
+    {
+        let task = RepeatableTask::InitRun;
+        Self {
+            compute: task,
+            draw: task,
+        }
+    }
+    pub fn pop(&mut self) -> Self
+    {
+        let compute = self.compute.pop();
+        let draw = self.draw.pop();
+        Self { compute, draw }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -53,9 +101,8 @@ pub enum RayState
 
 pub trait Pane
 {
-    fn get_task(&self) -> &ComputeTask;
-    fn set_task(&mut self, new_task: ComputeTask);
-
+    fn tasks(&self) -> &PaneTasks;
+    fn tasks_mut(&mut self) -> &mut PaneTasks;
     fn get_frame(&self) -> &ImageFrame;
     fn get_frame_mut(&mut self) -> &mut ImageFrame;
 
@@ -103,29 +150,26 @@ pub trait Pane
 
     fn schedule_compute(&mut self)
     {
-        self.set_task(ComputeTask::Compute);
+        self.tasks_mut().compute.schedule_init_run();
+        self.tasks_mut().draw.schedule_init_run();
+        self.marking_mut().sched_recompute_all();
     }
 
     fn schedule_recompute(&mut self)
     {
-        match self.get_task()
-        {
-            ComputeTask::Compute | ComputeTask::Recompute =>
-            {}
-            _ =>
-            {
-                self.set_task(ComputeTask::Recompute);
-                self.marking_mut().sched_recompute_all();
-            }
-        }
+        self.tasks_mut().compute.schedule_rerun();
+        self.tasks_mut().draw.schedule_rerun();
+        self.marking_mut().sched_recompute_all();
+    }
+
+    fn schedule_draw(&mut self)
+    {
+        self.tasks_mut().draw.schedule_init_run();
     }
 
     fn schedule_redraw(&mut self)
     {
-        if matches!(self.get_task(), ComputeTask::DoNothing)
-        {
-            self.set_task(ComputeTask::Redraw);
-        }
+        self.tasks_mut().draw.schedule_rerun();
     }
 
     fn resize_x(&mut self, width: usize)
@@ -170,6 +214,7 @@ pub trait Pane
 
     fn recompute(&mut self);
 
+    fn draw(&mut self);
     fn redraw(&mut self);
 
     fn process_marking_tasks(&mut self);
@@ -181,6 +226,7 @@ pub trait Pane
     {
         self.grid_mut().translate(offset_vector);
         self.schedule_recompute();
+        self.schedule_redraw();
     }
 
     #[inline]
@@ -208,31 +254,37 @@ pub trait Pane
         self.pan(translation_vector);
     }
 
-    fn process_task(&mut self)
+    fn process_tasks(&mut self)
     {
         self.process_marking_tasks();
 
-        let task = self.get_task();
-        match task
+        let tasks = self.tasks_mut().pop();
+        match tasks.compute
         {
-            ComputeTask::Recompute =>
+            RepeatableTask::Rerun =>
             {
                 self.recompute();
-                self.redraw();
             }
-            ComputeTask::Redraw =>
-            {
-                self.redraw();
-            }
-            ComputeTask::DoNothing =>
+            RepeatableTask::DoNothing =>
             {}
-            ComputeTask::Compute =>
+            RepeatableTask::InitRun =>
             {
                 self.compute();
-                self.redraw();
             }
         }
-        self.set_task(ComputeTask::DoNothing);
+        match tasks.draw
+        {
+            RepeatableTask::Rerun =>
+            {
+                self.redraw();
+            }
+            RepeatableTask::DoNothing =>
+            {}
+            RepeatableTask::InitRun =>
+            {
+                self.draw();
+            }
+        }
     }
 
     fn frame_contains_pixel(&self, pointer_pos: Pos2) -> bool
@@ -243,7 +295,7 @@ pub trait Pane
     fn map_pixel(&self, pointer_pos: Pos2) -> Cplx
     {
         let relative_pos = self.get_frame().to_local_coords(pointer_pos);
-        self.grid().map_vec2(relative_pos)
+        self.grid().map_pos(relative_pos.into())
     }
 
     fn process_mouse_input(&mut self, pointer_value: Cplx, zoom_factor: f32, reselect_point: bool)
@@ -281,13 +333,13 @@ pub trait Pane
 
 pub(super) struct WindowPane<P>
 where
-    P: ParameterPlane + 'static,
+    P: ParameterPlane,
 {
     pub plane: P,
     pub coloring: Coloring,
     iter_plane: IterPlane<P::Var, P::Deriv>,
     pub image_frame: ImageFrame,
-    task: ComputeTask,
+    tasks: PaneTasks,
     selection: Cplx,
     orbit_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
     pub marking: Marking,
@@ -306,6 +358,7 @@ where
         {
             self.plane.set_param(new_param);
             self.schedule_recompute();
+            self.schedule_redraw();
         }
         self.clear_marked_orbit();
         self.clear_equipotentials();
@@ -320,15 +373,10 @@ where
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
         let iter_plane = plane.compute();
-        let task = ComputeTask::Redraw;
         let selection = plane.default_selection();
 
-        let image =
-            RetainedImage::from_color_image("parameter plane", iter_plane.render(&coloring));
-        let frame = ImageFrame {
-            image,
-            region: Rect::NOTHING,
-        };
+        let image = iter_plane.render(&coloring);
+        let frame = ImageFrame::new(image);
 
         let degree = plane.degree().try_round().unwrap_or(2);
         let marking = Marking::default().with_degree(degree);
@@ -338,7 +386,7 @@ where
             coloring,
             iter_plane,
             image_frame: frame,
-            task,
+            tasks: PaneTasks::init_tasks(),
             selection,
             orbit_info: None,
             marking,
@@ -397,14 +445,14 @@ where
     P: ParameterPlane + 'static,
 {
     #[inline]
-    fn get_task(&self) -> &ComputeTask
+    fn tasks(&self) -> &PaneTasks
     {
-        &self.task
+        &self.tasks
     }
     #[inline]
-    fn set_task(&mut self, new_task: ComputeTask)
+    fn tasks_mut(&mut self) -> &mut PaneTasks
     {
-        self.task = new_task;
+        &mut self.tasks
     }
     #[inline]
     fn grid(&self) -> &PointGrid
@@ -551,7 +599,7 @@ where
     {
         self.plane.cycle_active_plane();
         self.schedule_recompute();
-        self.marking.sched_recompute_all();
+        self.schedule_redraw();
     }
 
     fn scale_max_iter(&mut self, factor: f64)
@@ -559,14 +607,24 @@ where
         let iters = self.plane.max_iter_mut();
         *iters = ((*iters as f64) * factor) as Period;
         self.schedule_recompute();
+        self.schedule_redraw();
+    }
+
+    #[inline]
+    fn draw(&mut self)
+    {
+        let image = self.iter_plane.render(self.get_coloring());
+        let image_frame = self.get_frame_mut();
+        image_frame.image = image;
     }
 
     #[inline]
     fn redraw(&mut self)
     {
-        let image = self.iter_plane.render(self.get_coloring());
-        let image_frame = self.get_frame_mut();
-        image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
+        let coloring = self.coloring.clone();
+        self.iter_plane
+            .render_into(&mut self.image_frame.image, &coloring);
+        self.image_frame.update_texture();
     }
     fn process_marking_tasks(&mut self)
     {
@@ -603,6 +661,7 @@ where
         self.zoom_factor *= scale;
         self.grid_mut().zoom(scale, base_point);
         self.schedule_recompute();
+        self.schedule_redraw();
     }
 
     fn select_preperiod_smooth_coloring(&mut self)
@@ -679,7 +738,7 @@ where
         let painter = ui.painter().with_clip_rect(frame.region);
         for ColoredPoint { point: z, color } in self.marking.iter_points()
         {
-            let point = frame.to_global_coords(grid.locate_point(z).to_vec2());
+            let point = frame.to_global_coords(grid.locate_point(z).into());
             let patch = CircleShape::filled(point, 4., color);
             painter.add(patch);
         }

@@ -1,9 +1,6 @@
-use fractal_common::prelude::*;
 use fractal_common::coloring::*;
-use fractal_common::math_utils::{
-    newton::*,
-    arithmetic::*,
-};
+use fractal_common::math_utils::{arithmetic::*, newton::*};
+use fractal_common::prelude::*;
 use fractal_common::symbolic_dynamics::OrbitSchema;
 use ndarray::{Array2, Axis};
 use num_cpus;
@@ -71,10 +68,12 @@ impl<V> Variable for V where
         + From<Cplx>
         + Into<Cplx>
         + Display
-{}
+{
+}
 impl<P> Parameter for P where
     P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
-{}
+{
+}
 impl<D> Derivative for D where
     D: Polar<Real>
         + Send
@@ -88,7 +87,8 @@ impl<D> Derivative for D where
         + MulAssign
         + Display
         + Into<Cplx>
-{}
+{
+}
 
 pub trait ParameterPlane: Sync + Send + Clone
 {
@@ -135,6 +135,10 @@ pub trait ParameterPlane: Sync + Send + Clone
     fn with_max_iter(self, max_iter: Period) -> Self;
 
     fn name(&self) -> String;
+    fn description(&self) -> String
+    {
+        String::new()
+    }
 
     /// The map defining the dynamical system.
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var;
@@ -673,7 +677,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         let escape_radius = 30.;
         let theta0 = 0.02;
 
-        let orbit = SimpleOrbit::new(|z,c|self.map(z,c), z0, c0, max_iter, escape_radius);
+        let orbit = SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
         let state = orbit.last()?.1;
         let EscapeState::Escaped { iters, final_value } = state else {return None};
 
@@ -703,12 +707,13 @@ pub trait ParameterPlane: Sync + Send + Clone
         // let mut result = vec![t0; num_points];
         let mut t = t0;
 
-        let result = std::iter::once(t).chain((0..num_points).map(|_|
-        {
-            target *= rotate;
-            t = find_target_newton_relative(compute, t, target).unwrap_or(t);
-            t
-        })).collect();
+        let result = std::iter::once(t)
+            .chain((0..num_points).map(|_| {
+                target *= rotate;
+                t = find_target_newton_relative(compute, t, target).unwrap_or(t);
+                t
+            }))
+            .collect();
 
         Some(result)
     }
@@ -863,10 +868,7 @@ pub trait ParameterPlane: Sync + Send + Clone
         }
     }
 
-    fn get_orbit_and_info(
-        &self,
-        point: Cplx,
-        ) -> OrbitAndInfo<Self::Var, Self::Param, Self::Deriv>
+    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Var, Self::Param, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);

@@ -1,8 +1,8 @@
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
-use fractal_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
 use fractal_common::prelude::*;
 use fractal_common::symbolic_dynamics::OrbitSchema;
+use fractal_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
 use num_traits::{One, Zero};
 
 #[derive(Clone)]
@@ -269,6 +269,11 @@ where
     fn name(&self) -> String
     {
         "JuliaSet".to_owned()
+    }
+
+    fn description(&self) -> String
+    {
+        self.parent.description()
     }
 
     #[inline]

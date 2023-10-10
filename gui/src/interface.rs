@@ -18,7 +18,7 @@ use crate::{
         Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
         PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
-    pane::{ChildTask, ComputeTask, Pane, WindowPane},
+    pane::{ChildTask, Pane, WindowPane},
 };
 use crate::{
     dialog::{ConfirmationDialog, RayParams},
@@ -144,8 +144,8 @@ where
 
 impl<P, J, C, M, T> MainInterface<P, J>
 where
-    P: ParameterPlane + Clone + 'static,
-    J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+    P: ParameterPlane + Clone,
+    J: ParameterPlane<MetaParam = M, Child = C> + Clone,
     C: ParameterPlane + From<J>,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
@@ -188,7 +188,7 @@ where
             self.child.grid_mut().change_bounds(new_bounds);
             self.child.set_param(T::from(new_param));
             self.child.grid_mut().resize_y(self.image_height);
-            self.child.set_task(ComputeTask::Compute);
+            self.child.schedule_compute();
         }
     }
 
@@ -272,7 +272,7 @@ where
 impl<P, J, C, M, T> PanePair for MainInterface<P, J>
 where
     P: ParameterPlane + Clone,
-    J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+    J: ParameterPlane<MetaParam = M, Child = C> + Clone,
     C: ParameterPlane + From<J>,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
@@ -492,7 +492,7 @@ where
 impl<P, J, C, M, T> Interactive for MainInterface<P, J>
 where
     P: ParameterPlane + Clone,
-    J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+    J: ParameterPlane<MetaParam = M, Child = C> + Clone,
     C: ParameterPlane + From<J>,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
@@ -560,8 +560,8 @@ where
 
     fn update_panes(&mut self)
     {
-        self.parent.process_task();
-        self.child.process_task();
+        self.parent.process_tasks();
+        self.child.process_tasks();
     }
 
     fn show_dialog(&mut self, ctx: &Context)

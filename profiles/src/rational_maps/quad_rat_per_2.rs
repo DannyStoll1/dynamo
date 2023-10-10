@@ -45,6 +45,15 @@ impl ParameterPlane for QuadRatPer2
         PointInfo::Escaping { potential }
     }
 
+    fn description(&self) -> String
+    {
+        "The moduli space of quadratic rational maps with a critical 2-cycle, \
+            parameterized as $f_c(z) = (z^2 + c)/(z^2 - 1)$. In these coordinates, \
+            ∞ <-> 1 is the critical 2-cycle. The plane is colored according to the \
+            activity of the free critical point 0."
+            .to_owned()
+    }
+
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {

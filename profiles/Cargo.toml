@@ -10,4 +10,3 @@ seq-macro = "0.3.5"
 
 [lib]
 name = "fractal_profiles"
-path = "lib.rs"

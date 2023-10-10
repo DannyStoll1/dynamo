@@ -1,9 +1,12 @@
 */target
 */Cargo.lock
 Cargo.lock
+release-archives
 target
 bin/images
 images
 wasm/Cargo.lock
 perf_notes.txt
-lib/src/bindings.rs
+notes.txt
+todo.txt
+profiles/src/rational_maps/quad_rat_per_4_1_experiments.rs

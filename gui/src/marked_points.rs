@@ -501,7 +501,7 @@ impl Marking
                         .iter()
                         .map(|z| {
                             let pt = grid.locate_point(*z);
-                            frame.to_global_coords(pt.to_vec2())
+                            frame.to_global_coords(pt.into())
                         })
                         .collect();
                     Colored {

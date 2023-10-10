@@ -1,5 +1,4 @@
 use crate::types::{Cplx, Real};
-use egui::{Pos2, Vec2};
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
 #[cfg(feature = "serde")]
@@ -240,10 +239,10 @@ impl PointGrid
     }
 
     #[must_use]
-    pub fn map_vec2(&self, pos: Vec2) -> Cplx
+    pub fn map_pos(&self, pos: [f32; 2]) -> Cplx
     {
-        let re = f64::from(pos.x).mul_add(self.pixel_width(), self.bounds.min_x);
-        let im = f64::from(pos.y).mul_add(-self.pixel_height(), self.bounds.max_y);
+        let re = f64::from(pos[0]).mul_add(self.pixel_width(), self.bounds.min_x);
+        let im = f64::from(pos[1]).mul_add(-self.pixel_height(), self.bounds.max_y);
         Cplx::new(re, im)
     }
 
@@ -269,12 +268,12 @@ impl PointGrid
     }
 
     #[must_use]
-    pub fn locate_point(&self, z: Cplx) -> Pos2
+    pub fn locate_point(&self, z: Cplx) -> [f32; 2]
     {
         let x = (z.re - self.bounds.min_x) / (self.pixel_width());
         let y = (z.im - self.bounds.min_y) / (self.pixel_height());
 
-        Pos2::new(x as f32, self.res_y as f32 - 1. - y as f32)
+        [x as f32, self.res_y as f32 - 1. - y as f32]
     }
 
     #[must_use]

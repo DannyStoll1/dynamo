@@ -29,12 +29,24 @@ impl ParameterPlane for QuadRatPer3
     parameter_plane_impl!();
     default_name!();
 
+    fn description(&self) -> String
+    {
+        "The moduli space of quadratic rational maps with a critical 3-cycle, \
+            parameterized as $f_c(z) = (z^2 + c^3 - c - 1)/(z^2 - c^2)$. \
+            In these coordinates, ∞ -> 1 -> -c is the critical 3-cycle. \
+            The plane is colored according to the \
+            activity of the free critical point 0."
+            .to_owned()
+    }
+
     fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
     {
         0.0.into()
     }
 
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv) {
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
         (ZERO, ZERO, ZERO)
     }
 
@@ -214,7 +226,7 @@ impl HasDynamicalCovers for QuadRatPer3
                     let den = u3 - u2 - u2 + 3. * u - 1.;
                     let dden = dnum - 4. * u + 4.;
 
-                    (num / den, du*(den * dnum - num * dden) / (den * den))
+                    (num / den, du * (den * dnum - num * dden) / (den * den))
                 };
                 bounds = Bounds {
                     min_x: -5.75,

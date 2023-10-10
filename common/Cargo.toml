@@ -14,7 +14,7 @@ rand = ">=0.8.5"
 rand_distr = ">=0.4.3"
 rayon = ">=1.7.0"
 image = "*"
-egui = "0.22.0"
+egui = "0.23.0"
 ndarray = ">=0.15.6"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 libc = {version = "0.2.147", optional = true}
