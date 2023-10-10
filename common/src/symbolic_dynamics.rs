@@ -6,11 +6,31 @@ use crate::prelude::*;
 use derive_more::{From, Into};
 use num_traits::sign::Signed;
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct AngleInfo
+{
+    pub angle: RationalAngle,
+    pub orbit_schema: OrbitSchema,
+    pub kneading_sequence: Itinerary,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct OrbitSchema
 {
     pub period: Period,
     pub preperiod: Period,
+}
+
+impl Default for OrbitSchema
+{
+    fn default() -> Self
+    {
+        Self {
+            period: 1,
+            preperiod: 0,
+        }
+    }
 }
 
 impl From<Period> for OrbitSchema
@@ -89,7 +109,7 @@ impl KneadingSymbol
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Itinerary
 {
     partition: CirclePartition,
@@ -126,7 +146,7 @@ impl std::fmt::Display for Itinerary
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct CirclePartition
 {
     angles: Vec<RationalAngle>,
@@ -196,7 +216,7 @@ impl CirclePartition
 }
 
 /// Wrapper class for num_rational::Rational that performs arithmetic mod 1
-#[derive(Clone, Copy, Debug, Hash, From, Into, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Hash, From, Into, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct RationalAngle(Rational);
 
 impl RationalAngle
@@ -258,7 +278,16 @@ impl RationalAngle
     pub fn itinerary(&self, degree: AngleNum, partition: CirclePartition) -> Itinerary
     {
         let orbit_schema = self.orbit_schema(degree);
+        self.itinerary_given_orbit_schema(orbit_schema, degree, partition)
+    }
 
+    fn itinerary_given_orbit_schema(
+        &self,
+        orbit_schema: OrbitSchema,
+        degree: AngleNum,
+        partition: CirclePartition,
+    ) -> Itinerary
+    {
         let mut x = *self;
 
         let preperiodic_part = (0..orbit_schema.preperiod)
@@ -286,12 +315,34 @@ impl RationalAngle
 
     pub fn kneading_sequence(&self, degree: AngleNum) -> Itinerary
     {
+        let orbit_schema = self.orbit_schema(degree);
+        self.kneading_sequence_given_orbit_schema(orbit_schema, degree)
+    }
+
+    fn kneading_sequence_given_orbit_schema(
+        &self,
+        orbit_schema: OrbitSchema,
+        degree: AngleNum,
+    ) -> Itinerary
+    {
         let theta_over_n = *self / degree;
         let partition_angles = (0..degree)
             .map(|x| theta_over_n + Self::new_raw(x, degree))
             .collect();
         let partition = CirclePartition::new_raw(partition_angles);
-        self.itinerary(degree, partition)
+        self.itinerary_given_orbit_schema(orbit_schema, degree, partition)
+    }
+
+    #[must_use]
+    pub fn to_angle_info(self, degree: AngleNum) -> AngleInfo
+    {
+        let orbit_schema = self.orbit_schema(degree);
+        let kneading_sequence = self.kneading_sequence_given_orbit_schema(orbit_schema, degree);
+        AngleInfo {
+            angle: self,
+            orbit_schema,
+            kneading_sequence,
+        }
     }
 
     fn mod_1(mut self) -> Self

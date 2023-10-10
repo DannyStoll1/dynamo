@@ -20,6 +20,7 @@ pub enum Action
     // Dynamics
     FindPeriodicPoint,
     MapSelection,
+    EnterCoordinates,
     DrawOrbit,
     ClearOrbit,
     DrawExternalRay
@@ -77,6 +78,10 @@ impl Action
                 "Find and select a nearby preperiodic/periodic/pcf point on the active image."
                     .to_owned()
             }
+            Self::EnterCoordinates =>
+            {
+                "Enter coordinates to select a point on active image.".to_owned()
+            }
             Self::MapSelection =>
             {
                 "Apply dynamical map to current selection on dynamical plane.".to_owned()
@@ -113,10 +118,7 @@ impl Action
                     .to_owned()
             }
             Self::CycleActivePlane => "Cycle through different planes of the fractal.".to_owned(),
-            Self::PromptImageHeight =>
-            {
-                "Prompt to set the height of the fractal image.".to_owned()
-            }
+            Self::PromptImageHeight => "Prompt to set the height of the fractal image.".to_owned(),
             Self::Pan(x, y) =>
             {
                 if *x == 0.
@@ -214,7 +216,8 @@ impl Action
             Self::ToggleCycles(_, p) => format!("Toggle {p}-cycles"),
 
             // Dynamics
-            Self::FindPeriodicPoint => "Find Point".to_owned(),
+            Self::FindPeriodicPoint => "Find Point...".to_owned(),
+            Self::EnterCoordinates => "Enter Point...".to_owned(),
             Self::MapSelection => "Map Selection".to_owned(),
             Self::DrawOrbit => "Draw Orbit".to_owned(),
             Self::ClearOrbit => "Clear Orbit".to_owned(),
@@ -224,11 +227,11 @@ impl Action
             {
                 if *select_landing_point
                 {
-                    "Ray to Point".to_owned()
+                    "Ray to Point...".to_owned()
                 }
                 else
                 {
-                    "Draw Ray".to_owned()
+                    "Draw Ray...".to_owned()
                 }
             }
             Self::DrawEquipotential => "Equipotential".to_owned(),

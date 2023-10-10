@@ -122,10 +122,15 @@ where
     find_root_newton_d(f_and_df, start).map(|(z, _f, _d)| z)
 }
 
-/// Apply Newton's method until we obtain a value within `NEWTON_MAX_ERR` of `target`,
+/// Apply Newton's method until we obtain a value within `error` of `target`,
 /// giving up after `NEWTON_MAX_ITERS`.
 /// Returns the approximate solution, together with the value and derivative of the function there.
-pub fn find_target_newton_d<T, F>(mut f_and_df: F, start: T, target: T) -> Option<(T, T, T)>
+pub fn find_target_newton_err_d<T, F>(
+    mut f_and_df: F,
+    start: T,
+    target: T,
+    error: Real,
+) -> Option<(T, T, T)>
 where
     F: FnMut(T) -> (T, T),
     T: Div<Output = T> + Sub<Output = T> + AddAssign + Dist<Real> + MaybeNan + Copy,
@@ -151,7 +156,7 @@ where
             return None;
         }
     }
-    if z.dist_sqr(z_old) < NEWTON_MAX_ERR
+    if z.dist_sqr(z_old) < error
     {
         Some((z, f, df))
     }
@@ -159,6 +164,27 @@ where
     {
         None
     }
+}
+
+/// Apply Newton's method until we obtain a value within `error` of `target`,
+/// giving up after `NEWTON_MAX_ITERS`.
+pub fn find_target_newton_err<T, F>(f_and_df: F, start: T, target: T, error: Real) -> Option<T>
+where
+    F: FnMut(T) -> (T, T),
+    T: Div<Output = T> + Sub<Output = T> + AddAssign + Dist<Real> + MaybeNan + Copy,
+{
+    find_target_newton_err_d(f_and_df, start, target, error).map(|(z, _f, _d)| z)
+}
+
+/// Apply Newton's method until we obtain a value within `NEWTON_MAX_ERR` of `target`,
+/// giving up after `NEWTON_MAX_ITERS`.
+/// Returns the approximate solution, together with the value and derivative of the function there.
+pub fn find_target_newton_d<T, F>(f_and_df: F, start: T, target: T) -> Option<(T, T, T)>
+where
+    F: FnMut(T) -> (T, T),
+    T: Div<Output = T> + Sub<Output = T> + AddAssign + Dist<Real> + MaybeNan + Copy,
+{
+    find_target_newton_err_d(f_and_df, start, target, NEWTON_MAX_ERR)
 }
 
 /// Apply Newton's method until we obtain a value within `NEWTON_MAX_ERR` of `target`,

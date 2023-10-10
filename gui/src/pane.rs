@@ -4,11 +4,11 @@ use fractal_core::dynamics::ParameterPlane;
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
-use crate::marked_points::{Colored, ColoredPoint};
+use crate::marked_points::ColoredPoint;
 
-use egui::{Color32, Pos2, Rect, Stroke, Ui};
+use egui::{Color32, Pos2, Rect, Ui};
 use egui_extras::RetainedImage;
-use epaint::{CircleShape, PathShape};
+use epaint::CircleShape;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -69,7 +69,9 @@ pub trait Pane
     fn select_ray_landing_point(&mut self, angle: RationalAngle);
     fn map_selection(&mut self);
     fn follow_ray_landing_point(&mut self, angle: RationalAngle);
-    fn reset_ray_state(&mut self);
+    fn stop_following_ray_landing_point(&mut self);
+    fn ray_state(&self) -> RayState;
+    fn angle_info(&self, angle: RationalAngle) -> AngleInfo;
 
     fn draw_equipotential(&mut self);
 
@@ -307,6 +309,11 @@ where
         }
         self.clear_marked_orbit();
         self.clear_equipotentials();
+
+        if let RayState::Following(angle) = self.ray_state()
+        {
+            self.select_ray_landing_point(angle);
+        }
     }
 
     #[must_use]
@@ -450,16 +457,28 @@ where
         self.select_point(self.plane.default_selection());
     }
     #[inline]
-    fn reset_ray_state(&mut self)
+    fn stop_following_ray_landing_point(&mut self)
     {
         self.ray_state = RayState::Idle;
+    }
+    #[inline]
+    fn ray_state(&self) -> RayState
+    {
+        self.ray_state
+    }
+
+    #[inline]
+    fn angle_info(&self, angle: RationalAngle) -> AngleInfo
+    {
+        let degree = self.plane.degree_int();
+        angle.to_angle_info(degree)
     }
 
     #[inline]
     fn draw_equipotential(&mut self)
     {
         let selection = self.get_selection();
-        self.marking_mut().toggle_equipotential(selection)
+        self.marking_mut().toggle_equipotential(selection);
     }
 
     #[inline]
@@ -507,17 +526,18 @@ where
     {
         if let Some(approx_landing_point) = self.marking().ray_landing_point(angle)
         {
-            let orbit_schema = angle.orbit_schema(self.plane.degree_int());
-            if let Some(landing_point) = self
-                .plane
-                .find_nearby_preperiodic_point(approx_landing_point, orbit_schema)
-            {
-                self.select_point(landing_point);
-            }
-            else
-            {
-                self.select_point(approx_landing_point);
-            }
+            self.select_point(approx_landing_point);
+            // let orbit_schema = angle.orbit_schema(self.plane.degree_int());
+            // if let Some(landing_point) = self
+            //     .plane
+            //     .find_nearby_preperiodic_point(approx_landing_point, orbit_schema)
+            // {
+            //     self.select_point(landing_point);
+            // }
+            // else
+            // {
+            //     self.select_point(approx_landing_point);
+            // }
         }
     }
 
@@ -544,11 +564,6 @@ where
     #[inline]
     fn redraw(&mut self)
     {
-        if let RayState::Following(angle) = self.ray_state
-        {
-            self.select_ray_landing_point(angle);
-        }
-
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.get_frame_mut();
         image_frame.image = RetainedImage::from_color_image("Parameter Plane", image);
@@ -558,6 +573,10 @@ where
         let period_coloring = self.coloring.get_period_coloring();
         self.marking
             .process_all_tasks(&self.plane, self.selection, period_coloring);
+        if let RayState::Following(angle) = self.ray_state
+        {
+            self.select_ray_landing_point(angle);
+        }
     }
 
     fn change_height(&mut self, new_height: usize)
@@ -641,24 +660,11 @@ where
     fn put_marked_curves(&self, ui: &mut Ui)
     {
         let frame = self.get_frame();
-        let grid = self.grid();
+        // let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
 
-        for Colored {
-            object: zs, color, ..
-        } in self.marking.iter_visible_curves()
-        {
-            let points = zs
-                .iter()
-                .map(|z| {
-                    let pt = grid.locate_point(*z);
-                    frame.to_global_coords(pt.to_vec2())
-                })
-                .collect();
-            let stroke = Stroke::new(1.0, color);
-            let path = PathShape::line(points, stroke);
-            painter.add(path);
-        }
+        self.marking()
+            .draw_curves(&painter, self.grid(), self.get_frame());
     }
 
     fn clear_marked_points(&mut self)
@@ -671,7 +677,7 @@ where
         let frame = self.get_frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
-        for ColoredPoint { point: z, color } in self.marking.iter_visible_points()
+        for ColoredPoint { point: z, color } in self.marking.iter_points()
         {
             let point = frame.to_global_coords(grid.locate_point(z).to_vec2());
             let patch = CircleShape::filled(point, 4., color);

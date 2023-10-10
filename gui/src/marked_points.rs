@@ -1,9 +1,13 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 
-use egui::Color32;
+use egui::{Color32, Painter};
+use epaint::{PathShape, Pos2, Stroke};
 use fractal_common::coloring::palette::DiscretePalette;
 use fractal_common::prelude::*;
 use fractal_core::dynamics::ParameterPlane;
+
+use crate::image_frame::ImageFrame;
 
 type Curve = Vec<Cplx>;
 
@@ -97,6 +101,7 @@ impl ObjectKey for CurveKey
         {
             Self::Orbit => plane.iter_orbit(selection).map(|z| z.into()).collect(),
             Self::Ray(angle) => plane.external_ray(Real::from(*angle)).unwrap_or_default(),
+
             Self::Equipotential(point) =>
             {
                 plane.equipotential(Cplx::from(*point)).unwrap_or_default()
@@ -106,11 +111,28 @@ impl ObjectKey for CurveKey
 }
 
 #[derive(Clone, Debug)]
-pub struct Colored<O>
+pub struct ColoredMaybeHidden<O>
 {
     pub object: O,
     pub color: Color32,
     pub visible: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct Colored<O>
+{
+    pub object: O,
+    pub color: Color32,
+}
+impl<O> From<ColoredMaybeHidden<O>> for Colored<O>
+{
+    fn from(value: ColoredMaybeHidden<O>) -> Self
+    {
+        Self {
+            object: value.object,
+            color: value.color,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -138,7 +160,7 @@ pub struct MarkedObjectStore<K, O>
 where
     K: ObjectKey<Object = O>,
 {
-    pub objects: HashMap<K, Colored<O>>,
+    pub objects: HashMap<K, ColoredMaybeHidden<O>>,
     tasks: VecDeque<MarkingTask<K>>,
     pub degree: AngleNum,
 }
@@ -156,41 +178,6 @@ where
     }
 }
 
-// #[derive(Default, Clone)]
-// pub struct Marking
-// {
-//     pub point_sets: HashMap<PointSetKey, ColoredPointSet>,
-//     pub curves: HashMap<CurveKey, ColoredCurve>,
-//     tasks: VecDeque<MarkingTask>,
-//     degree: AngleNum,
-// }
-//
-// #[must_use]
-// pub fn with_degree(mut self, degree: AngleNum) -> Self
-// {
-//     self.degree = degree;
-//     self
-// }
-//
-// pub fn toggle_selection(&mut self)
-// {
-//     self.sched_toggle(K::SelectedPoint);
-// }
-//
-// pub fn toggle_critical(&mut self)
-// {
-//     self.sched_toggle(K::SelectedPoint);
-// }
-//
-// pub fn toggle_cycles_of_period(&mut self, period: Period)
-// {
-//     self.sched_toggle(K::PeriodicPoints(period));
-// }
-//
-// pub fn toggle_ray(&mut self, angle: RationalAngle)
-// {
-//     self.sched_toggle_curve(CurveKey::Ray(angle));
-// }
 impl<K, O> MarkedObjectStore<K, O>
 where
     K: ObjectKey<Object = O>,
@@ -276,7 +263,7 @@ where
 
     fn enable<P: ParameterPlane>(&mut self, key: K, e: &EnvironmentInfo<P>)
     {
-        let col_obj = Colored {
+        let col_obj = ColoredMaybeHidden {
             object: key.compute(e.plane, e.selection),
             color: key.color_with(e.palette, self.degree),
             visible: true,
@@ -327,6 +314,7 @@ pub struct Marking
 {
     point_sets: MarkedObjectStore<PointSetKey, Vec<Cplx>>,
     curves: MarkedObjectStore<CurveKey, Curve>,
+    path_cache: RefCell<PathCache>,
 }
 impl Marking
 {
@@ -365,18 +353,21 @@ impl Marking
     pub fn toggle_ray(&mut self, angle: RationalAngle)
     {
         self.curves.sched_toggle(CurveKey::Ray(angle));
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn toggle_equipotential(&mut self, base_point: Cplx)
     {
         self.curves
             .sched_toggle(CurveKey::Equipotential(base_point.into()));
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn sched_recompute_all(&mut self)
     {
         self.point_sets.sched_recompute_all();
         self.curves.sched_recompute_all();
+        self.path_cache.borrow_mut().set_stale();
     }
     pub fn sched_recolor_all(&mut self)
     {
@@ -388,6 +379,7 @@ impl Marking
     {
         self.point_sets.disable_all();
         self.curves.disable_all();
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn process_all_tasks<P: ParameterPlane>(
@@ -408,17 +400,19 @@ impl Marking
 
     pub fn mark_orbit_manually(&mut self, orbit: Curve, color: Color32)
     {
-        let col_obj = Colored {
+        let col_obj = ColoredMaybeHidden {
             object: orbit,
             color,
             visible: true,
         };
         self.curves.objects.insert(CurveKey::Orbit, col_obj);
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn disable_orbit(&mut self)
     {
         self.curves.sched_disable(CurveKey::Orbit);
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn disable_all_equipotentials(&mut self)
@@ -433,6 +427,7 @@ impl Marking
         to_remove.iter().for_each(|k| {
             self.curves.objects.remove(k);
         });
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn disable_all_rays(&mut self)
@@ -447,6 +442,7 @@ impl Marking
         to_remove.iter().for_each(|k| {
             self.curves.objects.remove(k);
         });
+        self.path_cache.borrow_mut().set_stale();
     }
 
     pub fn disable_all_points(&mut self)
@@ -457,16 +453,17 @@ impl Marking
     pub fn disable_all_curves(&mut self)
     {
         self.curves.disable_all();
+        self.path_cache.borrow_mut().set_stale();
     }
 
-    pub fn iter_visible_points(&self) -> impl Iterator<Item = ColoredPoint> + '_
+    pub fn iter_points(&self) -> impl Iterator<Item = ColoredPoint> + '_
     {
         self.point_sets
             .objects
             .values()
             .filter(|o| o.visible)
             .flat_map(
-                |Colored {
+                |ColoredMaybeHidden {
                      object: point_set,
                      color,
                      ..
@@ -479,7 +476,7 @@ impl Marking
             )
     }
 
-    pub fn iter_visible_curves(&self) -> impl Iterator<Item = Colored<Curve>> + '_
+    fn iter_visible_curves(&self) -> impl Iterator<Item = ColoredMaybeHidden<Curve>> + '_
     {
         self.curves.objects.values().filter(|o| o.visible).cloned()
     }
@@ -488,6 +485,51 @@ impl Marking
     {
         let col_ray = self.curves.objects.get(&CurveKey::Ray(angle))?;
         col_ray.object.last().copied()
+    }
+
+    fn update_cache(&self, grid: &PointGrid, frame: &ImageFrame)
+    {
+        self.path_cache.borrow_mut().paths.clear();
+        self.path_cache
+            .borrow_mut()
+            .paths
+            .extend(self.iter_visible_curves().map(
+                |ColoredMaybeHidden {
+                     object: zs, color, ..
+                 }| {
+                    let points = zs
+                        .iter()
+                        .map(|z| {
+                            let pt = grid.locate_point(*z);
+                            frame.to_global_coords(pt.to_vec2())
+                        })
+                        .collect();
+                    Colored {
+                        object: points,
+                        color,
+                    }
+                },
+            ));
+
+        self.path_cache.borrow_mut().set_fresh();
+    }
+
+    pub fn draw_curves(&self, painter: &Painter, grid: &PointGrid, frame: &ImageFrame)
+    {
+        if self.path_cache.borrow().is_stale()
+        {
+            self.update_cache(grid, frame);
+        }
+        self.path_cache.borrow().paths.iter().for_each(
+            |Colored {
+                 object: path,
+                 color,
+             }| {
+                let stroke = Stroke::new(1.0, *color);
+                let path = PathShape::line(path.clone(), stroke);
+                painter.add(path);
+            },
+        );
     }
 }
 
@@ -542,5 +584,42 @@ mod hashing
                 im: value.im.into(),
             }
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct PathCache
+{
+    paths: Vec<Colored<Vec<Pos2>>>,
+    needs_refresh: bool,
+}
+impl Default for PathCache
+{
+    fn default() -> Self
+    {
+        Self {
+            paths: Vec::new(),
+            needs_refresh: true,
+        }
+    }
+}
+
+impl PathCache
+{
+    pub fn set_fresh(&mut self)
+    {
+        self.needs_refresh = false
+    }
+    pub fn is_fresh(&self) -> bool
+    {
+        !self.needs_refresh
+    }
+    pub fn set_stale(&mut self)
+    {
+        self.needs_refresh = true
+    }
+    pub fn is_stale(&self) -> bool
+    {
+        self.needs_refresh
     }
 }

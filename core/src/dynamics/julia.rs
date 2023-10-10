@@ -1,8 +1,7 @@
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
+use fractal_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
 use fractal_common::prelude::*;
-use fractal_common::coloring::*;
-use fractal_common::math_utils::newton::newton_until_convergence_d;
 use fractal_common::symbolic_dynamics::OrbitSchema;
 use num_traits::{One, Zero};
 
@@ -357,11 +356,16 @@ where
 
             for target in targets
             {
-                let (sol, z_k, d_k) = newton_until_convergence_d(fk_and_dfk, temp_z, target, error);
+                let Some((sol, z_k, d_k)) = find_target_newton_err_d(fk_and_dfk, temp_z, target, error) else {return Some(z_list)};
 
                 temp_z = sol;
 
                 dist = (2. * z_k.norm() * (z_k.norm()).log(deg)) / d_k.norm();
+
+                if temp_z.is_nan()
+                {
+                    return Some(z_list);
+                }
 
                 z_list.push(temp_z);
                 if dist < pixel_width

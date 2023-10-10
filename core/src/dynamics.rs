@@ -648,7 +648,7 @@ pub trait ParameterPlane: Sync + Send + Clone
 
             for target in targets
             {
-                let (sol, c_k, d_k) = newton_until_convergence_d(fk_and_dfk, temp_c, target, error);
+                let Some((sol, c_k, d_k)) = find_target_newton_err_d(fk_and_dfk, temp_c, target, error) else {return Some(c_list)};
 
                 temp_c = sol;
 
@@ -970,14 +970,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     #[inline]
     fn degree_int(&self) -> AngleNum
     {
-        if self.degree().is_nan()
-        {
-            0
-        }
-        else
-        {
-            self.degree() as AngleNum
-        }
+        self.degree().try_round().unwrap_or(0)
     }
 
     /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps

@@ -132,19 +132,19 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 20] = [
         show_in_menu: true,
         menu_action_override: None,
     },
-    // External ray
-    Hotkey {
-        shortcut: Some(CTRL_E),
-        action: DrawEquipotential,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
     // External ray to point
     Hotkey {
         shortcut: Some(CTRL_X),
         action: DrawExternalRay {
-            select_landing_point: false,
+            select_landing_point: true,
         },
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // Equipotential
+    Hotkey {
+        shortcut: Some(CTRL_E),
+        action: DrawEquipotential,
         show_in_menu: true,
         menu_action_override: None,
     },
@@ -195,10 +195,16 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 20] = [
 ];
 });
 
-pub static SELECTION_HOTKEYS: [Hotkey; 4] = [
+pub static SELECTION_HOTKEYS: [Hotkey; 5] = [
     Hotkey {
         shortcut: Some(KEY_I),
         action: ToggleSelectionMarker,
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    Hotkey {
+        shortcut: Some(KEY_INSERT),
+        action: EnterCoordinates,
         show_in_menu: true,
         menu_action_override: None,
     },
