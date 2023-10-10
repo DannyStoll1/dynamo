@@ -109,7 +109,7 @@ impl ParameterPlane for QuadRatGeneral
                     horner!(a, b * u, -u),
                     horner_monic!(a, b * u + 1., 2.),
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             4 =>
             {
@@ -246,7 +246,7 @@ impl ParameterPlane for QuadRatGeneral
                         b + b + 6.
                     ),
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

@@ -119,16 +119,16 @@ mod tests
         assert_eq!(res, 24);
     }
 
-    #[cfg(feature = "mpsolve")]
-    #[test]
-    fn mpsolve()
-    {
-        use crate::consts::*;
-        use math_utils::math_utils::poly_solve::solve_polynomial;
-        let poly = vec![-ONE, ZERO, ZERO, ONE];
-        let roots = solve_polynomial(&poly);
-        dbg!(roots);
-    }
+    // #[cfg(feature = "mpsolve")]
+    // #[test]
+    // fn mpsolve()
+    // {
+    //     use crate::consts::*;
+    //     use math_utils::math_utils::poly_solve::solve_polynomial;
+    //     let poly = vec![-ONE, ZERO, ZERO, ONE];
+    //     let roots = solve_polynomial(poly);
+    //     dbg!(roots);
+    // }
 
     #[test]
     fn chebyshev()
@@ -224,7 +224,8 @@ mod tests
     }
 
     #[test]
-    fn debug_find_point() {
+    fn debug_find_point()
+    {
         let param_plane = QuadRatPer4::default();
         {
             let o = OrbitSchema {
@@ -242,7 +243,8 @@ mod tests
     }
 
     #[test]
-    fn equipotential() {
+    fn equipotential()
+    {
         let param_plane = Mandelbrot::default();
         {
             let t = Cplx::new(-1.4, 0.5);
@@ -251,10 +253,11 @@ mod tests
     }
 
     #[test]
-    fn per10_debug() {
+    fn per10_debug()
+    {
         let param_plane = CubicPer1_0::default().marked_cycle_curve(1);
         dbg!(param_plane.point_grid());
-        let julia  = JuliaSet::from(param_plane);
+        let julia = JuliaSet::from(param_plane);
         dbg!(julia.point_grid());
     }
 }

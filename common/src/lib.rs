@@ -8,17 +8,11 @@ pub mod iter_plane;
 pub mod macros;
 pub mod math_utils;
 pub mod orbit_info;
-pub mod symbolic_dynamics;
 pub mod point_grid;
 pub mod prelude;
+pub mod symbolic_dynamics;
 pub mod traits;
 pub mod types;
-
-#[cfg(feature = "mpsolve")]
-mod bindings;
-#[cfg(not(feature = "mpsolve"))]
-mod bindings
-{}
 
 #[cfg(test)]
 mod tests
@@ -29,7 +23,7 @@ mod tests
     fn quartic_roots()
     {
         use crate::macros::horner_monic;
-        use crate::math_utils::poly_solve::solve_quartic;
+        use crate::math_utils::polynomial_roots::solve_quartic;
 
         let a = Cplx::new(2., 0.);
         let b = Cplx::new(3., 0.);

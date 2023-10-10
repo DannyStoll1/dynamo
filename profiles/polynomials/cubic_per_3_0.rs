@@ -1,3 +1,5 @@
+use fractal_common::horner_monic;
+
 use crate::macros::{horner, profile_imports};
 profile_imports!();
 
@@ -63,9 +65,24 @@ impl ParameterPlane for CubicPer3_0
         let b = t * t * t * u2_inv + u / t;
         CplxPair { a, b }
     }
+    #[inline]
+    fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
+    {
+        (self.param_map(point), ZERO)
+    }
     fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
         -(b + b) / (3. * a)
+    }
+    fn start_point_d(
+        &self,
+        t: Cplx,
+        CplxPair { a, b }: Self::Param,
+    ) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let dz_dt = -TWO_THIRDS * horner!(t, 1., 4., 6., 8., 7., 2.)
+            / horner_monic!(t, 1., 4., 6., 6., 5., 2.);
+        (-(b + b) / (3. * a), dz_dt, ZERO)
     }
     fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
     {
@@ -97,7 +114,7 @@ impl ParameterPlane for CubicPer3_0
                     2. * a2 * b,
                     a2 * a,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

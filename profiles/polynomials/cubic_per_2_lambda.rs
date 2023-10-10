@@ -110,7 +110,7 @@ impl ParameterPlane for CubicPer2Lambda
                     -u,
                     a * a * a,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }
@@ -419,7 +419,7 @@ impl ParameterPlane for CubicPer2CritMarked
                     -8. * c6 * (c + c3),
                     c8,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

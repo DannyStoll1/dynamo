@@ -7,12 +7,9 @@ authors = ["Danny Stoll"]
 repository = "https://github.com/dannystoll1/fractal-explorer"
 description = "A tool for studying discrete time dynamical systems - Native UI"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 eframe = ">=0.22.0"
 fractal_gui = { version = "*", path = "../gui" }
 
 [features]
 serde = ["fractal_gui/serde"]
-mpsolve = ["fractal_gui/mpsolve"]

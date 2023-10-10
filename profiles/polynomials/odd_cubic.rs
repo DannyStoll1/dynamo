@@ -123,7 +123,7 @@ impl ParameterPlane for OddCubic
                     horner!(u, 1., 8.),
                     ONE,
                 ];
-                let squared_sols = solve_polynomial(&coeffs);
+                let squared_sols = solve_polynomial(coeffs);
 
                 squared_sols
                     .iter()

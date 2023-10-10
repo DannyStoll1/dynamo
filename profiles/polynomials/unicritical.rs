@@ -86,7 +86,7 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
                 let mut coeffs: Vec<Cplx> =
                     (0..=D).map(|x| c * Real::from(binomial(D, x))).collect();
                 coeffs[1] -= Self::D_FLOAT;
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
                     .iter()
                     .map(|z| z * Self::D_FLOAT)
                     .collect()

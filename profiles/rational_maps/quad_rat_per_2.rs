@@ -118,12 +118,12 @@ impl ParameterPlane for QuadRatPer2
             4 =>
             {
                 const COEFFS: [Cplx; 5] = cplx_arr!([1, -4, 6, -3, 1]);
-                solve_polynomial(&COEFFS)
+                solve_polynomial(COEFFS)
             }
             5 =>
             {
                 const COEFFS: [Cplx; 11] = cplx_arr!([1, -9, 33, -64, 76, -66, 50, -31, 15, -5, 1]);
-                solve_polynomial(&COEFFS)
+                solve_polynomial(COEFFS)
             }
             6 =>
             {
@@ -131,7 +131,7 @@ impl ParameterPlane for QuadRatPer2
                     1, -19, 162, -822, 2781, -6677, 11858, -16093, 17187, -14858, 10683, -6549,
                     3486, -1617, 645, -213, 55, -10, 1
                 ]);
-                solve_polynomial(&COEFFS)
+                solve_polynomial(COEFFS)
             }
             _ => vec![],
         }
@@ -167,7 +167,7 @@ impl ParameterPlane for QuadRatPer2
                     ZERO,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             4 =>
             {
@@ -186,7 +186,7 @@ impl ParameterPlane for QuadRatPer2
                     TWO,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             5 =>
             {
@@ -223,7 +223,7 @@ impl ParameterPlane for QuadRatPer2
                     ZERO,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             6 =>
             {
@@ -461,7 +461,7 @@ impl ParameterPlane for QuadRatPer2
                     TWO,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

@@ -152,7 +152,7 @@ impl ParameterPlane for CubicMarked2Cycle
                     8. * c,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

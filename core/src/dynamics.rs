@@ -422,10 +422,6 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     /// Implementation of `cycles` for Julia sets spawned from this parameter plane.
     /// Used to mark selected periodic points on the dynamical plane.
-    ///
-    /// Since this often requires solving high-degree polynomials, periods beyond 1 or 2
-    /// will usually require the `mpsolve` feature until a complex polynomial solver is implemented
-    /// in pure Rust.
     #[inline]
     fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
     {
@@ -434,10 +430,6 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     /// Implementation of `precycles` for Julia sets spawned from this parameter plane.
     /// Used to mark selected preperiodic points on the dynamical plane.
-    ///
-    /// Since this often requires solving high-degree polynomials, periods beyond 1 or 2
-    /// will usually require the `mpsolve` feature until a complex polynomial solver is implemented
-    /// in pure Rust.
     #[inline]
     fn precycles_child(&self, _c: Self::Param, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {

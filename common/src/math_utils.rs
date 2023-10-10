@@ -12,7 +12,7 @@ use std::f64::consts::PI;
 // pub mod erf;
 pub mod arithmetic;
 pub mod newton;
-pub mod poly_solve;
+pub mod polynomial_roots;
 
 #[must_use]
 pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cplx)

@@ -1,6 +1,6 @@
 [package]
 name = "fractal_profiles"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 [dependencies]
@@ -11,6 +11,3 @@ seq-macro = "0.3.5"
 [lib]
 name = "fractal_profiles"
 path = "lib.rs"
-
-[features]
-mpsolve = ["fractal_common/mpsolve", "fractal_core/mpsolve"]

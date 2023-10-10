@@ -102,7 +102,7 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
                 coeffs[usize::try_from(M + N).unwrap_or(2)] = c;
                 coeffs[usize::try_from(N + 1).unwrap_or(1)] = -c;
                 coeffs[0] = ONE;
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

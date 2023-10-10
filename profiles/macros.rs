@@ -5,7 +5,7 @@ macro_rules! profile_imports {
     () => {
         use crate::macros::parameter_plane_impl;
         use fractal_common::consts::*;
-        use fractal_common::math_utils::poly_solve::*;
+        use fractal_common::math_utils::polynomial_roots::*;
         use fractal_common::point_grid::{Bounds, PointGrid};
         use fractal_common::prelude::*;
         use fractal_core::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};

@@ -114,7 +114,7 @@ impl ParameterPlane for QuadRatPreper21
                     c * horner!(c, 2., 8., 8., 6.),
                     c2 * (1. + c + c2),
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             4 =>
             {
@@ -145,8 +145,8 @@ impl ParameterPlane for QuadRatPreper21
                     c3,
                 ];
 
-                let mut sol0 = solve_polynomial(&coeffs0);
-                let sol1 = solve_polynomial(&coeffs1);
+                let mut sol0 = solve_polynomial(coeffs0);
+                let sol1 = solve_polynomial(coeffs1);
 
                 sol0.extend(sol1);
                 sol0

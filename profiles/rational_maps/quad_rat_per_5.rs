@@ -186,7 +186,7 @@ impl ParameterPlane for QuadRatPer5
                     horner!(a, -b, u, 2. * b + 5., 2.),
                     horner_monic!(a, b2 + b + b + 1., b + b + 2.),
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

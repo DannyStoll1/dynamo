@@ -139,13 +139,13 @@ impl ParameterPlane for Mandelbrot
             4 =>
             {
                 const COEFFS: [Cplx; 6] = cplx_arr!([1, 2, 3, 3, 3, 1]);
-                solve_polynomial(&COEFFS)
+                solve_polynomial(COEFFS)
             }
             5 =>
             {
                 const COEFFS: [Cplx; 16] =
                     cplx_arr!([1, 1, 2, 5, 14, 26, 44, 69, 94, 114, 116, 94, 60, 28, 8, 1]);
-                solve_polynomial(&COEFFS)
+                solve_polynomial(COEFFS)
             }
             _ => vec![],
         }
@@ -153,7 +153,7 @@ impl ParameterPlane for Mandelbrot
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
-        use fractal_common::math_utils::poly_solve::solve_polynomial;
+        use fractal_common::math_utils::polynomial_roots::solve_polynomial;
         match period
         {
             1 =>
@@ -178,7 +178,7 @@ impl ParameterPlane for Mandelbrot
                     ONE,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             4 =>
             {
@@ -198,7 +198,7 @@ impl ParameterPlane for Mandelbrot
                     ZERO,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             5 =>
             {
@@ -261,7 +261,7 @@ impl ParameterPlane for Mandelbrot
                     ONE,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             6 =>
             {
@@ -457,7 +457,7 @@ impl ParameterPlane for Mandelbrot
                     -ONE,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }
@@ -465,7 +465,7 @@ impl ParameterPlane for Mandelbrot
 
     fn precycles_child(&self, c: Cplx, orbit_schema: OrbitSchema) -> ComplexVec
     {
-        use fractal_common::math_utils::poly_solve::solve_polynomial;
+        use fractal_common::math_utils::polynomial_roots::solve_polynomial;
         match (orbit_schema.preperiod, orbit_schema.period)
         {
             (2, 1) =>
@@ -493,7 +493,7 @@ impl ParameterPlane for Mandelbrot
                     horner!(c, -1., 6.),
                     ONE,
                 ];
-                let zs = solve_polynomial(&coeffs);
+                let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
             (2, 4) =>
@@ -513,7 +513,7 @@ impl ParameterPlane for Mandelbrot
                     c * 12.,
                     ONE,
                 ];
-                let zs = solve_polynomial(&coeffs);
+                let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
             (3, 3) =>
@@ -533,7 +533,7 @@ impl ParameterPlane for Mandelbrot
                     c * 12.,
                     ONE,
                 ];
-                let zs = solve_polynomial(&coeffs);
+                let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
             (3, 4) =>
@@ -618,7 +618,7 @@ impl ParameterPlane for Mandelbrot
                     c * 24.,
                     ONE,
                 ];
-                let zs = solve_polynomial(&coeffs);
+                let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
             _ => vec![],
@@ -693,7 +693,7 @@ impl HasDynamicalCovers for Mandelbrot
             //             Cplx::new(12288., 0.),
             //             Cplx::new(4096., 0.),
             //         ];
-            //         let cs = solve_polynomial(&coeffs);
+            //         let cs = solve_polynomial(coeffs);
             //         cs[0]
             //     };
             //     bounds = Bounds::centered_square(4.);

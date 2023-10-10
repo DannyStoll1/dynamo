@@ -8,7 +8,9 @@ members = [
     "bin",
     "wasm",
     "profiles",
+    "poly_solve",
 ]
+
 
 [profile.dev]
 opt-level = 2

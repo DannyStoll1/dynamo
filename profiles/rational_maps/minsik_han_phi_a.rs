@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use fractal_common::math_utils::{binomial, nth_roots, roots_of_unity};
 
 use crate::macros::profile_imports;
@@ -93,7 +95,7 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
 
                 let u = c / Self::D_MINUS_1;
 
-                let coeffs: Vec<Cplx> = (0..D)
+                let coeffs: VecDeque<Cplx> = (0..D)
                     .map(|i| {
                         if i == 0
                         {
@@ -109,7 +111,7 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
                     })
                     .collect();
 
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
                     .iter()
                     .map(|z| (z * Self::D_MINUS_1))
                     .flat_map(|z| nth_roots(z, D))

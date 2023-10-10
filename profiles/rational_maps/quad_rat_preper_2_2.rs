@@ -116,7 +116,7 @@ impl ParameterPlane for QuadRatPreper22
                     b * (b - 3.) - 2. * a,
                     -ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

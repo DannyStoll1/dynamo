@@ -34,6 +34,10 @@ impl ParameterPlane for QuadRatPer3
         0.0.into()
     }
 
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv) {
+        (ZERO, ZERO, ZERO)
+    }
+
     fn encode_escaping_point(
         &self,
         iters: Period,
@@ -174,7 +178,7 @@ impl ParameterPlane for QuadRatPer3
                     c2 - 1.,
                     1. - c,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

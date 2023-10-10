@@ -337,7 +337,7 @@ impl ParameterPlane for BiquadraticMult
                     6. * a,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
                     .into_iter()
                     .map(Bicomplex::PlaneA)
                     .collect()

@@ -199,7 +199,7 @@ impl ParameterPlane for QuadRatPer4
                     horner!(c, -2., 9., -16., 14., -4., -3., 2.),
                     c * horner_monic!(c, 1., -4., 6., -4.),
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             4 =>
             {
@@ -237,7 +237,7 @@ impl ParameterPlane for QuadRatPer4
                     ),
                     c2 * c3 * horner_monic!(c, -1., 7., -21., 35., -35., 21., -7.),
                 ];
-                let mut rs = solve_polynomial(&coeffs);
+                let mut rs = solve_polynomial(coeffs);
                 rs.extend([ONE, c, ZERO].into_iter());
                 rs
             }

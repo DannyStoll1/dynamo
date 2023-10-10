@@ -203,7 +203,7 @@ impl ParameterPlane for CubicPer1Lambda
                     l20 * l2 * horner!(l, 28., -32.),
                     l24,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
                     .iter()
                     .flat_map(|x| {
                         let u = x.sqrt();
@@ -237,7 +237,7 @@ impl ParameterPlane for CubicPer1Lambda
                     2. * c,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }
@@ -530,7 +530,7 @@ impl ParameterPlane for CubicPer1_1
             {
                 let u = c * c + 3.;
                 let coeffs = [TWO, 2. * c, u, 4. * c, u, 2. * c, ONE];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             3 =>
             {
@@ -562,7 +562,7 @@ impl ParameterPlane for CubicPer1_1
                     8. * c,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }
@@ -640,7 +640,7 @@ impl ParameterPlane for CubicPer1_0
             {
                 let u = c * c + 1.;
                 let coeffs = [ONE, c, u, c + c, u, c + c, ONE];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             3 =>
             {
@@ -672,7 +672,7 @@ impl ParameterPlane for CubicPer1_0
                     c * 8.,
                     ONE,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             4 =>
             {
@@ -845,7 +845,7 @@ impl ParameterPlane for CubicPer1_0
                 {
                     println!("{}: {}", i, x.re);
                 }
-                let res = solve_polynomial(&coeffs);
+                let res = solve_polynomial(coeffs);
                 dbg!(&res);
                 res
             }
@@ -1230,7 +1230,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
                     ZERO,
                     a2 * a,
                 ];
-                solve_polynomial(&coeffs)
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }
