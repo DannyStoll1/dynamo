@@ -35,10 +35,10 @@ mod tests
     #[test]
     fn poly_addition()
     {
-        let poly0 = Polynomial::from([2, 3, 5, 7]);
-        let poly1 = Polynomial::from([-2, 1, -5]);
-        let poly2 = Polynomial::from([-2, 1, -5, -7]);
-        let poly3 = Polynomial::from([-4, -3, 2, 6, 2]);
+        let poly0: Polynomial<i32> = Polynomial::from([2, 3, 5, 7]);
+        let poly1: Polynomial<i32> = Polynomial::from([-2, 1, -5]);
+        let poly2: Polynomial<i32> = Polynomial::from([-2, 1, -5, -7]);
+        let poly3: Polynomial<i32> = Polynomial::from([-4, -3, 2, 6, 2]);
 
         assert_eq!(
             poly0.clone() + poly1.clone(),

@@ -4,7 +4,7 @@ use fractal_common::prelude::*;
 use fractal_common::symbolic_dynamics::OrbitSchema;
 use ndarray::{Array2, Axis};
 use num_cpus;
-use num_traits::{One, Zero};
+use num_traits::{NumOps, One, Zero};
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::{cell::RefCell, f64::consts::TAU};
 use std::{fmt::Display, ops::AddAssign};
@@ -38,7 +38,7 @@ pub trait Variable:
 {
 }
 pub trait Parameter:
-    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
+    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize + std::fmt::Debug
 {
 }
 pub trait Derivative:
@@ -72,6 +72,7 @@ impl<V> Variable for V where
 }
 impl<P> Parameter for P where
     P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
+    + std::fmt::Debug
 {
 }
 impl<D> Derivative for D where
@@ -591,79 +592,137 @@ pub trait ParameterPlane: Sync + Send + Clone
         find_root_newton(diff, start_point)
     }
 
-    /// Compute an external ray for a given angle in [0,1).
-    /// Currently works correctly only for quadratic polynomials.
-    fn external_ray(&self, theta: Real) -> Option<Vec<Cplx>>
+    /// Argument of f_c^k(z0) for c very large with a given argument,
+    /// where k = self.escaping_phase().
+    ///
+    /// Used to seed initial point for external rays.
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
     {
-        let escape_radius = 40.;
-        let deg = self.degree().powi(self.escaping_period() as i32);
-        if deg.is_nan()
+        angle
+    }
+
+    /// Compute an external ray for a given rational angle.
+    /// The same implementation would work for any real angle,
+    /// but we stick to rationals for compatibility with other modules
+    /// and to maintain precision.
+    ///
+    /// Currently works correctly only for quadratic polynomials.
+    fn external_ray(&self, angle: RationalAngle) -> Option<Vec<Cplx>> {
+        // Remove off the end if distance is increasing,
+        // as the helper method may return erroneous values near the end.
+        // We use l1 norms to preserve precision.
+        if let Some(mut t_list) = self.external_ray_helper(angle) {
+            let t0 = t_list.last()?;
+            let mut t1 = t_list.get(t_list.len() - 2)?;
+            let mut t2 = t_list.get(t_list.len() - 3)?;
+            let mut dist0 = (t0 - t1).l1_norm();
+            let mut dist1 = (t1 - t2).l1_norm();
+            while dist0 > dist1 {
+                t_list.pop();
+                t1 = t_list.last()?;
+                t2 = t_list.get(t_list.len() - 2)?;
+                dist0 = dist1;
+                dist1 = (t1 - t2).l1_norm();
+            }
+            Some(t_list)
+        }
+        else {
+            None
+        }
+    }
+
+    fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
+    {
+        const R: Real = 16.0;
+        let escape_radius_log2 = R.log2() * self.degree_real().abs();
+
+        let deg_real = self.degree_real().abs();
+        if deg_real.is_nan()
         {
             return None;
         }
-        let deg_log2 = deg.log2();
+        let deg_log2 = deg_real.log2();
 
-        let pixel_width = self.point_grid().pixel_width() * 0.3;
+        let pixel_width = self.point_grid().pixel_width() * 0.03;
         let error = self.point_grid().res_x as Real * 1e-8;
 
-        let angle = theta * TAU;
-        let base_point = escape_radius * Cplx::new(0., angle).exp();
-        let mut c_list = vec![base_point];
+        // let base_point = escape_radius * angle.to_circle();
+        // Arbitrary starting guess that is likely to escape
+        let base_point: Cplx = 65.0 * angle.to_circle();
+        let mut t_list = vec![];
 
-        // degree raised to the power k
-        let mut deg_k = 1.0;
+        // degree of each additional batch of iterations
+        let deg = self.degree().abs();
+
+        // Target angle for the composite map at each step.
+        // Initialized to value after self.escaping_phase() iterations.
+        let mut target_angle = self.angle_map_large_param(angle);
 
         for k in 0..RAY_DEPTH
         {
+            // Relative log2-norms of targets
+            // jth target norm = escape_radius^deg^(-j/S)
+            // u_j = log2(escape_radius) * deg^(-j/S)
             let us = (0..RAY_SHARPNESS).map(|j| {
-                escape_radius.ln()
+                escape_radius_log2
                     * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
-            });
-            let v = Cplx::new(0., angle * deg_k);
-            deg_k *= deg;
-            let targets = us.map(|u| (u + v).exp());
+            });//.inspect(|u|println!("u = {}", u));
+            let v = target_angle.to_circle();
+            let targets = us.map(|u| u.exp2() * v);
 
-            let mut temp_c = *c_list.last()?;
+            let mut t_curr = *t_list.last().unwrap_or(&base_point);
             let mut dist: Real;
 
-            let fk_and_dfk = |c: Cplx| {
-                let c_param = c.into();
+            let num_iters = k * self.escaping_period() + self.escaping_phase();
+            //
+            // dbg!(num_iters);
+            // dbg!(t_curr);
+            // dbg!(t_curr.arg()/TAU);
 
-                // For general, we want the critical value and its c-derivative here
-                let mut z_k = c.into();
-                let mut d_k = ONE;
+            let fk_and_dfk = |t: Cplx| {
+                let (c, dc_dt) = self.param_map_d(t);
+                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+                dz_dt += dz_dc * dc_dt;
 
-                for _ in 0..k * self.escaping_period()
+                for _i in 0..num_iters
                 {
-                    let (f, df_dz, df_dc) = self.gradient(z_k, c_param);
-                    d_k = d_k * df_dz.into() + df_dc.into();
-                    z_k = f;
+                    let (f, df_dz, df_dc) = self.gradient(z, c);
+                    dz_dt = dz_dt * df_dz + df_dc * dc_dt;
+                    // if _i == num_iters - 1 {
+                    // dbg!(z.into(), f.into(), dz_dt.into());
+                    // }
+                    z = f;
                 }
-                (z_k.into(), d_k)
+                (z.into(), dz_dt.into())
             };
 
             for target in targets
             {
-                let Some((sol, c_k, d_k)) = find_target_newton_err_d(fk_and_dfk, temp_c, target, error) else {return Some(c_list)};
-
-                temp_c = sol;
-
-                dist = (2. * c_k.norm() * (c_k.norm()).log(deg)) / d_k.norm();
-
-                if temp_c.is_nan()
+                // println!("New target: {}", target);
+                if let Some((sol, t_k, d_k)) =
+                    find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
                 {
-                    return Some(c_list);
-                }
+                    // dbg!(target, sol);
+                    t_curr = sol;
 
-                c_list.push(temp_c);
-                if dist < pixel_width
-                {
-                    return Some(c_list);
+                    if t_curr.is_nan()
+                    {
+                        return Some(t_list);
+                    }
+
+                    t_list.push(t_curr);
+
+                    dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
+                    if dist < pixel_width
+                    {
+                        return Some(t_list);
+                    }
                 }
             }
+            target_angle *= deg;
         }
 
-        Some(c_list)
+        Some(t_list)
     }
 
     /// Compute an equipotential curve through a given point.
@@ -679,7 +738,11 @@ pub trait ParameterPlane: Sync + Send + Clone
 
         let orbit = SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
         let state = orbit.last()?.1;
-        let EscapeState::Escaped { iters, final_value } = state else {return None};
+        let EscapeState::Escaped { iters, final_value } = state
+        else
+        {
+            return None;
+        };
 
         let mut target = final_value.into();
 
@@ -701,7 +764,7 @@ pub trait ParameterPlane: Sync + Send + Clone
             (z.into(), dz_dt.into())
         };
 
-        let num_points = (self.degree().powi(iters as i32) / theta0) as usize;
+        let num_points = (self.degree_real().powi(iters as i32) / theta0) as usize;
         let rotate = (theta0 * TAUI).exp();
 
         // let mut result = vec![t0; num_points];
@@ -717,58 +780,6 @@ pub trait ParameterPlane: Sync + Send + Clone
 
         Some(result)
     }
-
-    // fn external_angle(&self, point: Cplx) -> Option<Real>
-    // {
-    //     let c = self.param_map(point);
-    //     let z = self.start_point(c);
-    //     if let EscapeState::Escaped { iters, final_value } =
-    //         self.run_until_escape(z, c, 10., self.max_iter())
-    //     {
-    //         let error = 1e-12;
-    //         let mut curr = c;
-    //         let mut difference: Cplx;
-    //         let mut target = final_value;
-    //         let r = final_value.norm_sqr();
-    //         while target.norm_sqr() <= r.powi(10)
-    //         {
-    //             target *= 1.01;
-    //             dbg!(target);
-    //             loop
-    //             {
-    //                 dbg!(curr);
-    //                 // Newton's method to try to approximate
-    //                 // outward points on external ray
-    //                 let mut z_k = self.start_point(curr);
-    //                 let mut d_k = ONE_COMPLEX;
-    //                 for _ in 0..iters
-    //                 {
-    //                     d_k = d_k * self.dynamical_derivative(z_k, curr)
-    //                         + self.parameter_derivative(z_k, curr);
-    //                     z_k = self.map(z_k, curr);
-    //                 }
-    //
-    //                 if z_k.is_nan()
-    //                 {
-    //                     println!("nan encountered!");
-    //                     return Some(curr.arg() / TAU);
-    //                     // break;
-    //                 }
-    //
-    //                 difference = (target - z_k) / d_k;
-    //                 curr += difference;
-    //                 dbg!(z_k, d_k, difference);
-    //
-    //                 if difference.norm_sqr() < error
-    //                 {
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //         return Some(curr.arg() / TAU);
-    //     }
-    //     None
-    // }
 
     fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeState<Self::Var, Self::Deriv>
     {
@@ -945,9 +956,9 @@ pub trait ParameterPlane: Sync + Send + Clone
     ///
     /// Currently unused.
     #[inline]
-    fn is_dynamical(&self) -> bool
+    fn plane_type(&self) -> PlaneType
     {
-        false
+        PlaneType::Parameter
     }
 
     /// Order of vanishing of $1/f(1/z)$ at $z=0$, where $f$ is the dynamical map.
@@ -956,15 +967,15 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// Should be set to NAN if $f$ has an essential singularity at infinity.
     /// In such cases, external rays are unsupported (unless manually implemented).
     #[inline]
-    fn degree(&self) -> Real
+    fn degree_real(&self) -> Real
     {
         2.0
     }
 
     #[inline]
-    fn degree_int(&self) -> AngleNum
+    fn degree(&self) -> AngleNum
     {
-        self.degree().try_round().unwrap_or(0)
+        self.degree_real().try_round().unwrap_or(0)
     }
 
     /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps
@@ -979,23 +990,17 @@ pub trait ParameterPlane: Sync + Send + Clone
         1
     }
 
-    // fn julia_set(&self, point: Cplx) -> Option<Self::Child>
-    // where
-    //     Self: Clone,
-    // {
-    //     let param = self.param_map(point);
-    //     let point_grid = self
-    //         .point_grid()
-    //         .with_same_height(self.default_julia_bounds(point, param));
-    //
-    //     Some(JuliaSet {
-    //         point_grid,
-    //         max_iter: self.max_iter(),
-    //         min_iter: self.min_iter(),
-    //         parent: self.clone(),
-    //         param: (self.get_param(), param),
-    //     })
-    // }
+    /// For very large values of the parameter, how many iterations before the variable
+    /// value is large?
+    ///
+    /// Used for computing external rays, for which we use an iterate of the map instead of the map
+    /// itself.
+    ///
+    /// Almost always 0 or 1.
+    fn escaping_phase(&self) -> Period
+    {
+        1
+    }
 
     /// Default coloring algorithm to apply when loading the parameter plane.
     fn default_coloring(&self) -> Coloring
@@ -1068,43 +1073,30 @@ pub trait ParameterPlane: Sync + Send + Clone
             fill_rate: 0.04,
         }
     }
+}
 
-    // fn internal_potential(&self, point_info: PointInfo<Self::Var, Self::Deriv>) -> IterCount
-    // {
-    //     match point_info
-    //     {
-    //         PointInfo::Bounded | PointInfo::Wandering => 0.,
-    //         PointInfo::Escaping { potential } => potential,
-    //         PointInfo::Periodic { data } =>
-    //         {
-    //             let per = IterCount::from(data.period);
-    //
-    //             let mult_norm = data.multiplier.norm();
-    //
-    //             // Superattracting case
-    //             if mult_norm <= 1e-10
-    //             {
-    //                 let potential = 2.
-    //                     * (data.final_error.log(self.periodicity_tolerance())).log2() as IterCount;
-    //                 per.mul_add(-potential, IterCount::from(data.preperiod))
-    //             }
-    //             // Parabolic case
-    //             else if 1. - mult_norm <= 1e-5
-    //             {
-    //                 let potential = data.final_error / self.periodicity_tolerance();
-    //                 per.mul_add(-potential, IterCount::from(data.preperiod))
-    //             }
-    //             else
-    //             {
-    //                 let mut potential = -(data.final_error / self.periodicity_tolerance())
-    //                     .log(mult_norm) as IterCount;
-    //                 if potential.is_infinite() || potential.is_nan()
-    //                 {
-    //                     potential = -0.2;
-    //                 }
-    //                 per.mul_add(potential, f64::from(data.preperiod))
-    //             }
-    //         }
-    //     }
-    // }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum PlaneType
+{
+    #[default]
+    Parameter,
+    Dynamical,
+}
+impl PlaneType
+{
+    pub const fn is_dynamical(&self) -> bool
+    {
+        matches!(self, Self::Dynamical)
+    }
+}
+impl std::fmt::Display for PlaneType
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        match self
+        {
+            Self::Parameter => write!(f, "parameter"),
+            Self::Dynamical => write!(f, "dynamical"),
+        }
+    }
 }

@@ -1,11 +1,12 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::{error::Error, num::ParseIntError, str::FromStr};
+use std::{cmp::Ordering, collections::VecDeque, error::Error, num::ParseIntError, str::FromStr};
 
 use crate::prelude::*;
 use derive_more::{From, Into};
 use num_traits::sign::Signed;
 
+/// Information to display about a rational angle
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AngleInfo
@@ -15,11 +16,45 @@ pub struct AngleInfo
     pub kneading_sequence: Itinerary,
 }
 
+/// Period and preperiod of a point with finite orbit in a dynamical system.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct OrbitSchema
 {
     pub period: Period,
     pub preperiod: Period,
+}
+
+impl OrbitSchema
+{
+    #[must_use]
+    pub fn with_degree(self, degree: AngleNum) -> OrbitSchemaWithDegree
+    {
+        OrbitSchemaWithDegree {
+            preperiod: self.preperiod,
+            period: self.period,
+            degree,
+        }
+    }
+}
+
+impl PartialOrd for OrbitSchema
+{
+    fn lt(&self, other: &Self) -> bool
+    {
+        self.preperiod < other.preperiod && self.period == other.period
+    }
+    fn le(&self, other: &Self) -> bool
+    {
+        self.preperiod <= other.preperiod && self.period == other.period
+    }
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering>
+    {
+        if self.period != other.period
+        {
+            return None;
+        }
+        Some(self.preperiod.cmp(&other.preperiod))
+    }
 }
 
 impl Default for OrbitSchema
@@ -83,6 +118,71 @@ impl FromStr for OrbitSchema
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
+pub struct OrbitSchemaWithDegree
+{
+    pub preperiod: Period,
+    pub period: Period,
+    pub degree: AngleNum,
+}
+
+impl OrbitSchemaWithDegree
+{
+    /// Value m for which all angles with this orbit schema can be expressed in the form $k/m$.
+    pub fn natural_denom(&self) -> AngleNum
+    {
+        (self.degree.pow(self.preperiod) * (self.degree.pow(self.period) - 1)).abs()
+    }
+
+    pub fn active_angles(&self, include_suffixes: bool) -> VecDeque<RationalAngle>
+    {
+        if include_suffixes
+        {
+            self.child_angles()
+        }
+        else
+        {
+            self.exact_angles()
+        }
+    }
+
+    /// All angles of the same period and preperiod
+    pub fn exact_angles(&self) -> VecDeque<RationalAngle>
+    {
+        let denom = self.natural_denom();
+        (1..denom)
+            .map(|numer| RationalAngle::new(numer, denom))
+            .filter(|theta| theta.with_degree(self.degree).orbit_schema() == self.forget())
+            .collect()
+    }
+
+    /// All angles of the same period and the same or smaller preperiod
+    pub fn child_angles(&self) -> VecDeque<RationalAngle>
+    {
+        let denom = self.natural_denom();
+        (1..denom)
+            .map(|numer| RationalAngle::new(numer, denom))
+            .filter(|theta| theta.with_degree(self.degree).orbit_schema() <= self.forget())
+            .collect()
+    }
+
+    fn forget(self) -> OrbitSchema
+    {
+        OrbitSchema {
+            preperiod: self.preperiod,
+            period: self.period,
+        }
+    }
+}
+
+impl From<OrbitSchemaWithDegree> for OrbitSchema
+{
+    fn from(od: OrbitSchemaWithDegree) -> Self
+    {
+        od.forget()
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KneadingSymbol
 {
@@ -142,34 +242,59 @@ impl std::fmt::Display for Itinerary
             .map(|x| x.to_string_kneading())
             .collect::<Vec<String>>()
             .join("");
-        write!(f, "{}p{}", pre_str, per_str)
+        let formatted = format!("{}p{}", pre_str, per_str);
+        f.pad(&formatted)
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct CirclePartition
 {
-    angles: Vec<RationalAngle>,
+    angles: VecDeque<RationalAngle>,
 }
 impl CirclePartition
 {
     #[must_use]
-    pub fn new(mut angles: Vec<RationalAngle>) -> Self
+    pub fn new(mut angles: VecDeque<RationalAngle>) -> Self
     {
-        angles.sort();
+        angles.make_contiguous().sort();
+        Self { angles }
+    }
+
+    /// Assumes input is in ascending circular order.
+    #[must_use]
+    pub fn from_circularly_ordered(mut angles: VecDeque<RationalAngle>) -> Self
+    {
+        sort_circularly_ordered(&mut angles);
         Self { angles }
     }
 
     /// Assumes angles are sorted
     #[must_use]
-    pub fn new_raw(angles: Vec<RationalAngle>) -> Self
+    pub fn new_raw(angles: VecDeque<RationalAngle>) -> Self
     {
         Self { angles }
     }
 
+    /// Partition of the form $\{ theta/n, (theta+1)/n, ..., (theta+n-1)/n \}$.
+    /// These are of particular importance dynamically. For instance, if $c$
+    /// has external angle $\theta$ in the complement of the degree $n$ multibrot set,
+    /// and $z\in J(f_c)$ is a landing point of a dynamical ray at an angle $\alpha$,
+    /// then the topological dynamics of $z$ relative to the critical point is described by
+    /// the itinerary of $\alpha$ relative to the canonical partition of $\theta$.
+    #[must_use]
+    pub fn canonical(angle: RationalAngle, degree: AngleNum) -> Self
+    {
+        let theta_over_n = angle / degree;
+        //Guaranteed to be circularly ordered
+        let partition_angles = (0..degree.abs())
+            .map(|x| theta_over_n + RationalAngle::new_raw(x, degree))
+            .collect();
+        Self::from_circularly_ordered(partition_angles)
+    }
+
     pub fn identify(&self, theta: RationalAngle) -> KneadingSymbol
     {
-        use std::cmp::Ordering;
         for (i, x) in self.angles.iter().enumerate()
         {
             match theta.cmp(x)
@@ -185,9 +310,10 @@ impl CirclePartition
 
     pub fn is_circularly_ordered(&self) -> bool
     {
-        let Some((imin, xmin)) = self.angles.iter().enumerate().min_by_key(|(_i, x)|*x)
-        else {
-            return true
+        let Some((imin, xmin)) = self.angles.iter().enumerate().min_by_key(|(_i, x)| *x)
+        else
+        {
+            return true;
         };
         let mut x_curr = *xmin;
         for i in (imin + 1)..self.angles.len()
@@ -221,13 +347,14 @@ pub struct RationalAngle(Rational);
 
 impl RationalAngle
 {
-    const ONE_HALF: Self = Self::new_raw(1, 2);
+    pub const ZERO: Self = Self::new_raw(0, 1);
+    pub const ONE_HALF: Self = Self::new_raw(1, 2);
 
     #[must_use]
     pub fn new(numer: AngleNum, denom: AngleNum) -> Self
     {
         let rational = Rational::new(numer, denom);
-        Self(rational).mod_1()
+        Self(rational)
     }
 
     /// Creates a RationalAngle without checking for zero division, reducing, or projecting mod 1
@@ -237,111 +364,12 @@ impl RationalAngle
         Self(Rational::new_raw(numer, denom))
     }
 
-    /// Preperiod and period under the angle tupling map of a given degree
-    pub fn orbit_schema(&self, degree: AngleNum) -> OrbitSchema
-    {
-        let degree2 = degree * degree;
-        let mut slow = *self;
-        let mut fast = *self;
-
-        loop
-        {
-            slow *= degree;
-            fast *= degree2;
-            if fast == slow
-            {
-                break;
-            }
-        }
-
-        let mut period = 1;
-        slow *= degree;
-
-        while slow != fast
-        {
-            slow *= degree;
-            period += 1;
-        }
-
-        let mut preperiod = 0;
-        slow = *self;
-        while slow != fast
-        {
-            slow *= degree;
-            fast *= degree;
-            preperiod += 1;
-        }
-
-        OrbitSchema { preperiod, period }
-    }
-
-    pub fn itinerary(&self, degree: AngleNum, partition: CirclePartition) -> Itinerary
-    {
-        let orbit_schema = self.orbit_schema(degree);
-        self.itinerary_given_orbit_schema(orbit_schema, degree, partition)
-    }
-
-    fn itinerary_given_orbit_schema(
-        &self,
-        orbit_schema: OrbitSchema,
-        degree: AngleNum,
-        partition: CirclePartition,
-    ) -> Itinerary
-    {
-        let mut x = *self;
-
-        let preperiodic_part = (0..orbit_schema.preperiod)
-            .map(|_i| {
-                let id = partition.identify(x);
-                x *= degree;
-                id
-            })
-            .collect();
-
-        let periodic_part = (0..orbit_schema.period)
-            .map(|_i| {
-                let id = partition.identify(x);
-                x *= degree;
-                id
-            })
-            .collect();
-
-        Itinerary {
-            partition,
-            preperiodic_part,
-            periodic_part,
-        }
-    }
-
-    pub fn kneading_sequence(&self, degree: AngleNum) -> Itinerary
-    {
-        let orbit_schema = self.orbit_schema(degree);
-        self.kneading_sequence_given_orbit_schema(orbit_schema, degree)
-    }
-
-    fn kneading_sequence_given_orbit_schema(
-        &self,
-        orbit_schema: OrbitSchema,
-        degree: AngleNum,
-    ) -> Itinerary
-    {
-        let theta_over_n = *self / degree;
-        let partition_angles = (0..degree)
-            .map(|x| theta_over_n + Self::new_raw(x, degree))
-            .collect();
-        let partition = CirclePartition::new_raw(partition_angles);
-        self.itinerary_given_orbit_schema(orbit_schema, degree, partition)
-    }
-
     #[must_use]
-    pub fn to_angle_info(self, degree: AngleNum) -> AngleInfo
+    pub fn with_degree(self, degree: AngleNum) -> AngleWithDegree
     {
-        let orbit_schema = self.orbit_schema(degree);
-        let kneading_sequence = self.kneading_sequence_given_orbit_schema(orbit_schema, degree);
-        AngleInfo {
+        AngleWithDegree {
             angle: self,
-            orbit_schema,
-            kneading_sequence,
+            degree,
         }
     }
 
@@ -369,11 +397,6 @@ impl RationalAngle
     {
         self.0 = self.0.fract();
         self
-    }
-
-    fn to_complex(self) -> Cplx
-    {
-        (TAUI * Real::from(self)).exp()
     }
 }
 
@@ -408,23 +431,71 @@ impl std::ops::Neg for RationalAngle
     }
 }
 
-impl std::ops::Mul for RationalAngle
-{
-    type Output = Self;
+macro_rules! mul_div_int_impl {
+    ($other: ty) => {
+        impl std::ops::Mul<$other> for RationalAngle
+        {
+            type Output = Self;
 
-    fn mul(self, rhs: Self) -> Self::Output
-    {
-        Self(self.0 * rhs.0).mod_1()
-    }
+            fn mul(self, rhs: $other) -> Self::Output
+            {
+                Self(self.0 * (rhs as AngleNum)).mod_1()
+            }
+        }
+        impl std::ops::Mul<RationalAngle> for $other
+        {
+            type Output = RationalAngle;
+
+            fn mul(self, rhs: RationalAngle) -> Self::Output
+            {
+                rhs * (self as AngleNum)
+            }
+        }
+        impl std::ops::MulAssign<$other> for RationalAngle
+        {
+            fn mul_assign(&mut self, rhs: $other)
+            {
+                self.0 *= rhs as AngleNum;
+                self.reduce_mod_1();
+            }
+        }
+        impl std::ops::Div<$other> for RationalAngle
+        {
+            type Output = Self;
+
+            fn div(self, rhs: $other) -> Self::Output
+            {
+                Self(self.0 / (rhs as AngleNum)).mod_1()
+            }
+        }
+        impl std::ops::DivAssign<$other> for RationalAngle
+        {
+            fn div_assign(&mut self, rhs: $other)
+            {
+                self.0 /= rhs as AngleNum;
+                self.reduce_mod_1();
+            }
+        }
+    };
 }
 
 impl std::ops::Mul<AngleNum> for RationalAngle
 {
     type Output = Self;
 
-    fn mul(self, rhs: AngleNum) -> Self
+    fn mul(self, rhs: AngleNum) -> Self::Output
     {
-        Self::new(*self.0.numer() * rhs, *self.0.denom())
+        Self(self.0 * rhs).mod_1()
+    }
+}
+
+impl std::ops::Mul<Rational> for RationalAngle
+{
+    type Output = Self;
+
+    fn mul(self, rhs: Rational) -> Self::Output
+    {
+        Self(self.0 * rhs).mod_1()
     }
 }
 
@@ -458,11 +529,27 @@ impl std::ops::Div<AngleNum> for RationalAngle
     }
 }
 
+mul_div_int_impl!(u32);
+mul_div_int_impl!(i32);
+mul_div_int_impl!(u64);
+
 impl std::fmt::Display for RationalAngle
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        write!(f, "{}/{}", self.0.numer(), self.0.denom())
+        std::fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl std::fmt::Binary for RationalAngle
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        let degree = f.precision().and_then(|x| x.try_into().ok()).unwrap_or(2);
+        let itinerary = self
+            .with_degree(degree)
+            .canonical_itinerary(RationalAngle::ZERO);
+        std::fmt::Display::fmt(&itinerary, f)
     }
 }
 
@@ -471,6 +558,147 @@ impl From<RationalAngle> for Real
     fn from(angle: RationalAngle) -> Self
     {
         (*angle.0.numer() as Self) / (*angle.0.denom() as Self)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct AngleWithDegree
+{
+    pub angle: RationalAngle,
+    pub degree: AngleNum,
+}
+
+impl AngleWithDegree
+{
+    /// Preperiod and period under the angle tupling map
+    /// Guaranteed to be finite, e.g. by pigeon hole principle.
+    pub fn orbit_schema(&self) -> OrbitSchema
+    {
+        let degree2 = self.degree * self.degree;
+        let mut slow = self.angle;
+        let mut fast = self.angle;
+
+        loop
+        {
+            slow *= self.degree;
+            fast *= degree2;
+            if fast == slow
+            {
+                break;
+            }
+        }
+
+        let mut period = 1;
+        slow *= self.degree;
+
+        while slow != fast
+        {
+            slow *= self.degree;
+            period += 1;
+        }
+
+        let mut preperiod = 0;
+        slow = self.angle;
+        while slow != fast
+        {
+            slow *= self.degree;
+            fast *= self.degree;
+            preperiod += 1;
+        }
+
+        OrbitSchema { preperiod, period }
+    }
+
+    pub fn itinerary(&self, partition: CirclePartition) -> Itinerary
+    {
+        let orbit_schema = self.orbit_schema();
+        self.itinerary_given_orbit_schema(orbit_schema, partition)
+    }
+
+    fn itinerary_given_orbit_schema(
+        &self,
+        orbit_schema: OrbitSchema,
+        partition: CirclePartition,
+    ) -> Itinerary
+    {
+        let mut x = self.angle;
+
+        let preperiodic_part = (0..orbit_schema.preperiod)
+            .map(|_i| {
+                let id = partition.identify(x);
+                x *= self.degree;
+                id
+            })
+            .collect();
+
+        let periodic_part = (0..orbit_schema.period)
+            .map(|_i| {
+                let id = partition.identify(x);
+                x *= self.degree;
+                id
+            })
+            .collect();
+
+        Itinerary {
+            partition,
+            preperiodic_part,
+            periodic_part,
+        }
+    }
+
+    pub fn kneading_sequence(&self) -> Itinerary
+    {
+        let orbit_schema = self.orbit_schema();
+        self.kneading_sequence_given_orbit_schema(orbit_schema)
+    }
+
+    fn kneading_sequence_given_orbit_schema(&self, orbit_schema: OrbitSchema) -> Itinerary
+    {
+        let theta_over_n = self.angle / self.degree;
+        let partition_angles = (0..self.degree)
+            .map(|x| theta_over_n + RationalAngle::new_raw(x, self.degree))
+            .collect();
+        let partition = CirclePartition::new_raw(partition_angles);
+        self.itinerary_given_orbit_schema(orbit_schema, partition)
+    }
+
+    /// Canonical itinerary of self relative to `rel_angle`
+    pub fn canonical_itinerary(&self, rel_angle: RationalAngle) -> Itinerary
+    {
+        let orbit_schema = self.orbit_schema();
+        self.canonical_itinerary_given_orbit_schema(orbit_schema, rel_angle)
+    }
+
+    /// Canonical itinerary of self relative to `rel_angle`
+    pub fn canonical_itinerary_given_orbit_schema(
+        &self,
+        orbit_schema: OrbitSchema,
+        rel_angle: RationalAngle,
+    ) -> Itinerary
+    {
+        let partition = CirclePartition::canonical(rel_angle, self.degree);
+        self.itinerary_given_orbit_schema(orbit_schema, partition)
+    }
+
+    #[must_use]
+    pub fn to_angle_info(self) -> AngleInfo
+    {
+        let orbit_schema = self.orbit_schema();
+        let kneading_sequence = self.kneading_sequence_given_orbit_schema(orbit_schema);
+        AngleInfo {
+            angle: self.angle,
+            orbit_schema,
+            kneading_sequence,
+        }
+    }
+}
+
+impl std::fmt::Display for AngleWithDegree
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        let itinerary = self.canonical_itinerary(RationalAngle::ZERO);
+        itinerary.fmt(f)
     }
 }
 
@@ -584,8 +812,16 @@ fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
         static ref BIN_ANGLE: Regex = Regex::new(r"^(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_ANGLE.captures(text) else {return None};
-    let Some(bin_str) = captures.get(1) else {return None};
+    let Some(captures) = BIN_ANGLE.captures(text)
+    else
+    {
+        return None;
+    };
+    let Some(bin_str) = captures.get(1)
+    else
+    {
+        return None;
+    };
 
     Some(
         AngleNum::from_str_radix(bin_str.as_str(), 2)
@@ -601,7 +837,11 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
         static ref BIN_PREPER: Regex = Regex::new(r"^(\d*)p(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_PREPER.captures(text) else {return None};
+    let Some(captures) = BIN_PREPER.captures(text)
+    else
+    {
+        return None;
+    };
     if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2))
     {
         let per_str = per_match.as_str();
@@ -668,7 +908,6 @@ impl FromStr for RationalAngle
     }
 }
 
-//
 #[derive(Debug)]
 pub enum ParseOrbitSchemaError
 {
@@ -706,5 +945,24 @@ impl std::error::Error for ParseOrbitSchemaError
             Self::Periodic(cause) => Some(cause),
             Self::Preperiodic(cause) => Some(cause),
         }
+    }
+}
+
+/// Sort a VecDeque assuming it is circularly ordered.
+pub(crate) fn sort_circularly_ordered<T: PartialOrd>(angles: &mut VecDeque<T>)
+{
+    let Some(mut prev) = angles.front()
+    else
+    {
+        return;
+    };
+    for (i, x) in angles.iter().enumerate()
+    {
+        if x < prev
+        {
+            angles.rotate_left(i);
+            return;
+        }
+        prev = x;
     }
 }

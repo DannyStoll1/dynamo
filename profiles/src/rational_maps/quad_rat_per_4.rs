@@ -29,6 +29,16 @@ impl ParameterPlane for QuadRatPer4
     parameter_plane_impl!();
     default_name!();
 
+    fn description(&self) -> String
+    {
+        "The moduli space of quadratic rational maps with a critical 4-cycle, \
+            parameterized as $f_c(z) = (z-c)(z(c-1)-2c+1)/(z^2(c-1))$. \
+            In these coordinates, 0 -> ∞ -> 1 -> c is the critical 4-cycle. \
+            The plane is colored according to the \
+            activity of the free critical point 0."
+            .to_owned()
+    }
+
     fn encode_escaping_point(
         &self,
         iters: Period,
@@ -88,11 +98,12 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn start_point_d(&self, _point: Cplx, c: Cplx) -> (Cplx, Cplx, Cplx)
     {
-        let denom = (c * (c + 1.) - 1.).inv();
+        let c2 = c * c;
+        let denom = (c2 + c - 1.).inv();
         (
-            2. * c * (2. * c - 1.) * denom,
+            2. * (2. * c2 - c) * denom,
             ZERO,
-            2. * (c - 1.) * (3. * c - 1.) * denom * denom,
+            (6. * c2 - 8. * c + 2.) * denom * denom,
         )
     }
 
@@ -146,15 +157,34 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn degree(&self) -> Real
+    fn degree_real(&self) -> Real
     {
-        2.0
+        -2.0
+    }
+
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        -2
     }
 
     #[inline]
     fn escaping_period(&self) -> Period
     {
         4
+    }
+
+    #[inline]
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        let c2 = c * c;
+        vec![ZERO, 2. * (2. * c2 - c) / (c2 + c - 1.)]
+    }
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
     }
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
@@ -238,7 +268,7 @@ impl ParameterPlane for QuadRatPer4
                     c2 * c3 * horner_monic!(c, -1., 7., -21., 35., -35., 21., -7.),
                 ];
                 let mut rs = solve_polynomial(coeffs);
-                rs.extend([ONE, c, ZERO].into_iter());
+                rs.extend([ONE, c, ZERO]);
                 rs
             }
             _ => vec![],

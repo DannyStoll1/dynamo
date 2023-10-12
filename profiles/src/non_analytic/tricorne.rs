@@ -37,7 +37,7 @@ impl<const N: Period> ParameterPlane for Tricorne<N>
     default_name!();
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         Self::N_FLOAT
     }

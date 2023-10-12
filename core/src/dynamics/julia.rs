@@ -5,6 +5,8 @@ use fractal_common::symbolic_dynamics::OrbitSchema;
 use fractal_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
 use num_traits::{One, Zero};
 
+use super::PlaneType;
+
 #[derive(Clone)]
 pub struct JuliaSet<T>
 where
@@ -145,6 +147,12 @@ where
     }
 
     #[inline]
+    fn default_selection(&self) -> Cplx
+    {
+        self.parent.start_point(ZERO, self.local_param).into()
+    }
+
+    #[inline]
     fn start_point_d(
         &self,
         point: Cplx,
@@ -211,15 +219,21 @@ where
     // }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
-        self.parent.degree()
+        self.parent.degree_real()
     }
 
     #[inline]
     fn escaping_period(&self) -> Period
     {
         self.parent.escaping_period()
+    }
+
+    /// Always 0 for dynamical planes, since large parameter here means large starting value
+    #[inline]
+    fn escaping_phase(&self) -> Period {
+        0
     }
 
     #[inline]
@@ -305,83 +319,89 @@ where
         }
     }
 
-    fn is_dynamical(&self) -> bool
+    #[inline]
+    fn plane_type(&self) -> PlaneType
     {
-        true
+        PlaneType::Dynamical
     }
 
-    /// Compute an external ray for a given angle in [0,1).
-    /// depth: Controls how deep the ray goes. Higher values bring the landing point closer to the
-    /// bifurcation locus. [Suggested starting value: 25]
-    /// sharpness: Controls the density of points used to approxmate the external ray. [Suggested starting value: 20]
-    fn external_ray(&self, theta: Real) -> Option<Vec<Cplx>>
-    {
-        let escape_radius = 400.;
-        let deg = self.degree().powi(self.escaping_period() as i32);
-        if deg.is_nan()
-        {
-            return None;
-        }
-        let deg_log2 = deg.log2();
-
-        let pixel_width = self.point_grid().pixel_width() * 0.3;
-        let error = self.point_grid().res_x as Real * 1e-8;
-
-        let angle = theta * TAU;
-        let base_point = escape_radius * Cplx::new(0., angle).exp();
-        let mut z_list = vec![base_point];
-
-        // degree raised to the power k
-        let mut deg_k = 1.0;
-
-        for k in 0..RAY_DEPTH
-        {
-            let us = (0..RAY_SHARPNESS).map(|j| {
-                escape_radius.ln()
-                    * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
-            });
-            let v = Cplx::new(0., angle * deg_k);
-            deg_k *= deg;
-            let targets = us.map(|u| (u + v).exp());
-
-            let mut temp_z = *z_list.last()?;
-            let mut dist: Real;
-
-            let fk_and_dfk = |z: Cplx| {
-                let mut z_k = z.into();
-                let mut d_k = ONE;
-                for _ in 0..k * self.escaping_period()
-                {
-                    let (f, df_dz) = self.map_and_multiplier_lazy(z_k);
-                    d_k *= df_dz.into();
-                    z_k = f;
-                }
-                (z_k.into(), d_k)
-            };
-
-            for target in targets
-            {
-                let Some((sol, z_k, d_k)) = find_target_newton_err_d(fk_and_dfk, temp_z, target, error) else {return Some(z_list)};
-
-                temp_z = sol;
-
-                dist = (2. * z_k.norm() * (z_k.norm()).log(deg)) / d_k.norm();
-
-                if temp_z.is_nan()
-                {
-                    return Some(z_list);
-                }
-
-                z_list.push(temp_z);
-                if dist < pixel_width
-                {
-                    return Some(z_list);
-                }
-            }
-        }
-
-        Some(z_list)
-    }
+    // /// Compute an external ray for a given angle in [0,1).
+    // /// depth: Controls how deep the ray goes. Higher values bring the landing point closer to the
+    // /// bifurcation locus. [Suggested starting value: 25]
+    // /// sharpness: Controls the density of points used to approxmate the external ray. [Suggested starting value: 20]
+    // fn external_ray(&self, theta: Real) -> Option<Vec<Cplx>>
+    // {
+    //     let escape_radius = 400.;
+    //     let deg = self.degree().powi(self.escaping_period() as i32);
+    //     if deg.is_nan()
+    //     {
+    //         return None;
+    //     }
+    //     let deg_log2 = deg.log2();
+    //
+    //     let pixel_width = self.point_grid().pixel_width() * 0.3;
+    //     let error = self.point_grid().res_x as Real * 1e-8;
+    //
+    //     let angle = theta * TAU;
+    //     let base_point = escape_radius * Cplx::new(0., angle).exp();
+    //     let mut z_list = vec![base_point];
+    //
+    //     // degree raised to the power k
+    //     let mut deg_k = 1.0;
+    //
+    //     for k in 0..RAY_DEPTH
+    //     {
+    //         let us = (0..RAY_SHARPNESS).map(|j| {
+    //             escape_radius.ln()
+    //                 * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
+    //         });
+    //         let v = Cplx::new(0., angle * deg_k);
+    //         deg_k *= deg;
+    //         let targets = us.map(|u| (u + v).exp());
+    //
+    //         let mut temp_z = *z_list.last()?;
+    //         let mut dist: Real;
+    //
+    //         let fk_and_dfk = |z: Cplx| {
+    //             let mut z_k = z.into();
+    //             let mut d_k = ONE;
+    //             for _ in 0..k * self.escaping_period()
+    //             {
+    //                 let (f, df_dz) = self.map_and_multiplier_lazy(z_k);
+    //                 d_k *= df_dz.into();
+    //                 z_k = f;
+    //             }
+    //             (z_k.into(), d_k)
+    //         };
+    //
+    //         for target in targets
+    //         {
+    //             let Some((sol, z_k, d_k)) =
+    //                 find_target_newton_err_d(fk_and_dfk, temp_z, target, error)
+    //             else
+    //             {
+    //                 return Some(z_list);
+    //             };
+    //
+    //             temp_z = sol;
+    //
+    //             dist = (2. * z_k.norm() * (z_k.norm()).log(deg)) / d_k.norm();
+    //
+    //             if temp_z.is_nan()
+    //             {
+    //                 return Some(z_list);
+    //             }
+    //
+    //             z_list.push(temp_z);
+    //             if dist < pixel_width
+    //             {
+    //                 return Some(z_list);
+    //             }
+    //         }
+    //     }
+    //
+    //     Some(z_list)
+    // }
 
     // Try to find a (pre)periodic point near a given base point
     // fn find_nearby_preperiodic_point(

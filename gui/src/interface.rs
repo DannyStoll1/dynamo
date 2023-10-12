@@ -13,17 +13,14 @@ use fractal_core::dynamics::ParameterPlane;
 
 use crate::{
     actions::Action,
-    dialog::{Dialog, TextDialogBuilder, TextInputType},
+    dialog::{AllActiveRayParams, Dialog, TextDialogBuilder, TextInputType},
     hotkeys::{
         Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
         PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
     pane::{ChildTask, Pane, WindowPane},
 };
-use crate::{
-    dialog::{ConfirmationDialog, RayParams},
-    hotkeys::keyboard_shortcuts::*,
-};
+use crate::{dialog::RayParams, hotkeys::keyboard_shortcuts::*};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -99,7 +96,6 @@ pub trait PanePair
     fn prompt_save_active_pane(&mut self);
     fn prompt_save(&mut self, pane_id: PaneID);
     fn prompt_text(&mut self, input_type: TextInputType);
-    fn prompt_confirm_ray(&mut self, ray_params: RayParams);
     fn get_image_height(&self) -> usize;
     fn change_height(&mut self, new_height: usize);
 
@@ -224,13 +220,39 @@ where
             {
                 if let Ok(angle) = text.parse::<RationalAngle>()
                 {
-                    let angle_info = self.get_pane(pane_id).angle_info(angle);
+                    let pane = self.get_pane(pane_id);
+                    let angle_info = angle.with_degree(pane.degree()).to_angle_info();
+                    let ray_type = pane.plane_type();
                     let ray_params = RayParams {
                         pane_id,
                         angle_info,
                         follow,
+                        ray_type,
                     };
-                    self.prompt_confirm_ray(ray_params);
+                    let dialog = Dialog::confirm_ray(ray_params);
+                    self.dialog = Some(dialog);
+                }
+            }
+            ActiveRays {
+                pane_id,
+                include_suffixes,
+            } =>
+            {
+                if let Ok(o) = text.parse::<OrbitSchema>()
+                {
+                    let pane = self.get_pane(pane_id);
+                    let degree = pane.degree();
+                    let od = o.with_degree(degree);
+                    let active_angles = od.active_angles(include_suffixes);
+
+                    let params = AllActiveRayParams {
+                        pane_id,
+                        orbit_schema: o.with_degree(degree),
+                        active_angles,
+                        include_suffixes,
+                    };
+                    let dialog = Dialog::confirm_active_rays(params);
+                    self.dialog = Some(dialog);
                 }
             }
             Coordinates { pane_id } =>
@@ -300,29 +322,6 @@ where
         self.child.change_palette(palette);
     }
 
-    fn prompt_confirm_ray(&mut self, ray_params: RayParams)
-    {
-        let title = "Confirm external ray".to_owned();
-        let ray_type = if self.get_pane(ray_params.pane_id).is_dynamical()
-        {
-            "dynamical"
-        }
-        else
-        {
-            "parameter"
-        };
-        let prompt = format!(
-            "The {} ray at angle {} has preperiod {} and period {}.\nThe associated kneading sequence is {}",
-            ray_type,
-            ray_params.angle_info.angle,
-            ray_params.angle_info.orbit_schema.preperiod,
-            ray_params.angle_info.orbit_schema.period,
-            ray_params.angle_info.kneading_sequence
-        );
-        let conf_dialog = ConfirmationDialog::new(title, prompt, ray_params);
-        self.dialog = Some(Dialog::ConfirmRay(conf_dialog));
-    }
-
     fn prompt_text(&mut self, input_type: TextInputType)
     {
         use TextInputType::*;
@@ -331,14 +330,7 @@ where
             ExternalRay { pane_id, .. } =>
             {
                 let pane = self.get_pane(pane_id);
-                let ray_type = if pane.is_dynamical()
-                {
-                    "dynamical"
-                }
-                else
-                {
-                    "parameter"
-                };
+                let ray_type = pane.plane_type();
                 let prompt = format!(
                     concat!(
                         "Input an angle for {} ray on {}\n",
@@ -349,7 +341,22 @@ where
                 );
                 TextDialogBuilder::new(input_type)
                     .title("External ray angle input")
-                    .prompt(&prompt)
+                    .prompt(prompt)
+                    .build()
+            }
+            ActiveRays { pane_id, .. } =>
+            {
+                let pane = self.get_pane(pane_id);
+                let prompt = format!(
+                    concat!(
+                        "Input the period to draw all active rays on {}.\n",
+                        "Format: <period> or <preperiod, period>"
+                    ),
+                    pane.plane_name()
+                );
+                TextDialogBuilder::new(input_type)
+                    .title("Draw active rays")
+                    .prompt(prompt)
                     .build()
             }
             FindPeriodic { pane_id } =>
@@ -357,14 +364,14 @@ where
                 let pane = self.get_pane(pane_id);
                 let prompt = format!(
                     concat!(
-                        "Input the period to find a nearby point on {}\n",
+                        "Input the period to find a nearby point on {}.\n",
                         "Format: <period> or <preperiod, period>"
                     ),
                     pane.plane_name()
                 );
                 TextDialogBuilder::new(input_type)
                     .title("Find nearby point")
-                    .prompt(&prompt)
+                    .prompt(prompt)
                     .build()
             }
             Coordinates { pane_id } =>
@@ -376,7 +383,7 @@ where
                 );
                 TextDialogBuilder::new(input_type)
                     .title("Input coordinates")
-                    .prompt(&prompt)
+                    .prompt(prompt)
                     .build()
             }
         };
@@ -410,6 +417,21 @@ where
     fn set_active_pane(&mut self, pane_id: Option<PaneID>)
     {
         self.active_pane = pane_id;
+        match pane_id {
+            None => {
+                self.child_mut().frame_mut().deselect();
+                self.parent_mut().frame_mut().deselect();
+            }
+            Some(PaneID::Child) => {
+                self.child_mut().frame_mut().select();
+                self.parent_mut().frame_mut().deselect();
+            }
+            Some(PaneID::Parent) => {
+                self.parent_mut().frame_mut().select();
+                self.child_mut().frame_mut().deselect();
+            }
+        }
+
     }
 
     fn get_pane(&self, pane_id: PaneID) -> &dyn Pane
@@ -504,7 +526,11 @@ where
 
         self.reset_click();
 
-        let Some(pointer_pos) = ctx.pointer_latest_pos() else {return};
+        let Some(pointer_pos) = ctx.pointer_latest_pos()
+        else
+        {
+            return;
+        };
 
         if self.parent().frame_contains_pixel(pointer_pos)
         {
@@ -590,6 +616,18 @@ where
                     if let crate::dialog::Response::Complete { data } = conf_dialog.get_response()
                     {
                         self.process_conf_ray_response(data);
+                    }
+                }
+                Dialog::ConfirmActiveRays(conf_dialog) =>
+                {
+                    if let crate::dialog::Response::Complete { data } = conf_dialog.get_response()
+                    {
+                        let pane = self.get_pane_mut(data.pane_id);
+                        for angle in data.active_angles
+                        {
+                            pane.marking_mut().enable_ray(angle);
+                        }
+                        pane.schedule_redraw();
                     }
                 }
             }
@@ -693,10 +731,7 @@ where
             }
             Action::ClearOrbit =>
             {
-                if let Some(pane) = self.get_active_pane_mut()
-                {
-                    pane.clear_marked_orbit();
-                }
+                self.child_mut().clear_marked_orbit();
             }
             Action::DrawExternalRay {
                 select_landing_point,
@@ -707,6 +742,28 @@ where
                     let input_type = TextInputType::ExternalRay {
                         pane_id,
                         follow: *select_landing_point,
+                    };
+                    self.prompt_text(input_type);
+                }
+            }
+            Action::DrawRaysOfPeriod =>
+            {
+                if let Some(pane_id) = self.active_pane
+                {
+                    let input_type = TextInputType::ActiveRays {
+                        pane_id,
+                        include_suffixes: false,
+                    };
+                    self.prompt_text(input_type);
+                }
+            }
+            Action::DrawActiveRays =>
+            {
+                if let Some(pane_id) = self.active_pane
+                {
+                    let input_type = TextInputType::ActiveRays {
+                        pane_id,
+                        include_suffixes: true,
                     };
                     self.prompt_text(input_type);
                 }

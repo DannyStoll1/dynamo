@@ -51,7 +51,7 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -63,15 +63,29 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, param: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
     {
-        param.powf(0.5)
+        c.powf(0.5)
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let z0 = c.powf(0.5);
+        (z0, ZERO, 0.5 / z0)
     }
 
     #[inline]
     fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         2. * (z * z - c)
+    }
+
+    #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        let z2 = z * z;
+        (2. * z * (z2 / 3. - c), 2. * (z2 - c))
     }
 
     #[inline]
@@ -85,6 +99,11 @@ impl ParameterPlane for OddCubic
     {
         let sqrt_c = param.sqrt();
         vec![-sqrt_c, sqrt_c]
+    }
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle {
+        angle * Rational::new(3, 2) + RationalAngle::ONE_HALF
     }
 
     #[inline]

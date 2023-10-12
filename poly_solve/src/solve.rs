@@ -5,6 +5,15 @@ use num_complex::{Complex, Complex64};
 use rand::{rngs::ThreadRng, Rng};
 use std::f64::INFINITY;
 
+/// Find all roots of a given polynomial.
+pub fn solve_polynomial<P>(poly: P) -> Vec<Complex64>
+where
+    P: Into<Polynomial<Complex64>>,
+{
+    let mut solver = JenkinsTraubSolver::new(poly.into());
+    solver.find_all_roots()
+}
+
 fn compute_cauchy_poly(poly: &Polynomial<Complex64>) -> Polynomial<f64>
 {
     let coeffs = poly.coeffs.iter().map(|a| a.norm()).collect();
@@ -156,7 +165,7 @@ impl JenkinsTraubSolver
         {
             if let Some(res) = self.stage_1()
             {
-                return res
+                return res;
             }
         }
 
@@ -216,12 +225,4 @@ impl JenkinsTraubSolver
             })
             .collect()
     }
-}
-
-pub fn solve_polynomial<P>(poly: P) -> Vec<Complex64>
-where
-    P: Into<Polynomial<Complex64>>,
-{
-    let mut solver = JenkinsTraubSolver::new(poly.into());
-    solver.find_all_roots()
 }

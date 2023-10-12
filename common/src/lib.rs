@@ -17,7 +17,10 @@ pub mod types;
 #[cfg(test)]
 mod tests
 {
-    use crate::types::Cplx;
+    use crate::{
+        prelude::{OrbitSchema, RationalAngle},
+        types::Cplx,
+    };
 
     #[test]
     fn quartic_roots()
@@ -166,5 +169,39 @@ mod tests
         dbg!(err, derr);
         assert!(err < 1e-11);
         assert!(derr < 1e-11);
+    }
+
+    #[test]
+    fn sort_circ()
+    {
+        use crate::symbolic_dynamics::sort_circularly_ordered;
+        use std::collections::VecDeque;
+        let mut values = VecDeque::from([3, 4, 8, 8, 9, 0, 2]);
+        sort_circularly_ordered(&mut values);
+
+        assert_eq!(values, [0, 2, 3, 4, 8, 8, 9]);
+    }
+
+    #[test]
+    fn active_angles()
+    {
+        let o = OrbitSchema {
+            preperiod: 0,
+            period: 3,
+        };
+        let angles = o.with_degree(-2).child_angles();
+        dbg!(angles);
+    }
+
+    #[test]
+    fn fmt_angle()
+    {
+        let angle = RationalAngle::new(7, 17);
+        let s0 = format!("{:>10}", angle);
+        assert_eq!(s0, "      7/17");
+
+        let it = angle.with_degree(2);
+        let s = format!("{:>13}", it);
+        assert_eq!(s, "    p10010110");
     }
 }

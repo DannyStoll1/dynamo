@@ -48,7 +48,7 @@ impl ParameterPlane for CubicPer1Lambda
     basic_escape_encoding!(3., 1.);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -327,7 +327,7 @@ impl ParameterPlane for CubicPer1LambdaParam
     basic_escape_encoding!(3., 1.);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -452,7 +452,7 @@ impl ParameterPlane for CubicPer1_1
     default_name!();
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -595,7 +595,7 @@ impl ParameterPlane for CubicPer1_0
     basic_escape_encoding!(3.);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -612,6 +612,12 @@ impl ParameterPlane for CubicPer1_0
         -TWO_THIRDS * c
     }
 
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (-TWO_THIRDS * c, ZERO, (-TWO_THIRDS).into())
+    }
+
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
         z * (c + c + 3. * z)
@@ -622,9 +628,20 @@ impl ParameterPlane for CubicPer1_0
         z * z
     }
 
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let z2 = z * z;
+        (z2 * (z + c), z * (2. * c + 3. * z), z2)
+    }
+
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, -TWO_THIRDS * c]
+    }
+
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        3 * angle
     }
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
@@ -1150,7 +1167,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
     }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }

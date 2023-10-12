@@ -20,6 +20,7 @@ mod tests
     use crate::*;
     use fractal_common::point_grid::Bounds;
     use fractal_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema};
+    use fractal_common::symbolic_dynamics::RationalAngle;
     use fractal_core::dynamics::covering_maps::HasDynamicalCovers;
     use fractal_core::dynamics::julia::JuliaSet;
     use fractal_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
@@ -259,5 +260,17 @@ mod tests
         dbg!(param_plane.point_grid());
         let julia = JuliaSet::from(param_plane);
         dbg!(julia.point_grid());
+    }
+
+    #[test]
+    fn ext_ray()
+    {
+        // let param_plane = CubicPer1_0::default();
+        // let param_plane = OddCubic::default();
+        // let param_plane = Mandelbrot::default();
+        let param_plane = QuadRatPer2::default();
+        let angle = RationalAngle::new(1, 7);
+        let ray = param_plane.external_ray(angle);
+        // dbg!(ray);
     }
 }

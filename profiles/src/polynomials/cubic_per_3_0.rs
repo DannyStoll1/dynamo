@@ -28,7 +28,7 @@ impl ParameterPlane for CubicPer3_0
     basic_escape_encoding!(3., 1.);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }

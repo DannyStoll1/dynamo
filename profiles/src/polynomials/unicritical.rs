@@ -65,7 +65,7 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         Self::D_FLOAT
     }

@@ -37,7 +37,7 @@ impl ParameterPlane for CubicPer2Lambda
     basic_escape_encoding!(3.);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -193,7 +193,7 @@ impl ParameterPlane for CubicPer2LambdaParam
     basic_escape_encoding!(3.);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }
@@ -332,7 +332,7 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }

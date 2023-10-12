@@ -31,7 +31,7 @@ impl ParameterPlane for CubicMarked2Cycle
     default_name!();
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         3.0
     }

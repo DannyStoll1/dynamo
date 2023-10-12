@@ -1,5 +1,6 @@
 use crate::macros::profile_imports;
 use fractal_common::math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2};
+use fractal_core::dynamics::PlaneType;
 profile_imports!();
 
 #[derive(Clone, Debug, PartialEq)]
@@ -99,9 +100,9 @@ impl ParameterPlane for RiemannXiNewton
     type Child = Self;
     basic_plane_impl!();
 
-    fn is_dynamical(&self) -> bool
+    fn plane_type(&self) -> PlaneType
     {
-        true
+        PlaneType::Dynamical
     }
 
     fn start_point(&self, s: Cplx, _c: Self::Param) -> Self::Var

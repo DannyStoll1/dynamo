@@ -1,4 +1,5 @@
 use crate::globals::DISPLAY_PREC;
+use crate::prelude::{RationalAngle, Real, TAUI};
 use crate::types::Cplx;
 
 pub trait Norm<R>: Copy
@@ -110,11 +111,32 @@ impl Describe for i32
     }
 }
 
+pub trait ToCircle
+{
+    fn to_circle(self) -> Cplx;
+}
+impl ToCircle for Real
+{
+    fn to_circle(self) -> Cplx
+    {
+        (TAUI * self).exp()
+    }
+}
+impl ToCircle for RationalAngle
+{
+    fn to_circle(self) -> Cplx
+    {
+        (TAUI * Real::from(self)).exp()
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FloatToIntError;
 
-impl std::fmt::Display for FloatToIntError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Display for FloatToIntError
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
         write!(f, "Error converting float to integer")
     }
 }

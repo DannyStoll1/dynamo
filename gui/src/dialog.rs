@@ -1,7 +1,11 @@
-use egui::{self, Key};
+use std::collections::VecDeque;
+
+use egui::{self, Key, RichText, WidgetText};
 use egui::{vec2, Window};
 use egui_file::FileDialog;
-use fractal_common::symbolic_dynamics::AngleInfo;
+use fractal_common::symbolic_dynamics::{AngleInfo, RationalAngle, OrbitSchemaWithDegree};
+use fractal_core::dynamics::PlaneType;
+use std::fmt::Write;
 
 use crate::interface::PaneID;
 
@@ -11,6 +15,16 @@ pub struct RayParams
     pub pane_id: PaneID,
     pub angle_info: AngleInfo,
     pub follow: bool,
+    pub ray_type: PlaneType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct AllActiveRayParams
+{
+    pub pane_id: PaneID,
+    pub orbit_schema: OrbitSchemaWithDegree,
+    pub active_angles: VecDeque<RationalAngle>,
+    pub include_suffixes: bool,
 }
 
 pub enum Dialog
@@ -22,6 +36,7 @@ pub enum Dialog
     },
     Text(StructuredTextDialog),
     ConfirmRay(ConfirmationDialog<RayParams>),
+    ConfirmActiveRays(ConfirmationDialog<AllActiveRayParams>),
 }
 
 pub enum State
@@ -40,6 +55,11 @@ pub enum TextInputType
     {
         pane_id: PaneID, follow: bool
     },
+    ActiveRays
+    {
+        pane_id: PaneID,
+        include_suffixes: bool,
+    },
     FindPeriodic
     {
         pane_id: PaneID
@@ -52,13 +72,13 @@ pub enum TextInputType
 
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Response<T>
+pub enum Response<D>
 {
     Cancelled,
     InProgress,
     Complete
     {
-        data: T,
+        data: D,
     },
 }
 
@@ -66,7 +86,7 @@ pub struct TextDialogBuilder
 {
     input_type: TextInputType,
     title: String,
-    prompt: String,
+    prompt: WidgetText,
 }
 
 pub struct StructuredTextDialog
@@ -75,26 +95,20 @@ pub struct StructuredTextDialog
     pub dialog: TextDialog,
 }
 
-pub struct StructuredFileDialog
-{
-    pub input_type: TextInputType,
-    pub dialog: TextDialog,
-}
-
 pub struct TextDialog
 {
     pub title: String,
-    pub prompt: String,
+    pub prompt: WidgetText,
     pub user_input: String,
     pub state: State,
 }
 
-pub struct ConfirmationDialog<T>
+pub struct ConfirmationDialog<D>
 {
     pub title: String,
-    pub prompt: String,
+    pub prompt: WidgetText,
     pub state: State,
-    data: T,
+    data: D,
 }
 
 impl State
@@ -108,12 +122,12 @@ impl State
 impl TextDialogBuilder
 {
     #[must_use]
-    pub const fn new(input_type: TextInputType) -> Self
+    pub fn new(input_type: TextInputType) -> Self
     {
         Self {
             input_type,
             title: String::new(),
-            prompt: String::new(),
+            prompt: WidgetText::default(),
         }
     }
     pub fn title(mut self, title: &str) -> Self
@@ -121,9 +135,9 @@ impl TextDialogBuilder
         self.title = title.to_owned();
         self
     }
-    pub fn prompt(mut self, prompt: &str) -> Self
+    pub fn prompt(mut self, prompt: impl Into<WidgetText>) -> Self
     {
-        self.prompt = prompt.to_owned();
+        self.prompt = prompt.into();
         self
     }
     #[allow(clippy::missing_const_for_fn)]
@@ -158,11 +172,11 @@ impl std::ops::DerefMut for StructuredTextDialog
 impl TextDialog
 {
     #[must_use]
-    pub const fn new(title: String, prompt: String) -> Self
+    pub fn new(title: String, prompt: impl Into<WidgetText>) -> Self
     {
         Self {
             title,
-            prompt,
+            prompt: prompt.into(),
             user_input: String::new(),
             state: State::JustOpened,
         }
@@ -180,7 +194,7 @@ impl TextDialog
                 .default_pos(ctx.screen_rect().center())
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label(&self.prompt);
+                        ui.label(self.prompt.clone());
                         let response = ui.text_edit_singleline(&mut self.user_input);
                         ui.memory_mut(|mem| mem.request_focus(response.id));
                     });
@@ -253,11 +267,11 @@ impl TextDialog
 impl<T: Default> ConfirmationDialog<T>
 {
     #[must_use]
-    pub const fn new(title: String, prompt: String, data: T) -> Self
+    pub fn new(title: String, prompt: impl Into<WidgetText>, data: T) -> Self
     {
         Self {
             title,
-            prompt,
+            prompt: prompt.into(),
             state: State::JustOpened,
             data,
         }
@@ -275,7 +289,7 @@ impl<T: Default> ConfirmationDialog<T>
                 .default_pos(ctx.screen_rect().center())
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        ui.label(&self.prompt);
+                        ui.label(self.prompt.clone());
                     });
 
                     if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter))
@@ -341,6 +355,10 @@ impl Dialog
             {
                 conf_dialog.show(ctx);
             }
+            Self::ConfirmActiveRays(conf_dialog) =>
+            {
+                conf_dialog.show(ctx);
+            }
         }
     }
 
@@ -351,6 +369,45 @@ impl Dialog
             Self::Save { file_dialog, .. } => file_dialog.visible(),
             Self::Text(text_dialog) => text_dialog.visible(),
             Self::ConfirmRay(conf_dialog) => conf_dialog.visible(),
+            Self::ConfirmActiveRays(conf_dialog) => conf_dialog.visible(),
         }
+    }
+
+    #[must_use]
+    pub fn confirm_ray(ray_params: RayParams) -> Self
+    {
+        let title = "Confirm external ray".to_owned();
+        let prompt = format!(
+            "The {} ray at angle {} has preperiod {} and period {}.\nThe associated kneading sequence is {}",
+            ray_params.ray_type,
+            ray_params.angle_info.angle,
+            ray_params.angle_info.orbit_schema.preperiod,
+            ray_params.angle_info.orbit_schema.period,
+            ray_params.angle_info.kneading_sequence
+        );
+        let conf_dialog = ConfirmationDialog::new(title, prompt, ray_params);
+        Self::ConfirmRay(conf_dialog)
+    }
+
+    #[must_use]
+    pub fn confirm_active_rays(params: AllActiveRayParams) -> Self
+    {
+        let title = "Confirm active rays".to_owned();
+        let OrbitSchemaWithDegree { preperiod, period, degree } = params.orbit_schema;
+
+        let header = format!(
+            "The following angles are active with preperiod {} and period {}:",
+            preperiod, period
+        );
+
+        let pad = (period + preperiod + 1) as usize;
+        let mut body = String::new();
+        for a in params.active_angles.iter()
+        {
+            let _ = writeln!(&mut body, "{:>8} = {:>pad$}", a, a.with_degree(degree));
+        }
+        let prompt = RichText::from(format!("{}\n{}", header, body)).monospace();
+        let conf_dialog = ConfirmationDialog::new(title, prompt, params);
+        Self::ConfirmActiveRays(conf_dialog)
     }
 }

@@ -88,7 +88,7 @@ impl ObjectKey for CurveKey
             Self::Orbit => Color32::GREEN,
             Self::Ray(angle) =>
             {
-                let o = angle.orbit_schema(degree);
+                let o = angle.with_degree(degree).orbit_schema();
                 palette.map_preperiodic(&o)
             }
             Self::Equipotential(_) => Color32::YELLOW,
@@ -100,7 +100,7 @@ impl ObjectKey for CurveKey
         match self
         {
             Self::Orbit => plane.iter_orbit(selection).map(|z| z.into()).collect(),
-            Self::Ray(angle) => plane.external_ray(Real::from(*angle)).unwrap_or_default(),
+            Self::Ray(angle) => plane.external_ray(*angle).unwrap_or_default(),
 
             Self::Equipotential(point) =>
             {
@@ -331,6 +331,11 @@ impl Marking
         self.point_sets.sched_toggle(PointSetKey::SelectedPoint);
     }
 
+    pub fn enable_selection(&mut self)
+    {
+        self.point_sets.sched_enable(PointSetKey::SelectedPoint);
+    }
+
     pub fn select_point(&mut self, point: Cplx)
     {
         if let Some(selection) = self.point_sets.objects.get_mut(&PointSetKey::SelectedPoint)
@@ -353,6 +358,12 @@ impl Marking
     pub fn toggle_ray(&mut self, angle: RationalAngle)
     {
         self.curves.sched_toggle(CurveKey::Ray(angle));
+        self.path_cache.borrow_mut().set_stale();
+    }
+
+    pub fn enable_ray(&mut self, angle: RationalAngle)
+    {
+        self.curves.sched_enable(CurveKey::Ray(angle));
         self.path_cache.borrow_mut().set_stale();
     }
 

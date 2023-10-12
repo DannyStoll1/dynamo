@@ -69,7 +69,7 @@ impl ParameterPlane for QuadRatPer2
         ((c + z2) / u, -2.0 * z * (c + 1.) / (u * u))
     }
 
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         -2.0
     }
@@ -109,6 +109,12 @@ impl ParameterPlane for QuadRatPer2
     fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
     {
         (point, ONE)
+    }
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
     }
 
     #[inline]

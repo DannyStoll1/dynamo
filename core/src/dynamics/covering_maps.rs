@@ -69,9 +69,9 @@ where
     }
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
-        self.base_curve.degree()
+        self.base_curve.degree_real()
     }
 
     #[inline]
@@ -182,6 +182,12 @@ where
     fn name(&self) -> String
     {
         format!("Cover over {}", self.base_curve.name())
+    }
+
+    #[inline]
+    fn plane_type(&self) -> super::PlaneType
+    {
+        self.base_curve.plane_type()
     }
 
     fn description(&self) -> String

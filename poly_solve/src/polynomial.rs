@@ -20,7 +20,6 @@ pub struct Polynomial<T: Clone>
 
 impl<T: VariableOps> Polynomial<T>
 {
-    const NUM_ITERS: usize = 5;
     const ZERO: Self = Self {
         coeffs: VecDeque::new(),
     };
@@ -93,13 +92,13 @@ impl<T: VariableOps> Polynomial<T>
     }
 }
 
-impl<T: Clone + NumOps, const N: usize> From<[T; N]> for Polynomial<T>
+impl<R, T, const N: usize> From<[R; N]> for Polynomial<T>
+where
+    T: Clone + NumOps + From<R>,
 {
-    fn from(coeff_arr: [T; N]) -> Self
+    fn from(coeff_arr: [R; N]) -> Self
     {
-        Self {
-            coeffs: coeff_arr.into(),
-        }
+        coeff_arr.into_iter().map(T::from).collect()
     }
 }
 
@@ -123,7 +122,7 @@ impl<T: Clone + NumOps> From<&[T]> for Polynomial<T>
     }
 }
 
-impl<T: VariableOps> FromIterator<T> for Polynomial<T>
+impl<T: Clone> FromIterator<T> for Polynomial<T>
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self
     {
@@ -168,14 +167,22 @@ where
 {
     fn normalize(self) -> Self
     {
-        let Some(an) = self.coeffs.back().cloned() else {return Self::ZERO};
+        let Some(an) = self.coeffs.back().cloned()
+        else
+        {
+            return Self::ZERO;
+        };
         self.into_iter().map(|a| a / an.clone()).collect()
     }
 
     fn normalize_inplace(&mut self)
     {
         self.clear_leading_zeros();
-        let Some(an_ref) = self.coeffs.back() else {return};
+        let Some(an_ref) = self.coeffs.back()
+        else
+        {
+            return;
+        };
         let an = an_ref.clone();
         self.coeffs.iter_mut().for_each(|a| *a /= an.clone());
     }
@@ -241,7 +248,7 @@ impl<T: VariableOps> Add for Polynomial<T>
         let mut coeffs = self
             .coeffs
             .into_iter()
-            .zip_longest(rhs.coeffs.into_iter())
+            .zip_longest(rhs.coeffs)
             .map(|ab| ab.collapse(|a, b| a + b))
             .collect::<VecDeque<_>>();
         while let Some(a) = coeffs.back()

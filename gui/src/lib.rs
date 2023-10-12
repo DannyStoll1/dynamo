@@ -3,6 +3,7 @@
 use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 pub mod actions;
+pub mod colors;
 pub mod dialog;
 pub mod fractal_tab;
 pub mod hotkeys;

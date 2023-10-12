@@ -122,7 +122,7 @@ pub static PALETTE_HOTKEYS: [Hotkey; 7] = [
     },
 ];
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 20] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
@@ -141,9 +141,23 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 20] = [
         show_in_menu: true,
         menu_action_override: None,
     },
-    // Equipotential
+    // Rays of exact period
     Hotkey {
         shortcut: Some(CTRL_E),
+        action: DrawRaysOfPeriod,
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // Active rays
+    Hotkey {
+        shortcut: Some(CTRL_A),
+        action: DrawActiveRays,
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // Equipotential
+    Hotkey {
+        shortcut: Some(KEY_G),
         action: DrawEquipotential,
         show_in_menu: true,
         menu_action_override: None,

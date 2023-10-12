@@ -14,7 +14,7 @@ mod tests
     fn angle_period()
     {
         let angle = RationalAngle::new(3, 15);
-        let period_schema = angle.orbit_schema(2);
+        let period_schema = angle.with_degree(2).orbit_schema();
         assert_eq!(
             period_schema,
             OrbitSchema {
@@ -24,7 +24,7 @@ mod tests
         );
 
         let angle = RationalAngle::new(1, 10);
-        let period_schema = angle.orbit_schema(2);
+        let period_schema = angle.with_degree(2).orbit_schema();
         assert_eq!(
             period_schema,
             OrbitSchema {
@@ -34,7 +34,7 @@ mod tests
         );
 
         let angle = RationalAngle::new(17, 168);
-        let period_schema = angle.orbit_schema(2);
+        let period_schema = angle.with_degree(2).orbit_schema();
         assert_eq!(
             period_schema,
             OrbitSchema {
@@ -47,8 +47,8 @@ mod tests
     #[test]
     fn kneading_sequence()
     {
-        let angle = RationalAngle::new(3, 7);
-        let kneading_sequence = angle.kneading_sequence(2);
+        let angle = RationalAngle::new(3, 7).with_degree(2);
+        let kneading_sequence = angle.kneading_sequence();
         assert_eq!(kneading_sequence.to_string(), "p10*".to_owned())
     }
 
@@ -67,10 +67,26 @@ mod tests
         let str3 = "011p10";
         let val3 = RationalAngle::new(11, 24);
 
-        let Ok(out0) = str0.parse::<RationalAngle>() else {panic!("parse_angle returned None on input {}", str0)};
-        let Ok(out1) = str1.parse::<RationalAngle>() else {panic!("parse_angle returned None on input {}", str1)};
-        let Ok(out2) = str2.parse::<RationalAngle>() else {panic!("parse_angle returned None on input {}", str2)};
-        let Ok(out3) = str3.parse::<RationalAngle>() else {panic!("parse_angle returned None on input {}", str3)};
+        let Ok(out0) = str0.parse::<RationalAngle>()
+        else
+        {
+            panic!("parse_angle returned None on input {}", str0)
+        };
+        let Ok(out1) = str1.parse::<RationalAngle>()
+        else
+        {
+            panic!("parse_angle returned None on input {}", str1)
+        };
+        let Ok(out2) = str2.parse::<RationalAngle>()
+        else
+        {
+            panic!("parse_angle returned None on input {}", str2)
+        };
+        let Ok(out3) = str3.parse::<RationalAngle>()
+        else
+        {
+            panic!("parse_angle returned None on input {}", str3)
+        };
 
         assert_eq!(out0, val0);
         assert_eq!(out1, val1);

@@ -133,7 +133,7 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
     basic_escape_encoding!(f64::from(2 * D), 1);
 
     #[inline]
-    fn degree(&self) -> f64
+    fn degree_real(&self) -> f64
     {
         f64::from(2 * D)
     }

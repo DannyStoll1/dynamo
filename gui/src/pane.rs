@@ -1,6 +1,6 @@
 use fractal_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
 use fractal_common::prelude::*;
-use fractal_core::dynamics::ParameterPlane;
+use fractal_core::dynamics::{ParameterPlane, PlaneType};
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
@@ -36,9 +36,7 @@ impl RepeatableTask
     }
     fn pop(&mut self) -> RepeatableTask
     {
-        let task = self.clone();
-        *self = Self::DoNothing;
-        task
+        std::mem::take(self)
     }
     fn clear(&mut self)
     {
@@ -103,8 +101,8 @@ pub trait Pane
 {
     fn tasks(&self) -> &PaneTasks;
     fn tasks_mut(&mut self) -> &mut PaneTasks;
-    fn get_frame(&self) -> &ImageFrame;
-    fn get_frame_mut(&mut self) -> &mut ImageFrame;
+    fn frame(&self) -> &ImageFrame;
+    fn frame_mut(&mut self) -> &mut ImageFrame;
 
     fn get_coloring(&self) -> &Coloring;
     fn get_coloring_mut(&mut self) -> &mut Coloring;
@@ -118,7 +116,7 @@ pub trait Pane
     fn follow_ray_landing_point(&mut self, angle: RationalAngle);
     fn stop_following_ray_landing_point(&mut self);
     fn ray_state(&self) -> RayState;
-    fn angle_info(&self, angle: RationalAngle) -> AngleInfo;
+    fn degree(&self) -> AngleNum;
 
     fn draw_equipotential(&mut self);
 
@@ -134,7 +132,7 @@ pub trait Pane
     fn put_marked_points(&self, ui: &mut Ui);
     fn put_marked_curves(&self, ui: &mut Ui);
 
-    fn is_dynamical(&self) -> bool;
+    fn plane_type(&self) -> PlaneType;
     fn plane_name(&self) -> String;
     fn name(&self) -> String;
 
@@ -289,12 +287,12 @@ pub trait Pane
 
     fn frame_contains_pixel(&self, pointer_pos: Pos2) -> bool
     {
-        self.get_frame().region.contains(pointer_pos)
+        self.frame().region.contains(pointer_pos)
     }
 
     fn map_pixel(&self, pointer_pos: Pos2) -> Cplx
     {
-        let relative_pos = self.get_frame().to_local_coords(pointer_pos);
+        let relative_pos = self.frame().to_local_coords(pointer_pos);
         self.grid().map_pos(relative_pos.into())
     }
 
@@ -357,6 +355,7 @@ where
         if old_param != new_param
         {
             self.plane.set_param(new_param);
+            self.select_point(self.plane.default_selection());
             self.schedule_recompute();
             self.schedule_redraw();
         }
@@ -378,8 +377,9 @@ where
         let image = iter_plane.render(&coloring);
         let frame = ImageFrame::new(image);
 
-        let degree = plane.degree().try_round().unwrap_or(2);
-        let marking = Marking::default().with_degree(degree);
+        let degree = plane.degree_real().try_round().unwrap_or(2);
+        let mut marking = Marking::default().with_degree(degree);
+        marking.enable_selection();
 
         Self {
             plane,
@@ -465,12 +465,12 @@ where
         self.plane.point_grid_mut()
     }
     #[inline]
-    fn get_frame(&self) -> &ImageFrame
+    fn frame(&self) -> &ImageFrame
     {
         &self.image_frame
     }
     #[inline]
-    fn get_frame_mut(&mut self) -> &mut ImageFrame
+    fn frame_mut(&mut self) -> &mut ImageFrame
     {
         &mut self.image_frame
     }
@@ -515,11 +515,8 @@ where
         self.ray_state
     }
 
-    #[inline]
-    fn angle_info(&self, angle: RationalAngle) -> AngleInfo
-    {
-        let degree = self.plane.degree_int();
-        angle.to_angle_info(degree)
+    #[inline] fn degree(&self) -> AngleNum {
+        self.plane().degree()
     }
 
     #[inline]
@@ -561,7 +558,7 @@ where
 
     fn map_selection(&mut self)
     {
-        if self.is_dynamical()
+        if self.plane_type().is_dynamical()
         {
             let c = self.plane.param_map(self.selection);
             let mut z = self.plane.start_point(self.selection, c);
@@ -614,7 +611,7 @@ where
     fn draw(&mut self)
     {
         let image = self.iter_plane.render(self.get_coloring());
-        let image_frame = self.get_frame_mut();
+        let image_frame = self.frame_mut();
         image_frame.image = image;
     }
 
@@ -718,12 +715,12 @@ where
 
     fn put_marked_curves(&self, ui: &mut Ui)
     {
-        let frame = self.get_frame();
+        let frame = self.frame();
         // let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
 
         self.marking()
-            .draw_curves(&painter, self.grid(), self.get_frame());
+            .draw_curves(&painter, self.grid(), self.frame());
     }
 
     fn clear_marked_points(&mut self)
@@ -733,7 +730,7 @@ where
 
     fn put_marked_points(&self, ui: &mut Ui)
     {
-        let frame = self.get_frame();
+        let frame = self.frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
         for ColoredPoint { point: z, color } in self.marking.iter_points()
@@ -766,9 +763,9 @@ where
         res
     }
 
-    fn is_dynamical(&self) -> bool
+    fn plane_type(&self) -> PlaneType
     {
-        self.plane.is_dynamical()
+        self.plane.plane_type()
     }
 
     fn plane_name(&self) -> String
