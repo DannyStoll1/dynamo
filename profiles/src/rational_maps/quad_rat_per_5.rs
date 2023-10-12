@@ -50,9 +50,18 @@ pub struct QuadRatPer5
     point_grid: PointGrid,
     max_iter: Period,
 }
+impl QuadRatPer5
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for QuadRatPer5
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer5
@@ -65,6 +74,7 @@ impl ParameterPlane for QuadRatPer5
 
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var

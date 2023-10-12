@@ -916,11 +916,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     }
 
     /// Default bounds for this plane
-    #[inline]
-    fn default_bounds(&self) -> Bounds
-    {
-        Bounds::centered_square(2.2)
-    }
+    fn default_bounds(&self) -> Bounds;
 
     /// Default bounds for Julia sets spawned from this plane. This is only called by Julia sets,
     /// who reference the parent's `default_julia_bounds` in their `default_bounds`

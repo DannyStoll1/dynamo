@@ -11,9 +11,18 @@ pub struct CubicPer3_0
     max_iter: Period,
 }
 
+impl CubicPer3_0
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -7.5,
+        max_x: 2.5,
+        min_y: -5.,
+        max_y: 5.,
+    };
+}
 impl Default for CubicPer3_0
 {
-    fractal_impl!(-7.5, 2.5, -5., 5.);
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer3_0
@@ -25,6 +34,7 @@ impl ParameterPlane for CubicPer3_0
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
     basic_escape_encoding!(3., 1.);
 
     #[inline]

@@ -12,6 +12,7 @@ where
     base_curve: C,
     covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
     point_grid: PointGrid,
+    orig_bounds: Bounds,
 }
 
 impl<C> CoveringMap<C>
@@ -25,10 +26,12 @@ where
         point_grid: PointGrid,
     ) -> Self
     {
+        let orig_bounds = point_grid.bounds.clone();
         Self {
             base_curve,
             covering_map_d,
             point_grid,
+            orig_bounds,
         }
     }
 }
@@ -182,6 +185,11 @@ where
     fn name(&self) -> String
     {
         format!("Cover over {}", self.base_curve.name())
+    }
+
+    #[inline]
+    fn default_bounds(&self) -> Bounds {
+        self.orig_bounds.clone()
     }
 
     #[inline]

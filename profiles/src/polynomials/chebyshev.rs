@@ -131,6 +131,7 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 {
     parameter_plane_impl!();
     basic_escape_encoding!(f64::from(2 * D), 1);
+    default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
 
     #[inline]
     fn degree_real(&self) -> f64

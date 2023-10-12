@@ -40,6 +40,7 @@ impl<const N: Period> ParameterPlane for BurningShip<N>
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
 
     #[inline]
     fn degree_real(&self) -> f64
@@ -157,6 +158,7 @@ impl ParameterPlane for Sailboat
     type Deriv = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,
@@ -245,9 +247,18 @@ pub struct SailboatParam
     max_iter: Period,
 }
 
+impl SailboatParam
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for SailboatParam
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for SailboatParam
@@ -259,6 +270,7 @@ impl ParameterPlane for SailboatParam
     type Child = Sailboat;
 
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var

@@ -28,6 +28,7 @@ impl ParameterPlane for QuadRatPer3
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn description(&self) -> String
     {

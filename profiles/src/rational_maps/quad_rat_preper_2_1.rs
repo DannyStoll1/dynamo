@@ -28,6 +28,7 @@ impl ParameterPlane for QuadRatPreper21
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,

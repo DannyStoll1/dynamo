@@ -34,6 +34,7 @@ pub enum Action
     ClearEquipotentials,
     ClearCurves,
     ResetSelection,
+    ResetView,
     // Image controls
     ToggleLiveMode,
     CycleActivePlane,
@@ -120,6 +121,7 @@ impl Action
             Self::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
             Self::ClearCurves => "Clear all curves on active image.".to_owned(),
             Self::ResetSelection => "Reset selection to default on active image.".to_owned(),
+            Self::ResetView => "Reset bounds and selection to default on active image.".to_owned(),
 
             // Image Controls
             Self::ToggleLiveMode =>
@@ -251,6 +253,7 @@ impl Action
             Self::ClearEquipotentials => "Clear Equipotentials".to_owned(),
             Self::ClearCurves => "Clear Curves".to_owned(),
             Self::ResetSelection => "Reset Selection".to_owned(),
+            Self::ResetView => "Reset View".to_owned(),
 
             // Image Controls
             Self::ToggleLiveMode => "Toggle Live Mode".to_owned(),

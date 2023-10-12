@@ -296,6 +296,12 @@ pub struct CubicPer1LambdaParam
 impl CubicPer1LambdaParam
 {
     const BASE_POINT: Cplx = Cplx::new(1e-4, 0.);
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+            min_x: -2.2,
+            max_x: 4.2,
+            min_y: -2.5,
+            max_y: 2.5,
+        };
 
     fn base_param(lambda: Cplx) -> Cplx
     {
@@ -306,12 +312,7 @@ impl Default for CubicPer1LambdaParam
 {
     fn default() -> Self
     {
-        let bounds = Bounds {
-            min_x: -2.2,
-            max_x: 4.2,
-            min_y: -2.5,
-            max_y: 2.5,
-        };
+        let bounds = Self::DEFAULT_BOUNDS;
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
@@ -325,6 +326,7 @@ impl ParameterPlane for CubicPer1LambdaParam
 {
     parameter_plane_impl!(CubicPer1Lambda);
     basic_escape_encoding!(3., 1.);
+    default_bounds!();
 
     #[inline]
     fn degree_real(&self) -> f64
@@ -450,6 +452,7 @@ impl ParameterPlane for CubicPer1_1
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     #[inline]
     fn degree_real(&self) -> f64
@@ -583,15 +586,25 @@ pub struct CubicPer1_0
     max_iter: Period,
 }
 
+impl CubicPer1_0
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for CubicPer1_0
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer1_0
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
     basic_escape_encoding!(3.);
 
     #[inline]
@@ -1118,12 +1131,15 @@ pub struct CubicPer1LambdaModuli
     starting_crit: PlaneID,
 }
 
+impl CubicPer1LambdaModuli {
+    const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);
+}
+
 impl Default for CubicPer1LambdaModuli
 {
     fn default() -> Self
     {
-        const BOUNDS: Bounds = Bounds::centered_square(2.5);
-        let point_grid = PointGrid::new_by_res_y(1024, BOUNDS);
+        let point_grid = PointGrid::new_by_res_y(1024, Self::DEFAULT_BOUNDS);
         Self {
             point_grid,
             max_iter: 1024,
@@ -1143,6 +1159,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
 
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,

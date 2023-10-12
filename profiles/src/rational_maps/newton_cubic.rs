@@ -9,15 +9,25 @@ pub struct NewtonCubic
     max_iter: Period,
 }
 
+impl NewtonCubic
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for NewtonCubic
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for NewtonCubic
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     // f(z) = z^3 + cz - 1
     // f'(z) = 3z^2 + c

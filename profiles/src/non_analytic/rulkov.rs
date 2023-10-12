@@ -69,6 +69,7 @@ impl ParameterPlane for Rulkov
 
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn param_map(&self, point: Cplx) -> Self::Param
     {

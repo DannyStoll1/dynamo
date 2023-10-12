@@ -29,6 +29,7 @@ impl ParameterPlane for QuadRatPer2Lambda
     type Deriv = Cplx;
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
+    default_bounds!(Bounds::centered_square(3.));
 
     fn max_iter(&self) -> Period
     {
@@ -137,17 +138,21 @@ pub struct QuadRatPer2LambdaParam
     max_iter: Period,
 }
 
+impl QuadRatPer2LambdaParam
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.2,
+        max_x: 4.2,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
+
 impl Default for QuadRatPer2LambdaParam
 {
     fn default() -> Self
     {
-        let bounds = Bounds {
-            min_x: -2.2,
-            max_x: 4.2,
-            min_y: -2.5,
-            max_y: 2.5,
-        };
-        let point_grid = PointGrid::new_by_res_y(1024, bounds);
+        let point_grid = PointGrid::new_by_res_y(1024, Self::DEFAULT_BOUNDS);
         Self {
             point_grid,
             max_iter: 1024,
@@ -163,6 +168,7 @@ impl ParameterPlane for QuadRatPer2LambdaParam
     type MetaParam = NoParam;
     type Child = QuadRatPer2Lambda;
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var

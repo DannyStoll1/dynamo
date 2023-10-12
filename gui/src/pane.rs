@@ -110,6 +110,7 @@ pub trait Pane
     fn select_point(&mut self, point: Cplx);
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
+    fn reset(&mut self);
     fn select_nearby_point(&mut self, orbit_schema: OrbitSchema);
     fn select_ray_landing_point(&mut self, angle: RationalAngle);
     fn map_selection(&mut self);
@@ -503,6 +504,16 @@ where
     fn reset_selection(&mut self)
     {
         self.select_point(self.plane.default_selection());
+    }
+    #[inline]
+    fn reset(&mut self)
+    {
+        let bounds = self.plane.default_bounds();
+        self.grid_mut().change_bounds(bounds);
+        self.zoom_factor = 1.;
+        self.reset_selection();
+        self.clear_marked_orbit();
+        self.schedule_recompute();
     }
     #[inline]
     fn stop_following_ray_landing_point(&mut self)

@@ -35,6 +35,7 @@ impl<const N: Period> ParameterPlane for Tricorne<N>
     parameter_plane_impl!();
     basic_escape_encoding!(Self::N_FLOAT);
     default_name!();
+    default_bounds!();
 
     #[inline]
     fn degree_real(&self) -> f64

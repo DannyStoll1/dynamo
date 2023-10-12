@@ -28,6 +28,7 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
 {
     parameter_plane_impl!();
     basic_escape_encoding!(Self::D_FLOAT, 1.);
+    default_bounds!();
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {

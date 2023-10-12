@@ -244,7 +244,7 @@ pub static SELECTION_HOTKEYS: [Hotkey; 5] = [
     },
 ];
 
-pub static IMAGE_HOTKEYS: [Hotkey; 13] = [
+pub static IMAGE_HOTKEYS: [Hotkey; 14] = [
     // Hotkey {
     //     shortcut: Some(KEY_H),
     //     action: PromptImageHeight,
@@ -326,6 +326,12 @@ pub static IMAGE_HOTKEYS: [Hotkey; 13] = [
     Hotkey {
         shortcut: Some(CTRL_P),
         action: CycleActivePlane,
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    Hotkey {
+        shortcut: Some(KEY_HOME),
+        action: ResetView,
         show_in_menu: true,
         menu_action_override: None,
     },

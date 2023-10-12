@@ -37,6 +37,7 @@ impl<const D: i32> Default for MinsikHanPhi<D>
 impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
 {
     parameter_plane_impl!();
+    default_bounds!();
 
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
     {

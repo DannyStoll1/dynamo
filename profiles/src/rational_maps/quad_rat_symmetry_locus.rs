@@ -27,6 +27,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,

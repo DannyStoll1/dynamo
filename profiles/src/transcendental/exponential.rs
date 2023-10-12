@@ -30,6 +30,7 @@ impl ParameterPlane for Exponential
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,
@@ -145,6 +146,7 @@ impl ParameterPlane for CosineAdd
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,
@@ -240,6 +242,7 @@ impl ParameterPlane for Cosine
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,
@@ -336,6 +339,7 @@ impl ParameterPlane for SineWander
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escape_result(
         &self,

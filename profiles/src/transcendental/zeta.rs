@@ -10,9 +10,18 @@ pub struct RiemannXi
     point_grid: PointGrid,
     max_iter: Period,
 }
+impl RiemannXi
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -30.,
+        max_x: 30.,
+        min_y: -30.,
+        max_y: 30.,
+    };
+}
 impl Default for RiemannXi
 {
-    fractal_impl!(-30., 30., -30., 30.);
+    fractal_impl!();
 }
 impl ParameterPlane for RiemannXi
 {
@@ -22,6 +31,7 @@ impl ParameterPlane for RiemannXi
     type MetaParam = NoParam;
     type Child = RiemannXiNewton;
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn map(&self, s: Self::Var, c: Self::Param) -> Self::Var
@@ -99,6 +109,7 @@ impl ParameterPlane for RiemannXiNewton
     type MetaParam = ParamStack<NoParam, Cplx>;
     type Child = Self;
     basic_plane_impl!();
+    default_bounds!();
 
     fn plane_type(&self) -> PlaneType
     {

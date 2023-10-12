@@ -33,6 +33,7 @@ impl ParameterPlane for QuadRatGeneral
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+    default_bounds!(Bounds::centered_square(3.));
 
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {

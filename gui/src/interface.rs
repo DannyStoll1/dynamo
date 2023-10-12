@@ -417,21 +417,24 @@ where
     fn set_active_pane(&mut self, pane_id: Option<PaneID>)
     {
         self.active_pane = pane_id;
-        match pane_id {
-            None => {
+        match pane_id
+        {
+            None =>
+            {
                 self.child_mut().frame_mut().deselect();
                 self.parent_mut().frame_mut().deselect();
             }
-            Some(PaneID::Child) => {
+            Some(PaneID::Child) =>
+            {
                 self.child_mut().frame_mut().select();
                 self.parent_mut().frame_mut().deselect();
             }
-            Some(PaneID::Parent) => {
+            Some(PaneID::Parent) =>
+            {
                 self.parent_mut().frame_mut().select();
                 self.child_mut().frame_mut().deselect();
             }
         }
-
     }
 
     fn get_pane(&self, pane_id: PaneID) -> &dyn Pane
@@ -581,6 +584,11 @@ where
         if self.live_mode
         {
             self.parent.stop_following_ray_landing_point();
+            self.child.frame_mut().set_live();
+        }
+        else
+        {
+            self.child.frame_mut().unset_live();
         }
     }
 
@@ -795,6 +803,10 @@ where
                 None =>
                 {}
             },
+            Action::ResetView =>
+            {
+                self.get_active_pane_mut().map(|p| p.reset());
+            }
             Action::ToggleLiveMode => self.toggle_live_mode(),
             Action::CycleActivePlane =>
             {

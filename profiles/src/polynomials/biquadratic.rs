@@ -34,6 +34,7 @@ impl ParameterPlane for Biquadratic
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn name(&self) -> String
@@ -156,6 +157,7 @@ impl ParameterPlane for BiquadraticMult
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn name(&self) -> String
@@ -436,6 +438,7 @@ impl ParameterPlane for BiquadraticMultParam
     type MetaParam = NoParam;
     type Child = BiquadraticMult;
     basic_plane_impl!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,
@@ -587,6 +590,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn name(&self) -> String
@@ -729,6 +733,7 @@ impl ParameterPlane for BiquadraticMultSection
     type MetaParam = NoParam;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
+    default_bounds!();
 
     #[inline]
     fn name(&self) -> String

@@ -20,15 +20,25 @@ pub struct Mandelbrot
     max_iter: Period,
 }
 
+impl Mandelbrot
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.1,
+        max_x: 0.55,
+        min_y: -1.25,
+        max_y: 1.25,
+    };
+}
 impl Default for Mandelbrot
 {
-    fractal_impl!(-2.1, 0.55, -1.25, 1.25);
+    fractal_impl!();
 }
 
 impl ParameterPlane for Mandelbrot
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn param_map(&self, point: Cplx) -> Self::Param
     {

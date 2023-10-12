@@ -10,15 +10,25 @@ pub struct QuadRatPer2
     max_iter: Period,
 }
 
+impl QuadRatPer2
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.8,
+        max_x: 3.2,
+        min_y: -2.8,
+        max_y: 2.8,
+    };
+}
 impl Default for QuadRatPer2
 {
-    fractal_impl!(-2.8, 3.2, -2.8, 2.8);
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer2
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,

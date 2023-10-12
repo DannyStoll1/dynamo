@@ -35,6 +35,7 @@ impl ParameterPlane for CubicPer2Lambda
 {
     parameter_plane_impl!(Cplx, CplxPair, Cplx, Cplx);
     basic_escape_encoding!(3.);
+    default_bounds!();
 
     #[inline]
     fn degree_real(&self) -> f64
@@ -191,6 +192,7 @@ impl ParameterPlane for CubicPer2LambdaParam
 
     basic_plane_impl!();
     basic_escape_encoding!(3.);
+    default_bounds!(Bounds::centered_square(2.5));
 
     #[inline]
     fn degree_real(&self) -> f64
@@ -309,6 +311,7 @@ impl ParameterPlane for CubicPer2CritMarked
 {
     parameter_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn encode_escaping_point(
         &self,

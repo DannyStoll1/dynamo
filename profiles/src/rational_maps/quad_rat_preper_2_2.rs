@@ -10,9 +10,18 @@ pub struct QuadRatPreper22
     max_iter: Period,
 }
 
+impl QuadRatPreper22
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.0,
+        max_x: 3.0,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for QuadRatPreper22
 {
-    fractal_impl!(-2.0, 3.0, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPreper22
@@ -24,6 +33,7 @@ impl ParameterPlane for QuadRatPreper22
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
 
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {

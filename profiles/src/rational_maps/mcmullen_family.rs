@@ -27,6 +27,7 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
 {
     parameter_plane_impl!();
     basic_escape_encoding!(Self::M_FLOAT, 1.);
+    default_bounds!();
 
     #[inline]
     fn degree_real(&self) -> f64

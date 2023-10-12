@@ -12,7 +12,7 @@ macro_rules! profile_imports {
         use fractal_core::dynamics::julia::JuliaSet;
         use fractal_core::dynamics::ParameterPlane;
         use fractal_core::macros::{
-            basic_escape_encoding, basic_plane_impl, default_name, fractal_impl,
+            basic_escape_encoding, basic_plane_impl, default_bounds, default_name, fractal_impl,
         };
         use std::any::type_name;
 

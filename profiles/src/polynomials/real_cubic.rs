@@ -9,9 +9,18 @@ pub struct RealCubicRealCrit
     max_iter: Period,
 }
 
+impl RealCubicRealCrit
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for RealCubicRealCrit
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for RealCubicRealCrit
@@ -23,6 +32,7 @@ impl ParameterPlane for RealCubicRealCrit
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
     basic_escape_encoding!(3.);
 
     // Critical point = a
@@ -80,9 +90,18 @@ pub struct RealCubicImagCrit
     max_iter: Period,
 }
 
+impl RealCubicImagCrit
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.5,
+        max_x: 2.5,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
+}
 impl Default for RealCubicImagCrit
 {
-    fractal_impl!(-2.5, 2.5, -2.5, 2.5);
+    fractal_impl!();
 }
 
 impl ParameterPlane for RealCubicImagCrit
@@ -94,6 +113,7 @@ impl ParameterPlane for RealCubicImagCrit
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
+    default_bounds!();
     basic_escape_encoding!(3.);
 
     // Critical point = ai
