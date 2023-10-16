@@ -4,6 +4,7 @@
 
 pub mod dynamics;
 pub mod macros;
+pub mod prelude;
 
 #[cfg(test)]
 mod tests

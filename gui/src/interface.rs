@@ -267,8 +267,25 @@ where
             {
                 if let Ok(o) = text.parse::<OrbitSchema>()
                 {
-                    let pane = self.get_pane_mut(pane_id);
-                    pane.select_nearby_point(o);
+                    match pane_id
+                    {
+                        PaneID::Child =>
+                        {
+                            let pane = self.child_mut();
+                            if let Ok(selection) = pane.select_nearby_point(o)
+                            {
+                                pane.mark_orbit_and_info(selection);
+                            }
+                        }
+                        PaneID::Parent =>
+                        {
+                            if let Ok(selection) = self.parent_mut().select_nearby_point(o)
+                            {
+                                self.process_child_task();
+                                self.child_mut().mark_orbit_and_info(selection);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -287,6 +304,16 @@ where
         else
         {
             pane.stop_following_ray_landing_point();
+        }
+    }
+
+    fn process_child_task(&mut self)
+    {
+        if self.parent.pop_child_task() == ChildTask::UpdateParam
+        {
+            let parent_selection = self.parent.get_selection();
+            let new_child_param = self.parent.plane.param_map(parent_selection);
+            self.set_child_param(parent_selection, new_child_param);
         }
     }
 }
@@ -543,12 +570,7 @@ where
             let pointer_value = self.parent().map_pixel(pointer_pos);
             self.parent_mut()
                 .process_mouse_input(pointer_value, zoom_factor, reselect_point);
-            if self.parent_mut().pop_child_task() == ChildTask::UpdateParam
-            {
-                let parent_selection = self.parent.get_selection();
-                let new_child_param = self.parent.plane.param_map(parent_selection);
-                self.set_child_param(parent_selection, new_child_param);
-            }
+            self.process_child_task();
 
             if clicked
             {

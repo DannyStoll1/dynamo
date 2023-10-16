@@ -775,3 +775,133 @@ impl HasDynamicalCovers for QuadRatPer2
         CoveringMap::new(self, param_map, grid)
     }
 }
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct QuadRatPer2Cover
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl QuadRatPer2Cover
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.8,
+        max_x: 3.2,
+        min_y: -2.8,
+        max_y: 2.8,
+    };
+}
+impl Default for QuadRatPer2Cover
+{
+    fractal_impl!();
+}
+
+impl ParameterPlane for QuadRatPer2Cover
+{
+    parameter_plane_impl!();
+    default_name!();
+    default_bounds!();
+
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        _base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        // let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
+        let q = -1.;
+        let residual = ((u + q) / (v + q)).log2();
+        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
+        // (F - M) / (2L - M)
+        let potential = (residual as IterCount).mul_add(2., f64::from(iters));
+        PointInfo::Escaping { potential }
+    }
+
+    fn description(&self) -> String
+    {
+        "The moduli space of quadratic rational maps with a critical 2-cycle, \
+            parameterized as $f_c(z) = (z^2 + c)/(z^2 - 1)$. In these coordinates, \
+            ∞ <-> 1 is the critical 2-cycle. The plane is colored according to the \
+            activity of the free critical point 0."
+            .to_owned()
+    }
+
+    #[inline]
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    {
+        let z2 = z * z;
+        (c * z2 + 1.) / (z2 - c * c)
+    }
+
+    #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        let z2 = z * z;
+        let c2 = c * c;
+        (
+            (c * z2 + 1.) / (z2 - c2),
+            2. * z * (c2 * c + 1.) / (z2 - c2),
+        )
+    }
+
+    fn degree_real(&self) -> f64
+    {
+        -2.0
+    }
+
+    fn escaping_period(&self) -> Period
+    {
+        2
+    }
+
+    #[inline]
+    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    {
+        let c2 = c * c;
+        2. * z * (c2 * c + 1.) / (z * z - c2)
+    }
+
+    #[inline]
+    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    {
+        let z2 = z * z;
+        horner_monic!(z2, 2. * c, c * c)
+    }
+
+    #[inline]
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    {
+        ZERO
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (ZERO, ZERO, ZERO)
+    }
+
+    #[inline]
+    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    {
+        (point, ONE)
+    }
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
+    }
+}

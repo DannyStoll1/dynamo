@@ -422,7 +422,7 @@ impl Marking
 
     pub fn disable_orbit(&mut self)
     {
-        self.curves.sched_disable(CurveKey::Orbit);
+        self.curves.disable(CurveKey::Orbit);
         self.path_cache.borrow_mut().set_stale();
     }
 

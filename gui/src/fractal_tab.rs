@@ -408,7 +408,8 @@ impl FractalTab
         ui.menu_button("Rational Maps", |ui| {
             ui.set_max_width(250.);
             ui.menu_button("QuadRat Per(2)", |ui| {
-                fractal_menu_button!(self, ui, "Base Curve", QuadRatPer2);
+                fractal_menu_button!(self, ui, "Moduli space", QuadRatPer2);
+                fractal_menu_button!(self, ui, "3-fold cover", QuadRatPer2Cover);
                 ui.menu_button("Marked Cycle", |ui| {
                     fractal_menu_button_mc!(self, ui, QuadRatPer2, 1);
                     fractal_menu_button_mc!(self, ui, QuadRatPer2, 4);

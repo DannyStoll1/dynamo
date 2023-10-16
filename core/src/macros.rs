@@ -22,23 +22,22 @@ macro_rules! fractal_impl {
                 $param_name: $param_value,
             }
         }
-    };
-    // ($min_x: expr, $max_x: expr, $min_y: expr, $max_y: expr) => {
-    //     fn default() -> Self
-    //     {
-    //         let bounds = Bounds {
-    //             min_x: $min_x,
-    //             max_x: $max_x,
-    //             min_y: $min_y,
-    //             max_y: $max_y,
-    //         };
-    //         let point_grid = PointGrid::new_by_res_y(1024, bounds);
-    //         Self {
-    //             point_grid,
-    //             max_iter: 1024,
-    //         }
-    //     }
-    // };
+    }; // ($min_x: expr, $max_x: expr, $min_y: expr, $max_y: expr) => {
+       //     fn default() -> Self
+       //     {
+       //         let bounds = Bounds {
+       //             min_x: $min_x,
+       //             max_x: $max_x,
+       //             min_y: $min_y,
+       //             max_y: $max_y,
+       //         };
+       //         let point_grid = PointGrid::new_by_res_y(1024, bounds);
+       //         Self {
+       //             point_grid,
+       //             max_iter: 1024,
+       //         }
+       //     }
+       // };
 }
 
 #[macro_export]
@@ -195,4 +194,7 @@ macro_rules! basic_escape_encoding {
     };
 }
 
-pub use {basic_escape_encoding, basic_plane_impl, default_name, default_bounds, fractal_impl, point_grid_getters};
+pub use {
+    basic_escape_encoding, basic_plane_impl, default_bounds, default_name, fractal_impl,
+    point_grid_getters,
+};

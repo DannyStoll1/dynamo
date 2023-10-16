@@ -202,6 +202,6 @@ mod tests
 
         let it = angle.with_degree(2);
         let s = format!("{:>13}", it);
-        assert_eq!(s, "    p10010110");
+        assert_eq!(s, "    p01101001");
     }
 }

@@ -47,6 +47,18 @@ pub struct ImageFrame
     texture_id: Option<TextureHandle>,
     border: BorderMode,
 }
+impl Default for ImageFrame
+{
+    fn default() -> Self
+    {
+        Self {
+            image: ColorImage::default(),
+            region: Rect::NOTHING,
+            texture_id: None,
+            border: BorderMode::default(),
+        }
+    }
+}
 impl ImageFrame
 {
     #[must_use]

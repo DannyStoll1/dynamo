@@ -81,7 +81,7 @@ where
 
 impl<T> ParameterPlane for JuliaSet<T>
 where
-    T: ParameterPlane,
+    T: ParameterPlane + Clone,
 {
     type Var = T::Var;
     type Param = NoParam;
@@ -232,7 +232,8 @@ where
 
     /// Always 0 for dynamical planes, since large parameter here means large starting value
     #[inline]
-    fn escaping_phase(&self) -> Period {
+    fn escaping_phase(&self) -> Period
+    {
         0
     }
 

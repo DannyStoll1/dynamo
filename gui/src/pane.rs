@@ -111,7 +111,7 @@ pub trait Pane
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
     fn reset(&mut self);
-    fn select_nearby_point(&mut self, orbit_schema: OrbitSchema);
+    fn select_nearby_point(&mut self, orbit_schema: OrbitSchema) -> Result<Cplx, ()>;
     fn select_ray_landing_point(&mut self, angle: RationalAngle);
     fn map_selection(&mut self);
     fn follow_ray_landing_point(&mut self, angle: RationalAngle);
@@ -372,11 +372,9 @@ where
     #[must_use]
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
-        let iter_plane = plane.compute();
+        let iter_plane = IterPlane::create(plane.point_grid().clone());
         let selection = plane.default_selection();
-
-        let image = iter_plane.render(&coloring);
-        let frame = ImageFrame::new(image);
+        let frame = ImageFrame::default();
 
         let degree = plane.degree_real().try_round().unwrap_or(2);
         let mut marking = Marking::default().with_degree(degree);
@@ -526,7 +524,9 @@ where
         self.ray_state
     }
 
-    #[inline] fn degree(&self) -> AngleNum {
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
         self.plane().degree()
     }
 
@@ -559,11 +559,16 @@ where
         }
     }
 
-    fn select_nearby_point(&mut self, o: OrbitSchema)
+    fn select_nearby_point(&mut self, o: OrbitSchema) -> Result<Cplx, ()>
     {
         if let Some(landing_point) = self.plane.find_nearby_preperiodic_point(self.selection, o)
         {
             self.select_point(landing_point);
+            Ok(landing_point)
+        }
+        else
+        {
+            Err(())
         }
     }
 
@@ -686,9 +691,11 @@ where
 
     fn save_image(&mut self, img_width: usize, filename: &str)
     {
-        let plane = self.plane.clone().with_res_x(img_width);
-        let iter_plane = plane.compute();
+        let old_res_x = self.plane.point_grid().res_x;
+        self.plane.point_grid_mut().resize_x(img_width);
+        let iter_plane = self.plane.compute();
         iter_plane.save(self.get_coloring(), filename.to_owned());
+        self.plane.point_grid_mut().resize_x(old_res_x);
     }
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)

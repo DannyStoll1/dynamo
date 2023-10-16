@@ -91,13 +91,13 @@ impl<D> Derivative for D where
 {
 }
 
-pub trait ParameterPlane: Sync + Send + Clone
+pub trait ParameterPlane: Sync + Send
 {
     type Var: Variable;
     type Param: Parameter;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
     type Deriv: Derivative;
-    type Child: ParameterPlane + From<Self>;
+    type Child: ParameterPlane;
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
@@ -107,6 +107,7 @@ pub trait ParameterPlane: Sync + Send + Clone
 
     #[must_use]
     fn with_bounds(self, bounds: Bounds) -> Self
+        where Self: Sized
     {
         let point_grid = self.point_grid().new_with_same_height(bounds);
         self.with_point_grid(point_grid)
@@ -115,6 +116,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio
     #[must_use]
     fn with_res_y(mut self, res_y: usize) -> Self
+        where Self: Sized
     {
         self.point_grid_mut().resize_y(res_y);
         self
@@ -123,6 +125,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     /// Modify and return self with a different image width, and with height scaled to preserve aspect ratio
     #[must_use]
     fn with_res_x(mut self, res_x: usize) -> Self
+        where Self: Sized
     {
         self.point_grid_mut().resize_x(res_x);
         self
@@ -406,6 +409,7 @@ pub trait ParameterPlane: Sync + Send + Clone
     #[inline]
     #[must_use]
     fn with_param(mut self, param: <Self::MetaParam as ParamList>::Param) -> Self
+        where Self: Sized
     {
         self.set_param(param);
         self

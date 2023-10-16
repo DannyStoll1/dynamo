@@ -295,17 +295,17 @@ impl CirclePartition
 
     pub fn identify(&self, theta: RationalAngle) -> KneadingSymbol
     {
-        for (i, x) in self.angles.iter().enumerate()
+        for (i, x) in self.angles.iter().enumerate().rev()
         {
             match theta.cmp(x)
             {
-                Ordering::Less => return KneadingSymbol::Interior(i),
+                Ordering::Greater => return KneadingSymbol::Interior(i),
                 Ordering::Equal => return KneadingSymbol::Boundary(i),
                 _ =>
                 {}
             }
         }
-        KneadingSymbol::Interior(0)
+        KneadingSymbol::Interior(self.angles.len().checked_sub(1).unwrap_or(0))
     }
 
     pub fn is_circularly_ordered(&self) -> bool
