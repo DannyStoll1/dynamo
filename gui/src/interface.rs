@@ -22,19 +22,20 @@ use crate::{
 };
 use crate::{dialog::RayParams, hotkeys::keyboard_shortcuts::*};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum UIMessage
 {
+    #[default]
     DoNothing,
     CloseWindow,
     Quit,
 }
-impl Default for UIMessage
+impl UIMessage
 {
-    fn default() -> Self
+    fn pop(&mut self) -> Self
     {
-        Self::DoNothing
+        std::mem::take(self)
     }
 }
 
@@ -96,30 +97,25 @@ pub trait PanePair
     fn prompt_save_active_pane(&mut self);
     fn prompt_save(&mut self, pane_id: PaneID);
     fn prompt_text(&mut self, input_type: TextInputType);
-    fn get_image_height(&self) -> usize;
-    fn change_height(&mut self, new_height: usize);
+
+    fn update_panes(&mut self);
 
     // fn descend(self) -> Box<dyn PanePair>;
 }
 
 pub trait Interactive
 {
-    fn handle_mouse(&mut self, ctx: &Context);
-    fn handle_input(&mut self, ctx: &Context);
-    fn process_action(&mut self, action: &Action);
-
-    fn toggle_live_mode(&mut self);
     fn show_dialog(&mut self, ctx: &Context);
-    fn has_visible_dialog(&self) -> bool;
-    fn update_panes(&mut self);
-    fn show(&mut self, ui: &mut Ui);
     fn consume_click(&mut self);
     fn reset_click(&mut self);
-    fn schedule_close(&mut self);
-    fn schedule_quit(&mut self);
+    fn handle_input(&mut self, ctx: &Context);
     fn get_message(&self) -> UIMessage;
     fn pop_message(&mut self) -> UIMessage;
     fn name(&self) -> String;
+    fn get_image_height(&self) -> usize;
+    fn change_height(&mut self, new_height: usize);
+    fn show(&mut self, ui: &mut Ui);
+    fn process_action(&mut self, action: &Action);
 }
 
 pub struct MainInterface<P, J>
@@ -315,6 +311,86 @@ where
             let new_child_param = self.parent.plane.param_map(parent_selection);
             self.set_child_param(parent_selection, new_child_param);
         }
+    }
+
+    fn handle_mouse(&mut self, ctx: &Context)
+    {
+        let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;
+        let zoom_factor = ctx.input(InputState::zoom_delta);
+
+        self.reset_click();
+
+        let Some(pointer_pos) = ctx.pointer_latest_pos()
+        else
+        {
+            return;
+        };
+
+        if self.parent().frame_contains_pixel(pointer_pos)
+        {
+            ctx.set_cursor_icon(CursorIcon::Crosshair);
+            self.set_active_pane(Some(PaneID::Parent));
+            let reselect_point = self.live_mode || clicked;
+            let pointer_value = self.parent().map_pixel(pointer_pos);
+            self.parent_mut()
+                .process_mouse_input(pointer_value, zoom_factor, reselect_point);
+            self.process_child_task();
+
+            if clicked
+            {
+                self.consume_click();
+                let param = self.parent.plane.param_map(pointer_value);
+                let start = self.parent.plane.start_point(pointer_value, param);
+                self.child_mut().mark_orbit_and_info(start.into());
+            }
+        }
+        else if self.child().frame_contains_pixel(pointer_pos)
+        {
+            ctx.set_cursor_icon(CursorIcon::Crosshair);
+            self.set_active_pane(Some(PaneID::Child));
+            let pointer_value = self.child().map_pixel(pointer_pos);
+            self.child_mut()
+                .process_mouse_input(pointer_value, zoom_factor, clicked);
+
+            if clicked
+            {
+                self.consume_click();
+                self.child_mut().mark_orbit_and_info(pointer_value);
+            }
+        }
+        else
+        {
+            ctx.set_cursor_icon(CursorIcon::Default);
+        }
+    }
+
+    fn schedule_close(&mut self)
+    {
+        self.message = UIMessage::CloseWindow;
+    }
+
+    fn schedule_quit(&mut self)
+    {
+        self.message = UIMessage::Quit;
+    }
+
+    fn toggle_live_mode(&mut self)
+    {
+        self.live_mode ^= true;
+        if self.live_mode
+        {
+            self.parent.stop_following_ray_landing_point();
+            self.child.frame_mut().set_live();
+        }
+        else
+        {
+            self.child.frame_mut().unset_live();
+        }
+    }
+
+    fn has_visible_dialog(&self) -> bool
+    {
+        self.dialog.as_ref().map(|x| x.visible()).unwrap_or(false)
     }
 }
 
@@ -520,16 +596,10 @@ where
         }
     }
 
-    fn get_image_height(&self) -> usize
+    fn update_panes(&mut self)
     {
-        self.image_height
-    }
-
-    fn change_height(&mut self, new_height: usize)
-    {
-        self.image_height = new_height;
-        self.parent.change_height(new_height);
-        self.child.change_height(new_height);
+        self.parent.process_tasks();
+        self.child.process_tasks();
     }
 
     // fn descend(self) -> Box<dyn PanePair>
@@ -549,75 +619,33 @@ where
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
-    fn handle_mouse(&mut self, ctx: &Context)
+    fn handle_input(&mut self, ctx: &Context)
     {
-        let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;
-        let zoom_factor = ctx.input(InputState::zoom_delta);
-
-        self.reset_click();
-
-        let Some(pointer_pos) = ctx.pointer_latest_pos()
-        else
-        {
-            return;
-        };
-
-        if self.parent().frame_contains_pixel(pointer_pos)
-        {
-            ctx.set_cursor_icon(CursorIcon::Crosshair);
-            self.set_active_pane(Some(PaneID::Parent));
-            let reselect_point = self.live_mode || clicked;
-            let pointer_value = self.parent().map_pixel(pointer_pos);
-            self.parent_mut()
-                .process_mouse_input(pointer_value, zoom_factor, reselect_point);
-            self.process_child_task();
-
-            if clicked
-            {
-                self.consume_click();
-                let param = self.parent.plane.param_map(pointer_value);
-                let start = self.parent.plane.start_point(pointer_value, param);
-                self.child_mut().mark_orbit_and_info(start.into());
-            }
-        }
-        else if self.child().frame_contains_pixel(pointer_pos)
-        {
-            ctx.set_cursor_icon(CursorIcon::Crosshair);
-            self.set_active_pane(Some(PaneID::Child));
-            let pointer_value = self.child().map_pixel(pointer_pos);
-            self.child_mut()
-                .process_mouse_input(pointer_value, zoom_factor, clicked);
-
-            if clicked
-            {
-                self.consume_click();
-                self.child_mut().mark_orbit_and_info(pointer_value);
-            }
-        }
-        else
+        // Don't process input if the user is in a dialog
+        if self.has_visible_dialog()
         {
             ctx.set_cursor_icon(CursorIcon::Default);
+            return;
         }
-    }
-
-    fn toggle_live_mode(&mut self)
-    {
-        self.live_mode ^= true;
-        if self.live_mode
+        for Hotkey {
+            shortcut, action, ..
+        } in FILE_HOTKEYS
+            .iter()
+            .chain(IMAGE_HOTKEYS.iter())
+            .chain(ANNOTATION_HOTKEYS.iter())
+            .chain(SELECTION_HOTKEYS.iter())
+            .chain(INCOLORING_HOTKEYS.iter())
+            .chain(PALETTE_HOTKEYS.iter())
         {
-            self.parent.stop_following_ray_landing_point();
-            self.child.frame_mut().set_live();
+            if let Some(s) = shortcut.as_ref()
+            {
+                if shortcut_used!(ctx, s)
+                {
+                    self.process_action(action);
+                }
+            }
         }
-        else
-        {
-            self.child.frame_mut().unset_live();
-        }
-    }
-
-    fn update_panes(&mut self)
-    {
-        self.parent.process_tasks();
-        self.child.process_tasks();
+        self.handle_mouse(ctx);
     }
 
     fn show_dialog(&mut self, ctx: &Context)
@@ -669,38 +697,88 @@ where
         }
     }
 
-    fn has_visible_dialog(&self) -> bool
+    #[inline]
+    fn get_message(&self) -> UIMessage
     {
-        self.dialog.as_ref().map(|x| x.visible()).unwrap_or(false)
+        self.message
     }
 
-    fn handle_input(&mut self, ctx: &Context)
+    #[inline]
+    fn pop_message(&mut self) -> UIMessage
     {
-        // Don't process input if the user is in a dialog
-        if self.has_visible_dialog()
-        {
-            ctx.set_cursor_icon(CursorIcon::Default);
-            return;
-        }
-        for Hotkey {
-            shortcut, action, ..
-        } in FILE_HOTKEYS
-            .iter()
-            .chain(IMAGE_HOTKEYS.iter())
-            .chain(ANNOTATION_HOTKEYS.iter())
-            .chain(SELECTION_HOTKEYS.iter())
-            .chain(INCOLORING_HOTKEYS.iter())
-            .chain(PALETTE_HOTKEYS.iter())
-        {
-            if let Some(s) = shortcut.as_ref()
-            {
-                if shortcut_used!(ctx, s)
-                {
-                    self.process_action(action);
-                }
-            }
-        }
-        self.handle_mouse(ctx);
+        self.message.pop()
+    }
+
+    fn consume_click(&mut self)
+    {
+        self.click_used = true;
+    }
+
+    fn reset_click(&mut self)
+    {
+        self.click_used = false;
+    }
+
+    fn name(&self) -> String
+    {
+        self.parent.name()
+    }
+
+    fn get_image_height(&self) -> usize
+    {
+        self.image_height
+    }
+
+    fn change_height(&mut self, new_height: usize)
+    {
+        self.image_height = new_height;
+        self.parent.change_height(new_height);
+        self.child.change_height(new_height);
+    }
+
+    fn show(&mut self, ui: &mut Ui)
+    {
+        TableBuilder::new(ui)
+            .column(Column::auto().resizable(true))
+            .column(Column::remainder())
+            .vscroll(false)
+            .stick_to_bottom(true)
+            .header(20.0, |mut header| {
+                header.col(|ui| {
+                    ui.heading(self.parent().name());
+                });
+                header.col(|ui| {
+                    ui.heading(self.child().name());
+                });
+            })
+            .body(|mut body| {
+                body.row(self.parent.get_image_frame().height() as f32, |mut row| {
+                    row.col(|ui| {
+                        self.parent.get_image_frame_mut().put(ui);
+                        self.parent.put_marked_curves(ui);
+                        self.parent.put_marked_points(ui);
+                    });
+                    row.col(|ui| {
+                        self.child.get_image_frame_mut().put(ui);
+                        self.child.put_marked_curves(ui);
+                        self.child.put_marked_points(ui);
+                    });
+                });
+                body.row(80., |mut row| {
+                    row.col(|ui| {
+                        let selection_desc = self.parent.describe_selection();
+                        let orbit_desc = self.parent.describe_orbit_info();
+                        ui.label(selection_desc);
+                        ui.label(orbit_desc);
+                    });
+                    row.col(|ui| {
+                        let selection_desc = self.child.describe_selection();
+                        let orbit_desc = self.child.describe_orbit_info();
+                        ui.label(selection_desc);
+                        ui.label(orbit_desc);
+                    });
+                });
+            });
     }
 
     #[allow(clippy::option_map_unit_fn)]
@@ -892,92 +970,22 @@ where
             }
         }
     }
-
-    fn show(&mut self, ui: &mut Ui)
-    {
-        TableBuilder::new(ui)
-            .column(Column::auto().resizable(true))
-            .column(Column::remainder())
-            .vscroll(false)
-            .stick_to_bottom(true)
-            .header(20.0, |mut header| {
-                header.col(|ui| {
-                    ui.heading(self.parent.name());
-                });
-                header.col(|ui| {
-                    ui.heading(self.child.name());
-                });
-            })
-            .body(|mut body| {
-                body.row(self.parent.get_image_frame().height() as f32, |mut row| {
-                    row.col(|ui| {
-                        self.parent.get_image_frame_mut().put(ui);
-                        self.parent.put_marked_curves(ui);
-                        self.parent.put_marked_points(ui);
-                    });
-                    row.col(|ui| {
-                        self.child.get_image_frame_mut().put(ui);
-                        self.child.put_marked_curves(ui);
-                        self.child.put_marked_points(ui);
-                    });
-                });
-                body.row(80., |mut row| {
-                    row.col(|ui| {
-                        let selection_desc = self.parent.describe_selection();
-                        let orbit_desc = self.parent.describe_orbit_info();
-                        ui.label(selection_desc);
-                        ui.label(orbit_desc);
-                    });
-                    row.col(|ui| {
-                        let selection_desc = self.child.describe_selection();
-                        let orbit_desc = self.child.describe_orbit_info();
-                        ui.label(selection_desc);
-                        ui.label(orbit_desc);
-                    });
-                });
-            });
-    }
-
-    fn schedule_close(&mut self)
-    {
-        self.message = UIMessage::CloseWindow;
-    }
-
-    fn schedule_quit(&mut self)
-    {
-        self.message = UIMessage::Quit;
-    }
-
-    #[inline]
-    fn get_message(&self) -> UIMessage
-    {
-        self.message
-    }
-
-    #[inline]
-    fn pop_message(&mut self) -> UIMessage
-    {
-        let msg = self.get_message();
-        self.message = UIMessage::DoNothing;
-        msg
-    }
-
-    fn consume_click(&mut self)
-    {
-        self.click_used = true;
-    }
-
-    fn reset_click(&mut self)
-    {
-        self.click_used = false;
-    }
-
-    fn name(&self) -> String
-    {
-        self.parent.name()
-    }
 }
 
-pub trait Interface: PanePair + Interactive {}
+pub trait Interface: Interactive
+{
+    fn update(&mut self, ui: &mut Ui);
+}
 
-impl<T> Interface for T where T: PanePair + Interactive {}
+impl<T> Interface for T
+where
+    T: PanePair + Interactive,
+{
+    fn update(&mut self, ui: &mut Ui)
+    {
+        self.handle_input(ui.ctx());
+        self.show_dialog(ui.ctx());
+        self.update_panes();
+        self.show(ui);
+    }
+}

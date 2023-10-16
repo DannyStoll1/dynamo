@@ -10,7 +10,7 @@ description = "A tool for studying discrete time dynamical systems - Web UI"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fractal_gui = { path = "../gui"}
+fractal_app = { path = "../app"}
 web-sys = ">=0.3.63"
 eframe = "0.23.0"
 console_error_panic_hook = "0.1.7"

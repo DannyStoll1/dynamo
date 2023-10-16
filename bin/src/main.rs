@@ -1,8 +1,8 @@
-use fractal_gui as gui;
+use fractal_app as app;
 
 fn main() -> Result<(), eframe::Error>
 {
-    gui::run_app().ok();
+    app::run_app().ok();
 
     Ok(())
 }

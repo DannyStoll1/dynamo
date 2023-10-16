@@ -1,7 +1,7 @@
 #[cfg(target_arch = "wasm32")]
 use {
     eframe::{WebLogger, WebOptions, WebRunner},
-    fractal_gui::FractalApp,
+    fractal_app::FractalApp,
     log,
     wasm_bindgen::prelude::*,
 };

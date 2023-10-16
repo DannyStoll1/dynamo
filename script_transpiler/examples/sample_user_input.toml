@@ -1,0 +1,21 @@
+[metadata]
+name = "QuadRat Per(2, lambda)"
+short_name = "quadrat_per_2_l"
+
+[names]
+variable = "z"
+selection = "t"
+
+[constants]
+mu = "2-i"
+
+[parameters]
+a = "t**2 * i * (mu + mu*t - 4) / 4"
+b = "t * (mu*t - 4) / 4"
+
+[dynamics] 
+# Initial point. May depend on selection, parameters, and constants.
+start = "0"
+
+# Dynamical map. Cannot depend directly on selection (if it does, just add a parameter representing the selection).
+map = "(z**2 + a)/(z**2 + b)"

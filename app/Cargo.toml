@@ -1,0 +1,22 @@
+[package]
+name = "fractal_app"
+version = "0.4.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+egui = "0.23.0"
+egui_dock = "0.8.1"
+fractal_common = {version = "*", path = "../common"}
+fractal_core = {version = "*", path = "../core"}
+fractal_profiles = {version = "*", path = "../profiles"}
+fractal_gui = {version = "*", path = "../gui"}
+script_transpiler = {version = "*", path = "../script_transpiler", optional = true}
+seq-macro = "0.3.5"
+eframe = "0.23.0"
+egui_extras = "0.23.0"
+
+[features]
+serde = ["fractal_gui/serde"]
+user_profiles = ["dep:script_transpiler", "fractal_gui/user_profiles"]

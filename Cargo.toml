@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+    "app",
     "common",
     "core",
     "gui",
@@ -9,6 +10,8 @@ members = [
     "wasm",
     "profiles",
     "poly_solve",
+    "user_profiles",
+    "script_transpiler",
 ]
 
 
