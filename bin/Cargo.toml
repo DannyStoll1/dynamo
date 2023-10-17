@@ -1,6 +1,6 @@
 [package]
 name = "fractal"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Danny Stoll"]
@@ -17,7 +17,7 @@ serde = ["fractal_app/serde"]
 [package.metadata.bundle]
 name = "Fractal Explorer"
 identifier = "io.github.dannystoll1.fractal-explorer"
-version = "0.4.0"
+version = "0.5.0"
 icon = ["../docs/icons/*.png", "../docs/icons/*.icns"]
 short_description = "A tool for exploring dynamical systems on complex manifolds."
 osx_minimum_system_version = "10.7"

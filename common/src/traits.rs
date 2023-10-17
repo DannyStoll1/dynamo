@@ -62,7 +62,15 @@ pub trait Summarize: std::fmt::Display
 {
     fn summarize(&self) -> Option<String>
     {
-        Some(self.to_string())
+        let s = self.to_string();
+        if s.is_empty()
+        {
+            None
+        }
+        else
+        {
+            Some(s)
+        }
     }
 }
 

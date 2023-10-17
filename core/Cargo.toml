@@ -1,6 +1,6 @@
 [package]
 name = "fractal_core"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Danny Stoll"]
@@ -8,7 +8,7 @@ repository = "https://github.com/dannystoll1/fractal-explorer"
 description = "A tool for studying discrete time dynamical systems - Core Files"
 
 [dependencies]
-# num = ">=0.4.0"
+# num = ">=0.5.0"
 rayon = ">=1.7.0"
 thread_local = ">=1.1.7"
 num_cpus = ">=1.16.0"

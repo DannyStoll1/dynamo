@@ -4,6 +4,8 @@ use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 pub mod fractal_tab;
 pub mod macros;
+#[cfg(feature = "scripting")]
+pub mod script_editor;
 use fractal_tab::FractalTab;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -35,10 +37,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab)
     {
-        ui.label(tab.interface.name());
-        tab.show_menu(ui);
-        tab.process_interface_message(ui);
-        tab.interface.update(ui);
+        tab.update(ui);
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText

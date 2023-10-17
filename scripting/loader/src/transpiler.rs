@@ -1,4 +1,4 @@
-use crate::{error::UserScriptError, parser::*};
+use crate::{error::ScriptError, parser::*};
 use std::path::Path;
 
 pub struct Transpiler
@@ -16,11 +16,11 @@ impl Transpiler
     }
 
     #[must_use]
-    pub fn from_toml_path(path: &Path) -> Result<Self, UserScriptError>
+    pub fn from_toml_path(path: &Path) -> Result<Self, ScriptError>
     {
-        let content = std::fs::read_to_string(path).map_err(UserScriptError::ErrorReadingToml)?;
+        let content = std::fs::read_to_string(path).map_err(ScriptError::ErrorReadingToml)?;
         let user_input: UnparsedUserInput =
-            toml::from_str(&content).map_err(UserScriptError::ErrorParsingToml)?;
+            toml::from_str(&content).map_err(ScriptError::ErrorParsingToml)?;
         Ok(Self::new(user_input))
     }
 
@@ -28,7 +28,7 @@ impl Transpiler
     {
         if self.parsed_input.param_names.is_empty()
         {
-            return "type Parameters = NoParam".to_owned();
+            return "type Parameters = NoParam;".to_owned();
         }
 
         let member_decls: Vec<String> = self
@@ -230,7 +230,7 @@ impl Transpiler
         .to_owned()
     }
 
-    pub fn gen_rust(&self) -> String
+    pub fn gen_rust_profile(&self) -> String
     {
         format!(
             "{imports}\n\
@@ -248,10 +248,25 @@ impl Transpiler
         )
     }
 
-    pub fn write(&self, out_path: impl AsRef<Path>) -> Result<(), UserScriptError>
+    pub fn gen_mod_rs(&self) -> String
     {
-        let rust = self.gen_rust();
+        format!(
+            "pub mod {short_name};\n\
+            pub use {short_name}::create_interface;",
+            short_name = self.parsed_input.metadata.short_name
+        )
+    }
 
-        std::fs::write(out_path, rust).map_err(UserScriptError::ErrorWritingFile)
+    pub fn write(&self, out_path: &Path) -> Result<(), ScriptError>
+    {
+        let profile_rs = self.gen_rust_profile();
+        let mod_rs = self.gen_mod_rs();
+
+        let profile_rs_path =
+            out_path.join(format!("{}.rs", self.parsed_input.metadata.short_name));
+        let mod_rs_path = out_path.join("mod.rs");
+
+        std::fs::write(mod_rs_path, mod_rs).map_err(ScriptError::ErrorWritingFile)?;
+        std::fs::write(profile_rs_path, profile_rs).map_err(ScriptError::ErrorWritingFile)
     }
 }

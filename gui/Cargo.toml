@@ -1,7 +1,11 @@
 [package]
 name = "fractal_gui"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
+authors = ["Danny Stoll"]
+repository = "https://github.com/dannystoll1/fractal-explorer"
+description = "GUI for Fractal Explorer"
+license = "GPL-3.0-or-later"
 
 [dependencies]
 serde = { version = "1.0.188", features = ["derive"], optional = true }
@@ -19,4 +23,4 @@ libloading = {version = "0.8.1", optional = true}
 
 [features]
 serde = ["dep:serde", "eframe/serde", "epaint/serde", "fractal_core/serde", "fractal_common/serde"]
-user_profiles = ["dep:libloading"]
+scripting = ["dep:libloading"]

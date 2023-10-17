@@ -3,15 +3,15 @@ resolver = "2"
 
 members = [
     "app",
+    "bin",
     "common",
     "core",
     "gui",
-    "bin",
     "wasm",
     "profiles",
     "poly_solve",
-    "user_profiles",
-    "script_transpiler",
+    "scripting/loader",
+    "scripting/output",
 ]
 
 

@@ -7,7 +7,7 @@ use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::error::UserScriptError;
+use crate::error::ScriptError;
 
 #[derive(Debug, Deserialize)]
 pub struct Metadata
@@ -50,7 +50,7 @@ pub struct ParsedUserInput
 }
 impl TryFrom<UnparsedUserInput> for ParsedUserInput
 {
-    type Error = UserScriptError;
+    type Error = ScriptError;
     fn try_from(unparsed: UnparsedUserInput) -> Result<Self, Self::Error>
     {
         unparsed.parse()
@@ -68,7 +68,7 @@ fn json_to_string(value: &JsonValue) -> String
     }
 }
 
-pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, UserScriptError>
+pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptError>
 {
     match value
     {
@@ -120,20 +120,20 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, UserScript
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
                 return Ok(Complex64::new(0.0, b));
             }
-            Err(UserScriptError::MalformedConst)
+            Err(ScriptError::MalformedConst)
         }
         JsonValue::Number(n) =>
         {
-            let real_part = n.as_f64().ok_or(UserScriptError::MalformedConst)?;
+            let real_part = n.as_f64().ok_or(ScriptError::MalformedConst)?;
             Ok(Complex64::new(real_part, 0.0))
         }
-        _ => Err(UserScriptError::MalformedConst),
+        _ => Err(ScriptError::MalformedConst),
     }
 }
 
 impl UnparsedUserInput
 {
-    pub fn parse(self) -> Result<ParsedUserInput, UserScriptError>
+    pub fn parse(self) -> Result<ParsedUserInput, ScriptError>
     {
         let z = &self.names.variable;
         let t = &self.names.selection;
@@ -160,7 +160,7 @@ impl UnparsedUserInput
 
             import sys
             sys.path.append("python")
-            sys.path.append("script_transpiler/python")
+            sys.path.append("scripting/loader/python")
             from oxidize import *
 
             i = 1j

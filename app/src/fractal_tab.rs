@@ -16,17 +16,48 @@ use fractal_gui::interface::{Interface, MainInterface};
 use fractal_profiles::*;
 use seq_macro::seq;
 
-#[cfg(feature = "user_profiles")]
+#[cfg(feature = "scripting")]
+use crate::script_editor::{Popup, Response};
+#[cfg(feature = "scripting")]
 use std::path::Path;
+
+#[derive(Clone, Copy, Default)]
+pub enum MenuState
+{
+    #[default]
+    Closed,
+    Open,
+}
+impl MenuState
+{
+    pub fn close(&mut self)
+    {
+        *self = Self::Closed
+    }
+    pub fn open(&mut self)
+    {
+        *self = Self::Open
+    }
+    pub fn is_open(&self) -> bool
+    {
+        matches!(self, Self::Open)
+    }
+    pub fn is_closed(&self) -> bool
+    {
+        matches!(self, Self::Closed)
+    }
+}
 
 pub struct FractalTab
 {
     pub interface: Box<dyn Interface>,
     pub surface: SurfaceIndex,
     pub node: NodeIndex,
+    pub menu_state: MenuState,
+    #[cfg(feature = "scripting")]
+    pub popup: Option<Popup>,
 }
 
-// {{{impl FractalTab
 impl FractalTab
 {
     #[must_use]
@@ -41,8 +72,24 @@ impl FractalTab
         self
     }
 
-    pub fn show_menu(&mut self, ui: &mut Ui)
+    pub fn update(&mut self, ui: &mut Ui)
     {
+        ui.label(self.interface.name());
+        self.show_menu(ui);
+        self.process_interface_message(ui);
+        if self.should_update_interface()
+        {
+            self.interface.update(ui.ctx());
+        }
+        self.interface.show(ui);
+
+        #[cfg(feature = "scripting")]
+        self.show_popup(ui);
+    }
+
+    fn show_menu(&mut self, ui: &mut Ui)
+    {
+        self.menu_state.close();
         egui::menu::bar(ui, |ui| {
             self.file_menu(ui);
             self.fractal_menu(ui);
@@ -50,14 +97,15 @@ impl FractalTab
             self.selection_menu(ui);
             self.annotations_menu(ui);
             self.coloring_menu(ui);
-            #[cfg(feature = "user_profiles")]
-            self.user_profiles_menu(ui);
+            #[cfg(feature = "scripting")]
+            self.transpiled_scripts_menu(ui);
         });
     }
 
     fn file_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("File", |ui| {
+            self.menu_state.open();
             FILE_HOTKEYS.iter().for_each(|hotkey| {
                 self.hotkey_button(ui, hotkey);
             });
@@ -67,6 +115,7 @@ impl FractalTab
     fn fractal_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Fractal", |ui| {
+            self.menu_state.open();
             self.polynomials_menu(ui);
             self.rational_maps_menu(ui);
             self.transcendental_menu(ui);
@@ -77,6 +126,7 @@ impl FractalTab
     fn coloring_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Coloring", |ui| {
+            self.menu_state.open();
             ui.menu_button("Palette", |ui| {
                 PALETTE_HOTKEYS.iter().for_each(|hotkey| {
                     self.hotkey_button(ui, hotkey);
@@ -150,6 +200,7 @@ impl FractalTab
     fn image_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Image", |ui| {
+            self.menu_state.open();
             ui.menu_button("Set height", |ui| {
                 if ui.button("256").clicked()
                 {
@@ -188,6 +239,7 @@ impl FractalTab
     fn selection_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Selection", |ui| {
+            self.menu_state.open();
             SELECTION_HOTKEYS.iter().for_each(|hotkey| {
                 self.hotkey_button(ui, hotkey);
             });
@@ -197,22 +249,60 @@ impl FractalTab
     fn annotations_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Annotations", |ui| {
+            self.menu_state.open();
             ANNOTATION_HOTKEYS.iter().for_each(|hotkey| {
                 self.hotkey_button(ui, hotkey);
             });
         });
     }
 
-    #[cfg(feature = "user_profiles")]
-    fn user_profiles_menu(&mut self, ui: &mut Ui)
+    #[cfg(feature = "scripting")]
+    fn transpiled_scripts_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("User Scripts", |ui| {
-            if ui.button("Load Script").clicked()
+            if ui.button("Script Editor").clicked()
             {
-                self.load_user_profile();
+                self.popup = Some(Popup::edit());
+                ui.close_menu();
+            }
+            if ui.button("Load script...").clicked()
+            {
+                self.popup = Some(Popup::load());
                 ui.close_menu();
             }
         });
+    }
+
+    #[cfg(feature = "scripting")]
+    fn handle_popup_response(&mut self, response: Response)
+    {
+        use Response::*;
+        match response
+        {
+            DoNothing =>
+            {}
+            Close =>
+            {
+                self.popup = None;
+            }
+            Load(path) =>
+            {
+                self.load_user_script(path);
+                self.popup = None;
+            }
+        }
+    }
+
+    #[cfg(feature = "scripting")]
+    fn should_update_interface(&self) -> bool
+    {
+        !self.popup.is_some() && self.menu_state.is_closed()
+    }
+
+    #[cfg(not(feature = "scripting"))]
+    fn should_update_interface(&self) -> bool
+    {
+        self.menu_state.is_closed()
     }
 
     fn polynomials_menu(&mut self, ui: &mut Ui)
@@ -597,6 +687,7 @@ impl FractalTab
         M: ParamList<Param = T>,
         T: From<P::Param> + std::fmt::Display,
     {
+        use fractal_gui::interface::PanePair;
         let image_height = self.interface.get_image_height();
         let max_iters = 1024;
 
@@ -605,22 +696,19 @@ impl FractalTab
             .with_res_y(image_height);
         let child_plane = create_child(parent_plane.clone());
 
-        self.interface = Box::new(MainInterface::new(parent_plane, child_plane, image_height));
+        let mut interface = MainInterface::new(parent_plane, child_plane, image_height);
+        interface.update_panes();
+        self.interface = Box::new(interface);
     }
 
-    #[cfg(feature = "user_profiles")]
-    fn load_user_profile(&mut self)
+    #[cfg(feature = "scripting")]
+    fn load_user_script<P: AsRef<Path>>(&mut self, script_path: P)
     {
-        use script_transpiler::Loader;
+        use script_loader::Loader;
         let image_height = self.interface.get_image_height();
-        let toml_path = Path::new("script_transpiler/examples/sample_user_input.toml");
-        let crate_path = Path::new("user_profiles");
-        let loader = Loader {
-            toml_path,
-            crate_path,
-        };
+        let loader = Loader::new(script_path.as_ref(), image_height);
         unsafe {
-            match loader.run(image_height)
+            match loader.run()
             {
                 Ok(int) =>
                 {
@@ -634,7 +722,7 @@ impl FractalTab
         }
     }
 
-    pub fn process_interface_message(&mut self, _ui: &mut Ui)
+    fn process_interface_message(&mut self, _ui: &mut Ui)
     {
         use fractal_gui::interface::UIMessage::{CloseWindow, DoNothing, Quit};
         match self.interface.pop_message()
@@ -669,8 +757,18 @@ impl FractalTab
             }
         }
     }
+
+    #[cfg(feature = "scripting")]
+    fn show_popup(&mut self, ui: &mut Ui)
+    {
+        if let Some(popup) = self.popup.as_mut()
+        {
+            popup.show(ui.ctx());
+            let response = popup.pop_response();
+            self.handle_popup_response(response);
+        }
+    }
 }
-// }}}
 
 impl Default for FractalTab
 {
@@ -689,6 +787,9 @@ impl Default for FractalTab
             interface,
             surface: SurfaceIndex::main(),
             node: NodeIndex(0),
+            menu_state: Default::default(),
+            #[cfg(feature = "scripting")]
+            popup: None,
         }
     }
 }

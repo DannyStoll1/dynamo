@@ -974,18 +974,17 @@ where
 
 pub trait Interface: Interactive
 {
-    fn update(&mut self, ui: &mut Ui);
+    fn update(&mut self, ui: &Context);
 }
 
 impl<T> Interface for T
 where
     T: PanePair + Interactive,
 {
-    fn update(&mut self, ui: &mut Ui)
+    fn update(&mut self, ctx: &Context)
     {
-        self.handle_input(ui.ctx());
-        self.show_dialog(ui.ctx());
+        self.handle_input(ctx);
+        self.show_dialog(ctx);
         self.update_panes();
-        self.show(ui);
     }
 }

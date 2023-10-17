@@ -8,5 +8,5 @@ pub mod interface;
 pub mod marked_points;
 pub mod pane;
 
-#[cfg(feature = "user_profiles")]
+#[cfg(feature = "scripting")]
 pub mod interface_holder;

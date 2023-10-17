@@ -1,0 +1,13 @@
+[package]
+name = "transpiled-scripts"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+fractal_gui = { version = "*", path = "../../gui" }
+fractal_core = { version = "*", path = "../../core" }
+fractal_common = { version = "*", path = "../../common" }
+

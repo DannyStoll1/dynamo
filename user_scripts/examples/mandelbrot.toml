@@ -1,0 +1,16 @@
+[metadata]
+name = "Mandelbrot set"
+short_name = "mandelbrot"
+
+[names]
+variable = "z"
+selection = "t"
+
+[constants]
+
+[parameters]
+c = "t"
+
+[dynamics] 
+start = 0
+map = "z*z + c"

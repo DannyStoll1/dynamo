@@ -1,5 +1,5 @@
 use crate::interface::{Interactive, Interface, UIMessage};
-use egui::Ui;
+use egui::{Context, Ui};
 use libloading::Library;
 
 pub struct InterfaceHolder<'i>
@@ -68,8 +68,8 @@ impl<'i> Interactive for InterfaceHolder<'i>
 
 impl<'i> Interface for InterfaceHolder<'i>
 {
-    fn update(&mut self, ui: &mut Ui)
+    fn update(&mut self, ctx: &Context)
     {
-        self.interface.update(ui)
+        self.interface.update(ctx)
     }
 }

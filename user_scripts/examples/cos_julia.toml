@@ -1,0 +1,20 @@
+# Example script for a Julia set.
+# Julia set scripts are not generally recommended,
+# since you can always access the Julia set
+# from a corresponding parameter plane.
+# However, they can be useful in a pinch.
+[metadata]
+name = "Julia set for f(z) = cos(z)"
+short_name = "cos_julia"
+
+[names]
+variable = "z"
+selection = "t"
+
+[constants]
+
+[parameters]
+
+[dynamics] 
+start = "t"
+map = "cos(z)"

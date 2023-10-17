@@ -33,7 +33,7 @@ mod tests
             toml::from_str(&content).expect("Failed to parse the TOML content");
 
         let transpiler = Transpiler::new(user_input);
-        println!("{}", transpiler.gen_rust());
+        println!("{}", transpiler.gen_rust_profile());
     }
 
     #[test]
@@ -66,16 +66,21 @@ mod tests
     {
         use crate::loader::Loader;
         use std::path::Path;
-        let toml_path = Path::new("examples/sample_user_input.toml");
-        let crate_path = Path::new("../user_profiles");
-        let loader = Loader {
-            toml_path,
-            crate_path,
-        };
+        let toml_path = Path::new("../../user_scripts/.default.toml");
+        // let output_path = Path::new("../output");
+        let loader = Loader::new(toml_path, 768);
 
         unsafe {
-            let int = loader.run(768).unwrap();
-            dbg!(int.name());
+            let int = loader.run().unwrap();
+            assert_eq!(int.name(), "QuadRat Per(2, λ)");
+        }
+
+        let toml_path = Path::new("../../user_scripts/examples/mandelbrot.toml");
+        let loader = Loader::new(toml_path, 768);
+
+        unsafe {
+            let int = loader.run().unwrap();
+            assert_eq!(int.name(), "Mandelbrot");
         }
     }
 
