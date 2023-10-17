@@ -37,6 +37,7 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Shift+arrows: pan view
 - Space: Center selection
 - Shift+Space: Reset selection
+- Home: Reset view and selection
 
 ### Dynamics
 
@@ -82,7 +83,7 @@ Users can now write scripts at runtime to study custom dynamical systems.
 Since this requires compiling code locally, [Cargo](https://rustup.rs/) is a strict dependency.
 Python3 and [SymPy](https://www.sympy.org/en/index.html) are also required for the transpilation process.
 
-To try out this feature, navigate to the project directory and run `cargo run -rF scripting`.
+To try out this feature, navigate to the project directory and run `cargo +nightly run -rF scripting`.
 This feature has only been tested on Linux.
 
 While not as flexible as manually editing profiles in Rust, scripts still allow

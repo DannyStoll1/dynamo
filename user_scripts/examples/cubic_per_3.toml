@@ -1,0 +1,17 @@
+[metadata]
+name = "Cubic Per(3)"
+short_name = "cubic_per_3"
+
+[names]
+variable = "z"
+selection = "t"
+
+[constants]
+
+[parameters]
+a = "1 - t - 3/(t+1) + 1/(t+1)**2"
+b = "t**3/(t+1)**2 + 1 + 1/t"
+
+[dynamics]
+start = "-2*b/(3*a)"
+map = "1 + b*z**2 + a*z**3"
