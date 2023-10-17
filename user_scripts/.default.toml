@@ -1,6 +1,6 @@
 # This is a sample script to show capabilities.
 # Further examples may be found in user_scripts/examples.
-# You can change this default by editing user_scripts/.default.toml.
+# You can change this default by editing user_scripts/.default.toml
 
 [metadata]
 # Display name.
@@ -19,7 +19,8 @@ variable = "z"
 selection = "t"
 
 [constants]
-# Any constants you want to define
+# Any constants you want to define.
+# Note that `lambda` is forbidden, since it is a keyword in Python.
 mu = "2-i"
 
 [parameters]

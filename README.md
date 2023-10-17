@@ -90,39 +90,22 @@ for a lot of expressive power with minimal boilerplate.
 Example syntax:
 
     [metadata]
-    # Display name.
-    # May be any unicode string.
-    name = "QuadRat Per(2, λ)"
-
-    # Name used internally.
-    # Must be alphanumeric and unique to this script.
-    short_name = "quadrat_per_2_l"
+    name = "QuadRat Per(2, μ)"
+    short_name = "quadrat_per_2_mu"
 
     [names]
-    # Dynamical variable
     variable = "z"
-
-    # Pixel location
     selection = "t"
 
     [constants]
-    # Any constants you want to define
     mu = "2-i"
 
     [parameters]
-    # Any parameters for the system, described in terms of the selection
-    # If you just want a Julia set, you can leave this section empty.
     a = "t**2 * (mu + mu*t - 4) / 4"
     b = "t * (mu*t - 4) / 4"
 
     [dynamics]
-    # Initial point. May depend on selection, parameters, and constants.
-    # Perfectly valid in this context would be `start = "3*t - mu/a"`
     start = 0
-
-    # Dynamical map. Cannot depend directly on selection.
-    # If it does, just add a parameter representing the selection,
-    # e.g. c = "t" under [parameters]
     map = "(z**2 + a)/(z**2 + b)"
 
 ## Planned Features
@@ -130,8 +113,8 @@ Example syntax:
 - [x] Live Julia sets
 - [x] Mark orbits
 - [x] Marked points
-- :construction: External rays
-- :construction: Equipotentials
+- :hammer: External rays
+- :hammer: Equipotentials
 - Saving improvements
   - [ ] Save/load palettes
   - [x] Save images
@@ -144,7 +127,7 @@ Example syntax:
 - [ ] Drag to pan/zoom
 - [ ] Descend to child for multi-parameter systems
 - [ ] Solve for critical points and $n$-cycles automatically
-- :construction: User-friendly scripting interface
+- :hammer: User-friendly scripting interface
 - [ ] Switch to stable channel
 - [x] Implement web interface
   - [x] Fix broken clicking in web UI
