@@ -76,24 +76,75 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Up/Down: Change coloring period
 - Right/Left: Change coloring phase
 
+### User Scripts (Experimental)
+
+Users can now write scripts at runtime to study custom dynamical systems.
+Since this requires compiling code, [Cargo](https://rustup.rs/) is a strict dependency.
+
+To try out this feature, navigate to the project directory and run `cargo run -rF scripting`.
+This feature has only been tested on Linux.
+
+While not as flexible as manually editing profiles in Rust, scripts still allow
+for a lot of expressive power with minimal boilerplate.
+
+Example syntax:
+
+    [metadata]
+    # Display name.
+    # May be any unicode string.
+    name = "QuadRat Per(2, λ)"
+
+    # Name used internally.
+    # Must be alphanumeric and unique to this script.
+    short_name = "quadrat_per_2_l"
+
+    [names]
+    # Dynamical variable
+    variable = "z"
+
+    # Pixel location
+    selection = "t"
+
+    [constants]
+    # Any constants you want to define
+    mu = "2-i"
+
+    [parameters]
+    # Any parameters for the system, described in terms of the selection
+    # If you just want a Julia set, you can leave this section empty.
+    a = "t**2 * (mu + mu*t - 4) / 4"
+    b = "t * (mu*t - 4) / 4"
+
+    [dynamics]
+    # Initial point. May depend on selection, parameters, and constants.
+    # Perfectly valid in this context would be `start = "3*t - mu/a"`
+    start = 0
+
+    # Dynamical map. Cannot depend directly on selection.
+    # If it does, just add a parameter representing the selection,
+    # e.g. c = "t" under [parameters]
+    map = "(z**2 + a)/(z**2 + b)"
+
 ## Planned Features
 
 - [x] Live Julia sets
 - [x] Mark orbits
 - [x] Marked points
+- :construction: External rays
+- :construction: Equipotentials
 - Saving improvements
   - [ ] Save/load palettes
   - [x] Save images
     - [ ] Marked points/curves in saved images
   - [ ] Save program state
   - [x] User-friendly save dialog
-- [ ] Buttons for all actions
+- [x] Menu items for most/all actions
 - [ ] Command-line integration
 - [x] Internal coloration
 - [ ] Drag to pan/zoom
 - [ ] Descend to child for multi-parameter systems
 - [ ] Solve for critical points and $n$-cycles automatically
-- [ ] User-friendly scripting interface
+- :construction: User-friendly scripting interface
 - [ ] Switch to stable channel
 - [x] Implement web interface
   - [x] Fix broken clicking in web UI
