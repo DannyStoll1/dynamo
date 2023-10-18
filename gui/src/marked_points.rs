@@ -2,12 +2,19 @@ use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 
 use egui::{Color32, Painter};
-use epaint::{PathShape, Pos2, Stroke};
+use epaint::{CircleShape, PathShape, Pos2, Stroke};
+use image::{ImageBuffer, Rgb};
+use imageproc::drawing::{draw_filled_circle_mut, draw_polygon_mut};
+use itertools::Itertools;
+
 use fractal_common::coloring::palette::DiscretePalette;
 use fractal_common::prelude::*;
 use fractal_core::dynamics::ParameterPlane;
 
 use crate::image_frame::ImageFrame;
+
+const POINT_RADIUS: f32 = 3.5;
+const CURVE_THICKNESS: f32 = 0.8;
 
 type Curve = Vec<Cplx>;
 
@@ -525,6 +532,16 @@ impl Marking
         self.path_cache.borrow_mut().set_fresh();
     }
 
+    pub fn draw_points(&self, painter: &Painter, grid: &PointGrid, frame: &ImageFrame)
+    {
+        for ColoredPoint { point: z, color } in self.iter_points()
+        {
+            let point = frame.to_global_coords(grid.locate_point(z).into());
+            let patch = CircleShape::filled(point, POINT_RADIUS, color);
+            painter.add(patch);
+        }
+    }
+
     pub fn draw_curves(&self, painter: &Painter, grid: &PointGrid, frame: &ImageFrame)
     {
         if self.path_cache.borrow().is_stale()
@@ -541,6 +558,75 @@ impl Marking
                 painter.add(path);
             },
         );
+    }
+
+    fn draw_curves_to_image(&self, grid: &PointGrid, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
+    {
+        use imageproc::point::Point;
+        let thickness = CURVE_THICKNESS * (image.width() as f32) / 768.;
+
+        self.iter_visible_curves().for_each(
+            |ColoredMaybeHidden {
+                 object: curve,
+                 color,
+                 ..
+             }| {
+                let (r, g, b, _a) = color.to_tuple();
+                let color = Rgb([r, g, b]);
+                curve
+                    .iter()
+                    .cloned()
+                    .map(|z| grid.locate_point(z))
+                    .tuple_windows()
+                    .for_each(|([x0, y0], [x1, y1])| {
+                        let normal_x = y1 - y0;
+                        let normal_y = x0 - x1;
+                        let n_length = normal_x.hypot(normal_y);
+
+                        let nx = 0.5 * thickness * normal_x / n_length;
+                        let ny = 0.5 * thickness * normal_y / n_length;
+
+                        let corners = [
+                            (x0 - nx, y0 - ny),
+                            (x0 + nx, y0 + ny),
+                            (x1 + nx, y1 + ny),
+                            (x1 - nx, y1 - ny),
+                        ]
+                        .map(|(x, y)| Point::new(x as i32, y as i32));
+
+                        if corners[0] != corners[3]
+                        {
+                            draw_polygon_mut(image, &corners, color);
+                        }
+                    });
+                // curve
+                //     .iter()
+                //     .cloned()
+                //     .map(|z| grid.locate_point(z))
+                //     .map(|[x, y]| (x as i32, y as i32))
+                //     .tuple_windows()
+                //     .for_each(|(p0, p1)| {
+                //         draw_antialiased_line_segment_mut(image, p0, p1, color, interpolate);
+                //     });
+            },
+        );
+    }
+    fn draw_points_to_image(&self, grid: &PointGrid, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
+    {
+        let radius = POINT_RADIUS * (image.width() as f32) / 768.;
+        self.iter_points()
+            .for_each(|ColoredPoint { point, color }| {
+                let (r, g, b, _a) = color.to_tuple();
+                let color = Rgb([r, g, b]);
+                let [x, y] = grid.locate_point(point);
+                let center = (x as i32, y as i32);
+                draw_filled_circle_mut(image, center, radius as i32, color);
+            });
+    }
+    pub fn mark_image(&self, grid: &PointGrid, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
+    {
+        self.draw_curves_to_image(grid, image);
+        self.draw_points_to_image(grid, image);
     }
 }
 

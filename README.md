@@ -20,6 +20,9 @@ Fractal Explorer hopes to combine the strengths of these excellent tools, though
 - Equipotentials (not fully reliable, working on a better implementation)
 - Optimized for performance
 
+As of version 0.5, saved images now contain all annotations.
+![Example image showing external rays, equipotentials, and periodic points](images/sample.png)
+
 ## Installation
 
 To install and run, just clone the repository, navigate to `bin`, and run `cargo +nightly run -r`.
@@ -120,7 +123,7 @@ Example syntax:
 - Saving improvements
   - [ ] Save/load palettes
   - [x] Save images
-    - [ ] Marked points/curves in saved images
+    - [x] Marked points/curves in saved images
   - [ ] Save program state
   - [x] User-friendly save dialog
 - [x] Menu items for most/all actions

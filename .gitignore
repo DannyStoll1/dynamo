@@ -5,7 +5,9 @@ Cargo.lock
 release-archives
 target
 bin/images
-images
+images/*
+!images/
+!images/sample.png
 wasm/Cargo.lock
 perf_notes.txt
 notes.txt

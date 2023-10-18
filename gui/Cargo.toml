@@ -1,6 +1,6 @@
 [package]
 name = "fractal_gui"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 authors = ["Danny Stoll"]
 repository = "https://github.com/dannystoll1/fractal-explorer"
@@ -20,6 +20,9 @@ fractal_core = { version = "*", path = "../core" }
 fractal_common = { version = "*", path = "../common" }
 fractal_profiles = { version = "*", path = "../profiles" }
 libloading = {version = "0.8.1", optional = true}
+image = "0.24.7"
+imageproc = "0.23.0"
+itertools = "0.11.0"
 
 [features]
 serde = ["dep:serde", "eframe/serde", "epaint/serde", "fractal_core/serde", "fractal_common/serde"]

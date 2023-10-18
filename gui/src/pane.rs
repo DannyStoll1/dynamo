@@ -4,10 +4,8 @@ use fractal_core::dynamics::{ParameterPlane, PlaneType};
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
-use crate::marked_points::ColoredPoint;
 
 use egui::{Color32, Pos2, Ui};
-use epaint::CircleShape;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -694,7 +692,20 @@ where
         let old_res_x = self.plane.point_grid().res_x;
         self.plane.point_grid_mut().resize_x(img_width);
         let iter_plane = self.plane.compute();
-        iter_plane.save(self.get_coloring(), filename.to_owned());
+        // iter_plane.save(self.get_coloring(), filename.to_owned());
+
+        let mut image = iter_plane.write_image(self.get_coloring());
+        self.marking.mark_image(self.grid(), &mut image);
+
+        if let Err(e) = image.save(filename)
+        {
+            println!("Error saving file: {e:?}");
+        }
+        else
+        {
+            println!("Image saved to {filename}");
+        }
+
         self.plane.point_grid_mut().resize_x(old_res_x);
     }
 
@@ -751,12 +762,7 @@ where
         let frame = self.frame();
         let grid = self.grid();
         let painter = ui.painter().with_clip_rect(frame.region);
-        for ColoredPoint { point: z, color } in self.marking.iter_points()
-        {
-            let point = frame.to_global_coords(grid.locate_point(z).into());
-            let patch = CircleShape::filled(point, 4., color);
-            painter.add(patch);
-        }
+        self.marking.draw_points(&painter, grid, frame);
     }
 
     fn describe_selection(&self) -> String
