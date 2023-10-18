@@ -23,6 +23,15 @@ pub struct Loader<'a>
 
 impl<'a> Loader<'a>
 {
+    #[cfg(target_os = "linux")]
+    const LIB_EXT: &'static str = "so";
+
+    #[cfg(target_os = "windows")]
+    const LIB_EXT: &'static str = "dll";
+
+    #[cfg(target_os = "macos")]
+    const LIB_EXT: &'static str = "dylib";
+
     #[must_use]
     pub fn new(toml_path: &'a Path, image_height: usize) -> Self
     {
@@ -46,8 +55,11 @@ impl<'a> Loader<'a>
     {
         self.lib_path.get_or_insert_with(|| {
             let lib_id = &file_hash(self.toml_path).unwrap_or_default()[0..12];
-            self.output_path
-                .join(format!("../compiled/libscripts_{}.so", lib_id))
+            self.output_path.join(format!(
+                "../compiled/libscripts_{}.{}",
+                lib_id,
+                Self::LIB_EXT
+            ))
         })
     }
 
@@ -72,14 +84,16 @@ impl<'a> Loader<'a>
             .map_err(ScriptError::CargoCommandFailed)?;
 
         #[cfg(debug_assertions)]
-        let orig_lib_path = self
-            .output_path
-            .join("../../target/debug/libtranspiled_scripts.so");
+        let orig_lib_path = self.output_path.join(format!(
+            "../../target/debug/libtranspiled_scripts.{}",
+            Self::LIB_EXT
+        ));
 
         #[cfg(not(debug_assertions))]
-        let orig_lib_path = self
-            .output_path
-            .join("../../target/release/libtranspiled_scripts.so");
+        let orig_lib_path = self.output_path.join(format!(
+            "../../target/release/libtranspiled_scripts.{}",
+            Self::LIB_EXT
+        ));
 
         std::fs::rename(orig_lib_path, self.get_lib_path())
             .map_err(ScriptError::ErrorMovingLibrary)?;

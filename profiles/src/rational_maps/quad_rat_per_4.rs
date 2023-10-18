@@ -160,13 +160,13 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn degree_real(&self) -> Real
     {
-        -2.0
+        2.0
     }
 
     #[inline]
     fn degree(&self) -> AngleNum
     {
-        -2
+        2
     }
 
     #[inline]

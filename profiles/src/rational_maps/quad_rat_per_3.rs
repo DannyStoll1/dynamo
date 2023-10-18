@@ -126,12 +126,13 @@ impl ParameterPlane for QuadRatPer3
     #[inline]
     fn degree_real(&self) -> Real
     {
-        -2.0
+        2.0
     }
 
     #[inline]
-    fn degree(&self) -> AngleNum {
-        -2
+    fn degree(&self) -> AngleNum
+    {
+        2
     }
 
     #[inline]

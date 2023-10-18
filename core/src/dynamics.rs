@@ -964,10 +964,10 @@ pub trait ParameterPlane: Sync + Send
         PlaneType::Parameter
     }
 
-    /// Order of vanishing of $1/f(1/z)$ at $z=0$, where $f$ is the dynamical map.
-    /// Can be negative, as in the case for many families of rational maps.
+    /// Order of vanishing of the first return map of $1/f(1/z)$ at $z=0$.
     ///
-    /// Should be set to NAN if $f$ has an essential singularity at infinity.
+    /// Should be set to NAN if $f$ has an essential singularity at infinity,
+    /// or if infinity is not periodic under $f$.
     /// In such cases, external rays are unsupported (unless manually implemented).
     #[inline]
     fn degree_real(&self) -> Real
@@ -975,15 +975,18 @@ pub trait ParameterPlane: Sync + Send
         2.0
     }
 
+    /// Order of vanishing of the first return map of $1/f(1/z)$ at $z=0$.
+    ///
+    /// Should be set to 0 if $f$ has an essential singularity at infinity,
+    /// or if infinity is not periodic under $f$.
+    /// In such cases, external rays are unsupported (unless manually implemented).
     #[inline]
     fn degree(&self) -> AngleNum
     {
         self.degree_real().try_round().unwrap_or(0)
     }
 
-    /// Period of the "escaping" cycle. For instance, in Per(n) for quadratic rational maps
-    /// (parameterized so that infinity belongs to the critical cycle), this has value n.
-    /// For polynomial families, this always equals 1.
+    /// Period of infinity under $f$. Should be set to 0 if infinity is not periodic.
     ///
     /// Used for computing external rays, for which we use an iterate of the map instead of the map
     /// itself.

@@ -419,6 +419,12 @@ impl ParameterPlane for SineWander
         f64::NAN
     }
 
+    #[inline]
+    fn escaping_period(&self) -> Period
+    {
+        0
+    }
+
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)

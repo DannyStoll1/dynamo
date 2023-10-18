@@ -15,3 +15,4 @@ todo.txt
 profiles/src/rational_maps/quad_rat_per_4_1_experiments.rs
 scripting/compiled
 scripting/output/src/generated/*.rs
+.cargo
