@@ -24,13 +24,13 @@ pub struct Loader<'a>
 impl<'a> Loader<'a>
 {
     #[cfg(target_os = "linux")]
-    const LIB_EXT: &'static str = "so";
+    const LIB_NAME: &'static str = "libtranspiled_scripts.so";
 
     #[cfg(target_os = "windows")]
-    const LIB_EXT: &'static str = "dll";
+    const LIB_NAME: &'static str = "transpiled_scripts.dll";
 
     #[cfg(target_os = "macos")]
-    const LIB_EXT: &'static str = "dylib";
+    const LIB_NAME: &'static str = "libtranspiled_scripts.dylib";
 
     #[must_use]
     pub fn new(toml_path: &'a Path, image_height: usize) -> Self
@@ -67,7 +67,7 @@ impl<'a> Loader<'a>
             .join("..")
             .join("target")
             .join("debug")
-            .join(format!("libtranspiled_scripts.{}", Self::LIB_EXT))
+            .join(Self::LIB_NAME)
     }
 
     #[cfg(not(debug_assertions))]
@@ -79,7 +79,7 @@ impl<'a> Loader<'a>
             .join("..")
             .join("target")
             .join("release")
-            .join(format!("libtranspiled_scripts.{}", Self::LIB_EXT))
+            .join(Self::LIB_NAME)
     }
 
     fn dest_lib_path(&mut self) -> &PathBuf
@@ -90,7 +90,7 @@ impl<'a> Loader<'a>
                 .to_path_buf()
                 .join("..")
                 .join("compiled")
-                .join(format!("libscripts_{}.{}", lib_id, Self::LIB_EXT))
+                .join(format!("libscripts_{}.{}", lib_id, Self::LIB_NAME))
         })
     }
 
