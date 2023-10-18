@@ -1,5 +1,6 @@
 use fractal_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
 use fractal_common::prelude::*;
+use fractal_core::dynamics::error::FindPointResult;
 use fractal_core::dynamics::{ParameterPlane, PlaneType};
 
 use super::image_frame::ImageFrame;
@@ -109,7 +110,7 @@ pub trait Pane
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
     fn reset(&mut self);
-    fn select_nearby_point(&mut self, orbit_schema: OrbitSchema) -> Result<Cplx, ()>;
+    fn select_nearby_point(&mut self, orbit_schema: OrbitSchema) -> FindPointResult<Cplx>;
     fn select_ray_landing_point(&mut self, angle: RationalAngle);
     fn map_selection(&mut self);
     fn follow_ray_landing_point(&mut self, angle: RationalAngle);
@@ -557,17 +558,14 @@ where
         }
     }
 
-    fn select_nearby_point(&mut self, o: OrbitSchema) -> Result<Cplx, ()>
+    fn select_nearby_point(&mut self, o: OrbitSchema) -> FindPointResult<Cplx>
     {
-        if let Some(landing_point) = self.plane.find_nearby_preperiodic_point(self.selection, o)
-        {
-            self.select_point(landing_point);
-            Ok(landing_point)
-        }
-        else
-        {
-            Err(())
-        }
+        self.plane
+            .find_nearby_preperiodic_point(self.selection, o)
+            .map(|pt| {
+                self.select_point(pt);
+                pt
+            })
     }
 
     fn map_selection(&mut self)

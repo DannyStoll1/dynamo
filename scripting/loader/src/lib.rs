@@ -11,7 +11,6 @@ mod tests
     use crate::transpiler::*;
     use fractal_gui::interface::Interactive;
     use std::fs;
-    use toml;
 
     #[test]
     fn test_parse_input()
@@ -44,7 +43,7 @@ mod tests
         use serde_json::Value as JsonValue;
         let input0 = JsonValue::Number(Number::from(1));
         let input1 = JsonValue::String("3-2i".to_owned());
-        let input2 = JsonValue::String("-6.28i".to_owned());
+        let input2 = JsonValue::String("-6.283185307179586i".to_owned());
         let input3 = JsonValue::String("17".to_owned());
         let input4 = JsonValue::String("3- i".to_owned());
 
@@ -56,7 +55,7 @@ mod tests
 
         assert_eq!(val0, Complex64::new(1., 0.));
         assert_eq!(val1, Complex64::new(3., -2.));
-        assert_eq!(val2, Complex64::new(0., -6.28));
+        assert_eq!(val2, Complex64::new(0., -std::f64::consts::TAU));
         assert_eq!(val3, Complex64::new(17., 0.));
         assert_eq!(val4, Complex64::new(3., -1.));
     }

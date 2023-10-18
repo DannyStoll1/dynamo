@@ -15,7 +15,6 @@ impl Transpiler
         Self { parsed_input }
     }
 
-    #[must_use]
     pub fn from_toml_path(path: &Path) -> Result<Self, ScriptError>
     {
         let content = std::fs::read_to_string(path).map_err(ScriptError::ErrorReadingToml)?;

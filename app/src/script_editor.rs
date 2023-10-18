@@ -61,22 +61,12 @@ impl Popup
     {
         match self
         {
-            Self::Load(dialog) =>
-            {
-                if dialog.selected()
-                {
-                    if let Some(path) = dialog.path()
-                    {
-                        return Response::Load(path.to_path_buf())
-                    }
-                    return Response::Close
-                }
-                return Response::DoNothing
-            }
-            Self::Edit(editor) =>
-            {
-                return editor.pop_response()
-            }
+            Self::Load(dialog) if dialog.selected() => dialog
+                .path()
+                .map(|path| Response::Load(path.to_path_buf()))
+                .unwrap_or(Response::Close),
+            Self::Load(_) => Response::DoNothing,
+            Self::Edit(editor) => editor.pop_response(),
         }
     }
 }
@@ -132,7 +122,7 @@ impl ScriptEditor
                 .vscroll(true)
                 .default_height(720.)
                 .default_width(600.)
-                .show(&ctx, |ui| {
+                .show(ctx, |ui| {
                     egui::TextEdit::multiline(&mut self.text)
                         .code_editor()
                         .desired_rows(30)
@@ -216,17 +206,11 @@ impl ScriptEditor
 
     fn pop_response(&mut self) -> Response
     {
-        if let Some(path) = self.state.pop_if_ready()
+        match self.state.pop_if_ready()
         {
-            return Response::Load(path);
-        }
-        else if self.enabled()
-        {
-            return Response::DoNothing;
-        }
-        else
-        {
-            return Response::Close;
+            Some(path) => Response::Load(path),
+            None if self.enabled() => Response::DoNothing,
+            None => Response::Close,
         }
     }
 }

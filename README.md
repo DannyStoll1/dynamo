@@ -20,7 +20,7 @@ Fractal Explorer hopes to combine the strengths of these excellent tools, though
 - Equipotentials (not fully reliable, working on a better implementation)
 - Optimized for performance
 
-As of version 0.5, saved images now contain all annotations.
+As of version 0.5.1, saved images now contain all annotations.
 ![Example image showing external rays, equipotentials, and periodic points](images/sample.png)
 
 ## Installation

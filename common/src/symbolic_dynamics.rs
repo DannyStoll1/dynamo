@@ -305,7 +305,7 @@ impl CirclePartition
                 {}
             }
         }
-        KneadingSymbol::Interior(self.angles.len().checked_sub(1).unwrap_or(0))
+        KneadingSymbol::Interior(self.angles.len().saturating_sub(1))
     }
 
     pub fn is_circularly_ordered(&self) -> bool

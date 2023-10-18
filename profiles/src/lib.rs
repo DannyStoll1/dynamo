@@ -267,10 +267,11 @@ mod tests
     {
         // let param_plane = CubicPer1_0::default();
         // let param_plane = OddCubic::default();
-        // let param_plane = Mandelbrot::default();
-        let param_plane = QuadRatPer2::default();
+        let param_plane = Mandelbrot::default();
+        // let param_plane = QuadRatPer2::default();
         let angle = RationalAngle::new(1, 7);
-        let ray = param_plane.external_ray(angle);
-        // dbg!(ray);
+        let ray = param_plane.external_ray(angle).unwrap();
+        let target = Cplx::new(-0.125, 0.649519052838329);
+        assert!((ray.last().unwrap() - target).norm_sqr() < 1e-4);
     }
 }

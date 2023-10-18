@@ -78,6 +78,12 @@ where
     }
 
     #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        self.base_curve.degree()
+    }
+
+    #[inline]
     fn min_iter(&self) -> Period
     {
         self.base_curve.min_iter()
@@ -188,7 +194,8 @@ where
     }
 
     #[inline]
-    fn default_bounds(&self) -> Bounds {
+    fn default_bounds(&self) -> Bounds
+    {
         self.orig_bounds.clone()
     }
 

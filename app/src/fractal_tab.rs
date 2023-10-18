@@ -296,7 +296,7 @@ impl FractalTab
     #[cfg(feature = "scripting")]
     fn should_update_interface(&self) -> bool
     {
-        !self.popup.is_some() && self.menu_state.is_closed()
+        self.popup.is_none() && self.menu_state.is_closed()
     }
 
     #[cfg(not(feature = "scripting"))]

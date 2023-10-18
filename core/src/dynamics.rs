@@ -1,4 +1,5 @@
 use fractal_common::coloring::*;
+use fractal_common::math_utils::newton::error::NewtonResult;
 use fractal_common::math_utils::{arithmetic::*, newton::*};
 use fractal_common::prelude::*;
 use fractal_common::symbolic_dynamics::OrbitSchema;
@@ -14,6 +15,7 @@ pub mod covering_maps;
 pub mod julia;
 pub mod newton;
 pub mod orbit;
+pub mod error;
 // pub mod simple_parameter_plane;
 // pub mod functions;
 
@@ -21,6 +23,7 @@ use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
 use std::ops::{Add, Mul, MulAssign, Sub};
 
+use self::error::{FindPointError, FindPointResult};
 use self::orbit::OrbitParams;
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
@@ -482,11 +485,11 @@ pub trait ParameterPlane: Sync + Send
             period: n,
             preperiod: k,
         }: OrbitSchema,
-    ) -> Option<Cplx>
+    ) -> FindPointResult<Cplx>
     {
         if n == 0
         {
-            return None;
+            return Err(FindPointError::PeriodIsZero);
         }
 
         // Number of unitary divisors of n
@@ -593,7 +596,7 @@ pub trait ParameterPlane: Sync + Send
             out
         };
 
-        find_root_newton(diff, start_point)
+        find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
     }
 
     /// Argument of f_c^k(z0) for c very large with a given argument,
@@ -703,7 +706,7 @@ pub trait ParameterPlane: Sync + Send
             for target in targets
             {
                 // println!("New target: {}", target);
-                if let Some((sol, t_k, d_k)) =
+                if let Ok((sol, t_k, d_k)) =
                     find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
                 {
                     // dbg!(target, sol);
