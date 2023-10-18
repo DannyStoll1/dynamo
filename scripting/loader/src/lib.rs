@@ -64,22 +64,23 @@ mod tests
     fn loader()
     {
         use crate::loader::Loader;
-        use std::path::Path;
-        let toml_path = Path::new("../../user_scripts/.default.toml");
-        // let output_path = Path::new("../output");
-        let loader = Loader::new(toml_path, 768);
+        use std::path::PathBuf;
+        let scripts_path = PathBuf::from("..").join("..").join("user_scripts");
+        let toml_path = scripts_path.join(".default.toml");
+        let output_path = PathBuf::from("..").join("output");
+        let loader = Loader::new(&toml_path, 768).with_output_path(&output_path);
 
         unsafe {
             let int = loader.run().unwrap();
             assert_eq!(int.name(), "QuadRat Per(2, λ)");
         }
 
-        let toml_path = Path::new("../../user_scripts/examples/mandelbrot.toml");
-        let loader = Loader::new(toml_path, 768);
+        let toml_path = scripts_path.join("examples").join("mandelbrot.toml");
+        let loader = Loader::new(&toml_path, 768).with_output_path(&output_path);
 
         unsafe {
             let int = loader.run().unwrap();
-            assert_eq!(int.name(), "Mandelbrot");
+            assert_eq!(int.name(), "Mandelbrot set");
         }
     }
 

@@ -158,9 +158,9 @@ impl UnparsedUserInput
         let context: Context = python! {
             from sympy import symbols, lambdify, parse_expr, cse
 
-            import sys
+            import os, sys
             sys.path.append("python")
-            sys.path.append("scripting/loader/python")
+            sys.path.append(os.path.join("scripting", "loader", "python"))
             from oxidize import *
 
             i = 1j

@@ -16,7 +16,7 @@ fn file_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error>
 pub struct Loader<'a>
 {
     pub toml_path: &'a Path,
-    pub output_path: &'a Path,
+    pub output_path: PathBuf,
     pub image_height: usize,
     lib_path: Option<PathBuf>,
 }
@@ -35,7 +35,7 @@ impl<'a> Loader<'a>
     #[must_use]
     pub fn new(toml_path: &'a Path, image_height: usize) -> Self
     {
-        let output_path = Path::new("scripting/output");
+        let output_path = Path::new("scripting").join("output");
         Self {
             toml_path,
             output_path,
@@ -44,22 +44,53 @@ impl<'a> Loader<'a>
         }
     }
 
+    #[must_use]
+    pub fn with_output_path(mut self, output_path: impl Into<PathBuf>) -> Self
+    {
+        self.output_path = output_path.into();
+        self
+    }
+
     fn transpile_toml(&self) -> Result<(), ScriptError>
     {
         let transpiler = Transpiler::from_toml_path(self.toml_path)?;
-        let rust_path = self.output_path.join("src/generated");
+        let rust_path = self.output_path.join("src").join("generated");
         transpiler.write(&rust_path)
     }
 
-    fn get_lib_path(&mut self) -> &PathBuf
+    #[cfg(debug_assertions)]
+    fn orig_lib_path(&self) -> PathBuf
+    {
+        self.output_path
+            .to_path_buf()
+            .join("..")
+            .join("..")
+            .join("target")
+            .join("debug")
+            .join(format!("libtranspiled_scripts.{}", Self::LIB_EXT))
+    }
+
+    #[cfg(not(debug_assertions))]
+    fn orig_lib_path(&self) -> PathBuf
+    {
+        self.output_path
+            .to_path_buf()
+            .join("..")
+            .join("..")
+            .join("target")
+            .join("release")
+            .join(format!("libtranspiled_scripts.{}", Self::LIB_EXT))
+    }
+
+    fn dest_lib_path(&mut self) -> &PathBuf
     {
         self.lib_path.get_or_insert_with(|| {
             let lib_id = &file_hash(self.toml_path).unwrap_or_default()[0..12];
-            self.output_path.join(format!(
-                "../compiled/libscripts_{}.{}",
-                lib_id,
-                Self::LIB_EXT
-            ))
+            self.output_path
+                .to_path_buf()
+                .join("..")
+                .join("compiled")
+                .join(format!("libscripts_{}.{}", lib_id, Self::LIB_EXT))
         })
     }
 
@@ -67,45 +98,28 @@ impl<'a> Loader<'a>
     {
         Command::new("cargo")
             .args(["fmt", "-p", "transpiled-scripts"])
-            .current_dir(self.output_path);
+            .current_dir(&self.output_path);
 
-        #[cfg(debug_assertions)]
         let status = Command::new("cargo")
             .args(["build", "-p", "transpiled-scripts"])
-            .current_dir(self.output_path)
-            .status()
-            .map_err(ScriptError::CargoCommandFailed)?;
-
-        #[cfg(not(debug_assertions))]
-        let status = Command::new("cargo")
-            .args(&["build", "--release", "-p", "transpiled-scripts"])
             .current_dir(&self.output_path)
             .status()
             .map_err(ScriptError::CargoCommandFailed)?;
 
-        #[cfg(debug_assertions)]
-        let orig_lib_path = self.output_path.join(format!(
-            "../../target/debug/libtranspiled_scripts.{}",
-            Self::LIB_EXT
-        ));
-
-        #[cfg(not(debug_assertions))]
-        let orig_lib_path = self.output_path.join(format!(
-            "../../target/release/libtranspiled_scripts.{}",
-            Self::LIB_EXT
-        ));
-
-        std::fs::rename(orig_lib_path, self.get_lib_path())
-            .map_err(ScriptError::ErrorMovingLibrary)?;
-
-        if status.success()
+        if !status.success()
         {
-            Ok(())
+            return Err(ScriptError::CompilationFailed);
         }
-        else
-        {
-            Err(ScriptError::CompilationFailed)
-        }
+
+        println!(
+            "    Moving compiled library:\n        \
+                {}\n  \
+            --> {}",
+            self.orig_lib_path().display(),
+            self.dest_lib_path().display()
+        );
+        std::fs::rename(self.orig_lib_path(), self.dest_lib_path())
+            .map_err(ScriptError::ErrorMovingLibrary)
     }
 
     /// Load the library in `scripting/compiled` created by `self.build`.
@@ -123,7 +137,7 @@ impl<'a> Loader<'a>
     unsafe fn load<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
         // Load the dynamic library
-        let lib = Library::new(self.get_lib_path()).map_err(ScriptError::ErrorLoadingLibrary)?;
+        let lib = Library::new(self.dest_lib_path()).map_err(ScriptError::ErrorLoadingLibrary)?;
 
         // Get the constructor function from the dynamic library
         type Constructor = unsafe fn() -> *mut dyn Interface;
@@ -156,13 +170,13 @@ impl<'a> Loader<'a>
     /// filename based on the content of the user's script.
     pub unsafe fn run<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
-        println!("Transpiling script...");
+        println!("\nTranspiling script...");
         self.transpile_toml()?;
 
-        println!("Building script...");
+        println!("\nBuilding script...");
         self.build()?;
 
-        println!("Loading script...");
+        println!("\nLoading script...");
         self.load()
     }
 
@@ -179,7 +193,7 @@ impl<'a> Loader<'a>
     /// FIXME: Add a build script to clear old script libraries from `scripting/compiled` whenever `fractal-explorer` is recompiled.
     pub unsafe fn run_lazy<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
-        if self.get_lib_path().exists()
+        if self.dest_lib_path().exists()
         {
             println!("Library found, skipping compilation.");
         }
