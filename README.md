@@ -87,7 +87,7 @@ Since this requires compiling code locally, [Cargo](https://rustup.rs/) is a str
 Python3 and [SymPy](https://www.sympy.org/en/index.html) are also required for the transpilation process.
 
 To try out this feature, navigate to the project directory and run `cargo +nightly run -rF scripting`.
-This feature has only been tested on Linux.
+This feature has been tested to work on Linux and Windows, but it remains highly experimental.
 
 While not as flexible as manually editing profiles in Rust, scripts still allow
 for a lot of expressive power with minimal boilerplate.
