@@ -2,6 +2,7 @@
 */Cargo.lock
 **/__pycache__
 Cargo.lock
+.cargo
 release-archives
 target
 bin/images
@@ -14,4 +15,5 @@ notes.txt
 todo.txt
 profiles/src/rational_maps/quad_rat_per_4_1_experiments.rs
 scripting/output/src/generated/*.rs
-.cargo
+user_scripts/*.toml
+!user_scripts/.default.toml
