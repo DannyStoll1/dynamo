@@ -6,6 +6,27 @@ use libloading::{Library, Symbol};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+#[cfg(target_os = "linux")]
+mod config
+{
+    pub const LIB_EXT: &'static str = ".so";
+    pub const LIB_PRE: &'static str = "lib";
+}
+
+#[cfg(target_os = "windows")]
+mod config
+{
+    const LIB_EXT: &'static str = ".dll";
+    const LIB_PRE: &'static str = "";
+}
+
+#[cfg(target_os = "macos")]
+mod config
+{
+    const LIB_EXT: &'static str = ".dylib";
+    const LIB_PRE: &'static str = "lib";
+}
+
 fn file_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error>
 {
     let bytes = std::fs::read(path.as_ref())?;
@@ -23,15 +44,6 @@ pub struct Loader<'a>
 
 impl<'a> Loader<'a>
 {
-    #[cfg(target_os = "linux")]
-    const LIB_NAME: &'static str = "libtranspiled_scripts.so";
-
-    #[cfg(target_os = "windows")]
-    const LIB_NAME: &'static str = "transpiled_scripts.dll";
-
-    #[cfg(target_os = "macos")]
-    const LIB_NAME: &'static str = "libtranspiled_scripts.dylib";
-
     #[must_use]
     pub fn new(toml_path: &'a Path, image_height: usize) -> Self
     {
@@ -67,7 +79,11 @@ impl<'a> Loader<'a>
             .join("..")
             .join("target")
             .join("debug")
-            .join(Self::LIB_NAME)
+            .join(format!(
+                "{}transpiled_scripts{}",
+                config::LIB_PRE,
+                config::LIB_EXT
+            ))
     }
 
     #[cfg(not(debug_assertions))]
@@ -79,7 +95,11 @@ impl<'a> Loader<'a>
             .join("..")
             .join("target")
             .join("release")
-            .join(Self::LIB_NAME)
+            .join(format!(
+                "{}transpiled_scripts{}",
+                config::LIB_PRE,
+                config::LIB_EXT
+            ))
     }
 
     fn dest_lib_path(&mut self) -> &PathBuf
@@ -90,7 +110,12 @@ impl<'a> Loader<'a>
                 .to_path_buf()
                 .join("..")
                 .join("compiled")
-                .join(format!("libscripts_{}.{}", lib_id, Self::LIB_NAME))
+                .join(format!(
+                    "{}scripts_{}{}",
+                    config::LIB_PRE,
+                    lib_id,
+                    config::LIB_EXT
+                ))
         })
     }
 
@@ -113,7 +138,7 @@ impl<'a> Loader<'a>
 
         println!(
             "    Moving compiled library:\n        \
-                {}\n  \
+                {}\n    \
             --> {}",
             self.orig_lib_path().display(),
             self.dest_lib_path().display()
