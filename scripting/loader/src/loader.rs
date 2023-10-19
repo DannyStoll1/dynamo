@@ -16,15 +16,15 @@ mod config
 #[cfg(target_os = "windows")]
 mod config
 {
-    const LIB_EXT: &'static str = ".dll";
-    const LIB_PRE: &'static str = "";
+    pub const LIB_EXT: &'static str = ".dll";
+    pub const LIB_PRE: &'static str = "";
 }
 
 #[cfg(target_os = "macos")]
 mod config
 {
-    const LIB_EXT: &'static str = ".dylib";
-    const LIB_PRE: &'static str = "lib";
+    pub const LIB_EXT: &'static str = ".dylib";
+    pub const LIB_PRE: &'static str = "lib";
 }
 
 fn file_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error>
