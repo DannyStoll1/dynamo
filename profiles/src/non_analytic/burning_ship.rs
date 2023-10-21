@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl, profile_imports};
 use dynamo_common::types::variables::Matrix2x2;
 profile_imports!();
 
@@ -27,7 +27,7 @@ impl<const N: Period> BurningShip<N>
 }
 impl<const N: Period> Default for BurningShip<N>
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl<const N: Period> ParameterPlane for BurningShip<N>
@@ -41,33 +41,6 @@ impl<const N: Period> ParameterPlane for BurningShip<N>
     basic_plane_impl!();
     default_name!();
     default_bounds!();
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        Self::N_FLOAT
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log(Self::N_FLOAT);
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -147,7 +120,7 @@ impl Sailboat
 }
 impl Default for Sailboat
 {
-    dynamo_impl!(shift, ZERO);
+    fractal_impl!(shift, ZERO);
 }
 
 impl ParameterPlane for Sailboat
@@ -159,27 +132,6 @@ impl ParameterPlane for Sailboat
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -258,7 +210,7 @@ impl SailboatParam
 }
 impl Default for SailboatParam
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for SailboatParam
@@ -337,3 +289,14 @@ impl From<SailboatParam> for Sailboat
         }
     }
 }
+
+impl<const N: Period> InfinityFirstReturnMap for BurningShip<N>
+{
+    degree_impl!(2);
+}
+
+impl<const N: Period> EscapeEncoding for BurningShip<N> {}
+impl<const N: Period> ExternalRays for BurningShip<N> {}
+
+degree_impl!(Sailboat, 2);
+degree_impl!(SailboatParam, 2);

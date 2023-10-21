@@ -1,4 +1,4 @@
-use crate::macros::{cplx_arr, horner, horner_monic, profile_imports};
+use crate::macros::{cplx_arr, degree_impl, horner, horner_monic, profile_imports};
 use seq_macro::seq;
 profile_imports!();
 
@@ -21,7 +21,7 @@ impl QuadRatPer2
 }
 impl Default for QuadRatPer2
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer2
@@ -29,31 +29,6 @@ impl ParameterPlane for QuadRatPer2
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        // let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
-        let q = -1.;
-        let residual = ((u + q) / (v + q)).log2();
-        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
-        // (F - M) / (2L - M)
-        let potential = (residual as IterCount).mul_add(2., f64::from(iters));
-        PointInfo::Escaping { potential }
-    }
 
     fn description(&self) -> String
     {
@@ -77,16 +52,6 @@ impl ParameterPlane for QuadRatPer2
         let z2 = z * z;
         let u = z2 - 1.;
         ((c + z2) / u, -2.0 * z * (c + 1.) / (u * u))
-    }
-
-    fn degree_real(&self) -> f64
-    {
-        -2.0
-    }
-
-    fn escaping_period(&self) -> Period
-    {
-        2
     }
 
     #[inline]
@@ -119,12 +84,6 @@ impl ParameterPlane for QuadRatPer2
     fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
     {
         (point, ONE)
-    }
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle + RationalAngle::ONE_HALF
     }
 
     #[inline]
@@ -795,7 +754,7 @@ impl QuadRatPer2Cover
 }
 impl Default for QuadRatPer2Cover
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer2Cover
@@ -803,31 +762,6 @@ impl ParameterPlane for QuadRatPer2Cover
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        // let q = ((base_param - 1.) / (4. * base_param)).norm().log2();
-        let q = -1.;
-        let residual = ((u + q) / (v + q)).log2();
-        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
-        // (F - M) / (2L - M)
-        let potential = (residual as IterCount).mul_add(2., f64::from(iters));
-        PointInfo::Escaping { potential }
-    }
 
     fn description(&self) -> String
     {
@@ -854,16 +788,6 @@ impl ParameterPlane for QuadRatPer2Cover
             (c * z2 + 1.) / (z2 - c2),
             2. * z * (c2 * c + 1.) / (z2 - c2),
         )
-    }
-
-    fn degree_real(&self) -> f64
-    {
-        -2.0
-    }
-
-    fn escaping_period(&self) -> Period
-    {
-        2
     }
 
     #[inline]
@@ -898,6 +822,11 @@ impl ParameterPlane for QuadRatPer2Cover
     {
         (point, ONE)
     }
+}
+
+impl InfinityFirstReturnMap for QuadRatPer2
+{
+    degree_impl!(2, 2);
 
     #[inline]
     fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
@@ -905,3 +834,20 @@ impl ParameterPlane for QuadRatPer2Cover
         angle + RationalAngle::ONE_HALF
     }
 }
+
+impl InfinityFirstReturnMap for QuadRatPer2Cover
+{
+    degree_impl!(2, 2);
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
+    }
+}
+
+impl EscapeEncoding for QuadRatPer2 {}
+impl ExternalRays for QuadRatPer2 {}
+
+impl EscapeEncoding for QuadRatPer2Cover {}
+impl ExternalRays for QuadRatPer2Cover {}

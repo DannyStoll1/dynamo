@@ -20,7 +20,7 @@ impl NewtonCubic
 }
 impl Default for NewtonCubic
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for NewtonCubic
@@ -92,3 +92,16 @@ impl ParameterPlane for NewtonCubic
             .collect()
     }
 }
+
+impl InfinityFirstReturnMap for NewtonCubic
+{
+    degree_impl!(1);
+    #[inline]
+    fn escaping_phase(&self) -> Period
+    {
+        1
+    }
+}
+
+impl EscapeEncoding for NewtonCubic {}
+impl ExternalRays for NewtonCubic {}

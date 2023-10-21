@@ -1,5 +1,5 @@
 use super::quad_rat_general::QuadRatGeneral;
-use crate::macros::{horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -252,3 +252,6 @@ impl From<QuadRatPer2LambdaParam> for QuadRatPer2Lambda
         }
     }
 }
+
+degree_impl!(QuadRatPer2Lambda, 1, 1);
+degree_impl!(QuadRatPer2LambdaParam, 1, 1);

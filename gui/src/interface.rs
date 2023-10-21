@@ -9,7 +9,7 @@ use dynamo_common::{
     symbolic_dynamics::*,
     types::{Cplx, ParamList},
 };
-use dynamo_core::dynamics::ParameterPlane;
+use dynamo_core::dynamics::Displayable;
 
 use crate::{
     actions::Action,
@@ -120,8 +120,8 @@ pub trait Interactive
 
 pub struct MainInterface<P, J>
 where
-    P: ParameterPlane + Clone + 'static,
-    J: ParameterPlane + Clone + 'static,
+    P: Displayable + Clone + 'static,
+    J: Displayable + Clone + 'static,
 {
     parent: WindowPane<P>,
     child: WindowPane<J>,
@@ -136,9 +136,9 @@ where
 
 impl<P, J, C, M, T> MainInterface<P, J>
 where
-    P: ParameterPlane + Clone,
-    J: ParameterPlane<MetaParam = M, Child = C> + Clone,
-    C: ParameterPlane + From<J>,
+    P: Displayable + Clone,
+    J: Displayable<MetaParam = M, Child = C> + Clone,
+    C: Displayable + From<J>,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
@@ -396,9 +396,9 @@ where
 
 impl<P, J, C, M, T> PanePair for MainInterface<P, J>
 where
-    P: ParameterPlane + Clone,
-    J: ParameterPlane<MetaParam = M, Child = C> + Clone,
-    C: ParameterPlane + From<J>,
+    P: Displayable + Clone,
+    J: Displayable<MetaParam = M, Child = C> + Clone,
+    C: Displayable + From<J>,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
@@ -613,9 +613,9 @@ where
 
 impl<P, J, C, M, T> Interactive for MainInterface<P, J>
 where
-    P: ParameterPlane + Clone,
-    J: ParameterPlane<MetaParam = M, Child = C> + Clone,
-    C: ParameterPlane + From<J>,
+    P: Displayable + Clone,
+    J: Displayable<MetaParam = M, Child = C> + Clone,
+    C: Displayable + From<J>,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {

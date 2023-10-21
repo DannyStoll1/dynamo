@@ -1,4 +1,4 @@
-use crate::macros::{horner, horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -21,7 +21,7 @@ impl QuadRatPer4
 }
 impl Default for QuadRatPer4
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer4
@@ -38,41 +38,6 @@ impl ParameterPlane for QuadRatPer4
             The plane is colored according to the \
             activity of the free critical point 0."
             .to_owned()
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        c: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        {
-            if z.is_nan()
-            {
-                return PointInfo::Escaping {
-                    potential: f64::from(iters) - 4.,
-                };
-            }
-
-            let u = self.escape_radius().log2();
-            let v = z.norm_sqr().log2();
-            let c2 = c * c;
-            let two_c = c + c;
-            let c12 = c2 - two_c + 1.; // (c-1)^2
-
-            let d0 = c2 + c - 1.; // c^2 + c - 1
-            let d1 = d0 - two_c - two_c + 2.; // c^2 - 3c + 1
-            let d2 = c2 + c2 + d1; // 3c^2 - 3c + 1
-
-            // (2*a - 1) * (a - 1)^5 * a^5 * (a^2 - 3*a + 1)^-2 * (3a^2 - 3a + 1)^-2 * (a^2 + a - 1)^-2
-            let q_numer = (two_c - 1.) * c2 * c2 * c * c12 * c12 * (c - 1.);
-            let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
-            let q = (q_numer / q_denom).norm().log2();
-            let residual = ((u + q) / (v + q)).log2();
-            let potential = (residual as IterCount).mul_add(4., f64::from(iters));
-            PointInfo::Escaping { potential }
-        }
     }
 
     #[inline]
@@ -158,34 +123,10 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn degree_real(&self) -> Real
-    {
-        2.0
-    }
-
-    #[inline]
-    fn degree(&self) -> AngleNum
-    {
-        2
-    }
-
-    #[inline]
-    fn escaping_period(&self) -> Period
-    {
-        4
-    }
-
-    #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         let c2 = c * c;
         vec![ZERO, 2. * (2. * c2 - c) / (c2 + c - 1.)]
-    }
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle + RationalAngle::ONE_HALF
     }
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
@@ -332,3 +273,52 @@ impl HasDynamicalCovers for QuadRatPer4
         CoveringMap::new(self, param_map, grid)
     }
 }
+
+impl InfinityFirstReturnMap for QuadRatPer4
+{
+    degree_impl!(2, 4);
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
+    }
+}
+
+impl EscapeEncoding for QuadRatPer4 {
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        c: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        {
+            if z.is_nan()
+            {
+                return PointInfo::Escaping {
+                    potential: f64::from(iters) - 4.,
+                };
+            }
+
+            let u = self.escape_radius().log2();
+            let v = z.norm_sqr().log2();
+            let c2 = c * c;
+            let two_c = c + c;
+            let c12 = c2 - two_c + 1.; // (c-1)^2
+
+            let d0 = c2 + c - 1.; // c^2 + c - 1
+            let d1 = d0 - two_c - two_c + 2.; // c^2 - 3c + 1
+            let d2 = c2 + c2 + d1; // 3c^2 - 3c + 1
+
+            // (2*a - 1) * (a - 1)^5 * a^5 * (a^2 - 3*a + 1)^-2 * (3a^2 - 3a + 1)^-2 * (a^2 + a - 1)^-2
+            let q_numer = (two_c - 1.) * c2 * c2 * c * c12 * c12 * (c - 1.);
+            let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
+            let q = (q_numer / q_denom).norm().log2();
+            let residual = ((u + q) / (v + q)).log2();
+            let potential = (residual as IterCount).mul_add(4., f64::from(iters));
+            PointInfo::Escaping { potential }
+        }
+    }
+}
+impl ExternalRays for QuadRatPer4 {}

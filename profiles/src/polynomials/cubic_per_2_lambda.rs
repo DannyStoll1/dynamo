@@ -34,14 +34,7 @@ impl Default for CubicPer2Lambda
 impl ParameterPlane for CubicPer2Lambda
 {
     parameter_plane_impl!(Cplx, CplxPair, Cplx, Cplx);
-    basic_escape_encoding!(3.);
     default_bounds!();
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -159,6 +152,41 @@ impl ParameterPlane for CubicPer2Lambda
     }
 }
 
+impl InfinityFirstReturnMap for CubicPer2Lambda
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        3
+    }
+}
+
+impl EscapeEncoding for CubicPer2Lambda {}
+impl ExternalRays for CubicPer2Lambda {}
+
+impl InfinityFirstReturnMap for CubicPer2LambdaParam
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        3
+    }
+}
+impl EscapeEncoding for CubicPer2LambdaParam {}
+impl ExternalRays for CubicPer2LambdaParam {}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer2LambdaParam
@@ -191,14 +219,7 @@ impl ParameterPlane for CubicPer2LambdaParam
     type Child = CubicPer2Lambda;
 
     basic_plane_impl!();
-    basic_escape_encoding!(3.);
     default_bounds!(Bounds::centered_square(2.5));
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[inline]
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
@@ -304,7 +325,7 @@ impl CubicPer2CritMarked
 }
 impl Default for CubicPer2CritMarked
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer2CritMarked
@@ -312,33 +333,6 @@ impl ParameterPlane for CubicPer2CritMarked
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -434,6 +428,22 @@ impl ParameterPlane for CubicPer2CritMarked
         Bounds::square(2.2, param / 2.)
     }
 }
+
+impl InfinityFirstReturnMap for CubicPer2CritMarked
+{
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        3
+    }
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+}
+impl EscapeEncoding for CubicPer2CritMarked {}
+impl ExternalRays for CubicPer2CritMarked {}
 
 impl HasDynamicalCovers for CubicPer2CritMarked
 {

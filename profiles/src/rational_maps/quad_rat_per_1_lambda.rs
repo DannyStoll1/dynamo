@@ -1,5 +1,5 @@
 use super::quad_rat_general::QuadRatGeneral;
-use crate::macros::{horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner_monic, profile_imports};
 profile_imports!();
 
 // Maps of the form f_t(z) = (z^2+a_t)/(z^2+b_t),
@@ -470,3 +470,7 @@ impl ParameterPlane for QuadRatPer1_1
         self.general_plane.cycles_child(c, period)
     }
 }
+
+degree_impl!(QuadRatPer1Lambda, 1, 1);
+degree_impl!(QuadRatPer1LambdaParam, 1, 1);
+degree_impl!(QuadRatPer1_1, 1, 1);

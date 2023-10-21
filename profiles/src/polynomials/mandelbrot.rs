@@ -1,6 +1,6 @@
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 
-use crate::macros::{cplx_arr, horner, horner_monic, profile_imports};
+use crate::macros::{cplx_arr, degree_impl, horner, horner_monic, profile_imports};
 
 profile_imports!();
 
@@ -31,7 +31,7 @@ impl Mandelbrot
 }
 impl Default for Mandelbrot
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for Mandelbrot
@@ -865,3 +865,5 @@ impl HasDynamicalCovers for Mandelbrot
         CoveringMap::new(self, param_map, grid)
     }
 }
+
+degree_impl!(Mandelbrot, 2);

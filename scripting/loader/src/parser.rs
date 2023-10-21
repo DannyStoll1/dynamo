@@ -1,3 +1,4 @@
+use dynamo_common::types::Period;
 use inline_python::{python, Context};
 use lazy_static::lazy_static;
 use num_complex::Complex64;
@@ -6,6 +7,8 @@ use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::str::FromStr;
+
+mod defaults;
 
 use crate::error::ScriptError;
 
@@ -31,6 +34,29 @@ pub struct Functions
 }
 
 #[derive(Debug, Deserialize)]
+pub struct EscapingReturnMapParams
+{
+    #[serde(default = "defaults::degree")]
+    pub degree: i64,
+    #[serde(default = "defaults::escaping_period")]
+    pub escaping_period: Period,
+    #[serde(default = "defaults::escaping_phase")]
+    pub escaping_phase: Period,
+}
+
+impl Default for EscapingReturnMapParams
+{
+    fn default() -> Self
+    {
+        Self {
+            degree: defaults::degree(),
+            escaping_period: defaults::escaping_period(),
+            escaping_phase: defaults::escaping_phase(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct UnparsedUserInput
 {
     pub metadata: Metadata,
@@ -38,6 +64,7 @@ pub struct UnparsedUserInput
     pub parameters: HashMap<String, String>,
     pub dynamics: Functions,
     pub names: Names,
+    pub optional: Option<EscapingReturnMapParams>,
 }
 
 pub struct ParsedUserInput
@@ -46,6 +73,7 @@ pub struct ParsedUserInput
     pub constants: HashMap<String, Complex64>,
     pub param_names: Vec<String>,
     pub names: Names,
+    pub optional: EscapingReturnMapParams,
     pub context: Context,
 }
 impl TryFrom<UnparsedUserInput> for ParsedUserInput
@@ -192,6 +220,7 @@ impl UnparsedUserInput
             param_names,
             names: self.names,
             context,
+            optional: self.optional.unwrap_or_default(),
         })
     }
 }

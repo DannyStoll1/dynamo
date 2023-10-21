@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{profile_imports, ext_ray_impl_nonmonic};
 use std::f64::consts::SQRT_2;
 profile_imports!();
 use std::iter::once;
@@ -131,33 +131,7 @@ const CHEBYSHEV_5_CRIT: [Real; 9] = [
 impl<const D: Period> ParameterPlane for Chebyshev<D>
 {
     parameter_plane_impl!();
-    basic_escape_encoding!(f64::from(2 * D), 1);
     default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        f64::from(2 * D)
-    }
-
-    #[inline]
-    fn degree(&self) -> AngleNum
-    {
-        (2 * D).into()
-    }
-
-    #[inline]
-    fn escape_coeff_d(&self, param: Self::Param) -> (Cplx, Cplx)
-    {
-        if D % 2 == 0
-        {
-            (0.5 * param, Cplx::new(0.5, 0.))
-        }
-        else
-        {
-            (-0.5 * param, Cplx::new(-0.5, 0.))
-        }
-    }
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
@@ -290,4 +264,36 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
     {
         format!("Chebyshev degree {}", 2 * D)
     }
+}
+
+impl<const D: Period> InfinityFirstReturnMap for Chebyshev<D>
+{
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        (2 * D).into()
+    }
+
+    #[inline]
+    fn degree_real(&self) -> Real
+    {
+        (2 * D) as Real
+    }
+
+    fn escape_coeff_d(&self, param: Self::Param) -> (Cplx, Cplx)
+    {
+        if D % 2 == 0
+        {
+            (0.5 * param, Cplx::new(0.5, 0.))
+        }
+        else
+        {
+            (-0.5 * param, Cplx::new(-0.5, 0.))
+        }
+    }
+}
+
+impl<const D: Period> EscapeEncoding for Chebyshev<D> {}
+impl<const D: Period> ExternalRays for Chebyshev<D> {
+    ext_ray_impl_nonmonic!();
 }

@@ -1,5 +1,5 @@
 use super::julia::JuliaSet;
-use super::ParameterPlane;
+use super::{InfinityFirstReturnMap, ParameterPlane, EscapeEncoding, ExternalRays};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use num_traits::One;
@@ -69,24 +69,6 @@ where
     ) -> EscapeState<Self::Var, Self::Deriv>
     {
         self.base_curve.early_bailout(start, param)
-    }
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        self.base_curve.degree_real()
-    }
-
-    #[inline]
-    fn degree(&self) -> AngleNum
-    {
-        self.base_curve.degree()
-    }
-
-    #[inline]
-    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
-    {
-        self.base_curve.escape_coeff_d(c)
     }
 
     #[inline]
@@ -184,16 +166,6 @@ where
     }
 
     #[inline]
-    fn encode_escape_result(
-        &self,
-        state: EscapeState<C::Var, C::Deriv>,
-        base_param: C::Param,
-    ) -> PointInfo<C::Var, C::Deriv>
-    {
-        self.base_curve.encode_escape_result(state, base_param)
-    }
-
-    #[inline]
     fn name(&self) -> String
     {
         format!("Cover over {}", self.base_curve.name())
@@ -275,6 +247,51 @@ where
     }
 }
 
+impl<C> InfinityFirstReturnMap for CoveringMap<C>
+where
+    C: ParameterPlane + InfinityFirstReturnMap + Clone,
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        self.base_curve.degree_real()
+    }
+
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        self.base_curve.degree()
+    }
+
+    #[inline]
+    fn escaping_period(&self) -> Period {
+        self.base_curve.escaping_period()
+    }
+
+    #[inline]
+    fn escaping_phase(&self) -> Period {
+        self.base_curve.escaping_phase()
+    }
+
+    #[inline]
+    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    {
+        self.base_curve.escape_coeff_d(c)
+    }
+}
+
+impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C> {
+    #[inline]
+    fn encode_escape_result(
+        &self,
+        state: EscapeState<C::Var, C::Deriv>,
+        base_param: C::Param,
+    ) -> PointInfo<C::Var, C::Deriv>
+    {
+        self.base_curve.encode_escape_result(state, base_param)
+    }
+}
+
 pub trait HasDynamicalCovers: super::ParameterPlane + Clone
 {
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
@@ -302,3 +319,5 @@ pub trait HasDynamicalCovers: super::ParameterPlane + Clone
         CoveringMap::new(self, param_map, bounds)
     }
 }
+
+impl<C: ExternalRays + Clone> ExternalRays for CoveringMap<C> {}

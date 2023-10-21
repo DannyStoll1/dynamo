@@ -1,4 +1,4 @@
-use crate::macros::{horner, horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -21,7 +21,7 @@ impl QuadRatPer3
 }
 impl Default for QuadRatPer3
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer3
@@ -49,28 +49,6 @@ impl ParameterPlane for QuadRatPer3
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 3.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let delta = ((base_param - 1.) / (4. * base_param)).norm().log2();
-        let residual = ((u + delta) / (v + delta)).log2();
-        let potential = (residual as IterCount).mul_add(3., f64::from(iters));
-        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -121,30 +99,6 @@ impl ParameterPlane for QuadRatPer3
         let df_dz = 2. * (1. - c) * v * v * z * u2;
         let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z * z)));
         (f, df_dz, df_dc)
-    }
-
-    #[inline]
-    fn degree_real(&self) -> Real
-    {
-        2.0
-    }
-
-    #[inline]
-    fn degree(&self) -> AngleNum
-    {
-        2
-    }
-
-    #[inline]
-    fn escaping_period(&self) -> Period
-    {
-        3
-    }
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle + RationalAngle::ONE_HALF
     }
 
     #[inline]
@@ -289,3 +243,46 @@ impl HasDynamicalCovers for QuadRatPer3
         CoveringMap::new(self, param_map, grid)
     }
 }
+
+impl InfinityFirstReturnMap for QuadRatPer3
+{
+    degree_impl!(2, 3);
+
+    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    {
+        let u = c.inv();
+        (0.25 * (1. - u), 0.25 * u * u)
+    }
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
+    }
+}
+
+impl EscapeEncoding for QuadRatPer3
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 3.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let delta = ((base_param - 1.) / (4. * base_param)).norm().log2();
+        let residual = ((u + delta) / (v + delta)).log2();
+        let potential = (residual as IterCount).mul_add(3., f64::from(iters));
+        PointInfo::Escaping { potential }
+    }
+}
+impl ExternalRays for QuadRatPer3 {}

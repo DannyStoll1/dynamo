@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -27,21 +27,14 @@ impl<const N: Period> Tricorne<N>
 
 impl<const N: Period> Default for Tricorne<N>
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl<const N: Period> ParameterPlane for Tricorne<N>
 {
     parameter_plane_impl!();
-    basic_escape_encoding!(Self::N_FLOAT);
     default_name!();
     default_bounds!();
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        Self::N_FLOAT
-    }
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -82,3 +75,10 @@ impl<const N: Period> ParameterPlane for Tricorne<N>
         vec![ZERO]
     }
 }
+
+impl<const N: Period> InfinityFirstReturnMap for Tricorne<N>
+{
+    degree_impl!(N as AngleNum);
+}
+impl<const N: Period> EscapeEncoding for Tricorne<N> {}
+impl<const N: Period> ExternalRays for Tricorne<N> {}

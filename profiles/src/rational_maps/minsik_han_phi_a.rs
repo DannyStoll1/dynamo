@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use dynamo_common::math_utils::{binomial, nth_roots, roots_of_unity};
 
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -31,7 +31,7 @@ impl<const D: i32> MinsikHanPhi<D>
 
 impl<const D: i32> Default for MinsikHanPhi<D>
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
@@ -133,3 +133,11 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
         format!("Minsik Han Family, degree {D}")
     }
 }
+
+impl<const D: i32> InfinityFirstReturnMap for MinsikHanPhi<D>
+{
+    degree_impl!(0);
+}
+
+impl<const D: i32> EscapeEncoding for MinsikHanPhi<D> {}
+impl<const D: i32> ExternalRays for MinsikHanPhi<D> {}

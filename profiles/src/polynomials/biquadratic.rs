@@ -1,4 +1,4 @@
-use crate::macros::{horner, horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 use dynamo_common::types::variables::{Bicomplex, PlaneID};
 profile_imports!();
 
@@ -23,7 +23,7 @@ impl Biquadratic
 
 impl Default for Biquadratic
 {
-    dynamo_impl!(multiplier, ZERO);
+    fractal_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for Biquadratic
@@ -41,27 +41,6 @@ impl ParameterPlane for Biquadratic
     {
         let param = self.multiplier;
         format!("Biquadratic({param})")
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Self::Var,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -111,6 +90,30 @@ impl ParameterPlane for Biquadratic
             Bicomplex::PlaneA(_) => ONE,
             Bicomplex::PlaneB(_) => ZERO,
         }
+    }
+}
+
+impl EscapeEncoding for Biquadratic
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        _base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2() / 2.;
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
     }
 }
 
@@ -164,27 +167,6 @@ impl ParameterPlane for BiquadraticMult
     {
         let param = self.multiplier;
         format!("Biquadratic({param})")
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Self::Var,
-        _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -398,6 +380,30 @@ impl ParameterPlane for BiquadraticMult
     }
 }
 
+impl EscapeEncoding for BiquadraticMult
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        _base_param: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMultParam
@@ -439,27 +445,6 @@ impl ParameterPlane for BiquadraticMultParam
     type Child = BiquadraticMult;
     basic_plane_impl!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Self::Var,
-        _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn param_map(&self, c: Cplx) -> Self::Param
@@ -541,6 +526,34 @@ impl ParameterPlane for BiquadraticMultParam
     }
 }
 
+impl InfinityFirstReturnMap for BiquadraticMultParam {
+    degree_impl!(2);
+}
+
+impl EscapeEncoding for BiquadraticMultParam
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        _base_param: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
 impl From<BiquadraticMultParam> for BiquadraticMult
 {
     fn from(parent: BiquadraticMultParam) -> Self
@@ -579,7 +592,7 @@ impl BiquadraticMultSecondIterate
 }
 impl Default for BiquadraticMultSecondIterate
 {
-    dynamo_impl!(multiplier, ZERO);
+    fractal_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for BiquadraticMultSecondIterate
@@ -597,27 +610,6 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     {
         let param = self.multiplier;
         format!("BiquadraticMult({param})")
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -692,6 +684,30 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     }
 }
 
+impl EscapeEncoding for BiquadraticMultSecondIterate
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        _base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2() / 2.;
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMultSection
@@ -739,27 +755,6 @@ impl ParameterPlane for BiquadraticMultSection
     fn name(&self) -> String
     {
         "Biquadratic Section".to_string()
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Self::Var,
-        _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -904,3 +899,50 @@ impl ParameterPlane for BiquadraticMultSection
         Bounds::square(2.5, -0.5 * a)
     }
 }
+
+impl EscapeEncoding for BiquadraticMultSection
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        _base_param: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log2();
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
+impl InfinityFirstReturnMap for Biquadratic
+{
+    degree_impl!(2);
+}
+impl InfinityFirstReturnMap for BiquadraticMult
+{
+    degree_impl!(2);
+}
+impl InfinityFirstReturnMap for BiquadraticMultSecondIterate
+{
+    degree_impl!(2);
+}
+impl InfinityFirstReturnMap for BiquadraticMultSection
+{
+    degree_impl!(2);
+}
+
+
+impl ExternalRays for Biquadratic {}
+impl ExternalRays for BiquadraticMult {}
+impl ExternalRays for BiquadraticMultParam {}
+impl ExternalRays for BiquadraticMultSection {}

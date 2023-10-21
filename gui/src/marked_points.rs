@@ -9,7 +9,7 @@ use itertools::Itertools;
 
 use dynamo_common::coloring::palette::DiscretePalette;
 use dynamo_common::prelude::*;
-use dynamo_core::dynamics::ParameterPlane;
+use dynamo_core::dynamics::Displayable;
 
 use crate::image_frame::ImageFrame;
 
@@ -28,7 +28,7 @@ pub trait ObjectKey: Clone + std::hash::Hash + std::cmp::Eq + std::fmt::Debug
 {
     type Object;
     fn color_with(&self, palette: &DiscretePalette, degree: AngleNum) -> Color32;
-    fn compute<P: ParameterPlane>(&self, plane: &P, selection: Cplx) -> Self::Object;
+    fn compute<P: Displayable>(&self, plane: &P, selection: Cplx) -> Self::Object;
 }
 
 /// Keys of point-set objects in the data store. Each key may be toggled by the API.
@@ -54,7 +54,7 @@ impl ObjectKey for PointSetKey
         }
     }
 
-    fn compute<P: ParameterPlane>(&self, plane: &P, selection: Cplx) -> Vec<Cplx>
+    fn compute<P: Displayable>(&self, plane: &P, selection: Cplx) -> Vec<Cplx>
     {
         match self
         {
@@ -102,7 +102,7 @@ impl ObjectKey for CurveKey
         }
     }
 
-    fn compute<P: ParameterPlane>(&self, plane: &P, selection: Cplx) -> Curve
+    fn compute<P: Displayable>(&self, plane: &P, selection: Cplx) -> Curve
     {
         match self
         {
@@ -155,7 +155,7 @@ pub enum MarkingTask<K>
 }
 
 #[derive(Clone, Copy, Debug)]
-struct EnvironmentInfo<'plane, 'palette, P: ParameterPlane>
+struct EnvironmentInfo<'plane, 'palette, P: Displayable>
 {
     plane: &'plane P,
     selection: Cplx,
@@ -219,7 +219,7 @@ where
         self.tasks.push_back(MarkingTask::RecolorAll);
     }
 
-    fn process_task<P: ParameterPlane>(&mut self, task: MarkingTask<K>, e: &EnvironmentInfo<P>)
+    fn process_task<P: Displayable>(&mut self, task: MarkingTask<K>, e: &EnvironmentInfo<P>)
     {
         match task
         {
@@ -268,7 +268,7 @@ where
         }
     }
 
-    fn enable<P: ParameterPlane>(&mut self, key: K, e: &EnvironmentInfo<P>)
+    fn enable<P: Displayable>(&mut self, key: K, e: &EnvironmentInfo<P>)
     {
         let col_obj = ColoredMaybeHidden {
             object: key.compute(e.plane, e.selection),
@@ -290,14 +290,14 @@ where
         });
     }
 
-    pub fn recompute_all<P: ParameterPlane>(&mut self, plane: &P, selection: Cplx)
+    pub fn recompute_all<P: Displayable>(&mut self, plane: &P, selection: Cplx)
     {
         self.objects.iter_mut().for_each(|(key, col_obj)| {
             col_obj.object = key.compute(plane, selection);
         });
     }
 
-    fn process_all_tasks<P: ParameterPlane>(&mut self, env: &EnvironmentInfo<P>)
+    fn process_all_tasks<P: Displayable>(&mut self, env: &EnvironmentInfo<P>)
     {
         let tasks: Vec<_> = self.tasks.drain(..).collect();
         tasks.iter().for_each(|task| {
@@ -400,7 +400,7 @@ impl Marking
         self.path_cache.borrow_mut().set_stale();
     }
 
-    pub fn process_all_tasks<P: ParameterPlane>(
+    pub fn process_all_tasks<P: Displayable>(
         &mut self,
         plane: &P,
         selection: Cplx,

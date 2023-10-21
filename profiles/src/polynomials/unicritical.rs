@@ -1,4 +1,4 @@
-use crate::macros::{horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner_monic, profile_imports};
 use dynamo_common::{horner, math_utils::roots_of_unity};
 profile_imports!();
 
@@ -20,14 +20,13 @@ impl<const D: i32> Unicritical<D>
 
 impl<const D: i32> Default for Unicritical<D>
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 #[allow(clippy::suspicious_operation_groupings)]
 impl<const D: i32> ParameterPlane for Unicritical<D>
 {
     parameter_plane_impl!();
-    basic_escape_encoding!(Self::D_FLOAT, 1.);
     default_bounds!();
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -63,12 +62,6 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
-    }
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        Self::D_FLOAT
     }
 
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
@@ -112,6 +105,31 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         format!("Unicritical({D})")
     }
 }
+
+impl<const D: i32> InfinityFirstReturnMap for Unicritical<D>
+{
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        D.into()
+    }
+
+    #[inline]
+    fn degree_real(&self) -> Real
+    {
+        Self::D_FLOAT
+    }
+
+    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    {
+        let a = Self::D_FLOAT.powi(-D);
+        (c * a, a.into())
+    }
+}
+
+impl<const D: i32> EscapeEncoding for Unicritical<D> {}
+
+impl<const D: i32> ExternalRays for Unicritical<D> {}
 
 // const U3_MC_3_POLE_0: Cplx = Cplx::new(
 //     -6.3071559227053154449928460559449771172,

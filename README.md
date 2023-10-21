@@ -6,7 +6,7 @@ A powerful tool for studying complex dynamics. Inspired heavily by the following
 - Brian and Susanna Boyd's [Dynamics Explorer](https://sourceforge.net/projects/detool/)
 - Matt Noonan's [FractalStream](https://pi.math.cornell.edu/~noonan/fstream.html)
 
-Fractal Explorer hopes to combine the strengths of these excellent tools, though it is currently in a very early stage.
+Dynamo hopes to combine the strengths of these excellent tools, though it is currently in a very early stage.
 
 ## Features
 

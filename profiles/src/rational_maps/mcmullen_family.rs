@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -20,20 +20,13 @@ impl<const M: i32, const N: i32> McMullenFamily<M, N>
 
 impl<const M: i32, const N: i32> Default for McMullenFamily<M, N>
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
 {
     parameter_plane_impl!();
-    basic_escape_encoding!(Self::M_FLOAT, 1.);
     default_bounds!();
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        Self::M_FLOAT
-    }
 
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
@@ -44,8 +37,6 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         z.powi(M) + (c * z.powi(N)).inv()
-        // let z2 = z * z;
-        // z2 + (c * z * z2).inv()
     }
 
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
@@ -114,3 +105,11 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         format!("McMullen Family ({M}, {N})")
     }
 }
+
+impl<const M: i32, const N: i32> InfinityFirstReturnMap for McMullenFamily<M, N>
+{
+    degree_impl!(M as AngleNum);
+}
+
+impl<const M: i32, const N: i32> EscapeEncoding for McMullenFamily<M, N> {}
+impl<const M: i32, const N: i32> ExternalRays for McMullenFamily<M, N> {}

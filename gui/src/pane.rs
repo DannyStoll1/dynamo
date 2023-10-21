@@ -1,7 +1,7 @@
 use dynamo_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
 use dynamo_common::prelude::*;
 use dynamo_core::dynamics::error::FindPointResult;
-use dynamo_core::dynamics::{ParameterPlane, PlaneType};
+use dynamo_core::dynamics::{Displayable, PlaneType};
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
@@ -331,7 +331,7 @@ pub trait Pane
 
 pub(super) struct WindowPane<P>
 where
-    P: ParameterPlane,
+    P: Displayable,
 {
     pub plane: P,
     pub coloring: Coloring,
@@ -347,7 +347,7 @@ where
 }
 impl<P> WindowPane<P>
 where
-    P: ParameterPlane + 'static,
+    P: Displayable + 'static,
 {
     pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param)
     {
@@ -429,7 +429,7 @@ where
 
 impl<P> From<P> for WindowPane<P>
 where
-    P: ParameterPlane + 'static,
+    P: Displayable + 'static,
 {
     fn from(plane: P) -> Self
     {
@@ -440,7 +440,7 @@ where
 
 impl<P> Pane for WindowPane<P>
 where
-    P: ParameterPlane + 'static,
+    P: Displayable + 'static,
 {
     #[inline]
     fn tasks(&self) -> &PaneTasks

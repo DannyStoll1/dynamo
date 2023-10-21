@@ -5,7 +5,7 @@ use dynamo_common::consts::{OMEGA, ONE};
 use dynamo_common::types::{Cplx, ParamList};
 use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
 use dynamo_core::dynamics::julia::JuliaSet;
-use dynamo_core::dynamics::ParameterPlane;
+use dynamo_core::dynamics::{Displayable, ParameterPlane};
 use dynamo_gui::hotkeys::{
     Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS,
     SELECTION_HOTKEYS,
@@ -681,9 +681,9 @@ impl FractalTab
 
     fn change_fractal<P, J, C, M, T>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
     where
-        P: ParameterPlane + Clone + 'static,
-        J: ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
-        C: ParameterPlane + From<J>,
+        P: Displayable + Clone + 'static,
+        J: Displayable + ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+        C: Displayable + From<J>,
         M: ParamList<Param = T>,
         T: From<P::Param> + std::fmt::Display,
     {

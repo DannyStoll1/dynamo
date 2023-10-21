@@ -117,7 +117,7 @@ impl Transpiler
                 const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);\n\
             }}\n\
             impl Default for UserPlane {{\n\
-                dynamo_impl!();\n\
+                fractal_impl!();\n\
             }}\n\
             const i: Cplx = Cplx::new(0., 1.);\n\
             {}",
@@ -207,6 +207,39 @@ impl Transpiler
             name = self.parsed_input.metadata.name,
         )
     }
+
+    fn other_impls(&self) -> String
+    {
+        format!(
+            "impl InfinityFirstReturnMap for UserPlane {{
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {{
+        {degree}
+    }}
+    #[inline]
+    fn degree_real(&self) -> Real
+    {{
+        {degree} as Real
+    }}
+
+    fn escaping_phase(&self) -> Period {{
+        {escaping_phase}
+    }}
+
+    fn escaping_period(&self) -> Period {{
+        {escaping_period}
+    }}
+}}
+
+impl EscapeEncoding for UserPlane {{}}
+impl ExternalRays for UserPlane {{}}
+",
+            degree = self.parsed_input.optional.degree,
+            escaping_period = self.parsed_input.optional.escaping_period,
+            escaping_phase = self.parsed_input.optional.escaping_phase,
+        )
+    }
     fn imports(&self) -> String
     {
         "use dynamo_common::prelude::*;\n\
@@ -237,12 +270,14 @@ impl Transpiler
             {param_impls}\n\
             {struct_decl}\n\
             {plane_impl}\n\
+            {other_impls}\n\
             {constructor}",
             imports = self.imports(),
             param_decl = self.parameter_decl(),
             param_impls = self.parameter_impls(),
             struct_decl = self.user_struct_decl(),
             plane_impl = self.parameter_plane_impl(),
+            other_impls = self.other_impls(),
             constructor = self.constructor()
         )
     }

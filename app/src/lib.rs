@@ -106,7 +106,7 @@ mod tests
     #[test]
     fn gui_speedtest()
     {
-        use dynamo_core::dynamics::{julia::JuliaSet, ParameterPlane};
+        use dynamo_core::dynamics::{julia::JuliaSet, Displayable};
         let height = 1024;
         use dynamo_gui::interface::{MainInterface, PanePair};
         let parameter_plane = dynamo_profiles::QuadRatPer2::default()

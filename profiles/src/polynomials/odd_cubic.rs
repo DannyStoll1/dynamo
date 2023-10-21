@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl, profile_imports};
 use dynamo_common::{horner, horner_monic, math_utils::weierstrass_p};
 profile_imports!();
 
@@ -20,7 +20,7 @@ impl OddCubic
 }
 impl Default for OddCubic
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 #[allow(clippy::suspicious_operation_groupings)]
@@ -29,33 +29,6 @@ impl ParameterPlane for OddCubic
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -100,12 +73,6 @@ impl ParameterPlane for OddCubic
     {
         let sqrt_c = param.sqrt();
         vec![-sqrt_c, sqrt_c]
-    }
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle * Rational::new(3, 2) + RationalAngle::ONE_HALF
     }
 
     #[inline]
@@ -164,6 +131,20 @@ impl ParameterPlane for OddCubic
         Bounds::centered_square(2.2)
     }
 }
+
+impl InfinityFirstReturnMap for OddCubic
+{
+    degree_impl!(3);
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle * Rational::new(3, 2) + RationalAngle::ONE_HALF
+    }
+}
+
+impl EscapeEncoding for OddCubic {}
+impl ExternalRays for OddCubic {}
 
 #[allow(clippy::suspicious_operation_groupings)]
 impl HasDynamicalCovers for OddCubic

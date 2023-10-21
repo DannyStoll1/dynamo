@@ -1,4 +1,4 @@
-use crate::macros::{horner, profile_imports};
+use crate::macros::{degree_impl, horner, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -21,7 +21,7 @@ impl QuadRatPreper21
 }
 impl Default for QuadRatPreper21
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPreper21
@@ -29,28 +29,6 @@ impl ParameterPlane for QuadRatPreper21
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
-            };
-        }
-
-        let expansion_rate = base_param.norm_sqr();
-        let u = self.escape_radius().log(expansion_rate);
-        let v = z.norm_sqr().log(expansion_rate);
-        let residual = u - v;
-        let potential = IterCount::from(iters) + (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -163,6 +141,36 @@ impl ParameterPlane for QuadRatPreper21
     }
 }
 
+impl InfinityFirstReturnMap for QuadRatPreper21
+{
+    degree_impl!(1, 1);
+}
+
+impl EscapeEncoding for QuadRatPreper21
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
+        }
+
+        let expansion_rate = base_param.norm_sqr();
+        let u = self.escape_radius().log(expansion_rate);
+        let v = z.norm_sqr().log(expansion_rate);
+        let residual = u - v;
+        let potential = IterCount::from(iters) + (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
 impl HasDynamicalCovers for QuadRatPreper21
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
@@ -226,3 +234,5 @@ impl HasDynamicalCovers for QuadRatPreper21
         CoveringMap::new(self, param_map, grid)
     }
 }
+
+impl ExternalRays for QuadRatPreper21 {}

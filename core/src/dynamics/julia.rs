@@ -3,9 +3,10 @@ use crate::macros::basic_plane_impl;
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use dynamo_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
+use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use num_traits::{One, Zero};
 
-use super::PlaneType;
+use super::{EscapeEncoding, InfinityFirstReturnMap, PlaneType, ExternalRays};
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
@@ -169,15 +170,6 @@ where
         self.parent.cycle_active_plane();
     }
 
-    fn encode_escape_result(
-        &self,
-        state: EscapeState<Self::Var, Self::Deriv>,
-        _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        self.parent.encode_escape_result(state, self.local_param)
-    }
-
     #[inline]
     fn set_meta_param(
         &mut self,
@@ -217,37 +209,6 @@ where
     // {
     //     None
     // }
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        self.parent.degree_real()
-    }
-
-    #[inline]
-    fn degree(&self) -> AngleNum
-    {
-        self.parent.degree()
-    }
-
-    #[inline]
-    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
-    {
-        (self.parent.escape_coeff_d(self.local_param).0, ZERO)
-    }
-
-    #[inline]
-    fn escaping_period(&self) -> Period
-    {
-        self.parent.escaping_period()
-    }
-
-    /// Always 0 for dynamical planes, since large parameter here means large starting value
-    #[inline]
-    fn escaping_phase(&self) -> Period
-    {
-        0
-    }
 
     #[inline]
     fn default_bounds(&self) -> Bounds
@@ -495,4 +456,153 @@ where
     //
     //     find_root_newton(diff, start_point)
     // }
+}
+
+impl<P> InfinityFirstReturnMap for JuliaSet<P>
+where
+    P: ParameterPlane + Clone + InfinityFirstReturnMap,
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        self.parent.degree_real()
+    }
+
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        self.parent.degree()
+    }
+
+    #[inline]
+    fn escaping_period(&self) -> Period
+    {
+        self.parent.escaping_period()
+    }
+
+    /// Always 0 for dynamical planes, since large parameter here means large starting value
+    #[inline]
+    fn escaping_phase(&self) -> Period
+    {
+        0
+    }
+
+    #[inline]
+    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
+    {
+        (self.parent.escape_coeff_d(self.local_param).0, ZERO)
+    }
+}
+
+impl<P: EscapeEncoding + Clone> EscapeEncoding for JuliaSet<P>
+{
+    fn encode_escape_result(
+        &self,
+        state: EscapeState<Self::Var, Self::Deriv>,
+        _base_param: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        self.parent.encode_escape_result(state, self.local_param)
+    }
+}
+
+impl<P> ExternalRays for JuliaSet<P>
+where P : InfinityFirstReturnMap + Clone
+{
+    fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
+    {
+        const R: Real = 16.0;
+        let escape_radius_log2 = R.log2() * self.degree_real().abs();
+
+        let deg_real = self.degree_real().abs();
+        if deg_real.is_nan() || self.degree() <= 1
+        {
+            return None;
+        }
+        let deg_log2 = deg_real.log2();
+
+        let pixel_width = self.point_grid().pixel_width() * 0.03;
+        let error = self.point_grid().res_x as Real * 1e-8;
+
+        // let base_point = escape_radius * angle.to_circle();
+        // Arbitrary starting guess that is likely to escape
+        let base_point: Cplx = 65.0 * angle.to_circle();
+        let mut t_list = vec![];
+
+        let deg_real = self.degree_real();
+        let angle_boost = self.escape_coeff_d(NoParam).0.arg() / TAU;
+
+        // Target angle for the composite map at each step.
+        // Initialized to value after self.escaping_phase() iterations.
+        let mut target_angle = Real::from(self.angle_map_large_param(angle));
+
+        for k in 0..RAY_DEPTH
+        {
+            // Relative log2-norms of targets
+            // jth target norm = escape_radius^deg^(-j/S)
+            // u_j = log2(escape_radius) * deg^(-j/S)
+            let us = (0..RAY_SHARPNESS).map(|j| {
+                escape_radius_log2
+                    * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
+            });
+
+            let v = target_angle.to_circle();
+            let targets = us.map(|u| u.exp2() * v);
+
+            let mut t_curr = *t_list.last().unwrap_or(&base_point);
+            let mut dist: Real;
+
+            let num_iters = k * self.escaping_period() + self.escaping_phase();
+
+            let fk_and_dfk = |t: Cplx| {
+                let (c, dc_dt) = self.param_map_d(t);
+                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+                dz_dt += dz_dc * dc_dt;
+
+                for _i in 0..num_iters
+                {
+                    let (f, df_dz, df_dc) = self.gradient(z, c);
+                    dz_dt = dz_dt * df_dz + df_dc * dc_dt;
+                    z = f;
+                }
+
+                (z.into(), dz_dt.into())
+            };
+
+            for target in targets
+            {
+                match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
+                {
+                    Ok((sol, t_k, d_k)) =>
+                    {
+                        // dbg!(target, sol);
+                        t_curr = sol;
+
+                        if t_curr.is_nan()
+                        {
+                            return Some(t_list);
+                        }
+
+                        t_list.push(t_curr);
+
+                        dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
+                        if dist < pixel_width
+                        {
+                            return Some(t_list);
+                        }
+                    }
+                    Err(NanEncountered) =>
+                    {
+                        return Some(t_list);
+                    }
+                    _ =>
+                    {}
+                }
+            }
+            // target_angle *= deg;
+            target_angle = target_angle.mul_add(deg_real, angle_boost) % 1.;
+        }
+
+        Some(t_list)
+    }
 }

@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{profile_imports, degree_impl};
 use dynamo_common::types::{
     variables::{Matrix2x2, Point},
     Cplx,
@@ -56,7 +56,7 @@ impl Rulkov
 }
 impl Default for Rulkov
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for Rulkov
@@ -108,3 +108,5 @@ impl ParameterPlane for Rulkov
         z
     }
 }
+
+degree_impl!(Rulkov, 2);

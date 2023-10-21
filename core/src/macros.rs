@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! dynamo_impl {
+macro_rules! fractal_impl {
     () => {
         fn default() -> Self
         {
@@ -195,6 +195,6 @@ macro_rules! basic_escape_encoding {
 }
 
 pub use {
-    basic_escape_encoding, basic_plane_impl, default_bounds, default_name, dynamo_impl,
+    basic_escape_encoding, basic_plane_impl, default_bounds, default_name, fractal_impl,
     point_grid_getters,
 };

@@ -1,4 +1,4 @@
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl, profile_imports};
 use crate::macros::{horner, horner_monic};
 profile_imports!();
 
@@ -21,7 +21,7 @@ impl QuadRatPreper22
 }
 impl Default for QuadRatPreper22
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPreper22
@@ -76,28 +76,6 @@ impl ParameterPlane for QuadRatPreper22
         1. + (b + 1.).sqrt() * (b + a + 2.).re.signum()
     }
 
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        CplxPair { a: _, b }: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
-            };
-        }
-
-        let expansion_rate = b.norm_sqr();
-        let u = self.escape_radius().log(expansion_rate);
-        let v = z.norm_sqr().log(expansion_rate);
-        let residual = u - v;
-        let potential = 2.0f64.mul_add(residual as IterCount, IterCount::from(iters));
-        PointInfo::Escaping { potential }
-    }
-
     fn critical_points_child(&self, CplxPair { a: _, b }: Self::Param) -> Vec<Self::Var>
     {
         let disc = (b + 1.).sqrt();
@@ -132,3 +110,36 @@ impl ParameterPlane for QuadRatPreper22
         }
     }
 }
+
+impl InfinityFirstReturnMap for QuadRatPreper22
+{
+    degree_impl!(2, 1);
+    // TODO: angle_map_large_param, escaping_phase
+}
+
+impl EscapeEncoding for QuadRatPreper22
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        CplxPair { a: _, b }: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
+        }
+
+        let expansion_rate = b.norm_sqr();
+        let u = self.escape_radius().log(expansion_rate);
+        let v = z.norm_sqr().log(expansion_rate);
+        let residual = u - v;
+        let potential = 2.0f64.mul_add(residual as IterCount, IterCount::from(iters));
+        PointInfo::Escaping { potential }
+    }
+}
+
+impl ExternalRays for QuadRatPreper22 {}

@@ -24,7 +24,7 @@ mod tests
     use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
     use dynamo_core::dynamics::julia::JuliaSet;
     use dynamo_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
-    use dynamo_core::dynamics::ParameterPlane;
+    use dynamo_core::dynamics::*;
 
     #[test]
     fn compute_biquadratic()
@@ -272,5 +272,12 @@ mod tests
         dbg!(ray);
         // let target = Cplx::new(-0.125, 0.649519052838329);
         // assert!((ray.last().unwrap() - target).norm_sqr() < 1e-4);
+    }
+
+    #[test]
+    fn escaping_period()
+    {
+        let plane = QuadRatPer3::default();
+        assert_eq!(plane.escaping_period(), 3);
     }
 }

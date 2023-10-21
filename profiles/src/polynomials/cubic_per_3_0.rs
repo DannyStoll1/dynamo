@@ -1,6 +1,6 @@
 use dynamo_common::horner_monic;
 
-use crate::macros::{horner, profile_imports};
+use crate::macros::{degree_impl, horner, profile_imports};
 profile_imports!();
 
 // Cubic polynomials with a critical 3-cycle 0 -2-> 1 -> a+b+1 -> 0
@@ -22,7 +22,7 @@ impl CubicPer3_0
 }
 impl Default for CubicPer3_0
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer3_0
@@ -35,13 +35,8 @@ impl ParameterPlane for CubicPer3_0
     basic_plane_impl!();
     default_name!();
     default_bounds!();
-    basic_escape_encoding!(3., 1.);
 
     #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     fn map_and_multiplier(
         &self,
@@ -144,3 +139,5 @@ impl ParameterPlane for CubicPer3_0
         Bounds::square(radius, center)
     }
 }
+
+degree_impl!(CubicPer3_0, 3);

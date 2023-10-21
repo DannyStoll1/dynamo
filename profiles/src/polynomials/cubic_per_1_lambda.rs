@@ -45,13 +45,6 @@ impl Default for CubicPer1Lambda
 impl ParameterPlane for CubicPer1Lambda
 {
     parameter_plane_impl!(Cplx, Cplx, Cplx, Cplx);
-    basic_escape_encoding!(3., 1.);
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -285,6 +278,20 @@ impl ParameterPlane for CubicPer1Lambda
     }
 }
 
+impl EscapeEncoding for CubicPer1Lambda
+{
+    basic_escape_encoding!(3., 1.);
+}
+
+impl InfinityFirstReturnMap for CubicPer1Lambda
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct CubicPer1LambdaParam
 {
@@ -325,14 +332,7 @@ impl Default for CubicPer1LambdaParam
 impl ParameterPlane for CubicPer1LambdaParam
 {
     parameter_plane_impl!(CubicPer1Lambda);
-    basic_escape_encoding!(3., 1.);
     default_bounds!();
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[inline]
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
@@ -408,6 +408,20 @@ impl ParameterPlane for CubicPer1LambdaParam
     }
 }
 
+impl EscapeEncoding for CubicPer1LambdaParam
+{
+    basic_escape_encoding!(3., 1.);
+}
+
+impl InfinityFirstReturnMap for CubicPer1LambdaParam
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+}
+
 impl From<CubicPer1LambdaParam> for CubicPer1Lambda
 {
     fn from(parent: CubicPer1LambdaParam) -> Self
@@ -445,7 +459,7 @@ impl CubicPer1_1
 
 impl Default for CubicPer1_1
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer1_1
@@ -454,12 +468,6 @@ impl ParameterPlane for CubicPer1_1
     default_name!();
     default_bounds!();
 
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
-
     fn periodicity_tolerance(&self) -> Real
     {
         1e-6
@@ -467,26 +475,6 @@ impl ParameterPlane for CubicPer1_1
     fn min_iter(&self) -> Period
     {
         self.max_iter() / 3
-    }
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
     }
 
     #[inline]
@@ -578,6 +566,44 @@ impl ParameterPlane for CubicPer1_1
     }
 }
 
+impl InfinityFirstReturnMap for CubicPer1_1
+{
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+}
+
+impl EscapeEncoding for CubicPer1_1
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        _base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let residual = (v / u).log(3.);
+        let potential = f64::from(iters) - (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
+impl ExternalRays for CubicPer1_1 {}
+impl ExternalRays for CubicPer1Lambda {}
+impl ExternalRays for CubicPer1LambdaParam {}
+impl ExternalRays for CubicPer1LambdaModuli {}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer1_0
@@ -597,7 +623,7 @@ impl CubicPer1_0
 }
 impl Default for CubicPer1_0
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicPer1_0
@@ -605,13 +631,6 @@ impl ParameterPlane for CubicPer1_0
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-    basic_escape_encoding!(3.);
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
 
     #[allow(clippy::suspicious_operation_groupings)]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -650,11 +669,6 @@ impl ParameterPlane for CubicPer1_0
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, -TWO_THIRDS * c]
-    }
-
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        3 * angle
     }
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
@@ -895,6 +909,22 @@ impl ParameterPlane for CubicPer1_0
         }
     }
 }
+
+impl InfinityFirstReturnMap for CubicPer1_0 {
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        3 * angle
+    }
+}
+
+impl EscapeEncoding for CubicPer1_0 {}
+impl ExternalRays for CubicPer1_0 {}
 
 impl HasDynamicalCovers for CubicPer1_0
 {
@@ -1162,34 +1192,6 @@ impl ParameterPlane for CubicPer1LambdaModuli
     default_name!();
     default_bounds!();
 
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Self::Var,
-        CplxPair { a, b: _ }: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let delta = 0.5 * a.norm().log2();
-        let residual = ((v + delta) / (u + delta)).log(3.);
-        let potential = IterCount::from(iters) - IterCount::from(residual);
-        PointInfo::Escaping { potential }
-    }
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
-
     #[inline]
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {
@@ -1300,6 +1302,38 @@ impl ParameterPlane for CubicPer1LambdaModuli
     {
         let radius = (2. * (b / a).sqrt().norm()).max(6.0);
         Bounds::centered_square(radius)
+    }
+}
+
+impl InfinityFirstReturnMap for CubicPer1LambdaModuli {
+    #[inline]
+    fn degree_real(&self) -> f64
+    {
+        3.0
+    }
+}
+
+impl EscapeEncoding for CubicPer1LambdaModuli {
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Self::Var,
+        CplxPair { a, b: _ }: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 1.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let delta = 0.5 * a.norm().log2();
+        let residual = ((v + delta) / (u + delta)).log(3.);
+        let potential = IterCount::from(iters) - IterCount::from(residual);
+        PointInfo::Escaping { potential }
     }
 }
 

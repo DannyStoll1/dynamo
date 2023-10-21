@@ -20,7 +20,7 @@ impl RealCubicRealCrit
 }
 impl Default for RealCubicRealCrit
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for RealCubicRealCrit
@@ -33,7 +33,6 @@ impl ParameterPlane for RealCubicRealCrit
     basic_plane_impl!();
     default_name!();
     default_bounds!();
-    basic_escape_encoding!(3.);
 
     // Critical point = a
     fn map(&self, z: Self::Var, RealPair { a, b }: Self::Param) -> Self::Var
@@ -82,6 +81,9 @@ impl ParameterPlane for RealCubicRealCrit
     }
 }
 
+degree_impl!(RealCubicRealCrit, 3);
+degree_impl!(RealCubicImagCrit, 3);
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RealCubicImagCrit
@@ -101,7 +103,7 @@ impl RealCubicImagCrit
 }
 impl Default for RealCubicImagCrit
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for RealCubicImagCrit
@@ -114,7 +116,6 @@ impl ParameterPlane for RealCubicImagCrit
     basic_plane_impl!();
     default_name!();
     default_bounds!();
-    basic_escape_encoding!(3.);
 
     // Critical point = ai
     fn map(&self, z: Self::Var, RealPair { a, b }: Self::Param) -> Self::Var

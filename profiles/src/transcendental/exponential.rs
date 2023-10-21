@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use crate::macros::profile_imports;
+use crate::macros::{degree_impl_transcendental, profile_imports};
 use dynamo_common::math_utils::slog;
 profile_imports!();
 
@@ -23,7 +23,7 @@ impl Exponential
 }
 impl Default for Exponential
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for Exponential
@@ -31,37 +31,6 @@ impl ParameterPlane for Exponential
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        if z.re < 0.
-        {
-            return PointInfo::Bounded;
-        }
-        if z.is_infinite()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) + 1.,
-            };
-        }
-        let u = slog(self.escape_radius());
-        let v = slog(z.norm_sqr());
-        let residual = v - u;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, lambda: Cplx) -> Cplx
@@ -139,7 +108,7 @@ impl CosineAdd
 
 impl Default for CosineAdd
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for CosineAdd
@@ -147,32 +116,6 @@ impl ParameterPlane for CosineAdd
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-        if z.is_infinite()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) + 1.,
-            };
-        }
-        let u = slog(self.escape_radius());
-        let v = slog(z.norm_sqr());
-        let residual = v - u;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -235,7 +178,7 @@ impl Cosine
 }
 impl Default for Cosine
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for Cosine
@@ -243,32 +186,6 @@ impl ParameterPlane for Cosine
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-        if z.is_infinite()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) + 1.,
-            };
-        }
-        let u = slog(self.escape_radius());
-        let v = slog(z.norm_sqr());
-        let residual = v - u;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, lambda: Cplx) -> Cplx
@@ -332,7 +249,7 @@ impl SineWander
 
 impl Default for SineWander
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for SineWander
@@ -340,49 +257,6 @@ impl ParameterPlane for SineWander
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escape_result(
-        &self,
-        state: EscapeState<Self::Var, Self::Deriv>,
-        base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        match state
-        {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Wandering,
-            EscapeState::Periodic { data } => PointInfo::Periodic { data },
-            EscapeState::Escaped { iters, final_value } =>
-            {
-                self.encode_escaping_point(iters, final_value, base_param)
-            }
-        }
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-        if z.is_infinite()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) + 1.,
-            };
-        }
-        let u = slog(self.escape_radius());
-        let v = slog(z.norm_sqr());
-        let residual = v - u;
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -413,20 +287,13 @@ impl ParameterPlane for SineWander
         ONE
     }
 
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        f64::NAN
-    }
-
-    #[inline]
-    fn escaping_period(&self) -> Period
-    {
-        0
-    }
-
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)
     }
 }
+
+degree_impl_transcendental!(Exponential);
+degree_impl_transcendental!(Cosine);
+degree_impl_transcendental!(CosineAdd);
+degree_impl_transcendental!(SineWander);

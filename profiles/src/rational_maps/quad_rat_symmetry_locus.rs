@@ -1,4 +1,4 @@
-use crate::macros::{horner, profile_imports};
+use crate::macros::{degree_impl, horner, profile_imports};
 profile_imports!();
 
 // Quadratic rational maps of the form z -> c(z+1/z)
@@ -20,7 +20,7 @@ impl QuadRatSymmetryLocus
 }
 impl Default for QuadRatSymmetryLocus
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatSymmetryLocus
@@ -28,28 +28,6 @@ impl ParameterPlane for QuadRatSymmetryLocus
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
-            };
-        }
-
-        let expansion_rate = base_param.norm_sqr();
-        let u = self.escape_radius().log(expansion_rate);
-        let v = z.norm_sqr().log(expansion_rate);
-        let residual = u - v;
-        let potential = IterCount::from(iters) + (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -154,3 +132,35 @@ impl ParameterPlane for QuadRatSymmetryLocus
         Bounds::centered_square(4.)
     }
 }
+
+impl InfinityFirstReturnMap for QuadRatSymmetryLocus
+{
+    degree_impl!(1, 1);
+}
+
+impl EscapeEncoding for QuadRatSymmetryLocus
+{
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        base_param: Cplx,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
+        }
+
+        let expansion_rate = base_param.norm_sqr();
+        let u = self.escape_radius().log(expansion_rate);
+        let v = z.norm_sqr().log(expansion_rate);
+        let residual = u - v;
+        let potential = IterCount::from(iters) + (residual as IterCount);
+        PointInfo::Escaping { potential }
+    }
+}
+
+impl ExternalRays for QuadRatSymmetryLocus {}

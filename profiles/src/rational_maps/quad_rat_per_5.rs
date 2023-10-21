@@ -61,7 +61,7 @@ impl QuadRatPer5
 }
 impl Default for QuadRatPer5
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for QuadRatPer5
@@ -141,30 +141,6 @@ impl ParameterPlane for QuadRatPer5
         CplxPair::from((a, b))
     }
 
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        CplxPair { a, b }: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let delta = top_coeff(a, b).norm_sqr().log2();
-        let residual = ((u + delta) / (v + delta)).log2();
-        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
-        // (F - M) / (2L - M)
-        let potential = (residual as IterCount).mul_add(5., f64::from(iters));
-        PointInfo::Escaping { potential }
-    }
-
     fn escape_radius(&self) -> Real
     {
         1e24
@@ -211,7 +187,10 @@ impl ParameterPlane for QuadRatPer5
     {
         ONE
     }
+}
 
+impl InfinityFirstReturnMap for QuadRatPer5
+{
     #[inline]
     fn degree_real(&self) -> Real
     {
@@ -230,3 +209,30 @@ impl ParameterPlane for QuadRatPer5
         5
     }
 }
+
+impl EscapeEncoding for QuadRatPer5 {
+    fn encode_escaping_point(
+        &self,
+        iters: Period,
+        z: Cplx,
+        CplxPair { a, b }: Self::Param,
+    ) -> PointInfo<Self::Var, Self::Deriv>
+    {
+        if z.is_nan()
+        {
+            return PointInfo::Escaping {
+                potential: f64::from(iters) - 2.,
+            };
+        }
+
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let delta = top_coeff(a, b).norm_sqr().log2();
+        let residual = ((u + delta) / (v + delta)).log2();
+        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
+        // (F - M) / (2L - M)
+        let potential = (residual as IterCount).mul_add(5., f64::from(iters));
+        PointInfo::Escaping { potential }
+    }
+}
+impl ExternalRays for QuadRatPer5 {}

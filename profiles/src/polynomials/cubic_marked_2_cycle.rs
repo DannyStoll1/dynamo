@@ -1,4 +1,4 @@
-use crate::macros::{horner, horner_monic, profile_imports};
+use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -22,7 +22,7 @@ impl CubicMarked2Cycle
 }
 impl Default for CubicMarked2Cycle
 {
-    dynamo_impl!();
+    fractal_impl!();
 }
 
 impl ParameterPlane for CubicMarked2Cycle
@@ -30,33 +30,6 @@ impl ParameterPlane for CubicMarked2Cycle
     parameter_plane_impl!();
     default_name!();
     default_bounds!();
-
-    #[inline]
-    fn degree_real(&self) -> f64
-    {
-        3.0
-    }
-
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
-    }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
@@ -159,6 +132,8 @@ impl ParameterPlane for CubicMarked2Cycle
         }
     }
 }
+
+degree_impl!(CubicMarked2Cycle, 3);
 
 const MIS_1_1_G2: Cplx = Cplx::new(1. / 192., 0.);
 const MIS_1_1_G3: Cplx = Cplx::new(-161. / 13824., 0.);
