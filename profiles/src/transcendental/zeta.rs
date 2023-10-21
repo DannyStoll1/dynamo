@@ -1,6 +1,6 @@
 use crate::macros::profile_imports;
-use fractal_common::math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2};
-use fractal_core::dynamics::PlaneType;
+use dynamo_common::math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2};
+use dynamo_core::dynamics::PlaneType;
 profile_imports!();
 
 #[derive(Clone, Debug, PartialEq)]
@@ -21,7 +21,7 @@ impl RiemannXi
 }
 impl Default for RiemannXi
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 impl ParameterPlane for RiemannXi
 {
@@ -87,7 +87,7 @@ impl RiemannXiNewton
 }
 impl Default for RiemannXiNewton
 {
-    fractal_impl!(param, ZERO);
+    dynamo_impl!(param, ZERO);
 }
 impl From<RiemannXi> for RiemannXiNewton
 {

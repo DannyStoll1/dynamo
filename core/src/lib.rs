@@ -9,7 +9,7 @@ pub mod prelude;
 #[cfg(test)]
 mod tests
 {
-    use fractal_common::prelude::{OrbitSchema, RationalAngle};
+    use dynamo_common::prelude::{OrbitSchema, RationalAngle};
 
     #[test]
     fn angle_period()

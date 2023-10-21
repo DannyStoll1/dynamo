@@ -20,7 +20,7 @@ impl QuadRatSymmetryLocus
 }
 impl Default for QuadRatSymmetryLocus
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatSymmetryLocus

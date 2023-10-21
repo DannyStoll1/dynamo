@@ -1,7 +1,7 @@
 use super::julia::JuliaSet;
 use super::ParameterPlane;
-use fractal_common::prelude::*;
-use fractal_common::symbolic_dynamics::OrbitSchema;
+use dynamo_common::prelude::*;
+use dynamo_common::symbolic_dynamics::OrbitSchema;
 use num_traits::One;
 
 #[derive(Clone)]
@@ -81,6 +81,12 @@ where
     fn degree(&self) -> AngleNum
     {
         self.base_curve.degree()
+    }
+
+    #[inline]
+    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    {
+        self.base_curve.escape_coeff_d(c)
     }
 
     #[inline]
@@ -215,7 +221,7 @@ where
     }
 
     #[inline]
-    fn default_coloring(&self) -> fractal_common::coloring::Coloring
+    fn default_coloring(&self) -> dynamo_common::coloring::Coloring
     {
         self.base_curve.default_coloring()
     }

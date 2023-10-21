@@ -88,9 +88,7 @@ impl IncoloringAlgorithm
                 let val = IterCount::from(point_info.preperiod);
 
                 let potential = (val * coloring_rate / per).tanh();
-                palette
-                    .period_coloring
-                    .map(per as f32, potential as f32)
+                palette.period_coloring.map(per as f32, potential as f32)
             }
             Self::InternalPotential {
                 periodicity_tolerance,

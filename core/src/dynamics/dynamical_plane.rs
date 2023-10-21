@@ -1,4 +1,4 @@
-use fractal_common::point_grid::*;
+use dynamo_common::point_grid::*;
 use crate::primitive_types::*;
 
 pub trait DynamicalPlane {

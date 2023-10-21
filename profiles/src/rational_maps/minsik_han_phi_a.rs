@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use fractal_common::math_utils::{binomial, nth_roots, roots_of_unity};
+use dynamo_common::math_utils::{binomial, nth_roots, roots_of_unity};
 
 use crate::macros::profile_imports;
 profile_imports!();
@@ -31,7 +31,7 @@ impl<const D: i32> MinsikHanPhi<D>
 
 impl<const D: i32> Default for MinsikHanPhi<D>
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl<const D: i32> ParameterPlane for MinsikHanPhi<D>

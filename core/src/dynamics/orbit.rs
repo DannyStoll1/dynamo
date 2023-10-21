@@ -1,4 +1,4 @@
-use fractal_common::prelude::*;
+use dynamo_common::prelude::*;
 use num_traits::One;
 
 pub struct OrbitParams
@@ -227,19 +227,6 @@ where
         }
         self.state
     }
-
-    // pub fn from_plane(plane: impl ParameterPlane, param: V) -> Self
-    // {
-    //     let start = plane.start_point(param);
-    //     Self::new(
-    //         |z, c| plane.map(z, c),
-    //         |z, c| plane.dynamical_derivative(z, c),
-    //         |i, z| plane.stop_condition(i, z),
-    //         |i, z0, z1, c| plane.check_periodicity(i, z0, z1, c),
-    //         start,
-    //         param,
-    //     )
-    // }
 
     fn stop_condition(&self, iter: Period, z: V) -> EscapeState<V, D>
     {

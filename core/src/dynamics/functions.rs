@@ -1,4 +1,4 @@
-use fractal_common::types::*;
+use dynamo_common::types::*;
 
 trait DynamicalMap<Vars, Params>
 {

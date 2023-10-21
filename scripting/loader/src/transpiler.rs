@@ -117,7 +117,7 @@ impl Transpiler
                 const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);\n\
             }}\n\
             impl Default for UserPlane {{\n\
-                fractal_impl!();\n\
+                dynamo_impl!();\n\
             }}\n\
             const i: Cplx = Cplx::new(0., 1.);\n\
             {}",
@@ -209,9 +209,9 @@ impl Transpiler
     }
     fn imports(&self) -> String
     {
-        "use fractal_common::prelude::*;\n\
-        use fractal_core::prelude::*;\n\
-        use fractal_gui::interface::{MainInterface, Interface};\n\
+        "use dynamo_common::prelude::*;\n\
+        use dynamo_core::prelude::*;\n\
+        use dynamo_gui::interface::{MainInterface, Interface};\n\
         "
         .to_owned()
     }

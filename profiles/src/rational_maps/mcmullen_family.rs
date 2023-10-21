@@ -20,7 +20,7 @@ impl<const M: i32, const N: i32> McMullenFamily<M, N>
 
 impl<const M: i32, const N: i32> Default for McMullenFamily<M, N>
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>

@@ -7,9 +7,9 @@ use image::{ImageBuffer, Rgb};
 use imageproc::drawing::{draw_filled_circle_mut, draw_polygon_mut};
 use itertools::Itertools;
 
-use fractal_common::coloring::palette::DiscretePalette;
-use fractal_common::prelude::*;
-use fractal_core::dynamics::ParameterPlane;
+use dynamo_common::coloring::palette::DiscretePalette;
+use dynamo_common::prelude::*;
+use dynamo_core::dynamics::ParameterPlane;
 
 use crate::image_frame::ImageFrame;
 
@@ -633,7 +633,7 @@ impl Marking
 mod hashing
 {
 
-    use fractal_common::types::{Cplx, Real};
+    use dynamo_common::types::{Cplx, Real};
 
     #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
     pub(super) struct HashedReal(u64);

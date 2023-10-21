@@ -1,5 +1,5 @@
 use super::ParameterPlane;
-use fractal_common::types::Cplx;
+use dynamo_common::types::Cplx;
 
 trait NewtonPlane: ParameterPlane<Var = Cplx, Deriv = Cplx>
 {

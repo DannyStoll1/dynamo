@@ -1,8 +1,8 @@
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
-use fractal_common::prelude::*;
-use fractal_common::symbolic_dynamics::OrbitSchema;
-use fractal_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
+use dynamo_common::prelude::*;
+use dynamo_common::symbolic_dynamics::OrbitSchema;
+use dynamo_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
 use num_traits::{One, Zero};
 
 use super::PlaneType;
@@ -222,6 +222,18 @@ where
     fn degree_real(&self) -> f64
     {
         self.parent.degree_real()
+    }
+
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        self.parent.degree()
+    }
+
+    #[inline]
+    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
+    {
+        (self.parent.escape_coeff_d(self.local_param).0, ZERO)
     }
 
     #[inline]

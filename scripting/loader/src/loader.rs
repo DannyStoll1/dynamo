@@ -1,7 +1,7 @@
 use crate::error::ScriptError;
 use crate::transpiler::Transpiler;
-use fractal_gui::interface::Interface;
-use fractal_gui::interface_holder::InterfaceHolder;
+use dynamo_gui::interface::Interface;
+use dynamo_gui::interface_holder::InterfaceHolder;
 use libloading::{Library, Symbol};
 use std::path::{Path, PathBuf};
 use std::process::Command;

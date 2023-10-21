@@ -1,5 +1,5 @@
 use crate::macros::{horner, profile_imports};
-use fractal_common::math_utils::weierstrass_p;
+use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -21,7 +21,7 @@ impl QuadRatPreper21
 }
 impl Default for QuadRatPreper21
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatPreper21

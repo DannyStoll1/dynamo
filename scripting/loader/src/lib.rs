@@ -9,7 +9,7 @@ mod tests
 {
     use crate::parser::*;
     use crate::transpiler::*;
-    use fractal_gui::interface::Interactive;
+    use dynamo_gui::interface::Interactive;
     use std::fs;
 
     #[test]

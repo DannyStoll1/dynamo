@@ -1,8 +1,8 @@
-use fractal_common::coloring::*;
-use fractal_common::math_utils::newton::error::NewtonResult;
-use fractal_common::math_utils::{arithmetic::*, newton::*};
-use fractal_common::prelude::*;
-use fractal_common::symbolic_dynamics::OrbitSchema;
+use dynamo_common::coloring::*;
+use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
+use dynamo_common::math_utils::{arithmetic::*, newton::*};
+use dynamo_common::prelude::*;
+use dynamo_common::symbolic_dynamics::OrbitSchema;
 use ndarray::{Array2, Axis};
 use num_cpus;
 use num_traits::{NumOps, One, Zero};
@@ -12,10 +12,10 @@ use std::{fmt::Display, ops::AddAssign};
 use thread_local::ThreadLocal;
 
 pub mod covering_maps;
+pub mod error;
 pub mod julia;
 pub mod newton;
 pub mod orbit;
-pub mod error;
 // pub mod simple_parameter_plane;
 // pub mod functions;
 
@@ -74,8 +74,7 @@ impl<V> Variable for V where
 {
 }
 impl<P> Parameter for P where
-    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
-    + std::fmt::Debug
+    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize + std::fmt::Debug
 {
 }
 impl<D> Derivative for D where
@@ -110,7 +109,8 @@ pub trait ParameterPlane: Sync + Send
 
     #[must_use]
     fn with_bounds(self, bounds: Bounds) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         let point_grid = self.point_grid().new_with_same_height(bounds);
         self.with_point_grid(point_grid)
@@ -119,7 +119,8 @@ pub trait ParameterPlane: Sync + Send
     /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio
     #[must_use]
     fn with_res_y(mut self, res_y: usize) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.point_grid_mut().resize_y(res_y);
         self
@@ -128,7 +129,8 @@ pub trait ParameterPlane: Sync + Send
     /// Modify and return self with a different image width, and with height scaled to preserve aspect ratio
     #[must_use]
     fn with_res_x(mut self, res_x: usize) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.point_grid_mut().resize_x(res_x);
         self
@@ -253,14 +255,6 @@ pub trait ParameterPlane: Sync + Send
             Self::Deriv::zero(),
             Self::Deriv::zero(),
         )
-    }
-
-    /// Marked critical value and its derivative with respect to the parameter. Only needed for
-    /// external rays in parameter planes.
-    /// TODO: implement this correctly
-    fn critical_value_and_param_derivative(&self, _c: Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        (NAN.into(), Self::Deriv::zero())
     }
 
     /// Map points in the image to parameters. Used for multi-parameter systems or covering maps
@@ -412,7 +406,8 @@ pub trait ParameterPlane: Sync + Send
     #[inline]
     #[must_use]
     fn with_param(mut self, param: <Self::MetaParam as ParamList>::Param) -> Self
-        where Self: Sized
+    where
+        Self: Sized,
     {
         self.set_param(param);
         self
@@ -614,17 +609,20 @@ pub trait ParameterPlane: Sync + Send
     /// and to maintain precision.
     ///
     /// Currently works correctly only for quadratic polynomials.
-    fn external_ray(&self, angle: RationalAngle) -> Option<Vec<Cplx>> {
+    fn external_ray(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
+    {
         // Remove off the end if distance is increasing,
         // as the helper method may return erroneous values near the end.
         // We use l1 norms to preserve precision.
-        if let Some(mut t_list) = self.external_ray_helper(angle) {
+        if let Some(mut t_list) = self.external_ray_helper(angle)
+        {
             let t0 = t_list.last()?;
             let mut t1 = t_list.get(t_list.len() - 2)?;
             let mut t2 = t_list.get(t_list.len() - 3)?;
             let mut dist0 = (t0 - t1).l1_norm();
             let mut dist1 = (t1 - t2).l1_norm();
-            while dist0 > dist1 {
+            while dist0 > dist1
+            {
                 t_list.pop();
                 t1 = t_list.last()?;
                 t2 = t_list.get(t_list.len() - 2)?;
@@ -633,7 +631,8 @@ pub trait ParameterPlane: Sync + Send
             }
             Some(t_list)
         }
-        else {
+        else
+        {
             None
         }
     }
@@ -659,7 +658,7 @@ pub trait ParameterPlane: Sync + Send
         let mut t_list = vec![];
 
         // degree of each additional batch of iterations
-        let deg = self.degree().abs();
+        let deg = self.degree();
 
         // Target angle for the composite map at each step.
         // Initialized to value after self.escaping_phase() iterations.
@@ -673,7 +672,8 @@ pub trait ParameterPlane: Sync + Send
             let us = (0..RAY_SHARPNESS).map(|j| {
                 escape_radius_log2
                     * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
-            });//.inspect(|u|println!("u = {}", u));
+            });
+
             let v = target_angle.to_circle();
             let targets = us.map(|u| u.exp2() * v);
 
@@ -681,49 +681,100 @@ pub trait ParameterPlane: Sync + Send
             let mut dist: Real;
 
             let num_iters = k * self.escaping_period() + self.escaping_phase();
-            //
-            // dbg!(num_iters);
-            // dbg!(t_curr);
-            // dbg!(t_curr.arg()/TAU);
 
             let fk_and_dfk = |t: Cplx| {
                 let (c, dc_dt) = self.param_map_d(t);
                 let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
                 dz_dt += dz_dc * dc_dt;
 
+                let (a, a_d) = self.escape_coeff_d(c);
+                let a_arg = a.ln();
+                let a_arg_d = a_d / a;
+
+                // Correction term to fix the angle
+                let mut corr_arg = ZERO;
+                let mut corr_arg_d = ZERO;
+
                 for _i in 0..num_iters
                 {
                     let (f, df_dz, df_dc) = self.gradient(z, c);
                     dz_dt = dz_dt * df_dz + df_dc * dc_dt;
-                    // if _i == num_iters - 1 {
-                    // dbg!(z.into(), f.into(), dz_dt.into());
-                    // }
                     z = f;
                 }
+
+                for _i in (self.escaping_phase()..num_iters).step_by(self.escaping_period() as usize)
+                {
+                    corr_arg = corr_arg * self.degree_real() + a_arg;
+                    corr_arg.im %= TAU;
+                    corr_arg_d = corr_arg_d * self.degree_real() + a_arg_d;
+                }
+                // let corr = corr_arg.to_circle();
+
+                if num_iters > self.escaping_phase()
+                {
+                    let corr = corr_arg.exp();
+                    let corr_d = corr * corr_arg_d;
+
+                    let zcorr = z.into() / corr;
+                    let zcorr_d = (dz_dt.into() - zcorr * corr_d) / corr;
+                    // if zcorr_d.norm_sqr() < 1e-3
+                    // {
+                    //     zcorr_d = dz_dt.into() / corr;
+                    // }
+
+                    dbg!(
+                        num_iters,
+                        t,
+                        z.into(),
+                        dz_dt.into(),
+                        corr,
+                        corr_d,
+                        zcorr,
+                        zcorr_d
+                    );
+                    dbg!(corr);
+                    // assert!((corr - cr).norm_sqr() < 10.);
+                    // assert!(t.norm_sqr() < 1e4);
+                    return (zcorr, zcorr_d);
+                }
                 (z.into(), dz_dt.into())
+
+                // let corr = corr_log.exp();
+                // let corr_d = corr * corr_log_d;
+                // let zcorr = z.into() / corr;
+                // (zcorr, (dz_dt.into() - zcorr * corr_d) / corr)
             };
 
             for target in targets
             {
-                // println!("New target: {}", target);
-                if let Ok((sol, t_k, d_k)) =
-                    find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
+                println!("New target: {}", target);
+                match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
                 {
-                    // dbg!(target, sol);
-                    t_curr = sol;
-
-                    if t_curr.is_nan()
+                    Ok((sol, t_k, d_k)) =>
                     {
+                        // dbg!(target, sol);
+                        t_curr = sol;
+
+                        if t_curr.is_nan()
+                        {
+                            return Some(t_list);
+                        }
+
+                        t_list.push(t_curr);
+
+                        dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
+                        if dist < pixel_width
+                        {
+                            return Some(t_list);
+                        }
+                    }
+                    Err(NanEncountered) =>
+                    {
+                        println!("NaN encountered!");
                         return Some(t_list);
                     }
-
-                    t_list.push(t_curr);
-
-                    dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
-                    if dist < pixel_width
-                    {
-                        return Some(t_list);
-                    }
+                    _ =>
+                    {}
                 }
             }
             target_angle *= deg;
@@ -1007,6 +1058,31 @@ pub trait ParameterPlane: Sync + Send
     {
         1
     }
+
+    // /// Leading coefficient of the self-return map at infinity,
+    // /// together with its derivative.
+    // ///
+    // /// Used for computing external rays.
+    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
+    {
+        (ONE, ZERO)
+    }
+    // fn escape_coeff_d(&self, t: Cplx, c: Self::Param) -> (Cplx, Self::Deriv, Self::Deriv) {
+    //     (ONE, ZERO, ZERO)
+    // }
+    // //
+    // /// Scaling factor by which we may conjugate our map to make the first return map at infinity
+    // /// monic.
+    // ///
+    // /// Used for computing external rays.
+    // fn monic_conj_d(&self, t: Cplx, c: Self::Param) -> (Cplx, Cplx, Cplx) {
+    //     if self.degree() == 1 || self.escape_coeff(c) == ONE {
+    //         (ONE, ZERO, ZERO)
+    //     } else {
+    //         self.escape_coeff(c).powf(
+    //         1.0 / (self.degree_real() - 1.0))
+    //     }
+    // }
 
     /// Default coloring algorithm to apply when loading the parameter plane.
     fn default_coloring(&self) -> Coloring

@@ -1,4 +1,4 @@
-use fractal_app as app;
+use dynamo_app as app;
 
 fn main() -> Result<(), eframe::Error>
 {

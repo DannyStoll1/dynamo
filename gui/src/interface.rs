@@ -4,12 +4,12 @@ use egui::{Context, CursorIcon, InputState, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
 
-use fractal_common::{
+use dynamo_common::{
     coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
     symbolic_dynamics::*,
     types::{Cplx, ParamList},
 };
-use fractal_core::dynamics::ParameterPlane;
+use dynamo_core::dynamics::ParameterPlane;
 
 use crate::{
     actions::Action,

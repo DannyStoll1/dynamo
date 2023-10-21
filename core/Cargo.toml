@@ -1,5 +1,5 @@
 [package]
-name = "fractal_core"
+name = "dynamo_core"
 version = "0.5.1"
 edition = "2021"
 license = "GPL-3.0-or-later"
@@ -15,9 +15,9 @@ num_cpus = ">=1.16.0"
 ndarray = ">=0.15.6"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 serde = { version = "1.0.166", features = ["derive"], optional = true }
-fractal_common = { version = "*", path = "../common" }
+dynamo_common = { version = "*", path = "../common" }
 num-traits = "0.2.16"
 
 [features]
-serde = ["dep:serde", "fractal_common/serde"]
+serde = ["dep:serde", "dynamo_common/serde"]
 wasm = []

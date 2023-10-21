@@ -20,7 +20,7 @@ impl RealCubicRealCrit
 }
 impl Default for RealCubicRealCrit
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for RealCubicRealCrit
@@ -101,7 +101,7 @@ impl RealCubicImagCrit
 }
 impl Default for RealCubicImagCrit
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for RealCubicImagCrit

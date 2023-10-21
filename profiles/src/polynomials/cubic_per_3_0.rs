@@ -1,4 +1,4 @@
-use fractal_common::horner_monic;
+use dynamo_common::horner_monic;
 
 use crate::macros::{horner, profile_imports};
 profile_imports!();
@@ -22,7 +22,7 @@ impl CubicPer3_0
 }
 impl Default for CubicPer3_0
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for CubicPer3_0

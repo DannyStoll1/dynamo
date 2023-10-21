@@ -1,5 +1,5 @@
 use crate::macros::{horner, horner_monic, profile_imports};
-use fractal_common::math_utils::weierstrass_p;
+use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
 const G2: Cplx = Cplx::new(2.75, 0.);
@@ -61,7 +61,7 @@ impl QuadRatPer5
 }
 impl Default for QuadRatPer5
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatPer5

@@ -27,7 +27,7 @@ impl<const N: Period> Tricorne<N>
 
 impl<const N: Period> Default for Tricorne<N>
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl<const N: Period> ParameterPlane for Tricorne<N>

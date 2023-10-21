@@ -1,5 +1,5 @@
 use crate::macros::{horner, horner_monic, profile_imports};
-use fractal_common::types::variables::{Bicomplex, PlaneID};
+use dynamo_common::types::variables::{Bicomplex, PlaneID};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -23,7 +23,7 @@ impl Biquadratic
 
 impl Default for Biquadratic
 {
-    fractal_impl!(multiplier, ZERO);
+    dynamo_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for Biquadratic
@@ -579,7 +579,7 @@ impl BiquadraticMultSecondIterate
 }
 impl Default for BiquadraticMultSecondIterate
 {
-    fractal_impl!(multiplier, ZERO);
+    dynamo_impl!(multiplier, ZERO);
 }
 
 impl ParameterPlane for BiquadraticMultSecondIterate

@@ -1,4 +1,4 @@
-use fractal_common::{
+use dynamo_common::{
     coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
     types::{IterCount, Period},
 };

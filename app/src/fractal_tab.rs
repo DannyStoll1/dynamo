@@ -1,19 +1,19 @@
 use crate::macros::{
-    fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
+    dynamo_menu_button, dynamo_menu_button_dyn, dynamo_menu_button_mc, dynamo_menu_button_mis,
 };
-use egui::Ui;
-use egui_dock::{NodeIndex, SurfaceIndex};
-use fractal_common::consts::{OMEGA, ONE};
-use fractal_common::types::{Cplx, ParamList};
-use fractal_core::dynamics::covering_maps::HasDynamicalCovers;
-use fractal_core::dynamics::julia::JuliaSet;
-use fractal_core::dynamics::ParameterPlane;
-use fractal_gui::hotkeys::{
+use dynamo_common::consts::{OMEGA, ONE};
+use dynamo_common::types::{Cplx, ParamList};
+use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
+use dynamo_core::dynamics::julia::JuliaSet;
+use dynamo_core::dynamics::ParameterPlane;
+use dynamo_gui::hotkeys::{
     Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS,
     SELECTION_HOTKEYS,
 };
-use fractal_gui::interface::{Interface, MainInterface};
-use fractal_profiles::*;
+use dynamo_gui::interface::{Interface, MainInterface};
+use dynamo_profiles::*;
+use egui::Ui;
+use egui_dock::{NodeIndex, SurfaceIndex};
 use seq_macro::seq;
 
 #[cfg(feature = "scripting")]
@@ -92,7 +92,7 @@ impl FractalTab
         self.menu_state.close();
         egui::menu::bar(ui, |ui| {
             self.file_menu(ui);
-            self.fractal_menu(ui);
+            self.dynamo_menu(ui);
             self.image_menu(ui);
             self.selection_menu(ui);
             self.annotations_menu(ui);
@@ -112,7 +112,7 @@ impl FractalTab
         });
     }
 
-    fn fractal_menu(&mut self, ui: &mut Ui)
+    fn dynamo_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Fractal", |ui| {
             self.menu_state.open();
@@ -310,80 +310,80 @@ impl FractalTab
         ui.menu_button("Polynomials", |ui| {
             ui.set_max_width(250.);
             ui.menu_button("Quadratic Family", |ui| {
-                fractal_menu_button!(self, ui, "Base Curve", Mandelbrot);
+                dynamo_menu_button!(self, ui, "Base Curve", Mandelbrot);
                 ui.menu_button("Marked Cycle", |ui| {
-                    fractal_menu_button_mc!(self, ui, Mandelbrot, 1);
-                    fractal_menu_button_mc!(self, ui, Mandelbrot, 3);
-                    fractal_menu_button_mc!(self, ui, Mandelbrot, 4);
+                    dynamo_menu_button_mc!(self, ui, Mandelbrot, 1);
+                    dynamo_menu_button_mc!(self, ui, Mandelbrot, 3);
+                    dynamo_menu_button_mc!(self, ui, Mandelbrot, 4);
                 });
                 ui.menu_button("Marked Periodic Point", |ui| {
-                    fractal_menu_button_mc!(self, ui, Mandelbrot, 1);
-                    fractal_menu_button_dyn!(self, ui, Mandelbrot, 2);
-                    fractal_menu_button_dyn!(self, ui, Mandelbrot, 3);
+                    dynamo_menu_button_mc!(self, ui, Mandelbrot, 1);
+                    dynamo_menu_button_dyn!(self, ui, Mandelbrot, 2);
+                    dynamo_menu_button_dyn!(self, ui, Mandelbrot, 3);
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
-                    fractal_menu_button_mis!(self, ui, Mandelbrot, 2, 1);
-                    fractal_menu_button_mis!(self, ui, Mandelbrot, 2, 2);
-                    // fractal_menu_button_mis!(self, ui, Mandelbrot, 3, 1);
+                    dynamo_menu_button_mis!(self, ui, Mandelbrot, 2, 1);
+                    dynamo_menu_button_mis!(self, ui, Mandelbrot, 2, 2);
+                    // dynamo_menu_button_mis!(self, ui, Mandelbrot, 3, 1);
                 });
             });
             ui.menu_button("Cubic Family", |ui| {
                 ui.menu_button("Real Slices", |ui| {
-                    fractal_menu_button!(self, ui, "Real critical point", RealCubicRealCrit);
-                    fractal_menu_button!(self, ui, "Imag critical point", RealCubicImagCrit);
+                    dynamo_menu_button!(self, ui, "Real critical point", RealCubicRealCrit);
+                    dynamo_menu_button!(self, ui, "Imag critical point", RealCubicImagCrit);
                 });
                 ui.menu_button("Odd Cubics", |ui| {
-                    fractal_menu_button!(self, ui, "Base curve", OddCubic);
+                    dynamo_menu_button!(self, ui, "Base curve", OddCubic);
                     ui.menu_button("Marked Cycle", |ui| {
-                        fractal_menu_button_mc!(self, ui, OddCubic, 1);
-                        fractal_menu_button_mc!(self, ui, OddCubic, 2);
+                        dynamo_menu_button_mc!(self, ui, OddCubic, 1);
+                        dynamo_menu_button_mc!(self, ui, OddCubic, 2);
                     });
                     ui.menu_button("Marked Periodic Point", |ui| {
-                        fractal_menu_button_dyn!(self, ui, OddCubic, 1);
-                        fractal_menu_button_dyn!(self, ui, OddCubic, 2);
+                        dynamo_menu_button_dyn!(self, ui, OddCubic, 1);
+                        dynamo_menu_button_dyn!(self, ui, OddCubic, 2);
                     });
                     ui.menu_button("Marked Preperiodic Point", |ui| {
-                        fractal_menu_button_mis!(self, ui, OddCubic, 1, 1);
-                        fractal_menu_button_mis!(self, ui, OddCubic, 1, 2);
+                        dynamo_menu_button_mis!(self, ui, OddCubic, 1, 1);
+                        dynamo_menu_button_mis!(self, ui, OddCubic, 1, 2);
                     });
                 });
                 ui.menu_button("Cubic Per(1)", |ui| {
-                    fractal_menu_button!(self, ui, "Base Curve", CubicPer1_0);
+                    dynamo_menu_button!(self, ui, "Base Curve", CubicPer1_0);
                     ui.menu_button("Marked Cycle", |ui| {
-                        fractal_menu_button_mc!(self, ui, CubicPer1_0, 1);
-                        fractal_menu_button_mc!(self, ui, CubicPer1_0, 2);
+                        dynamo_menu_button_mc!(self, ui, CubicPer1_0, 1);
+                        dynamo_menu_button_mc!(self, ui, CubicPer1_0, 2);
                     });
                     ui.menu_button("Marked Periodic Point", |ui| {
-                        fractal_menu_button_dyn!(self, ui, CubicPer1_0, 1);
-                        fractal_menu_button_dyn!(self, ui, CubicPer1_0, 2);
+                        dynamo_menu_button_dyn!(self, ui, CubicPer1_0, 1);
+                        dynamo_menu_button_dyn!(self, ui, CubicPer1_0, 2);
                     });
                     ui.menu_button("Marked Preperiodic Point", |ui| {
-                        fractal_menu_button_mis!(self, ui, CubicPer1_0, 1, 1);
+                        dynamo_menu_button_mis!(self, ui, CubicPer1_0, 1, 1);
                     });
                 });
                 ui.menu_button("Cubic Per(2)", |ui| {
-                    fractal_menu_button!(self, ui, "Base curve", CubicPer2CritMarked);
+                    dynamo_menu_button!(self, ui, "Base curve", CubicPer2CritMarked);
                     ui.menu_button("Marked Cycle", |ui| {
-                        fractal_menu_button_mc!(self, ui, CubicPer2CritMarked, 1);
-                        fractal_menu_button_mc!(self, ui, CubicPer2CritMarked, 2);
+                        dynamo_menu_button_mc!(self, ui, CubicPer2CritMarked, 1);
+                        dynamo_menu_button_mc!(self, ui, CubicPer2CritMarked, 2);
                     });
                 });
-                fractal_menu_button!(self, ui, "Per(3)", CubicPer3_0);
+                dynamo_menu_button!(self, ui, "Per(3)", CubicPer3_0);
                 ui.menu_button("Cubic Per(1, 1)", |ui| {
-                    fractal_menu_button!(self, ui, "Base Curve", CubicPer1_1);
+                    dynamo_menu_button!(self, ui, "Base Curve", CubicPer1_1);
                     ui.menu_button("Marked Cycle", |ui| {
-                        fractal_menu_button_mc!(self, ui, CubicPer1_1, 2);
+                        dynamo_menu_button_mc!(self, ui, CubicPer1_1, 2);
                     });
                     ui.menu_button("Marked Periodic Point", |ui| {
-                        fractal_menu_button_dyn!(self, ui, CubicPer1_1, 2);
+                        dynamo_menu_button_dyn!(self, ui, CubicPer1_1, 2);
                     });
                     ui.menu_button("Marked Preperiodic Point", |ui| {
-                        fractal_menu_button_mis!(self, ui, CubicPer1_1, 1, 1);
+                        dynamo_menu_button_mis!(self, ui, CubicPer1_1, 1, 1);
                     });
                 });
                 ui.menu_button("Cubic Per(1, λ)", |ui| {
-                    fractal_menu_button!(self, ui, "λ-plane", CubicPer1LambdaParam);
-                    fractal_menu_button!(
+                    dynamo_menu_button!(self, ui, "λ-plane", CubicPer1LambdaParam);
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.3",
@@ -391,7 +391,7 @@ impl FractalTab
                         with_param,
                         Cplx::from(0.3)
                     );
-                    fractal_menu_button!(
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.3 moduli",
@@ -399,7 +399,7 @@ impl FractalTab
                         with_param,
                         Cplx::from(0.3)
                     );
-                    fractal_menu_button!(
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.2+0.7i moduli",
@@ -407,7 +407,7 @@ impl FractalTab
                         with_param,
                         Cplx::new(0.2, 0.7)
                     );
-                    fractal_menu_button!(
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.99 moduli",
@@ -415,7 +415,7 @@ impl FractalTab
                         with_param,
                         Cplx::from(0.99)
                     );
-                    fractal_menu_button!(
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.99i",
@@ -425,8 +425,8 @@ impl FractalTab
                     );
                 });
                 ui.menu_button("Per(2, λ)", |ui| {
-                    fractal_menu_button!(self, ui, "λ-plane", CubicPer2LambdaParam);
-                    fractal_menu_button!(
+                    dynamo_menu_button!(self, ui, "λ-plane", CubicPer2LambdaParam);
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.3",
@@ -434,7 +434,7 @@ impl FractalTab
                         with_param,
                         Cplx::from(0.3)
                     );
-                    fractal_menu_button!(
+                    dynamo_menu_button!(
                         self,
                         ui,
                         "λ=0.99i",
@@ -444,45 +444,45 @@ impl FractalTab
                     );
                 });
                 ui.menu_button("2-cycle 0 <-> 1", |ui| {
-                    fractal_menu_button!(self, ui, "Base curve", CubicMarked2Cycle);
+                    dynamo_menu_button!(self, ui, "Base curve", CubicMarked2Cycle);
                     ui.menu_button("Marked Cycle", |ui| {
-                        fractal_menu_button_mc!(self, ui, CubicMarked2Cycle, 1);
+                        dynamo_menu_button_mc!(self, ui, CubicMarked2Cycle, 1);
                     });
                     ui.menu_button("Marked Periodic Point", |ui| {
-                        fractal_menu_button_dyn!(self, ui, CubicMarked2Cycle, 2);
+                        dynamo_menu_button_dyn!(self, ui, CubicMarked2Cycle, 2);
                     });
                     ui.menu_button("Marked Preperiodic Point", |ui| {
-                        fractal_menu_button_mis!(self, ui, CubicMarked2Cycle, 1, 1);
-                        fractal_menu_button_mis!(self, ui, CubicMarked2Cycle, 1, 2);
+                        dynamo_menu_button_mis!(self, ui, CubicMarked2Cycle, 1, 1);
+                        dynamo_menu_button_mis!(self, ui, CubicMarked2Cycle, 1, 2);
                     });
                 });
             });
             ui.menu_button("Unicritical Maps: z -> c*(1+z/d)^d", |ui| {
                 ui.menu_button("Degree 3", |ui| {
-                    fractal_menu_button!(self, ui, "Base curve", Unicritical<3>);
+                    dynamo_menu_button!(self, ui, "Base curve", Unicritical<3>);
                     ui.menu_button("Marked Cycle", |ui| {
-                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 1);
-                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 2);
-                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 3);
+                        dynamo_menu_button_mc!(self, ui, Unicritical<3>, 1);
+                        dynamo_menu_button_mc!(self, ui, Unicritical<3>, 2);
+                        dynamo_menu_button_mc!(self, ui, Unicritical<3>, 3);
                     });
                     ui.menu_button("Marked Periodic Point", |ui| {
-                        fractal_menu_button_mc!(self, ui, Unicritical<3>, 1);
-                        fractal_menu_button_dyn!(self, ui, Unicritical<3>, 2);
+                        dynamo_menu_button_mc!(self, ui, Unicritical<3>, 1);
+                        dynamo_menu_button_dyn!(self, ui, Unicritical<3>, 2);
                     });
                 });
                 seq!(D in 4..=8 {
-                    fractal_menu_button!(self, ui, format!("Degree {}", D), Unicritical<D>);
+                    dynamo_menu_button!(self, ui, format!("Degree {}", D), Unicritical<D>);
                 });
             });
             #[allow(clippy::identity_op)]
             ui.menu_button("Chebyshev family: z -> (-1)^k * c * cheb2k(z/2)", |ui| {
                 seq!(D in 1..=5 {
-                    fractal_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);
+                    dynamo_menu_button!(self, ui, format!("Degree {}", 2*D), Chebyshev<D>);
                 });
             });
             ui.menu_button("Biquadratic Maps", |ui| {
-                fractal_menu_button!(self, ui, "λ-plane", BiquadraticMultParam);
-                fractal_menu_button!(
+                dynamo_menu_button!(self, ui, "λ-plane", BiquadraticMultParam);
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=0.3",
@@ -490,7 +490,7 @@ impl FractalTab
                     with_param,
                     Cplx::from(0.3)
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=0.2+0.7j",
@@ -498,7 +498,7 @@ impl FractalTab
                     with_param,
                     Cplx::new(0.2, 0.7)
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=0.99i",
@@ -506,7 +506,7 @@ impl FractalTab
                     with_param,
                     Cplx::new(0., 0.99)
                 );
-                fractal_menu_button!(self, ui, "Section (b=1): λ-plane", BiquadraticMultSection);
+                dynamo_menu_button!(self, ui, "Section (b=1): λ-plane", BiquadraticMultSection);
             });
         });
     }
@@ -515,55 +515,55 @@ impl FractalTab
         ui.menu_button("Rational Maps", |ui| {
             ui.set_max_width(250.);
             ui.menu_button("QuadRat Per(2)", |ui| {
-                fractal_menu_button!(self, ui, "Moduli space", QuadRatPer2);
-                fractal_menu_button!(self, ui, "3-fold cover", QuadRatPer2Cover);
+                dynamo_menu_button!(self, ui, "Moduli space", QuadRatPer2);
+                dynamo_menu_button!(self, ui, "3-fold cover", QuadRatPer2Cover);
                 ui.menu_button("Marked Cycle", |ui| {
-                    fractal_menu_button_mc!(self, ui, QuadRatPer2, 1);
-                    fractal_menu_button_mc!(self, ui, QuadRatPer2, 4);
-                    fractal_menu_button_mc!(self, ui, QuadRatPer2, 5);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer2, 1);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer2, 4);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer2, 5);
                 });
                 ui.menu_button("Marked Periodic Point", |ui| {
-                    fractal_menu_button_mc!(self, ui, QuadRatPer2, 1);
-                    fractal_menu_button_dyn!(self, ui, QuadRatPer2, 3);
-                    fractal_menu_button_dyn!(self, ui, QuadRatPer2, 4);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer2, 1);
+                    dynamo_menu_button_dyn!(self, ui, QuadRatPer2, 3);
+                    dynamo_menu_button_dyn!(self, ui, QuadRatPer2, 4);
                 });
                 ui.menu_button("Marked Preperiodic Point", |ui| {
-                    fractal_menu_button_mis!(self, ui, QuadRatPer2, 1, 1);
-                    fractal_menu_button_mis!(self, ui, QuadRatPer2, 2, 1);
-                    fractal_menu_button_mis!(self, ui, QuadRatPer2, 2, 2);
+                    dynamo_menu_button_mis!(self, ui, QuadRatPer2, 1, 1);
+                    dynamo_menu_button_mis!(self, ui, QuadRatPer2, 2, 1);
+                    dynamo_menu_button_mis!(self, ui, QuadRatPer2, 2, 2);
                 });
             });
             ui.menu_button("QuadRat Per(3)", |ui| {
-                fractal_menu_button!(self, ui, "Base Curve", QuadRatPer3);
+                dynamo_menu_button!(self, ui, "Base Curve", QuadRatPer3);
                 ui.menu_button("Marked Cycle curves", |ui| {
-                    fractal_menu_button_mc!(self, ui, QuadRatPer3, 1);
-                    fractal_menu_button_mc!(self, ui, QuadRatPer3, 4);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer3, 1);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer3, 4);
                 });
             });
             ui.menu_button("QuadRat Per(4)", |ui| {
-                fractal_menu_button!(self, ui, "Base Curve", QuadRatPer4);
+                dynamo_menu_button!(self, ui, "Base Curve", QuadRatPer4);
                 ui.menu_button("Marked Cycle curves", |ui| {
-                    fractal_menu_button_mc!(self, ui, QuadRatPer4, 3);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPer4, 3);
                 });
             });
-            fractal_menu_button!(self, ui, "QuadRat Per(5)", QuadRatPer5);
+            dynamo_menu_button!(self, ui, "QuadRat Per(5)", QuadRatPer5);
             ui.menu_button("QuadRat Preper(2, 1)", |ui| {
-                fractal_menu_button!(self, ui, "Base Curve", QuadRatPreper21);
+                dynamo_menu_button!(self, ui, "Base Curve", QuadRatPreper21);
                 ui.menu_button("Marked Cycle", |ui| {
-                    fractal_menu_button_mc!(self, ui, QuadRatPreper21, 3);
-                    fractal_menu_button_mc!(self, ui, QuadRatPreper21, 4);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPreper21, 3);
+                    dynamo_menu_button_mc!(self, ui, QuadRatPreper21, 4);
                 });
             });
-            fractal_menu_button!(self, ui, "QuadRat Preper(2, 2)", QuadRatPreper22);
+            dynamo_menu_button!(self, ui, "QuadRat Preper(2, 2)", QuadRatPreper22);
             ui.menu_button("QuadRat Per(1, λ)", |ui| {
-                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer1LambdaParam);
-                fractal_menu_button!(
+                dynamo_menu_button!(self, ui, "λ-plane", QuadRatPer1LambdaParam);
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=1",
                     QuadRatPer1_1
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=-1",
@@ -571,7 +571,7 @@ impl FractalTab
                     with_param,
                     -ONE
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=ω",
@@ -579,7 +579,7 @@ impl FractalTab
                     with_param,
                     OMEGA
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=i",
@@ -587,7 +587,7 @@ impl FractalTab
                     with_param,
                     Cplx::new(0., 1.)
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=exp(φτi)",
@@ -597,8 +597,8 @@ impl FractalTab
                 );
             });
             ui.menu_button("QuadRat Per(2, λ)", |ui| {
-                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer2LambdaParam);
-                fractal_menu_button!(
+                dynamo_menu_button!(self, ui, "λ-plane", QuadRatPer2LambdaParam);
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=1",
@@ -606,7 +606,7 @@ impl FractalTab
                     with_param,
                     ONE
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=i",
@@ -614,7 +614,7 @@ impl FractalTab
                     with_param,
                     Cplx::new(0., 1.)
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=-3",
@@ -622,7 +622,7 @@ impl FractalTab
                     with_param,
                     Cplx::from(-3.)
                 );
-                fractal_menu_button!(
+                dynamo_menu_button!(
                     self,
                     ui,
                     "λ=-27",
@@ -632,19 +632,19 @@ impl FractalTab
                 );
             });
 
-            fractal_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
-            fractal_menu_button!(self, ui, "Newton Cubic", NewtonCubic);
+            dynamo_menu_button!(self, ui, "QuadRat Symmetry Locus", QuadRatSymmetryLocus);
+            dynamo_menu_button!(self, ui, "Newton Cubic", NewtonCubic);
             ui.menu_button("McMullen Family: z -> z^m + 1/(c*z^n)", |ui| {
                 seq!(N in 2..=8 {
-                    fractal_menu_button!(self, ui, format!("(m=2, n={})", N), McMullenFamily<2, N>);
+                    dynamo_menu_button!(self, ui, format!("(m=2, n={})", N), McMullenFamily<2, N>);
                 });
                 seq!(M in 2..=8 {
-                    fractal_menu_button!(self, ui, format!("(m={}, n={})", M, M), McMullenFamily<M, M>);
+                    dynamo_menu_button!(self, ui, format!("(m={}, n={})", M, M), McMullenFamily<M, M>);
                 });
             });
             ui.menu_button("Minsik Han Φ: z -> az/(z^d+d-1)", |ui| {
                 seq!(D in 2..=8 {
-                    fractal_menu_button!(self, ui, format!("Degree {}", D), MinsikHanPhi<D>);
+                    dynamo_menu_button!(self, ui, format!("Degree {}", D), MinsikHanPhi<D>);
                 });
             });
         });
@@ -653,11 +653,11 @@ impl FractalTab
     fn transcendental_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("Transcendental maps", |ui| {
-            fractal_menu_button!(self, ui, "z -> λexp(z)", Exponential);
-            fractal_menu_button!(self, ui, "z -> λcos(z)", Cosine);
-            fractal_menu_button!(self, ui, "z -> cos(z) + c", CosineAdd);
-            fractal_menu_button!(self, ui, "z -> sin(z) + z + τc", SineWander);
-            fractal_menu_button!(self, ui, "Riemann Xi Newton [SLOW!]", RiemannXi);
+            dynamo_menu_button!(self, ui, "z -> λexp(z)", Exponential);
+            dynamo_menu_button!(self, ui, "z -> λcos(z)", Cosine);
+            dynamo_menu_button!(self, ui, "z -> cos(z) + c", CosineAdd);
+            dynamo_menu_button!(self, ui, "z -> sin(z) + z + τc", SineWander);
+            dynamo_menu_button!(self, ui, "Riemann Xi Newton [SLOW!]", RiemannXi);
         });
     }
 
@@ -666,16 +666,16 @@ impl FractalTab
         ui.menu_button("Non-analytic maps", |ui| {
             ui.menu_button("Tricorne", |ui| {
                 seq!(D in 2..=5 {
-                    fractal_menu_button!(self, ui, format!("Degree {}", D), Tricorne<D>);
+                    dynamo_menu_button!(self, ui, format!("Degree {}", D), Tricorne<D>);
                 });
             });
             ui.menu_button("Burning Ship", |ui| {
                 seq!(D in 2..=5 {
-                    fractal_menu_button!(self, ui, format!("Degree {}", D), BurningShip<D>);
+                    dynamo_menu_button!(self, ui, format!("Degree {}", D), BurningShip<D>);
                 });
             });
-            fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam);
-            fractal_menu_button!(self, ui, "Rulkov Map", Rulkov);
+            dynamo_menu_button!(self, ui, "Sailboat Param", SailboatParam);
+            dynamo_menu_button!(self, ui, "Rulkov Map", Rulkov);
         });
     }
 
@@ -687,7 +687,7 @@ impl FractalTab
         M: ParamList<Param = T>,
         T: From<P::Param> + std::fmt::Display,
     {
-        use fractal_gui::interface::PanePair;
+        use dynamo_gui::interface::PanePair;
         let image_height = self.interface.get_image_height();
         let max_iters = 1024;
 
@@ -724,7 +724,7 @@ impl FractalTab
 
     fn process_interface_message(&mut self, _ui: &mut Ui)
     {
-        use fractal_gui::interface::UIMessage::{CloseWindow, DoNothing, Quit};
+        use dynamo_gui::interface::UIMessage::{CloseWindow, DoNothing, Quit};
         match self.interface.pop_message()
         {
             DoNothing =>

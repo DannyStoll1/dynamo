@@ -1,5 +1,5 @@
 use crate::macros::{horner, horner_monic, profile_imports};
-use fractal_common::math_utils::weierstrass_p;
+use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
 // Quadratic rational maps with a critical 3-cycle: -c => ∞ -> 1 -> -c
@@ -21,7 +21,7 @@ impl QuadRatPer3
 }
 impl Default for QuadRatPer3
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatPer3

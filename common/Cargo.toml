@@ -1,5 +1,5 @@
 [package]
-name = "fractal_common"
+name = "dynamo_common"
 version = "0.5.1"
 edition = "2021"
 authors = ["Danny Stoll <dastoll@umich.edu>"]

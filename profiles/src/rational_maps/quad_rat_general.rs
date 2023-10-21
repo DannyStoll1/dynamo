@@ -1,6 +1,6 @@
 use crate::macros::horner;
 use crate::macros::{horner_monic, profile_imports};
-use fractal_common::types::CplxPair;
+use dynamo_common::types::CplxPair;
 profile_imports!();
 
 #[derive(Clone, Debug)]

@@ -9,10 +9,10 @@ description = "A tool for studying discrete time dynamical systems - Native UI"
 
 [dependencies]
 eframe = "0.23.0"
-fractal_app = { version = "*", path = "../app" }
+dynamo_app = { version = "*", path = "../app" }
 
 [features]
-serde = ["fractal_app/serde"]
+serde = ["dynamo_app/serde"]
 
 [package.metadata.bundle]
 name = "Fractal Explorer"

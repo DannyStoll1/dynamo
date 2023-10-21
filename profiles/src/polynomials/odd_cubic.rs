@@ -1,5 +1,5 @@
 use crate::macros::profile_imports;
-use fractal_common::{horner, horner_monic, math_utils::weierstrass_p};
+use dynamo_common::{horner, horner_monic, math_utils::weierstrass_p};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ impl OddCubic
 }
 impl Default for OddCubic
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 #[allow(clippy::suspicious_operation_groupings)]
@@ -103,7 +103,8 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle {
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
         angle * Rational::new(3, 2) + RationalAngle::ONE_HALF
     }
 

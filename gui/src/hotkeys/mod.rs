@@ -1,6 +1,6 @@
 pub mod keyboard_shortcuts;
 use crate::{actions::Action, interface::PaneID};
-use fractal_common::coloring::algorithms::IncoloringAlgorithm;
+use dynamo_common::coloring::algorithms::IncoloringAlgorithm;
 use keyboard_shortcuts::*;
 use seq_macro::seq;
 

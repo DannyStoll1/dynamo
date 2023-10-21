@@ -1,5 +1,5 @@
 use crate::macros::profile_imports;
-use fractal_common::types::{
+use dynamo_common::types::{
     variables::{Matrix2x2, Point},
     Cplx,
 };
@@ -56,7 +56,7 @@ impl Rulkov
 }
 impl Default for Rulkov
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for Rulkov

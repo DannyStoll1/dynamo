@@ -20,7 +20,7 @@ impl NewtonCubic
 }
 impl Default for NewtonCubic
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for NewtonCubic

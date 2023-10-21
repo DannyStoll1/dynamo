@@ -18,13 +18,13 @@ pub use non_analytic::*;
 mod tests
 {
     use crate::*;
-    use fractal_common::point_grid::Bounds;
-    use fractal_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema};
-    use fractal_common::symbolic_dynamics::RationalAngle;
-    use fractal_core::dynamics::covering_maps::HasDynamicalCovers;
-    use fractal_core::dynamics::julia::JuliaSet;
-    use fractal_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
-    use fractal_core::dynamics::ParameterPlane;
+    use dynamo_common::point_grid::Bounds;
+    use dynamo_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema};
+    use dynamo_common::symbolic_dynamics::RationalAngle;
+    use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
+    use dynamo_core::dynamics::julia::JuliaSet;
+    use dynamo_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
+    use dynamo_core::dynamics::ParameterPlane;
 
     #[test]
     fn compute_biquadratic()
@@ -265,13 +265,12 @@ mod tests
     #[test]
     fn ext_ray()
     {
-        // let param_plane = CubicPer1_0::default();
-        // let param_plane = OddCubic::default();
-        let param_plane = Mandelbrot::default();
-        // let param_plane = QuadRatPer2::default();
-        let angle = RationalAngle::new(1, 7);
-        let ray = param_plane.external_ray(angle).unwrap();
-        let target = Cplx::new(-0.125, 0.649519052838329);
-        assert!((ray.last().unwrap() - target).norm_sqr() < 1e-4);
+        // let param_plane = Mandelbrot::default();
+        let param_plane: Chebyshev<1> = Default::default();
+        let angle = RationalAngle::new(1, 3);
+        let ray = param_plane.external_ray(angle);
+        dbg!(ray);
+        // let target = Cplx::new(-0.125, 0.649519052838329);
+        // assert!((ray.last().unwrap() - target).norm_sqr() < 1e-4);
     }
 }

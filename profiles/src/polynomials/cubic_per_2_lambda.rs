@@ -1,5 +1,5 @@
 use crate::macros::{horner, horner_monic, profile_imports};
-use fractal_common::{math_utils::weierstrass_p, types::variables::PlaneID};
+use dynamo_common::{math_utils::weierstrass_p, types::variables::PlaneID};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -304,7 +304,7 @@ impl CubicPer2CritMarked
 }
 impl Default for CubicPer2CritMarked
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for CubicPer2CritMarked

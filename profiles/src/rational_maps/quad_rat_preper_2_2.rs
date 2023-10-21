@@ -21,7 +21,7 @@ impl QuadRatPreper22
 }
 impl Default for QuadRatPreper22
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatPreper22

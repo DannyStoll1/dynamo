@@ -15,7 +15,7 @@ num-complex = { version = "0.4.4", features = ["serde"] }
 regex = "1.10.0"
 lazy_static = "1.4.0"
 libloading = "0.8.1"
-fractal_gui = { version = "*", path = "../../gui", features = ["scripting"] }
-fractal_core = { version = "*", path = "../../core" }
-fractal_common = { version = "*", path = "../../common" }
+dynamo_gui = { version = "*", path = "../../gui", features = ["scripting"] }
+dynamo_core = { version = "*", path = "../../core" }
+dynamo_common = { version = "*", path = "../../common" }
 sha256 = "1.4.0"

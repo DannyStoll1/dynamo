@@ -1,5 +1,5 @@
 use crate::macros::{horner_monic, profile_imports};
-use fractal_common::{horner, math_utils::roots_of_unity};
+use dynamo_common::{horner, math_utils::roots_of_unity};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ impl<const D: i32> Unicritical<D>
 
 impl<const D: i32> Default for Unicritical<D>
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 #[allow(clippy::suspicious_operation_groupings)]
@@ -79,7 +79,7 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        use fractal_common::math_utils::binomial;
+        use dynamo_common::math_utils::binomial;
         match period
         {
             1 =>

@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["dylib"]
 
 [dependencies]
-fractal_gui = { version = "*", path = "../../gui" }
-fractal_core = { version = "*", path = "../../core" }
-fractal_common = { version = "*", path = "../../common" }
+dynamo_gui = { version = "*", path = "../../gui" }
+dynamo_core = { version = "*", path = "../../core" }
+dynamo_common = { version = "*", path = "../../common" }
 

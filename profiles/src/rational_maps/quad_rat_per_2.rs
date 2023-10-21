@@ -21,7 +21,7 @@ impl QuadRatPer2
 }
 impl Default for QuadRatPer2
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatPer2
@@ -795,7 +795,7 @@ impl QuadRatPer2Cover
 }
 impl Default for QuadRatPer2Cover
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for QuadRatPer2Cover

@@ -1,5 +1,5 @@
 use crate::macros::profile_imports;
-use fractal_common::types::variables::Matrix2x2;
+use dynamo_common::types::variables::Matrix2x2;
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ impl<const N: Period> BurningShip<N>
 }
 impl<const N: Period> Default for BurningShip<N>
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl<const N: Period> ParameterPlane for BurningShip<N>
@@ -147,7 +147,7 @@ impl Sailboat
 }
 impl Default for Sailboat
 {
-    fractal_impl!(shift, ZERO);
+    dynamo_impl!(shift, ZERO);
 }
 
 impl ParameterPlane for Sailboat
@@ -258,7 +258,7 @@ impl SailboatParam
 }
 impl Default for SailboatParam
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for SailboatParam

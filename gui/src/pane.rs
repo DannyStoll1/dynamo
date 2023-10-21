@@ -1,7 +1,7 @@
-use fractal_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
-use fractal_common::prelude::*;
-use fractal_core::dynamics::error::FindPointResult;
-use fractal_core::dynamics::{ParameterPlane, PlaneType};
+use dynamo_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
+use dynamo_common::prelude::*;
+use dynamo_core::dynamics::error::FindPointResult;
+use dynamo_core::dynamics::{ParameterPlane, PlaneType};
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;

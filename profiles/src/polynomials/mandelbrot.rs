@@ -1,4 +1,4 @@
-use fractal_common::symbolic_dynamics::OrbitSchema;
+use dynamo_common::symbolic_dynamics::OrbitSchema;
 
 use crate::macros::{cplx_arr, horner, horner_monic, profile_imports};
 
@@ -31,7 +31,7 @@ impl Mandelbrot
 }
 impl Default for Mandelbrot
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for Mandelbrot
@@ -174,7 +174,7 @@ impl ParameterPlane for Mandelbrot
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
-        use fractal_common::math_utils::polynomial_roots::solve_polynomial;
+        use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
         match period
         {
             1 =>
@@ -486,7 +486,7 @@ impl ParameterPlane for Mandelbrot
 
     fn precycles_child(&self, c: Cplx, orbit_schema: OrbitSchema) -> ComplexVec
     {
-        use fractal_common::math_utils::polynomial_roots::solve_polynomial;
+        use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
         match (orbit_schema.preperiod, orbit_schema.period)
         {
             (2, 1) =>

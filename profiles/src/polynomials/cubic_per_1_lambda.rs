@@ -1,5 +1,5 @@
 use crate::macros::{horner, horner_monic, profile_imports};
-use fractal_common::types::variables::PlaneID;
+use dynamo_common::types::variables::PlaneID;
 profile_imports!();
 
 const I: Cplx = Cplx::new(0., 1.);
@@ -297,11 +297,11 @@ impl CubicPer1LambdaParam
 {
     const BASE_POINT: Cplx = Cplx::new(1e-4, 0.);
     const DEFAULT_BOUNDS: Bounds = Bounds {
-            min_x: -2.2,
-            max_x: 4.2,
-            min_y: -2.5,
-            max_y: 2.5,
-        };
+        min_x: -2.2,
+        max_x: 4.2,
+        min_y: -2.5,
+        max_y: 2.5,
+    };
 
     fn base_param(lambda: Cplx) -> Cplx
     {
@@ -445,7 +445,7 @@ impl CubicPer1_1
 
 impl Default for CubicPer1_1
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for CubicPer1_1
@@ -597,7 +597,7 @@ impl CubicPer1_0
 }
 impl Default for CubicPer1_0
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for CubicPer1_0
@@ -1131,7 +1131,8 @@ pub struct CubicPer1LambdaModuli
     starting_crit: PlaneID,
 }
 
-impl CubicPer1LambdaModuli {
+impl CubicPer1LambdaModuli
+{
     const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);
 }
 

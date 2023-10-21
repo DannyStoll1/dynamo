@@ -66,6 +66,7 @@ impl ChebyshevCoeffTable
     }
 }
 
+/// (-1)^D * c * T_{2D}(z/2)
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Chebyshev<const D: Period>
@@ -139,9 +140,28 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         f64::from(2 * D)
     }
 
+    #[inline]
+    fn degree(&self) -> AngleNum
+    {
+        (2 * D).into()
+    }
+
+    #[inline]
+    fn escape_coeff_d(&self, param: Self::Param) -> (Cplx, Cplx)
+    {
+        if D % 2 == 0
+        {
+            (0.5 * param, Cplx::new(0.5, 0.))
+        }
+        else
+        {
+            (-0.5 * param, Cplx::new(-0.5, 0.))
+        }
+    }
+
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        let z2 = z * z * 0.25;
+        let w = z * z * 0.25;
 
         let mut z_iter = self.coeffs.iter().rev();
 
@@ -151,7 +171,7 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 
         for &a in z_iter
         {
-            zval = zval * z2 + a;
+            zval = zval * w + a;
         }
 
         c * zval
@@ -268,6 +288,6 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 
     fn name(&self) -> String
     {
-        format!("Chebyshev degree {D}")
+        format!("Chebyshev degree {}", 2 * D)
     }
 }

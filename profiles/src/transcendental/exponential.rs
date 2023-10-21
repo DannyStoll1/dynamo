@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 
 use crate::macros::profile_imports;
-use fractal_common::math_utils::slog;
+use dynamo_common::math_utils::slog;
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -23,7 +23,7 @@ impl Exponential
 }
 impl Default for Exponential
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for Exponential
@@ -139,7 +139,7 @@ impl CosineAdd
 
 impl Default for CosineAdd
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for CosineAdd
@@ -235,7 +235,7 @@ impl Cosine
 }
 impl Default for Cosine
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for Cosine
@@ -332,7 +332,7 @@ impl SineWander
 
 impl Default for SineWander
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for SineWander

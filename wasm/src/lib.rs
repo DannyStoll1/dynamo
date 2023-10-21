@@ -1,7 +1,7 @@
 #[cfg(target_arch = "wasm32")]
 use {
+    dynamo_app::FractalApp,
     eframe::{WebLogger, WebOptions, WebRunner},
-    fractal_app::FractalApp,
     log,
     wasm_bindgen::prelude::*,
 };

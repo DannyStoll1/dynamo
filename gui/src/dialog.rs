@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 
+use dynamo_common::symbolic_dynamics::{AngleInfo, OrbitSchemaWithDegree, RationalAngle};
+use dynamo_core::dynamics::PlaneType;
 use egui::{self, Key, RichText, WidgetText};
 use egui::{vec2, Window};
 use egui_file::FileDialog;
-use fractal_common::symbolic_dynamics::{AngleInfo, RationalAngle, OrbitSchemaWithDegree};
-use fractal_core::dynamics::PlaneType;
 use std::fmt::Write;
 
 use crate::interface::PaneID;
@@ -393,7 +393,11 @@ impl Dialog
     pub fn confirm_active_rays(params: AllActiveRayParams) -> Self
     {
         let title = "Confirm active rays".to_owned();
-        let OrbitSchemaWithDegree { preperiod, period, degree } = params.orbit_schema;
+        let OrbitSchemaWithDegree {
+            preperiod,
+            period,
+            degree,
+        } = params.orbit_schema;
 
         let header = format!(
             "The following angles are active with preperiod {} and period {}:",

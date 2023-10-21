@@ -17,7 +17,7 @@ pub fn run_app() -> Result<(), eframe::Error>
     };
 
     eframe::run_native(
-        "Run complex dynamics simulations",
+        "Dynamo",
         options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
@@ -106,10 +106,10 @@ mod tests
     #[test]
     fn gui_speedtest()
     {
-        use fractal_core::dynamics::{julia::JuliaSet, ParameterPlane};
+        use dynamo_core::dynamics::{julia::JuliaSet, ParameterPlane};
         let height = 1024;
-        use fractal_gui::interface::{MainInterface, PanePair};
-        let parameter_plane = fractal_profiles::QuadRatPer2::default()
+        use dynamo_gui::interface::{MainInterface, PanePair};
+        let parameter_plane = dynamo_profiles::QuadRatPer2::default()
             .with_res_y(height)
             .with_max_iter(2048);
 

@@ -26,7 +26,7 @@
 //     };
 // }
 
-macro_rules! fractal_menu_button {
+macro_rules! dynamo_menu_button {
     ($self: ident, $ui: ident, $name: expr, $fractal: ty) => {
         if $ui.button($name).clicked()
         {
@@ -59,9 +59,9 @@ macro_rules! fractal_menu_button {
     };
 }
 
-macro_rules! fractal_menu_button_mc {
+macro_rules! dynamo_menu_button_mc {
     ($self: ident, $ui: ident, $fractal: ty, $period: expr) => {
-        fractal_menu_button!(
+        dynamo_menu_button!(
             $self,
             $ui,
             format!("Period {}", $period),
@@ -72,9 +72,9 @@ macro_rules! fractal_menu_button_mc {
     };
 }
 
-macro_rules! fractal_menu_button_dyn {
+macro_rules! dynamo_menu_button_dyn {
     ($self: ident, $ui: ident, $fractal: ty, $period: expr) => {
-        fractal_menu_button!(
+        dynamo_menu_button!(
             $self,
             $ui,
             format!("Period {}", $period),
@@ -85,9 +85,9 @@ macro_rules! fractal_menu_button_dyn {
     };
 }
 
-macro_rules! fractal_menu_button_mis {
+macro_rules! dynamo_menu_button_mis {
     ($self: ident, $ui: ident, $fractal: ty, $preperiod: expr, $period: expr) => {
-        fractal_menu_button!(
+        dynamo_menu_button!(
             $self,
             $ui,
             format!("Preperiod {}, Period {}", $preperiod, $period),
@@ -100,5 +100,5 @@ macro_rules! fractal_menu_button_mis {
 }
 
 pub(crate) use {
-    fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
+    dynamo_menu_button, dynamo_menu_button_dyn, dynamo_menu_button_mc, dynamo_menu_button_mis,
 };

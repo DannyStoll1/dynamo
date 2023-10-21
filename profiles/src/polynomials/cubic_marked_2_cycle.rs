@@ -1,5 +1,5 @@
 use crate::macros::{horner, horner_monic, profile_imports};
-use fractal_common::math_utils::weierstrass_p;
+use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
 // Cubic polynomials with 2-cycle 0 <-> 1
@@ -22,7 +22,7 @@ impl CubicMarked2Cycle
 }
 impl Default for CubicMarked2Cycle
 {
-    fractal_impl!();
+    dynamo_impl!();
 }
 
 impl ParameterPlane for CubicMarked2Cycle
