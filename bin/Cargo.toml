@@ -4,7 +4,7 @@ version = "0.5.1"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Danny Stoll"]
-repository = "https://github.com/dannystoll1/fractal-explorer"
+repository = "https://github.com/dannystoll1/dynamo"
 description = "A tool for studying discrete time dynamical systems - Native UI"
 
 [dependencies]
@@ -16,7 +16,7 @@ serde = ["dynamo_app/serde"]
 
 [package.metadata.bundle]
 name = "Fractal Explorer"
-identifier = "io.github.dannystoll1.fractal-explorer"
+identifier = "io.github.dannystoll1.dynamo"
 version = "0.5.1"
 icon = ["../docs/icons/*.png", "../docs/icons/*.icns"]
 short_description = "A tool for exploring dynamical systems on complex manifolds."

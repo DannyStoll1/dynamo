@@ -156,7 +156,7 @@ impl<'a> Loader<'a>
     /// created by the Rust compiler in `self.build`.
     ///
     /// However, no checks are currently performed to ensure that the flags passed to
-    /// `cargo` in `self.build` match those with which `fractal-explorer` was compiled.
+    /// `cargo` in `self.build` match those with which `dynamo` was compiled.
     /// If these flags do not match, the ABIs will likely be incompatible, leading to undefined
     /// behavior.
     unsafe fn load<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
@@ -185,7 +185,7 @@ impl<'a> Loader<'a>
     /// # Safety
     ///
     /// Care must be taken to ensure the same flags are passed to `cargo` during `build`
-    /// as were used to compile `fractal-explorer`. See the safety notes for `load`.
+    /// as were used to compile `dynamo`. See the safety notes for `load`.
     ///
     /// Additionally, we must ensure that the library remains in memory for as long as the
     /// interface does. The InterfaceHolder structure provides this protection.
@@ -210,12 +210,12 @@ impl<'a> Loader<'a>
     /// # Safety
     ///
     /// While this method would be quite useful to reduce load times for reused scripts, it is also
-    /// very unstable. In particular, if fractal-explorer is updated or ported to a new machine,
+    /// very unstable. In particular, if dynamo is updated or ported to a new machine,
     /// but the user script libraries are not cleaned (e.g. by running `clear_scripts.sh`),
-    /// then the old libraries may have an ABI mismatch with the newer `fractal-explorer`, leading
+    /// then the old libraries may have an ABI mismatch with the newer `dynamo`, leading
     /// to undefined behavior.
     ///
-    /// FIXME: Add a build script to clear old script libraries from `scripting/compiled` whenever `fractal-explorer` is recompiled.
+    /// FIXME: Add a build script to clear old script libraries from `scripting/compiled` whenever `dynamo` is recompiled.
     pub unsafe fn run_lazy<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
         if self.dest_lib_path().exists()

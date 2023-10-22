@@ -3,7 +3,7 @@ name = "dynamo_gui"
 version = "0.5.1"
 edition = "2021"
 authors = ["Danny Stoll"]
-repository = "https://github.com/dannystoll1/fractal-explorer"
+repository = "https://github.com/dannystoll1/dynamo"
 description = "GUI for Fractal Explorer"
 license = "GPL-3.0-or-later"
 

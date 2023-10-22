@@ -1,0 +1,15 @@
+[metadata]
+name = "Collatz"
+short_name = "collatz"
+
+[names]
+variable = "z"
+selection = "t"
+
+[constants]
+
+[parameters]
+
+[dynamics]
+start = "t"
+map = "(z/2) * cos(2*pi*z) + (3*z+1)*sin(2*pi*z)"
