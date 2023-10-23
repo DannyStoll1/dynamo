@@ -72,7 +72,9 @@ mod tests
 
         let start = Cplx::new(-2.71, 5.7);
 
-        let sol = poly0.find_root_newton(start, 1e-14).unwrap();
+        let sol = poly0
+            .find_root_newton(start, 1e-14)
+            .expect("Failed to converge to root!");
 
         assert!(poly0.eval(sol).norm_sqr() < 1e-14);
     }

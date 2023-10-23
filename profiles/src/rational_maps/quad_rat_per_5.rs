@@ -8,9 +8,9 @@ const G3: Cplx = Cplx::new(-0.375, 0.);
 // Utility function for determining smooth coloring rate
 fn top_coeff(a: Cplx, b: Cplx) -> Cplx
 {
-    let a2 = a * a;
+    let a2 = a.powi(2);
     let x = a + 1.;
-    let x2 = x * x;
+    let x2 = x.powi(2);
     let x3 = x2 * x;
     let y = a + x;
 
@@ -21,7 +21,7 @@ fn top_coeff(a: Cplx, b: Cplx) -> Cplx
     let c3 = x2 * horner!(a, 215., 1118., 2005., 1458., 354.);
     let c2 = x3 * horner!(a, 77., 479., 1020., 845., 214.);
     let c1 = x3 * y * horner!(a, 14., 91., 197., 159., 38.);
-    let c0 = x2 * x2 * y * y * (a + y) * (y + a * x);
+    let c0 = (x2 * y).powi(2) * (a + y) * (y + a * x);
 
     let d0 = a2 * x2 * horner!(x, 6., 4., -145., 200., 423., -782., -181., 450., 145.);
     let d1 =
@@ -79,22 +79,22 @@ impl ParameterPlane for QuadRatPer5
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        let z2 = z * z;
-        (z2 + c.a * z + c.b) / z2
+        let z2 = z.powi(2);
+        1. + (c.a * z + c.b) / z2
     }
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let az = c.a * z;
-        ((z2 + az + c.b) / z2, -(az + c.b + c.b) / (z2 * z))
+        (1. + (az + c.b) / z2, -(az + 2. * c.b) / (z2 * z))
     }
 
     #[inline]
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        let z2 = z * z;
-        -(c.a * z + c.b + c.b) / (z2 * z)
+        let z2 = z.powi(2);
+        -(c.a * z + 2. * c.b) / (z2 * z)
     }
     #[inline]
     fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
@@ -105,7 +105,7 @@ impl ParameterPlane for QuadRatPer5
     #[inline]
     fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
-        -(b + b) / a
+        -2. * b / a
     }
 
     fn param_map(&self, t: Cplx) -> Self::Param
@@ -114,22 +114,16 @@ impl ParameterPlane for QuadRatPer5
 
         // F5 = 4*x^3 - y^2 - 11/4*x + 3/8
 
-        y /= 2.;
         x = -x - 0.25;
-        // F3 = x^3 + 3/4*x^2 + y^2 - 1/2*x - 1/4
 
-        y += 0.5 * (x + 1.);
-        // F2 = x^3 + x^2 - (x+1)*y + y^2
+        y += x + 1.;
+        y /= 2. * x;
 
-        y /= x;
         // F1 = x*y^2 + x^2 - x*y + x - y
 
         let mut tmp = y - x - 1.;
-        y = x - 1.;
-        // F0 = 2*x^3 + x^2*y - 3*x*y^2 + y^3 + 2*x^2*z + x*y*z - y^2*z + x*z^2
-
         x /= tmp;
-        y /= tmp;
+        y = x - tmp.inv();
         // E5 = 2*x^3 + x^2*y - 3*x*y^2 + y^3 + 2*x^2 + x*y - y^2 + x
 
         tmp = (x + 1.) * y;
@@ -159,7 +153,7 @@ impl ParameterPlane for QuadRatPer5
             2 => solve_quadratic(b, a - b).to_vec(),
             3 =>
             {
-                let b2 = b * b;
+                let b2 = b.powi(2);
                 let b3 = b * b2;
                 let u = 3. * (b + 1.);
                 let ub = u * b;
@@ -210,7 +204,8 @@ impl InfinityFirstReturnMap for QuadRatPer5
     }
 }
 
-impl EscapeEncoding for QuadRatPer5 {
+impl EscapeEncoding for QuadRatPer5
+{
     fn encode_escaping_point(
         &self,
         iters: Period,

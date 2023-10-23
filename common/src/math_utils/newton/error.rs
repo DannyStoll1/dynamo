@@ -13,8 +13,8 @@ impl<T> Error<T>
     {
         match self
         {
-            Error::FailedToConverge(val) => Error::FailedToConverge(f(val)),
-            Error::NanEncountered => Error::NanEncountered,
+            Self::FailedToConverge(val) => Error::FailedToConverge(f(val)),
+            Self::NanEncountered => Error::NanEncountered,
         }
     }
 }

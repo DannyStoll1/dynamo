@@ -16,6 +16,7 @@ macro_rules! profile_imports {
         use dynamo_core::macros::{
             basic_escape_encoding, basic_plane_impl, default_bounds, default_name, fractal_impl,
         };
+        use num_traits::ops::mul_add::MulAdd;
         use std::any::type_name;
 
         #[cfg(feature = "serde")]
@@ -97,6 +98,23 @@ macro_rules! degree_impl {
         fn escaping_period(&self) -> Period
         {
             $period
+        }
+    };
+    ($deg: expr, $period: expr, $coeff: expr) => {
+        degree_impl!($deg, $period);
+
+        #[allow(unused_variables)]
+        #[inline]
+        fn escape_coeff(&self, c: Self::Param) -> Cplx
+        {
+            Cplx::from($coeff)
+        }
+
+        #[allow(unused_variables)]
+        #[inline]
+        fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+        {
+            (Cplx::from($coeff), ZERO)
         }
     };
 }
@@ -181,6 +199,7 @@ macro_rules! cplx_arr {
     };
 }
 
+#[allow(unused_macros)]
 macro_rules! ext_ray_impl_nonmonic_conj {
     () => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>

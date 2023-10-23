@@ -37,12 +37,12 @@ impl ParameterPlane for RealCubicRealCrit
     // Critical point = a
     fn map(&self, z: Self::Var, RealPair { a, b }: Self::Param) -> Self::Var
     {
-        b + z * (z * z - 3. * a * a)
+        b + z * (z.powi(2) - 3. * a.powi(2))
     }
 
     fn dynamical_derivative(&self, z: Self::Var, RealPair { a, .. }: Self::Param) -> Self::Deriv
     {
-        3. * (z * z - a * a)
+        3. * (z.powi(2) - a.powi(2))
     }
 
     #[inline]
@@ -52,8 +52,8 @@ impl ParameterPlane for RealCubicRealCrit
         RealPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        let a2 = a * a;
+        let z2 = z.powi(2);
+        let a2 = a.powi(2);
         (b + z * (z2 - 3. * a2), 3. * (z2 - a2))
     }
 
@@ -120,12 +120,12 @@ impl ParameterPlane for RealCubicImagCrit
     // Critical point = ai
     fn map(&self, z: Self::Var, RealPair { a, b }: Self::Param) -> Self::Var
     {
-        b + z * (z * z + 3. * a * a)
+        b + z * (z.powi(2) + 3. * a.powi(2))
     }
 
     fn dynamical_derivative(&self, z: Self::Var, RealPair { a, .. }: Self::Param) -> Self::Deriv
     {
-        3. * (z * z + a * a)
+        3. * (z.powi(2) + a.powi(2))
     }
 
     #[inline]
@@ -135,8 +135,8 @@ impl ParameterPlane for RealCubicImagCrit
         RealPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        let a2 = a * a;
+        let z2 = z.powi(2);
+        let a2 = a.powi(2);
         (b + z * (z2 + 3. * a2), 3. * (z2 + a2))
     }
 

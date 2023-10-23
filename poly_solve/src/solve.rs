@@ -101,7 +101,7 @@ impl JenkinsTraubSolver
     {
         self.h_init
             .as_ref()
-            .unwrap()
+            .expect("reset_h_poly called before completion of stage 0")
             .coeffs
             .clone_into(&mut self.h_poly.coeffs);
     }

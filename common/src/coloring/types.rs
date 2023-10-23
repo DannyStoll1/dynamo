@@ -110,8 +110,8 @@ impl From<Hsv> for Rgb<u8>
 {
     fn from(val: Hsv) -> Self
     {
-        let (r, g, b) = val.as_rgb_tuple();
-        Self([r, g, b])
+        let rgb = val.as_rgb_tuple();
+        Self(rgb.into())
     }
 }
 impl From<Color32> for Hsv

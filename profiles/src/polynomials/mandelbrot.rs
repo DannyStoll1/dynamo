@@ -4,13 +4,16 @@ use crate::macros::{cplx_arr, degree_impl, horner, horner_monic, profile_imports
 
 profile_imports!();
 
+#[inline]
 fn f(z: Cplx, c: Cplx) -> Cplx
 {
-    z * z + c
+    z.powi(2) + c
 }
+
+#[inline]
 fn df_dz(z: Cplx, _c: Cplx) -> Cplx
 {
-    z + z
+    2. * z
 }
 
 #[derive(Clone, Debug)]
@@ -54,12 +57,6 @@ impl ParameterPlane for Mandelbrot
     {
         ZERO
     }
-
-    // #[inline]
-    // fn critical_value(&self, c: Self::Param) -> Self::Var
-    // {
-    //     c
-    // }
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {

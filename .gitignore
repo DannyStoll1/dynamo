@@ -1,19 +1,33 @@
+# Build artifacts
 */target
-*/Cargo.lock
 **/__pycache__
-Cargo.lock
-.cargo
-release-archives
+**/Cargo.lock
 target
-bin/images
+release-archives
+scripting/output/src/generated/*.rs
+
+# Deployment files
+prepare-release.sh
+docs/icons/macos.icns
+
+# User files
 images/*
 !images/
 !images/sample.png
-wasm/Cargo.lock
+user_scripts/*.toml
+!user_scripts/.default.toml
+
+# Config
+bacon.toml
+.cargo
+
+# Notes
 perf_notes.txt
 notes.txt
 todo.txt
+
+# Experiments
 profiles/src/rational_maps/quad_rat_per_4_1_experiments.rs
-scripting/output/src/generated/*.rs
-user_scripts/*.toml
-!user_scripts/.default.toml
+
+# Backups
+**/*.bak

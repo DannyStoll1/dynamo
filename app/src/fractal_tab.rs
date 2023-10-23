@@ -21,7 +21,7 @@ use crate::script_editor::{Popup, Response};
 #[cfg(feature = "scripting")]
 use std::path::Path;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum MenuState
 {
     #[default]
@@ -48,11 +48,33 @@ impl MenuState
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TabID
+{
+    pub surface: SurfaceIndex,
+    pub node: NodeIndex,
+}
+impl Default for TabID {
+    fn default() -> Self {
+        Self {
+            surface: SurfaceIndex::main(),
+            node: NodeIndex(0),
+        }
+    }
+}
+
+impl From<TabID> for (SurfaceIndex, NodeIndex)
+{
+    fn from(value: TabID) -> Self
+    {
+        (value.surface, value.node)
+    }
+}
+
 pub struct FractalTab
 {
     pub interface: Box<dyn Interface>,
-    pub surface: SurfaceIndex,
-    pub node: NodeIndex,
+    pub id: TabID,
     pub menu_state: MenuState,
     #[cfg(feature = "scripting")]
     pub popup: Option<Popup>,
@@ -61,14 +83,12 @@ pub struct FractalTab
 impl FractalTab
 {
     #[must_use]
-    pub const fn with_surface_and_node_index(
+    pub const fn with_id(
         mut self,
-        surface: SurfaceIndex,
-        node: NodeIndex,
+        tab_id: TabID,
     ) -> Self
     {
-        self.surface = surface;
-        self.node = node;
+        self.id = tab_id;
         self
     }
 
@@ -76,7 +96,6 @@ impl FractalTab
     {
         ui.label(self.interface.name());
         self.show_menu(ui);
-        self.process_interface_message(ui);
         if self.should_update_interface()
         {
             self.interface.update(ui.ctx());
@@ -722,24 +741,6 @@ impl FractalTab
         }
     }
 
-    fn process_interface_message(&mut self, _ui: &mut Ui)
-    {
-        use dynamo_gui::interface::UIMessage::{CloseWindow, DoNothing, Quit};
-        match self.interface.pop_message()
-        {
-            DoNothing =>
-            {}
-            CloseWindow =>
-            {
-                // self.node.remove_tab(0);
-            }
-            Quit =>
-            {
-                std::process::exit(0);
-            }
-        }
-    }
-
     fn hotkey_button(&mut self, ui: &mut Ui, hotkey: &Hotkey)
     {
         if let Some(action) = hotkey.menu_action()
@@ -785,9 +786,8 @@ impl Default for FractalTab
 
         Self {
             interface,
-            surface: SurfaceIndex::main(),
-            node: NodeIndex(0),
             menu_state: Default::default(),
+            id: TabID::default(),
             #[cfg(feature = "scripting")]
             popup: None,
         }

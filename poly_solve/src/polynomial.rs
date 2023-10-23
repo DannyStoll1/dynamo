@@ -85,6 +85,7 @@ impl<T: VariableOps> Polynomial<T>
         let mut b_s = rhs.iter().cloned();
         for a in a_s
         {
+            #[allow(clippy::unwrap_used)]
             let b = b_s.next().unwrap(); // Guaranteed to be Some since rhs has higher degree
             *a += b;
         }

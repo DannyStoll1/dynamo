@@ -52,7 +52,7 @@ impl ParameterPlane for QuadRatPer4
     {
         let pole = 2.618_033_988_749_89;
         let u = t.inv();
-        (u + pole, -u * u)
+        (u + pole, -u.powi(2))
     }
 
     #[inline]
@@ -64,7 +64,7 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn start_point_d(&self, _point: Cplx, c: Cplx) -> (Cplx, Cplx, Cplx)
     {
-        let c2 = c * c;
+        let c2 = c.powi(2);
         let denom = (c2 + c - 1.).inv();
         (
             2. * (2. * c2 - c) * denom,
@@ -76,19 +76,19 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        (c * z - c - c - z + 1.) * (z - c) / (z * z * (c - 1.))
+        (c * (z - 2.) - z + 1.) * (z - c) / (z.powi(2) * (c - 1.))
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
-        let c2 = c * c;
+        let c2 = c.powi(2);
         let c_minus_1 = c - 1.;
-        let u = (c_minus_1 * z * z).inv();
-        let two_c = c + c;
+        let u = (c_minus_1 * z.powi(2)).inv();
+        let two_c = 2. * c;
 
         (
-            (z - c) * (c * z - z - two_c + 1.) * u,
+            (z - c) * (c_minus_1 * z - two_c + 1.) * u,
             (c2 + c_minus_1 - (4. * c2 - two_c) / z) * u,
         )
     }
@@ -96,23 +96,23 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let c2 = c * c;
-        (4. * c2 - (c2 + c - 1.) * z - c - c) / ((c - 1.) * z * z * z)
+        let c2 = c.powi(2);
+        (4. * c2 - (c2 + c - 1.) * z - c - c) / ((c - 1.) * z.powi(3))
     }
 
     #[inline]
     fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let v = (c - 1.) * z;
-        (1. + (2. - c) * c * (z - 2.)) / (v * v)
+        (1. + (2. - c) * c * (z - 2.)) / v.powi(2)
     }
 
     #[inline]
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let v = c - 1.;
-        let c2 = c * c;
-        let z2 = z * z;
+        let c2 = c.powi(2);
+        let z2 = z.powi(2);
         let u = (v * z2).inv();
         let two_c = c + c;
         (
@@ -125,7 +125,7 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        let c2 = c * c;
+        let c2 = c.powi(2);
         vec![ZERO, 2. * (2. * c2 - c) / (c2 + c - 1.)]
     }
 
@@ -137,13 +137,13 @@ impl ParameterPlane for QuadRatPer4
             {
                 let x0 = c - 1.;
                 let x1 = x0.inv();
-                let x2 = c * c;
+                let x2 = c.powi(2);
                 let x3 = x1 * (x0 + x2);
                 let x4 = x1 * (c - (x2 + x2));
                 let x5 = 1. - 3. * x3;
                 let s = -4. * x5.powf(3.);
                 let t = 9. * x3 + 27. * x4 - 2.;
-                let u = (s + t * t).sqrt();
+                let u = (s + t.powi(2)).sqrt();
                 let x6 = (0.5 * (t + u)).powf(ONE_THIRD);
                 let x7 = x6 / 3.;
                 let x8 = x5 / (3. * x6);
@@ -153,15 +153,15 @@ impl ParameterPlane for QuadRatPer4
             }
             2 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let x0 = c2 * 3.;
                 let denom = 0.5 / (c - 1.);
-                let disc = (x0 * x0 - c * (8. * c2 - 6. * c + 4.) + 1.).sqrt();
+                let disc = (x0.powi(2) - c * (8. * c2 - 6. * c + 4.) + 1.).sqrt();
                 vec![denom * (x0 + disc - 1.), denom * (x0 - disc - 1.)]
             }
             3 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let coeffs = [
                     c2 * c * horner!(c, 1., -7., 18., -20., 8.),
                     c2 * horner!(c, -4., 25., -54., 41., 4., -12.),
@@ -175,9 +175,9 @@ impl ParameterPlane for QuadRatPer4
             }
             4 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let c3 = c * c2;
-                let c4 = c2 * c2;
+                let c4 = c2.powi(2);
                 let coeffs = [
                     c3 * c4 * horner!(c, -1., 12., -61., 170., -280., 272., -144., 32.),
                     c4 * horner!(
@@ -279,46 +279,27 @@ impl InfinityFirstReturnMap for QuadRatPer4
     degree_impl!(2, 4);
 
     #[inline]
+    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    {
+        let c2 = c.powi(2);
+        let c12 = c2 - 2. * c + 1.; // (c-1)^2
+
+        let d0 = c2 + c - 1.; // c^2 + c - 1
+        let d1 = d0 - 4. * c + 2.; // c^2 - 3c + 1
+        let d2 = 2. * c2 + d1; // 3c^2 - 3c + 1
+
+        // (2*a - 1) * (a - 1)^5 * a^5 * (a^2 - 3*a + 1)^-2 * (3a^2 - 3a + 1)^-2 * (a^2 + a - 1)^-2
+        let q_numer = c * (c - 1.) * (2. * c - 1.) * (c2 * c12).powi(2);
+        let q_denom = (d0 * d1 * d2).powi(2);
+        q_numer / q_denom
+    }
+
+    #[inline]
     fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
     {
         angle + RationalAngle::ONE_HALF
     }
 }
 
-impl EscapeEncoding for QuadRatPer4 {
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        c: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        {
-            if z.is_nan()
-            {
-                return PointInfo::Escaping {
-                    potential: f64::from(iters) - 4.,
-                };
-            }
-
-            let u = self.escape_radius().log2();
-            let v = z.norm_sqr().log2();
-            let c2 = c * c;
-            let two_c = c + c;
-            let c12 = c2 - two_c + 1.; // (c-1)^2
-
-            let d0 = c2 + c - 1.; // c^2 + c - 1
-            let d1 = d0 - two_c - two_c + 2.; // c^2 - 3c + 1
-            let d2 = c2 + c2 + d1; // 3c^2 - 3c + 1
-
-            // (2*a - 1) * (a - 1)^5 * a^5 * (a^2 - 3*a + 1)^-2 * (3a^2 - 3a + 1)^-2 * (a^2 + a - 1)^-2
-            let q_numer = (two_c - 1.) * c2 * c2 * c * c12 * c12 * (c - 1.);
-            let q_denom = d0 * d0 + d1 * d1 + d2 * d2;
-            let q = (q_numer / q_denom).norm().log2();
-            let residual = ((u + q) / (v + q)).log2();
-            let potential = (residual as IterCount).mul_add(4., f64::from(iters));
-            PointInfo::Escaping { potential }
-        }
-    }
-}
+impl EscapeEncoding for QuadRatPer4 {}
 impl ExternalRays for QuadRatPer4 {}

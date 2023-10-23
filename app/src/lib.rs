@@ -6,7 +6,7 @@ pub mod fractal_tab;
 pub mod macros;
 #[cfg(feature = "scripting")]
 pub mod script_editor;
-use fractal_tab::FractalTab;
+use fractal_tab::{FractalTab, TabID};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
@@ -29,6 +29,7 @@ pub fn run_app() -> Result<(), eframe::Error>
 struct TabViewer<'a>
 {
     added_nodes: &'a mut Vec<FractalTab>,
+    to_remove: &'a mut Vec<TabID>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_>
@@ -38,6 +39,25 @@ impl egui_dock::TabViewer for TabViewer<'_>
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab)
     {
         tab.update(ui);
+
+        use dynamo_gui::interface::UIMessage::*;
+        match tab.interface.pop_message()
+        {
+            Quit =>
+            {
+                std::process::exit(0);
+            }
+            CloseWindow =>
+            {
+                self.to_remove.push(tab.id);
+            }
+            NewTab =>
+            {
+                self.on_add(tab.id.surface, tab.id.node);
+            }
+            DoNothing =>
+            {}
+        }
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText
@@ -47,7 +67,11 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
     fn on_add(&mut self, surface: SurfaceIndex, node: NodeIndex)
     {
-        let tab = FractalTab::default().with_surface_and_node_index(surface, node);
+        let tab_id = TabID {
+            surface,
+            node,
+        };
+        let tab = FractalTab::default().with_id(tab_id);
         self.added_nodes.push(tab);
     }
 }
@@ -55,6 +79,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
 pub struct FractalApp
 {
     dock_state: DockState<FractalTab>,
+    tab_count: usize,
 }
 
 impl Default for FractalApp
@@ -65,7 +90,7 @@ impl Default for FractalApp
 
         let dock_state = DockState::new(vec![tab0]);
 
-        Self { dock_state }
+        Self { dock_state, tab_count: 1 }
     }
 }
 
@@ -74,6 +99,7 @@ impl eframe::App for FractalApp
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
     {
         let mut added_nodes = Vec::new();
+        let mut to_remove = Vec::new();
         DockArea::new(&mut self.dock_state)
             .show_add_buttons(true)
             .style({
@@ -85,17 +111,24 @@ impl eframe::App for FractalApp
                 ctx,
                 &mut TabViewer {
                     added_nodes: &mut added_nodes,
+                    to_remove: &mut to_remove,
                 },
             );
-        for tab in added_nodes
+        for tab in added_nodes.into_iter()
         {
             self.dock_state
-                .set_focused_node_and_surface((tab.surface, tab.node));
-            // self.tree.push_to_focused_leaf(FractalTab {
-            //     interface: tab.interface,
-            //     node: NodeIndex(self.counter),
-            // });
-            self.dock_state.push_to_focused_leaf(FractalTab::default());
+                .set_focused_node_and_surface(tab.id.into());
+            self.dock_state.push_to_focused_leaf(tab);
+            self.tab_count += 1;
+        }
+        for tab_id in to_remove.into_iter()
+        {
+            self.tab_count -= 1;
+            if self.tab_count == 0 {
+                std::process::exit(0);
+            }
+            let (surface, node) = tab_id.into();
+            self.dock_state.remove_tab((surface, node, self.tab_count.into()));
         }
     }
 }
@@ -103,10 +136,12 @@ impl eframe::App for FractalApp
 #[cfg(test)]
 mod tests
 {
+    use dynamo_core::dynamics::ParameterPlane;
+
     #[test]
     fn gui_speedtest()
     {
-        use dynamo_core::dynamics::{julia::JuliaSet, Displayable};
+        use dynamo_core::dynamics::julia::JuliaSet;
         let height = 1024;
         use dynamo_gui::interface::{MainInterface, PanePair};
         let parameter_plane = dynamo_profiles::QuadRatPer2::default()

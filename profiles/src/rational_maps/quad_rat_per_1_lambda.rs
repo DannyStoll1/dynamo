@@ -288,7 +288,7 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     {
         let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         let z2 = z * z;
-        (1. + a / z2, -(a + a) / (z2 * z))
+        (1. + a / z2, -2. * a / (z2 * z))
     }
 
     #[inline]

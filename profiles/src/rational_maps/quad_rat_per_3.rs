@@ -54,50 +54,50 @@ impl ParameterPlane for QuadRatPer3
     #[inline]
     fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
-        let z2 = z * z;
-        let c2 = c * c;
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
         let u = (z2 - c2).inv();
         let v = c + 1.;
-        ((z2 + c2 * c - v) * u, 2.0 * (1. - c) * v * v * z * u * u)
+        ((z2 + c2 * c - v) * u, 2.0 * (1. - c) * (u * v).powi(2) * z)
     }
 
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let z2 = z * z;
-        let c2 = c * c;
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
         (z2 + c2 * c - c - 1.) / (z2 - c2)
     }
 
     #[inline]
     fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let u = 1. / (c * c - z * z);
+        let u = 1. / (c.powi(2) - z.powi(2));
         let v = c + 1.;
-        2.0 * (1. - c) * v * v * z * u * u
+        2.0 * (1. - c) * (u * v).powi(2) * z
     }
 
     #[inline]
     fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let r = c * c - z * z;
-        let u2 = 1. / (r * r);
-        (c + 1.) * u2 * (r - c * (r + 2.0 * (ONE - z * z)))
+        let r = c.powi(2) - z.powi(2);
+        let u2 = r.powi(-2);
+        (c + 1.) * u2 * (r - c * (r + 2.0 * (1.0 - z.powi(2))))
     }
 
     #[inline]
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let z2 = z * z;
-        let c2 = c * c;
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
         let r = c2 - z2;
         let u = r.inv();
-        let u2 = u * u;
+        let u2 = u.powi(2);
         let v = c + 1.;
 
         let f = u * (v - z2 - c2 * c);
-        let df_dz = 2. * (1. - c) * v * v * z * u2;
-        let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z * z)));
+        let df_dz = 2. * (1. - c) * v.powi(2) * z * u2;
+        let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z2)));
         (f, df_dz, df_dc)
     }
 
@@ -113,11 +113,11 @@ impl ParameterPlane for QuadRatPer3
         {
             1 =>
             {
-                let x0 = c * c;
+                let x0 = c.powi(2);
                 let x1 = c * x0;
                 let x2 = 3. * x0 + 1.;
                 let u = 27. * (c - x1) - 9. * x0 + 25.;
-                let x3 = (0.5 * (u + (-4. * x2 * x2 * x2 + u * u).sqrt())).powf(ONE_THIRD);
+                let x3 = (0.5 * (u + (-4. * x2 * x2 * x2 + u.powi(2)).sqrt())).powf(ONE_THIRD);
                 let x4 = x3 / 3.;
                 let x5 = x2 / (3. * x3);
                 let r1 = -x4 * OMEGA_BAR - x5 * OMEGA + ONE_THIRD;
@@ -131,7 +131,7 @@ impl ParameterPlane for QuadRatPer3
             }
             3 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let u = (c - 1.).inv();
                 let a0 = u * (1. + c + c2 + c2 * c2);
                 let a1 = u * (1. + c * (1. - 2. * c2));
@@ -141,7 +141,7 @@ impl ParameterPlane for QuadRatPer3
             }
             4 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let coeffs = [
                     horner_monic!(c, -1., -4., -7., -2., 13., 29., 29., 15., -3., -8., -6., 0., 0.),
                     horner_monic!(c, -1., -4., -7., -2., 12., 22., 14., -2., -9., -6., -2., 0.),
@@ -183,7 +183,7 @@ impl HasDynamicalCovers for QuadRatPer3
                 param_map = |t| {
                     let pole = 1.324_717_957_244_75;
                     let u = 1. / t + pole;
-                    let u2 = u * u;
+                    let u2 = u.powi(2);
                     let u3 = u2 * u;
 
                     let du = -u2.inv();
@@ -193,7 +193,7 @@ impl HasDynamicalCovers for QuadRatPer3
                     let den = u3 - u2 - u2 + 3. * u - 1.;
                     let dden = dnum - 4. * u + 4.;
 
-                    (num / den, du * (den * dnum - num * dden) / (den * den))
+                    (num / den, du * (den * dnum - num * dden) / den.powi(2))
                 };
                 bounds = Bounds {
                     min_x: -5.75,
@@ -248,10 +248,15 @@ impl InfinityFirstReturnMap for QuadRatPer3
 {
     degree_impl!(2, 3);
 
+    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    {
+        0.25 * (1. - c.inv())
+    }
+
     fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
     {
         let u = c.inv();
-        (0.25 * (1. - u), 0.25 * u * u)
+        (0.25 * (1. - u), 0.25 * u.powi(2))
     }
 
     #[inline]
@@ -261,28 +266,5 @@ impl InfinityFirstReturnMap for QuadRatPer3
     }
 }
 
-impl EscapeEncoding for QuadRatPer3
-{
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: Cplx,
-        base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
-    {
-        if z.is_nan()
-        {
-            return PointInfo::Escaping {
-                potential: f64::from(iters) - 3.,
-            };
-        }
-
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let delta = ((base_param - 1.) / (4. * base_param)).norm().log2();
-        let residual = ((u + delta) / (v + delta)).log2();
-        let potential = (residual as IterCount).mul_add(3., f64::from(iters));
-        PointInfo::Escaping { potential }
-    }
-}
+impl EscapeEncoding for QuadRatPer3 {}
 impl ExternalRays for QuadRatPer3 {}

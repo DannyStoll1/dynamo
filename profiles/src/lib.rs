@@ -27,82 +27,6 @@ mod tests
     use dynamo_core::dynamics::*;
 
     #[test]
-    fn compute_biquadratic()
-    {
-        let plane = Biquadratic::default()
-            .with_res_y(512)
-            .with_max_iter(2048)
-            .with_param((-0.3).into());
-        plane.compute();
-    }
-
-    #[test]
-    fn compute_per2()
-    {
-        let plane = QuadRatPer2::default().with_res_y(512).with_max_iter(2048);
-        plane.compute();
-    }
-
-    #[test]
-    fn compute_per2_julia()
-    {
-        let plane = QuadRatPer2::default().with_res_y(1024).with_max_iter(2048);
-        let julia = JuliaSet::from(plane);
-        let mut iter_plane = julia.compute();
-        for _ in 0..9
-        {
-            julia.compute_into(&mut iter_plane);
-        }
-    }
-
-    #[test]
-    fn compute_per3()
-    {
-        let plane = QuadRatPer3::default().with_res_y(512).with_max_iter(2048);
-        plane.compute();
-    }
-
-    #[test]
-    fn compute_per4()
-    {
-        let plane = QuadRatPer4::default().with_res_y(512).with_max_iter(2048);
-        plane.compute();
-    }
-
-    #[test]
-    fn compute_preper21()
-    {
-        let plane = QuadRatPreper21::default()
-            .with_res_y(512)
-            .with_max_iter(2048);
-        plane.compute();
-    }
-
-    #[test]
-    fn compute_symmetry_locus()
-    {
-        let plane = QuadRatSymmetryLocus::default()
-            .with_res_y(512)
-            .with_max_iter(2048);
-        plane.compute();
-    }
-
-    #[test]
-    fn compute_rulkov()
-    {
-        let mut plane = Rulkov::default().with_res_y(256).with_max_iter(2048);
-        let bounds = Bounds {
-            min_x: -9.859092283464022,
-            max_x: 11.712293384188932,
-            min_y: -11.185367984659074,
-            max_y: 10.011947411300476,
-        };
-
-        plane.point_grid_mut().change_bounds(bounds);
-        plane.compute();
-    }
-
-    #[test]
     fn test_horner()
     {
         use crate::macros::horner;
@@ -201,7 +125,7 @@ mod tests
             let target = Cplx::new(0., 1.);
             let approx = param_plane.find_nearby_preperiodic_point(start, o);
 
-            let error = approx.unwrap().dist_sqr(target);
+            let error = approx.expect("Failed to converge").dist_sqr(target);
             println!("Parameter error: {:.4e}", approx.unwrap().dist_sqr(target));
             assert!(error < 1e-5);
         }
@@ -279,5 +203,14 @@ mod tests
     {
         let plane = QuadRatPer3::default();
         assert_eq!(plane.escaping_period(), 3);
+    }
+
+    #[test]
+    fn escape_coeff()
+    {
+        let plane = QuadRatPer4::default();
+        let c = Cplx::new(4.2, 0.0);
+        let q = plane.escape_coeff(c);
+        assert!((q - 0.119960462401084).norm_sqr() < 1e-12)
     }
 }

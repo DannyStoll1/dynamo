@@ -27,7 +27,7 @@ pub struct OrbitSchema
 impl OrbitSchema
 {
     #[must_use]
-    pub fn with_degree(self, degree: AngleNum) -> OrbitSchemaWithDegree
+    pub const fn with_degree(self, degree: AngleNum) -> OrbitSchemaWithDegree
     {
         OrbitSchemaWithDegree {
             preperiod: self.preperiod,
@@ -129,7 +129,7 @@ pub struct OrbitSchemaWithDegree
 impl OrbitSchemaWithDegree
 {
     /// Value m for which all angles with this orbit schema can be expressed in the form $k/m$.
-    pub fn natural_denom(&self) -> AngleNum
+    pub const fn natural_denom(&self) -> AngleNum
     {
         (self.degree.pow(self.preperiod) * (self.degree.pow(self.period) - 1)).abs()
     }
@@ -166,7 +166,7 @@ impl OrbitSchemaWithDegree
             .collect()
     }
 
-    fn forget(self) -> OrbitSchema
+    const fn forget(self) -> OrbitSchema
     {
         OrbitSchema {
             preperiod: self.preperiod,
@@ -365,7 +365,7 @@ impl RationalAngle
     }
 
     #[must_use]
-    pub fn with_degree(self, degree: AngleNum) -> AngleWithDegree
+    pub const fn with_degree(self, degree: AngleNum) -> AngleWithDegree
     {
         AngleWithDegree {
             angle: self,
@@ -546,9 +546,7 @@ impl std::fmt::Binary for RationalAngle
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
         let degree = f.precision().and_then(|x| x.try_into().ok()).unwrap_or(2);
-        let itinerary = self
-            .with_degree(degree)
-            .canonical_itinerary(RationalAngle::ZERO);
+        let itinerary = self.with_degree(degree).canonical_itinerary(Self::ZERO);
         std::fmt::Display::fmt(&itinerary, f)
     }
 }

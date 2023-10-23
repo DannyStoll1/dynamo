@@ -42,29 +42,29 @@ impl ParameterPlane for QuadRatPer2
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         (z2 + c) / (z2 - 1.)
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let u = z2 - 1.;
-        ((c + z2) / u, -2.0 * z * (c + 1.) / (u * u))
+        ((c + z2) / u, -2.0 * z * (c + 1.) / u.powi(2))
     }
 
     #[inline]
     fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
     {
-        let u = 1. / (z * z - 1.);
-        -2.0 * (c + 1.) * z * u * u
+        let u = 1. / (z.powi(2) - 1.);
+        -2.0 * (c + 1.) * z * u.powi(2)
     }
 
     #[inline]
     fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        1. / (z * z - 1.)
+        (z.powi(2) - 1.).inv()
     }
 
     #[inline]
@@ -460,6 +460,7 @@ impl ParameterPlane for QuadRatPer2
 
 impl HasDynamicalCovers for QuadRatPer2
 {
+    #[allow(clippy::suspicious_operation_groupings)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
@@ -826,7 +827,7 @@ impl ParameterPlane for QuadRatPer2Cover
 
 impl InfinityFirstReturnMap for QuadRatPer2
 {
-    degree_impl!(2, 2);
+    degree_impl!(2, 2, 0.5);
 
     #[inline]
     fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
@@ -837,7 +838,7 @@ impl InfinityFirstReturnMap for QuadRatPer2
 
 impl InfinityFirstReturnMap for QuadRatPer2Cover
 {
-    degree_impl!(2, 2);
+    degree_impl!(2, 2, 0.5);
 
     #[inline]
     fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle

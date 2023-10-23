@@ -1086,6 +1086,7 @@ impl HasDynamicalCovers for CubicPer1_1
         CoveringMap::new(self, param_map, grid)
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);

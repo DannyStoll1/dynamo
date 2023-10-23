@@ -152,7 +152,7 @@ impl HasDynamicalCovers for Unicritical<3>
         {
             1 =>
             {
-                param_map = |t| (3. * (t + 1.) * t * t, 3. * t * (3. * t + 2.));
+                param_map = |t| (3. * (t + 1.) * t.powi(2), 3. * t * (3. * t + 2.));
                 bounds = Bounds {
                     min_x: -1.8,
                     max_x: 0.9,
@@ -162,7 +162,7 @@ impl HasDynamicalCovers for Unicritical<3>
             }
             2 =>
             {
-                param_map = |t| (3. * (t - 2.) * t * t, 3. * t * (3. * t - 4.));
+                param_map = |t| (3. * (t - 2.) * t.powi(2), 3. * t * (3. * t - 4.));
                 bounds = Bounds {
                     min_x: -1.,
                     max_x: 2.5,
@@ -200,7 +200,7 @@ impl HasDynamicalCovers for Unicritical<3>
                     let v = u + 1.;
                     let w = (POLE_1 * u + POLE_0) / v;
 
-                    let dw = VECT / (v * v);
+                    let dw = VECT / v.powi(2);
 
                     let num0 = horner_monic!(w, NUM_0, NUM_1, NUM_2, NUM_3);
                     let num0_d = horner!(w, NUM_1, DNUM_2, DNUM_3, 4.);
@@ -213,13 +213,13 @@ impl HasDynamicalCovers for Unicritical<3>
                     let den0_2 = den0 * den0;
                     let den0_3 = den0_2 * den0;
 
-                    let num = NUM_COEF * num0 * num0;
+                    let num = NUM_COEF * num0.powi(2);
                     let num_d = 2. * NUM_COEF * num0 * num0_d;
 
                     let den = den0_3 * den1;
                     let den_d = 3. * den0_2 * den0_d * den1 + den0_3 * den1_d;
 
-                    (num / den, dw * (den * num_d - num * den_d) / (den * den))
+                    (num / den, dw * (den * num_d - num * den_d) / den.powi(2))
                 };
                 bounds = Bounds {
                     min_x: -2.,
@@ -238,6 +238,7 @@ impl HasDynamicalCovers for Unicritical<3>
         CoveringMap::new(self, param_map, grid)
     }
 
+    #[allow(clippy::suspicious_operation_groupings)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
@@ -248,7 +249,7 @@ impl HasDynamicalCovers for Unicritical<3>
             2 =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
                     let num0 = t - 0.5;
                     let num1 = t2 + t + 1.25;
                     let den0 = t2 + 0.75;

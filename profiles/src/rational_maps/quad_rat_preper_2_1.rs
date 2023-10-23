@@ -33,14 +33,14 @@ impl ParameterPlane for QuadRatPreper21
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        c * (z + 2. + 1. / z)
+        c * (z + 2. + z.inv())
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let u = z.inv();
-        (c * (z + 2. + u), c * (1. - u * u))
+        (c * (z + 2. + u), c * (1. - u.powi(2)))
     }
 
     fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
@@ -51,13 +51,13 @@ impl ParameterPlane for QuadRatPreper21
     #[inline]
     fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        c * (1. - 1. / (z * z))
+        c * (1. - 1. / z.powi(2))
     }
 
     #[inline]
     fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
     {
-        z + 1. / z + 2.
+        z + z.inv() + 2.
     }
 
     #[inline]
@@ -83,7 +83,7 @@ impl ParameterPlane for QuadRatPreper21
                     return vec![];
                 }
 
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let coeffs = [
                     c2 * c2,
                     c2 * horner!(c, 2., 4., 6.),
@@ -102,7 +102,7 @@ impl ParameterPlane for QuadRatPreper21
                     return vec![];
                 }
 
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let c3 = c * c2;
                 let c5 = c2 * c3;
                 let coeffs0 = [
@@ -185,7 +185,7 @@ impl HasDynamicalCovers for QuadRatPreper21
             {
                 param_map = |c| {
                     let u = c + 4.;
-                    (0.25 * u * u, 0.5 * u)
+                    (0.25 * u.powi(2), 0.5 * u)
                 };
                 bounds = Bounds {
                     min_x: -6.2,
