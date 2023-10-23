@@ -44,7 +44,7 @@ impl Hotkey
 
 use Action::*;
 
-pub static FILE_HOTKEYS: [Hotkey; 5] = [
+pub static FILE_HOTKEYS: [Hotkey; 6] = [
     Hotkey {
         shortcut: Some(CTRL_Q),
         action: Quit,
@@ -55,6 +55,12 @@ pub static FILE_HOTKEYS: [Hotkey; 5] = [
         shortcut: Some(CTRL_W),
         action: Close,
         show_in_menu: false,
+        menu_action_override: None,
+    },
+    Hotkey {
+        shortcut: Some(CTRL_T),
+        action: NewTab,
+        show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
@@ -77,7 +83,13 @@ pub static FILE_HOTKEYS: [Hotkey; 5] = [
     },
 ];
 
-pub static PALETTE_HOTKEYS: [Hotkey; 7] = [
+pub static PALETTE_HOTKEYS: [Hotkey; 8] = [
+    Hotkey {
+        shortcut: Some(CTRL_L),
+        action: SaveActivePalette,
+        show_in_menu: false,
+        menu_action_override: None,
+    },
     Hotkey {
         shortcut: Some(KEY_B),
         action: SetPaletteBlack,

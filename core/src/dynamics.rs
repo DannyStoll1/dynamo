@@ -27,6 +27,9 @@ use self::error::{FindPointError, FindPointResult};
 use self::orbit::OrbitParams;
 // pub use simple_parameter_plane::SimpleParameterPlane;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub trait Variable:
     Norm<Real>
     + Dist<Real>
@@ -378,6 +381,7 @@ pub trait ParameterPlane: Sync + Send
     }
 
     /// Try to find a (pre)periodic point near a given base point
+    #[allow(clippy::suspicious_operation_groupings)]
     fn find_nearby_preperiodic_point(
         &self,
         start_point: Cplx,
@@ -691,6 +695,7 @@ pub trait ParameterPlane: Sync + Send
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PlaneType
 {
     #[default]
@@ -763,10 +768,17 @@ pub trait InfinityFirstReturnMap: ParameterPlane {
     #[inline]
     fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle { angle}
 
-    // /// Leading coefficient of the self-return map at infinity,
-    // /// together with its derivative.
-    // ///
-    // /// Used for computing external rays.
+    /// Leading coefficient of the self-return map at infinity.
+    /// Used for computing external rays.
+    #[inline]
+    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    {
+        self.escape_coeff_d(c).0
+    }
+
+    /// Leading coefficient of the self-return map at infinity,
+    /// together with its derivative.
+    /// Used for computing external rays.
     fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx) {
         (ONE, ZERO)
     }
@@ -990,7 +1002,7 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap {
         &self,
         iters: Period,
         z: Self::Var,
-        _c: Self::Param,
+        c: Self::Param,
     ) -> PointInfo<Self::Var, Self::Deriv>
     {
         if z.is_nan()
@@ -1002,9 +1014,11 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap {
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let residual = (v / u).log(self.degree_real());
+        let q = self.escape_coeff(c).norm().log2();
+        let residual = ((u+q) / (v+q)).log(self.degree_real()) as IterCount;
+        let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
         PointInfo::Escaping {
-            potential: IterCount::from(iters * self.escaping_period()) - (residual as IterCount),
+            potential
         }
     }
 }
@@ -1044,19 +1058,18 @@ pub trait Computable: ParameterPlane + EscapeEncoding {
         }
     }
 
-    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Var, Self::Param, Self::Deriv>
+    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         let result = self.run_and_encode_point(start, param);
         OrbitInfo {
             start,
-            param,
             result,
         }
     }
 
-    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Var, Self::Param, Self::Deriv>
+    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
@@ -1086,7 +1099,6 @@ pub trait Computable: ParameterPlane + EscapeEncoding {
             orbit: trajectory,
             info: OrbitInfo {
                 start,
-                param,
                 result,
             },
         }

@@ -2,6 +2,9 @@ use crate::globals::DISPLAY_PREC;
 use crate::types::{IterCount, Period, Real};
 use std::fmt::Display;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PointInfo<V, D>
@@ -24,10 +27,9 @@ pub enum PointInfo<V, D>
         num_point_classes: usize,
     },
 }
-impl<V, P, D> std::fmt::Display for OrbitInfo<V, P, D>
+impl<V, D> std::fmt::Display for OrbitInfo<V, D>
 where
     V: std::fmt::Display,
-    P: std::fmt::Display,
     D: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
@@ -43,24 +45,23 @@ where
         };
         write!(
             f,
-            "Parameter: {:.*}\nStarting point: {:.*}\n{}",
-            DISPLAY_PREC, self.param, DISPLAY_PREC, self.start, result_summary
+            "Starting point: {:.*}\n{}",
+            DISPLAY_PREC, self.start, result_summary
         )
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct OrbitInfo<V, P, D>
+pub struct OrbitInfo<V, D>
 {
     pub start: V,
-    pub param: P,
     pub result: PointInfo<V, D>,
 }
-pub struct OrbitAndInfo<V, P, D>
+pub struct OrbitAndInfo<V, D>
 {
     pub orbit: Vec<V>,
-    pub info: OrbitInfo<V, P, D>,
+    pub info: OrbitInfo<V, D>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

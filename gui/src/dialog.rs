@@ -1,15 +1,28 @@
 use std::collections::VecDeque;
 
-use dynamo_common::symbolic_dynamics::{AngleInfo, OrbitSchemaWithDegree, RationalAngle};
+use dynamo_common::rational_angle::RationalAngle;
+use dynamo_common::symbolic_dynamics::{AngleInfo, OrbitSchemaWithDegree};
 use dynamo_core::dynamics::PlaneType;
 use egui::{self, Key, RichText, WidgetText};
 use egui::{vec2, Window};
 use egui_file::FileDialog;
 use std::fmt::Write;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::interface::PaneID;
 
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum SaveFileType
+{
+    Image,
+    Palette,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RayParams
 {
     pub pane_id: PaneID,
@@ -19,6 +32,7 @@ pub struct RayParams
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AllActiveRayParams
 {
     pub pane_id: PaneID,
@@ -33,6 +47,7 @@ pub enum Dialog
     {
         pane_id: PaneID,
         file_dialog: FileDialog,
+        file_type: SaveFileType,
     },
     Text(StructuredTextDialog),
     ConfirmRay(ConfirmationDialog<RayParams>),

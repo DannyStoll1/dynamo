@@ -16,6 +16,7 @@ images/*
 !images/sample.png
 user_scripts/*.toml
 !user_scripts/.default.toml
+palettes
 
 # Config
 bacon.toml

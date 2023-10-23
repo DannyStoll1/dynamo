@@ -11,8 +11,11 @@ pub enum Action
     // UI control
     Quit,
     Close,
+    NewTab,
     SaveImage(PaneID),
     SaveActiveImage,
+    SavePalette(PaneID),
+    SaveActivePalette,
     // Annotation toggles
     ToggleSelectionMarker,
     ToggleCritical(PaneID),
@@ -61,8 +64,11 @@ impl Action
             // UI Control
             Self::Quit => "Exit the application.".to_owned(),
             Self::Close => "Close the current tab.".to_owned(),
-            Self::SaveImage(pane_id) => format!("Save the {} active image to a file.", pane_id),
+            Self::NewTab => "Open a new tab.".to_owned(),
+            Self::SaveImage(pane_id) => format!("Save the {} image to a file.", pane_id),
             Self::SaveActiveImage => "Save the active image to a file.".to_owned(),
+            Self::SavePalette(pane_id) => format!("Save the {pane_id} palette to a file."),
+            Self::SaveActivePalette => format!("Save palette for active image to a file."),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle selection marker on active image.".to_owned(),
@@ -215,8 +221,11 @@ impl Action
             // UI Control
             Self::Quit => "Exit".to_owned(),
             Self::Close => "Close Tab".to_owned(),
+            Self::NewTab => "New Tab".to_owned(),
             Self::SaveActiveImage => "Save Image".to_owned(),
             Self::SaveImage(pane_id) => format!("Save {:#}", pane_id),
+            Self::SaveActivePalette => "Save Palette".to_owned(),
+            Self::SavePalette(pane_id) => format!("Save {:#} Palette", pane_id),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle Selection".to_owned(),

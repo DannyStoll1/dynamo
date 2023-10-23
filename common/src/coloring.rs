@@ -1,4 +1,7 @@
-use std::ops::{Deref, DerefMut};
+use std::{
+    ops::{Deref, DerefMut},
+    path::Path,
+};
 
 use crate::orbit_info::PointInfo;
 use crate::traits::Polar;
@@ -122,6 +125,21 @@ impl Coloring
     pub fn set_interior_algorithm(&mut self, algorithm: IncoloringAlgorithm)
     {
         self.algorithm = algorithm;
+    }
+
+    #[cfg(feature = "serde")]
+    pub fn save_to_file<P>(&self, filename: P) -> std::io::Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        use std::io::Write;
+
+        let toml_string =
+            toml::to_string(self.get_palette()).expect("Failed to serialize palette.");
+        let mut file = std::fs::File::create(filename)?;
+        file.write_all(toml_string.as_bytes())?;
+
+        Ok(())
     }
 }
 

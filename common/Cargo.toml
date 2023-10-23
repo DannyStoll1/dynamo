@@ -21,6 +21,7 @@ ndarray = ">=0.15.6"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 libc = {version = "0.2.147", optional = true}
 serde = { version = "1.0.166", features = ["derive"], optional = true }
+toml = { version = "0.8.4", optional = true }
 num-rational = "0.4.1"
 num-traits = "0.2.16"
 lazy_static = "1.4.0"
@@ -29,4 +30,4 @@ poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"
 
 [features]
-serde = ["dep:serde", "num-complex/serde"]
+serde = ["dep:serde", "dep:toml", "num-complex/serde"]

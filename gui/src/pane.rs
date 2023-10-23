@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use dynamo_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
 use dynamo_common::prelude::*;
 use dynamo_core::dynamics::error::FindPointResult;
@@ -319,7 +321,8 @@ pub trait Pane
 
     fn scale_max_iter(&mut self, factor: f64);
 
-    fn save_image(&mut self, img_width: usize, filename: &str);
+    fn save_image(&mut self, img_width: usize, filename: &Path);
+    fn save_palette(&mut self, filename: &Path);
 
     fn change_height(&mut self, new_height: usize);
 
@@ -339,7 +342,7 @@ where
     pub image_frame: ImageFrame,
     tasks: PaneTasks,
     selection: Cplx,
-    orbit_info: Option<OrbitInfo<P::Var, P::Param, P::Deriv>>,
+    orbit_info: Option<OrbitInfo<P::Var, P::Deriv>>,
     pub marking: Marking,
     pub zoom_factor: Real,
     pub ray_state: RayState,
@@ -406,17 +409,17 @@ where
     }
 
     #[inline]
-    const fn get_orbit_info(&self) -> &Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    const fn get_orbit_info(&self) -> &Option<OrbitInfo<P::Var, P::Deriv>>
     {
         &self.orbit_info
     }
     #[inline]
-    fn get_orbit_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Var, P::Param, P::Deriv>>
+    fn get_orbit_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Var, P::Deriv>>
     {
         &mut self.orbit_info
     }
     #[inline]
-    fn set_orbit_info(&mut self, info: OrbitInfo<P::Var, P::Param, P::Deriv>)
+    fn set_orbit_info(&mut self, info: OrbitInfo<P::Var, P::Deriv>)
     {
         self.orbit_info = Some(info);
     }
@@ -685,7 +688,7 @@ where
         self.set_coloring_algorithm(coloring_algorithm);
     }
 
-    fn save_image(&mut self, img_width: usize, filename: &str)
+    fn save_image(&mut self, img_width: usize, filename: &Path)
     {
         let old_res_x = self.plane.point_grid().res_x;
         self.plane.point_grid_mut().resize_x(img_width);
@@ -701,10 +704,22 @@ where
         }
         else
         {
-            println!("Image saved to {filename}");
+            println!("Image saved to {}", filename.to_string_lossy());
         }
 
         self.plane.point_grid_mut().resize_x(old_res_x);
+    }
+
+    fn save_palette(&mut self, filename: &Path)
+    {
+        if let Err(e) = self.coloring.save_to_file(filename)
+        {
+            println!("Error saving palette: {e:?}");
+        }
+        else
+        {
+            println!("Palette saved to {}", filename.to_string_lossy());
+        }
     }
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)

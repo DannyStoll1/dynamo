@@ -10,6 +10,7 @@ pub mod math_utils;
 pub mod orbit_info;
 pub mod point_grid;
 pub mod prelude;
+pub mod rational_angle;
 pub mod symbolic_dynamics;
 pub mod traits;
 pub mod types;

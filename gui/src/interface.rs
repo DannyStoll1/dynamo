@@ -6,21 +6,22 @@ use egui_file::FileDialog;
 
 use dynamo_common::{
     coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
-    symbolic_dynamics::*,
-    types::{Cplx, ParamList},
+    prelude::*,
 };
 use dynamo_core::dynamics::Displayable;
 
 use crate::{
     actions::Action,
-    dialog::{AllActiveRayParams, Dialog, TextDialogBuilder, TextInputType},
+    dialog::*,
     hotkeys::{
-        Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
-        PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+        keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS,
+        INCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
     pane::{ChildTask, Pane, WindowPane},
 };
-use crate::{dialog::RayParams, hotkeys::keyboard_shortcuts::*};
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -30,6 +31,7 @@ pub enum UIMessage
     DoNothing,
     CloseWindow,
     Quit,
+    NewTab,
 }
 impl UIMessage
 {
@@ -94,8 +96,8 @@ pub trait PanePair
     fn set_active_pane(&mut self, pane_id: Option<PaneID>);
     fn get_active_pane(&self) -> Option<&dyn Pane>;
     fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>;
-    fn prompt_save_active_pane(&mut self);
-    fn prompt_save(&mut self, pane_id: PaneID);
+    fn prompt_save_image(&mut self, pane_id: PaneID);
+    fn prompt_save_palette(&mut self, pane_id: PaneID);
     fn prompt_text(&mut self, input_type: TextInputType);
 
     fn update_panes(&mut self);
@@ -190,21 +192,41 @@ where
         self.dialog = None;
     }
 
-    fn handle_save_dialog(&mut self, pane_id: PaneID, file_dialog: &FileDialog)
+    fn handle_save_dialog(
+        &mut self,
+        pane_id: PaneID,
+        file_dialog: &FileDialog,
+        file_type: &SaveFileType,
+    )
     {
-        // If file selection was confirmed
-        if file_dialog.selected()
+        // Ensure file selection was confirmed
+        if !file_dialog.selected()
         {
-            if let Some(path) = file_dialog.path()
-            {
-                let filename = path.to_string_lossy().into_owned();
-                let image_width: usize = 4096; // You can make this dynamic as per your requirement
-
-                let pane = self.get_pane_mut(pane_id);
-                pane.save_image(image_width, &filename);
-            }
-            self.set_active_pane(None);
+            return;
         }
+
+        let Some(path) = file_dialog.path()
+        else
+        {
+            return;
+        };
+
+        let pane = self.get_pane_mut(pane_id);
+
+        use SaveFileType::*;
+        match file_type
+        {
+            Image =>
+            {
+                let image_width: usize = 4096; // You can make this dynamic as per your requirement
+                pane.save_image(image_width, path);
+            }
+            Palette =>
+            {
+                pane.save_palette(path);
+            }
+        }
+        self.set_active_pane(None);
     }
 
     fn process_text_dialog_input(&mut self, input_type: TextInputType, text: String)
@@ -374,6 +396,11 @@ where
         self.message = UIMessage::Quit;
     }
 
+    fn schedule_new_tab(&mut self)
+    {
+        self.message = UIMessage::NewTab;
+    }
+
     fn toggle_live_mode(&mut self)
     {
         self.live_mode ^= true;
@@ -494,10 +521,10 @@ where
         self.dialog = Some(dialog);
     }
 
-    fn prompt_save(&mut self, pane_id: PaneID)
+    fn prompt_save_image(&mut self, pane_id: PaneID)
     {
         let path = PathBuf::from("images");
-        let _ = std::fs::create_dir("images");
+        let _ = std::fs::create_dir(&path);
         let mut file_dialog = FileDialog::save_file(Some(path))
             .default_filename(format!("{}.png", self.parent.name()))
             .show_rename(false)
@@ -506,15 +533,24 @@ where
         self.dialog = Some(Dialog::Save {
             pane_id,
             file_dialog,
+            file_type: SaveFileType::Image,
         });
     }
 
-    fn prompt_save_active_pane(&mut self)
+    fn prompt_save_palette(&mut self, pane_id: PaneID)
     {
-        if let Some(pane_id) = self.active_pane
-        {
-            self.prompt_save(pane_id);
-        }
+        let path = PathBuf::from("palettes");
+        let _ = std::fs::create_dir(&path);
+        let mut file_dialog = FileDialog::save_file(Some(path))
+            .default_filename("palette.toml")
+            .show_rename(false)
+            .show_new_folder(true);
+        file_dialog.open();
+        self.dialog = Some(Dialog::Save {
+            pane_id,
+            file_dialog,
+            file_type: SaveFileType::Palette,
+        });
     }
 
     fn set_active_pane(&mut self, pane_id: Option<PaneID>)
@@ -661,7 +697,8 @@ where
                 Dialog::Save {
                     pane_id,
                     file_dialog,
-                } => self.handle_save_dialog(*pane_id, file_dialog),
+                    file_type,
+                } => self.handle_save_dialog(*pane_id, file_dialog, file_type),
                 Dialog::Text(text_dialog) =>
                 {
                     if let crate::dialog::Response::Complete { data } = text_dialog.get_response()
@@ -788,8 +825,23 @@ where
         {
             Action::Quit => self.schedule_quit(),
             Action::Close => self.schedule_close(),
-            Action::SaveImage(pane_id) => self.prompt_save(*pane_id),
-            Action::SaveActiveImage => self.prompt_save_active_pane(),
+            Action::NewTab => self.schedule_new_tab(),
+            Action::SaveImage(pane_id) => self.prompt_save_image(*pane_id),
+            Action::SaveActiveImage =>
+            {
+                if let Some(pane_id) = self.active_pane
+                {
+                    self.prompt_save_image(pane_id);
+                }
+            }
+            Action::SavePalette(pane_id) => self.prompt_save_palette(*pane_id),
+            Action::SaveActivePalette =>
+            {
+                if let Some(pane_id) = self.active_pane
+                {
+                    self.prompt_save_palette(pane_id);
+                }
+            }
             Action::ToggleSelectionMarker =>
             {
                 if let Some(pane) = self.get_active_pane_mut()

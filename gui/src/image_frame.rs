@@ -6,6 +6,7 @@ use epaint::{ColorImage, Stroke, TextureHandle};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BorderMode
 {
     selected: bool,
