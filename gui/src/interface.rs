@@ -17,7 +17,7 @@ use crate::{
         keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS,
         INCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
-    pane::{ChildTask, Pane, WindowPane},
+    pane::{id::*, tasks::ChildTask, Pane, WindowPane},
 };
 
 #[cfg(feature = "serde")]
@@ -41,46 +41,6 @@ impl UIMessage
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum PaneID
-{
-    #[default]
-    Parent,
-    Child,
-}
-impl std::fmt::Display for PaneID
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
-    {
-        match self
-        {
-            Self::Parent =>
-            {
-                if f.alternate()
-                {
-                    write!(f, "Parent")
-                }
-                else
-                {
-                    write!(f, "parent")
-                }
-            }
-            Self::Child =>
-            {
-                if f.alternate()
-                {
-                    write!(f, "Child")
-                }
-                else
-                {
-                    write!(f, "child")
-                }
-            }
-        }
-    }
-}
-
 pub trait PanePair
 {
     fn parent(&self) -> &dyn Pane;
@@ -96,8 +56,10 @@ pub trait PanePair
     fn set_active_pane(&mut self, pane_id: Option<PaneID>);
     fn get_active_pane(&self) -> Option<&dyn Pane>;
     fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>;
-    fn prompt_save_image(&mut self, pane_id: PaneID);
-    fn prompt_save_palette(&mut self, pane_id: PaneID);
+    fn get_selected_pane_ids(&self, selection: PaneSelection) -> Vec<PaneID>;
+    fn prompt_save_image(&mut self, panes: PaneSelection);
+    fn prompt_save_palette(&mut self, panes: PaneSelection);
+    fn prompt_load_palette(&mut self, panes: PaneSelection);
     fn prompt_text(&mut self, input_type: TextInputType);
 
     fn update_panes(&mut self);
@@ -194,7 +156,7 @@ where
 
     fn handle_save_dialog(
         &mut self,
-        pane_id: PaneID,
+        selection: PaneSelection,
         file_dialog: &FileDialog,
         file_type: &SaveFileType,
     )
@@ -211,7 +173,7 @@ where
             return;
         };
 
-        let pane = self.get_pane_mut(pane_id);
+        let pane_ids = self.get_selected_pane_ids(selection);
 
         use SaveFileType::*;
         match file_type
@@ -219,13 +181,40 @@ where
             Image =>
             {
                 let image_width: usize = 4096; // You can make this dynamic as per your requirement
-                pane.save_image(image_width, path);
+                pane_ids
+                    .into_iter()
+                    .for_each(|pane_id| self.get_pane_mut(pane_id).save_image(image_width, path));
             }
             Palette =>
             {
-                pane.save_palette(path);
+                pane_ids
+                    .into_iter()
+                    .for_each(|pane_id| self.get_pane_mut(pane_id).save_palette(path));
             }
         }
+        self.set_active_pane(None);
+    }
+
+    fn handle_load_dialog(&mut self, file_dialog: &FileDialog, pane_selection: PaneSelection)
+    {
+        // Ensure file selection was confirmed
+        if !file_dialog.selected()
+        {
+            return;
+        }
+
+        let Some(path) = file_dialog.path()
+        else
+        {
+            return;
+        };
+
+        self.get_selected_pane_ids(pane_selection)
+            .into_iter()
+            .for_each(|pane_id| {
+                self.get_pane_mut(pane_id).load_palette(path);
+            });
+
         self.set_active_pane(None);
     }
 
@@ -234,7 +223,10 @@ where
         use crate::dialog::TextInputType::*;
         match input_type
         {
-            ExternalRay { pane_id, follow } =>
+            ExternalRay {
+                pane_selection: pane_id,
+                follow,
+            } =>
             {
                 if let Ok(angle) = text.parse::<RationalAngle>()
                 {
@@ -264,7 +256,7 @@ where
                     let active_angles = od.active_angles(include_suffixes);
 
                     let params = AllActiveRayParams {
-                        pane_id,
+                        panes: pane_id,
                         orbit_schema: o.with_degree(degree),
                         active_angles,
                         include_suffixes,
@@ -457,7 +449,10 @@ where
         use TextInputType::*;
         let text_dialog = match input_type
         {
-            ExternalRay { pane_id, .. } =>
+            ExternalRay {
+                pane_selection: pane_id,
+                ..
+            } =>
             {
                 let pane = self.get_pane(pane_id);
                 let ray_type = pane.plane_type();
@@ -521,7 +516,7 @@ where
         self.dialog = Some(dialog);
     }
 
-    fn prompt_save_image(&mut self, pane_id: PaneID)
+    fn prompt_save_image(&mut self, pane_selection: PaneSelection)
     {
         let path = PathBuf::from("images");
         let _ = std::fs::create_dir(&path);
@@ -531,13 +526,13 @@ where
             .show_new_folder(true);
         file_dialog.open();
         self.dialog = Some(Dialog::Save {
-            pane_id,
+            pane_selection,
             file_dialog,
             file_type: SaveFileType::Image,
         });
     }
 
-    fn prompt_save_palette(&mut self, pane_id: PaneID)
+    fn prompt_save_palette(&mut self, panes: PaneSelection)
     {
         let path = PathBuf::from("palettes");
         let _ = std::fs::create_dir(&path);
@@ -547,9 +542,24 @@ where
             .show_new_folder(true);
         file_dialog.open();
         self.dialog = Some(Dialog::Save {
-            pane_id,
+            pane_selection: panes,
             file_dialog,
             file_type: SaveFileType::Palette,
+        });
+    }
+
+    fn prompt_load_palette(&mut self, pane_selection: PaneSelection)
+    {
+        let path = PathBuf::from("palettes");
+        let _ = std::fs::create_dir(&path);
+        let mut file_dialog = FileDialog::open_file(Some(path))
+            .default_filename("palette.toml")
+            .show_rename(false)
+            .show_new_folder(true);
+        file_dialog.open();
+        self.dialog = Some(Dialog::Load {
+            pane_selection,
+            file_dialog,
         });
     }
 
@@ -584,6 +594,7 @@ where
             PaneID::Child => self.child(),
         }
     }
+
     fn get_pane_mut(&mut self, pane_id: PaneID) -> &mut dyn Pane
     {
         match pane_id
@@ -601,6 +612,20 @@ where
     fn get_active_pane_mut(&mut self) -> Option<&mut dyn Pane>
     {
         Some(self.get_pane_mut(self.active_pane?))
+    }
+
+    fn get_selected_pane_ids(&self, selection: PaneSelection) -> Vec<PaneID>
+    {
+        use PaneSelection::*;
+        match selection
+        {
+            ActivePane => self
+                .active_pane
+                .map(|pane_id| vec![pane_id])
+                .unwrap_or_default(),
+            BothPanes => vec![PaneID::Parent, PaneID::Child],
+            Id(pane_id) => vec![pane_id],
+        }
     }
 
     fn set_palette(&mut self, palette: ColorPalette)
@@ -695,10 +720,14 @@ where
             match &mut dialog
             {
                 Dialog::Save {
-                    pane_id,
+                    pane_selection: panes,
                     file_dialog,
                     file_type,
-                } => self.handle_save_dialog(*pane_id, file_dialog, file_type),
+                } => self.handle_save_dialog(*panes, file_dialog, file_type),
+                Dialog::Load {
+                    file_dialog,
+                    pane_selection,
+                } => self.handle_load_dialog(file_dialog, *pane_selection),
                 Dialog::Text(text_dialog) =>
                 {
                     if let crate::dialog::Response::Complete { data } = text_dialog.get_response()
@@ -717,7 +746,7 @@ where
                 {
                     if let crate::dialog::Response::Complete { data } = conf_dialog.get_response()
                     {
-                        let pane = self.get_pane_mut(data.pane_id);
+                        let pane = self.get_pane_mut(data.panes);
                         for angle in data.active_angles
                         {
                             pane.marking_mut().enable_ray(angle);
@@ -826,22 +855,9 @@ where
             Action::Quit => self.schedule_quit(),
             Action::Close => self.schedule_close(),
             Action::NewTab => self.schedule_new_tab(),
-            Action::SaveImage(pane_id) => self.prompt_save_image(*pane_id),
-            Action::SaveActiveImage =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
-                    self.prompt_save_image(pane_id);
-                }
-            }
-            Action::SavePalette(pane_id) => self.prompt_save_palette(*pane_id),
-            Action::SaveActivePalette =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
-                    self.prompt_save_palette(pane_id);
-                }
-            }
+            Action::SaveImage(panes) => self.prompt_save_image(*panes),
+            Action::SavePalette(panes) => self.prompt_save_palette(*panes),
+            Action::LoadPalette(panes) => self.prompt_load_palette(*panes),
             Action::ToggleSelectionMarker =>
             {
                 if let Some(pane) = self.get_active_pane_mut()
@@ -850,17 +866,25 @@ where
                     pane.schedule_redraw();
                 }
             }
-            Action::ToggleCritical(pane_id) =>
+            Action::ToggleCritical(selection) =>
             {
-                let pane = self.get_pane_mut(*pane_id);
-                pane.marking_mut().toggle_critical();
-                pane.schedule_redraw();
+                self.get_selected_pane_ids(*selection)
+                    .into_iter()
+                    .for_each(|pane_id| {
+                        let pane = self.get_pane_mut(pane_id);
+                        pane.marking_mut().toggle_critical();
+                        pane.schedule_redraw();
+                    });
             }
-            Action::ToggleCycles(pane_id, period) =>
+            Action::ToggleCycles(selection, period) =>
             {
-                let pane = self.get_pane_mut(*pane_id);
-                pane.marking_mut().toggle_cycles_of_period(*period);
-                pane.schedule_redraw();
+                self.get_selected_pane_ids(*selection)
+                    .into_iter()
+                    .for_each(|pane_id| {
+                        let pane = self.get_pane_mut(pane_id);
+                        pane.marking_mut().toggle_cycles_of_period(*period);
+                        pane.schedule_redraw();
+                    });
             }
             Action::FindPeriodicPoint =>
             {
@@ -900,7 +924,7 @@ where
                 if let Some(pane_id) = self.active_pane
                 {
                     let input_type = TextInputType::ExternalRay {
-                        pane_id,
+                        pane_selection: pane_id,
                         follow: *select_landing_point,
                     };
                     self.prompt_text(input_type);

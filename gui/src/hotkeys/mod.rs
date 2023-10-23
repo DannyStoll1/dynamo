@@ -1,5 +1,8 @@
 pub mod keyboard_shortcuts;
-use crate::{actions::Action, interface::PaneID};
+use crate::{
+    actions::Action,
+    pane::id::{PaneID::*, PaneSelection::*},
+};
 use dynamo_common::coloring::algorithms::IncoloringAlgorithm;
 use keyboard_shortcuts::*;
 use seq_macro::seq;
@@ -65,29 +68,35 @@ pub static FILE_HOTKEYS: [Hotkey; 6] = [
     },
     Hotkey {
         shortcut: Some(CTRL_S),
-        action: SaveActiveImage,
+        action: SaveImage(ActivePane),
         show_in_menu: false,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: None,
-        action: SaveImage(PaneID::Parent),
+        action: SaveImage(Id(Parent)),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: None,
-        action: SaveImage(PaneID::Child),
+        action: SaveImage(Id(Child)),
         show_in_menu: true,
         menu_action_override: None,
     },
 ];
 
-pub static PALETTE_HOTKEYS: [Hotkey; 8] = [
+pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
+    Hotkey {
+        shortcut: Some(CTRL_K),
+        action: SavePalette(ActivePane),
+        show_in_menu: true,
+        menu_action_override: None,
+    },
     Hotkey {
         shortcut: Some(CTRL_L),
-        action: SaveActivePalette,
-        show_in_menu: false,
+        action: LoadPalette(BothPanes),
+        show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
@@ -111,25 +120,25 @@ pub static PALETTE_HOTKEYS: [Hotkey; 8] = [
     Hotkey {
         shortcut: Some(KEY_UP),
         action: ScalePalettePeriod(1.25),
-        show_in_menu: false,
+        show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_DOWN),
         action: ScalePalettePeriod(0.8),
-        show_in_menu: false,
+        show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_LEFT),
         action: ShiftPalettePhase(-0.02),
-        show_in_menu: false,
+        show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(KEY_RIGHT),
         action: ShiftPalettePhase(0.02),
-        show_in_menu: false,
+        show_in_menu: true,
         menu_action_override: None,
     },
 ];
@@ -176,13 +185,13 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
     },
     Hotkey {
         shortcut: Some(KEY_P),
-        action: ToggleCritical(PaneID::Child),
+        action: ToggleCritical(Id(Child)),
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(SHIFT_P),
-        action: ToggleCritical(PaneID::Parent),
+        action: ToggleCritical(Id(Parent)),
         show_in_menu: false,
         menu_action_override: None,
     },
@@ -195,13 +204,13 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
     #(
         Hotkey {
             shortcut: Some(CTRL_~n),
-            action: ToggleCycles(PaneID::Child, n),
+            action: ToggleCycles(Id(Child), n),
             show_in_menu: true,
             menu_action_override: None,
         },
         Hotkey {
             shortcut: Some(CTRL_SHIFT_~n),
-            action: ToggleCycles(PaneID::Parent, n),
+            action: ToggleCycles(Id(Parent), n),
             show_in_menu: false,
             menu_action_override: None,
         },

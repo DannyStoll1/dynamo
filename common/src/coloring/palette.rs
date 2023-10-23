@@ -4,7 +4,7 @@ use crate::types::IterCount;
 use egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
-use rand_distr::{ChiSquared, Distribution};
+use rand_distr::{ChiSquared, Distribution, Uniform};
 use std::f64::consts::PI;
 
 #[cfg(feature = "serde")]
@@ -109,7 +109,7 @@ impl ColorPalette
             color_map_b: Sinusoid::new(period_b),
             period_coloring: DiscretePalette::standard(),
             in_color: Color32::BLACK,
-            wandering_color: Color32::WHITE,
+            wandering_color: Color32::BROWN,
         }
     }
 
@@ -150,23 +150,33 @@ impl ColorPalette
     pub fn new_random(contrast: f64, brightness: f64) -> Self
     {
         let mut rng = thread_rng();
+
+        let phase_r = Uniform::new(0., 1.).sample(&mut rng);
+        let phase_g = Uniform::new(0., 1.).sample(&mut rng);
+        let phase_b = Uniform::new(0., 1.).sample(&mut rng);
+
         ChiSquared::new(7.5).map_or(Self::black(8.), |period_dist| {
             let period_r: f64 = period_dist.sample(&mut rng);
             let period_g: f64 = period_dist.sample(&mut rng);
             let period_b: f64 = period_dist.sample(&mut rng);
 
-            Self::new_with_contrast(period_r, period_g, period_b, contrast, brightness)
+            Self::new(period_r, period_g, period_b)
+                .with_phases(phase_r, phase_g, phase_b)
+                .with_contrast(contrast, brightness)
         })
     }
 
     #[must_use]
-    pub fn new_with_contrast(
-        period_r: f64,
-        period_g: f64,
-        period_b: f64,
-        contrast: f64,
-        brightness: f64,
-    ) -> Self
+    pub fn with_phases(mut self, phase_r: f64, phase_g: f64, phase_b: f64) -> Self
+    {
+        self.color_map_r.phase = phase_r;
+        self.color_map_g.phase = phase_g;
+        self.color_map_b.phase = phase_b;
+        self
+    }
+
+    #[must_use]
+    pub fn with_contrast(mut self, contrast: f64, brightness: f64) -> Self
     {
         let mut amplitude = contrast / 2.0;
         if amplitude > brightness
@@ -178,33 +188,15 @@ impl ColorPalette
             amplitude = 1. - brightness;
         }
 
-        let palette_r = Sinusoid {
-            period: period_r,
-            amplitude,
-            midline: brightness,
-            phase: 0.,
-        };
-        let palette_g = Sinusoid {
-            period: period_g,
-            amplitude,
-            midline: brightness,
-            phase: 0.,
-        };
-        let palette_b = Sinusoid {
-            period: period_b,
-            amplitude,
-            midline: brightness,
-            phase: 0.,
-        };
+        self.color_map_r.amplitude = amplitude;
+        self.color_map_g.amplitude = amplitude;
+        self.color_map_b.amplitude = amplitude;
 
-        Self {
-            color_map_r: palette_r,
-            color_map_g: palette_g,
-            color_map_b: palette_b,
-            period_coloring: DiscretePalette::default(),
-            in_color: Color32::BLACK,
-            wandering_color: Color32::BROWN,
-        }
+        self.color_map_r.midline = brightness;
+        self.color_map_g.midline = brightness;
+        self.color_map_b.midline = brightness;
+
+        self
     }
 
     #[must_use]

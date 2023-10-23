@@ -141,6 +141,17 @@ impl Coloring
 
         Ok(())
     }
+
+    #[cfg(feature = "serde")]
+    pub fn load_palette<P>(&mut self, path: P) -> Result<(), Box<dyn std::error::Error>>
+    where
+        P: AsRef<Path>,
+    {
+        let content = std::fs::read_to_string(path)?;
+        let palette: ColorPalette = toml::from_str(&content)?;
+        self.palette = palette;
+        Ok(())
+    }
 }
 
 impl Deref for Coloring

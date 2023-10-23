@@ -11,7 +11,7 @@ use std::fmt::Write;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::interface::PaneID;
+use crate::pane::id::{PaneID, PaneSelection};
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -35,7 +35,7 @@ pub struct RayParams
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AllActiveRayParams
 {
-    pub pane_id: PaneID,
+    pub panes: PaneID,
     pub orbit_schema: OrbitSchemaWithDegree,
     pub active_angles: VecDeque<RationalAngle>,
     pub include_suffixes: bool,
@@ -45,9 +45,14 @@ pub enum Dialog
 {
     Save
     {
-        pane_id: PaneID,
+        pane_selection: PaneSelection,
         file_dialog: FileDialog,
         file_type: SaveFileType,
+    },
+    Load
+    {
+        pane_selection: PaneSelection,
+        file_dialog: FileDialog,
     },
     Text(StructuredTextDialog),
     ConfirmRay(ConfirmationDialog<RayParams>),
@@ -68,7 +73,7 @@ pub enum TextInputType
 {
     ExternalRay
     {
-        pane_id: PaneID, follow: bool
+        pane_selection: PaneID, follow: bool
     },
     ActiveRays
     {
@@ -362,6 +367,10 @@ impl Dialog
             {
                 file_dialog.show(ctx);
             }
+            Self::Load { file_dialog, .. } =>
+            {
+                file_dialog.show(ctx);
+            }
             Self::Text(text_dialog) =>
             {
                 text_dialog.show(ctx);
@@ -382,6 +391,7 @@ impl Dialog
         match self
         {
             Self::Save { file_dialog, .. } => file_dialog.visible(),
+            Self::Load { file_dialog, .. } => file_dialog.visible(),
             Self::Text(text_dialog) => text_dialog.visible(),
             Self::ConfirmRay(conf_dialog) => conf_dialog.visible(),
             Self::ConfirmActiveRays(conf_dialog) => conf_dialog.visible(),

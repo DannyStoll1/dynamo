@@ -2,8 +2,10 @@ use dynamo_common::{
     coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
     types::{IterCount, Period},
 };
+use crate::pane::id::*;
 
-use crate::interface::PaneID;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Action
@@ -12,14 +14,13 @@ pub enum Action
     Quit,
     Close,
     NewTab,
-    SaveImage(PaneID),
-    SaveActiveImage,
-    SavePalette(PaneID),
-    SaveActivePalette,
+    SaveImage(PaneSelection),
+    SavePalette(PaneSelection),
+    LoadPalette(PaneSelection),
     // Annotation toggles
     ToggleSelectionMarker,
-    ToggleCritical(PaneID),
-    ToggleCycles(PaneID, Period),
+    ToggleCritical(PaneSelection),
+    ToggleCycles(PaneSelection, Period),
     // Dynamics
     FindPeriodicPoint,
     MapSelection,
@@ -66,9 +67,8 @@ impl Action
             Self::Close => "Close the current tab.".to_owned(),
             Self::NewTab => "Open a new tab.".to_owned(),
             Self::SaveImage(pane_id) => format!("Save the {} image to a file.", pane_id),
-            Self::SaveActiveImage => "Save the active image to a file.".to_owned(),
             Self::SavePalette(pane_id) => format!("Save the {pane_id} palette to a file."),
-            Self::SaveActivePalette => format!("Save palette for active image to a file."),
+            Self::LoadPalette(pane_id) => format!("Load palette for {} from file", pane_id),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle selection marker on active image.".to_owned(),
@@ -222,17 +222,18 @@ impl Action
             Self::Quit => "Exit".to_owned(),
             Self::Close => "Close Tab".to_owned(),
             Self::NewTab => "New Tab".to_owned(),
-            Self::SaveActiveImage => "Save Image".to_owned(),
-            Self::SaveImage(pane_id) => format!("Save {:#}", pane_id),
-            Self::SaveActivePalette => "Save Palette".to_owned(),
-            Self::SavePalette(pane_id) => format!("Save {:#} Palette", pane_id),
+            Self::SaveImage(pane_selection) => format!("Save{:#}", pane_selection),
+            Self::SavePalette(pane_selection) => format!("Save{:#} Palette", pane_selection),
+            Self::LoadPalette(pane_selection) => format!("Load{:#} Palette", pane_selection),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle Selection".to_owned(),
             Self::ToggleCritical(pane_id) => match pane_id
             {
-                PaneID::Parent => "Toggle marked pts (parent)".to_owned(),
-                PaneID::Child => "Toggle Critical".to_owned(),
+                PaneSelection::ActivePane => "Toggle marked pts (active pane)".to_owned(),
+                PaneSelection::BothPanes => "Toggle marked pts".to_owned(),
+                PaneSelection::Id(PaneID::Parent) => "Toggle marked pts (parent)".to_owned(),
+                PaneSelection::Id(PaneID::Child) => "Toggle Critical".to_owned(),
             },
             Self::ToggleCycles(_, p) => format!("Toggle {p}-cycles"),
 

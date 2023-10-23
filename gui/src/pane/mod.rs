@@ -1,102 +1,19 @@
+use egui::{Color32, Pos2, Ui};
 use std::path::Path;
 
+use super::image_frame::ImageFrame;
+use super::marked_points::Marking;
 use dynamo_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
 use dynamo_common::prelude::*;
 use dynamo_core::dynamics::error::FindPointResult;
 use dynamo_core::dynamics::{Displayable, PlaneType};
 
-use super::image_frame::ImageFrame;
-use super::marked_points::Marking;
-
-use egui::{Color32, Pos2, Ui};
+pub mod id;
+pub mod tasks;
+use tasks::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum RepeatableTask
-{
-    #[default]
-    DoNothing,
-    Rerun,
-    InitRun,
-}
-impl RepeatableTask
-{
-    fn schedule_init_run(&mut self)
-    {
-        *self = Self::InitRun;
-    }
-    fn schedule_rerun(&mut self)
-    {
-        if matches!(self, Self::DoNothing)
-        {
-            *self = Self::Rerun;
-        }
-    }
-    fn pop(&mut self) -> RepeatableTask
-    {
-        std::mem::take(self)
-    }
-    fn clear(&mut self)
-    {
-        *self = Self::DoNothing;
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub struct PaneTasks
-{
-    pub compute: RepeatableTask,
-    pub draw: RepeatableTask,
-}
-
-impl PaneTasks
-{
-    #[must_use]
-    pub const fn init_tasks() -> Self
-    {
-        let task = RepeatableTask::InitRun;
-        Self {
-            compute: task,
-            draw: task,
-        }
-    }
-    pub fn pop(&mut self) -> Self
-    {
-        let compute = self.compute.pop();
-        let draw = self.draw.pop();
-        Self { compute, draw }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum ResizeTask
-{
-    #[default]
-    DoNothing,
-    ShowDialog,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum ChildTask
-{
-    #[default]
-    Idle,
-    UpdateParam,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum RayState
-{
-    #[default]
-    Idle,
-    Following(RationalAngle),
-}
 
 pub trait Pane
 {
@@ -323,6 +240,7 @@ pub trait Pane
 
     fn save_image(&mut self, img_width: usize, filename: &Path);
     fn save_palette(&mut self, filename: &Path);
+    fn load_palette(&mut self, filename: &Path);
 
     fn change_height(&mut self, new_height: usize);
 
@@ -720,6 +638,15 @@ where
         {
             println!("Palette saved to {}", filename.to_string_lossy());
         }
+    }
+
+    fn load_palette(&mut self, filename: &Path)
+    {
+        if let Err(e) = self.coloring.load_palette(filename)
+        {
+            println!("Error loading palette: {e:?}");
+        }
+        self.schedule_redraw();
     }
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
