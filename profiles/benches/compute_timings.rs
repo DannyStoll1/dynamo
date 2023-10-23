@@ -106,10 +106,10 @@ fn compute_rulkov(b: &mut Bencher)
     b.iter(|| {
         let mut plane = Rulkov::default().with_res_y(768).with_max_iter(2048);
         let bounds = Bounds {
-            min_x: -9.859092283464022,
-            max_x: 11.712293384188932,
-            min_y: -11.185367984659074,
-            max_y: 10.011947411300476,
+            min_x: -9.859_092_283_464_022,
+            max_x: 11.712_293_384_188_932,
+            min_y: -11.185_367_984_659_074,
+            max_y: 10.011_947_411_300_476,
         };
 
         plane.point_grid_mut().change_bounds(bounds);

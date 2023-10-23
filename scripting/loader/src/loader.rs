@@ -9,22 +9,22 @@ use std::process::Command;
 #[cfg(target_os = "linux")]
 mod config
 {
-    pub const LIB_EXT: &'static str = ".so";
-    pub const LIB_PRE: &'static str = "lib";
+    pub const LIB_EXT: &str = ".so";
+    pub const LIB_PRE: &str = "lib";
 }
 
 #[cfg(target_os = "windows")]
 mod config
 {
-    pub const LIB_EXT: &'static str = ".dll";
-    pub const LIB_PRE: &'static str = "";
+    pub const LIB_EXT: &str = ".dll";
+    pub const LIB_PRE: &str = "";
 }
 
 #[cfg(target_os = "macos")]
 mod config
 {
-    pub const LIB_EXT: &'static str = ".dylib";
-    pub const LIB_PRE: &'static str = "lib";
+    pub const LIB_EXT: &str = ".dylib";
+    pub const LIB_PRE: &str = "lib";
 }
 
 fn file_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error>

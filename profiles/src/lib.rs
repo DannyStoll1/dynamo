@@ -20,7 +20,7 @@ mod tests
     use crate::*;
     use dynamo_common::point_grid::Bounds;
     use dynamo_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema};
-    use dynamo_common::symbolic_dynamics::RationalAngle;
+    use dynamo_common::rational_angle::RationalAngle;
     use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
     use dynamo_core::dynamics::julia::JuliaSet;
     use dynamo_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
@@ -63,8 +63,8 @@ mod tests
         let z = Cplx::new(10.0, 0.0);
         let (val, mul) = chebyshev.map_and_multiplier(z, c);
         dbg!(val, mul);
-        assert!((val + 470449.).norm() < 1e-2);
-        assert!((mul + 288090.).norm() < 1e-2);
+        assert!((val + 470_449.).norm() < 1e-2);
+        assert!((mul + 288_090.).norm() < 1e-2);
     }
 
     // #[test]
@@ -125,8 +125,9 @@ mod tests
             let target = Cplx::new(0., 1.);
             let approx = param_plane.find_nearby_preperiodic_point(start, o);
 
-            let error = approx.expect("Failed to converge").dist_sqr(target);
-            println!("Parameter error: {:.4e}", approx.unwrap().dist_sqr(target));
+            let approx = approx.expect("Failed to converge");
+            let error = approx.dist_sqr(target);
+            println!("Parameter error: {:.4e}", approx.dist_sqr(target));
             assert!(error < 1e-5);
         }
 
@@ -139,11 +140,13 @@ mod tests
                 period: 3,
             };
             let start = Cplx::new(1.5, 0.1);
-            let target = Cplx::new(1.30193773580484, 0.);
+            let target = Cplx::new(1.301_937_735_804_84, 0.);
             let approx = dynam_plane.find_nearby_preperiodic_point(start, o);
 
-            let error = approx.unwrap().dist_sqr(target);
-            println!("Dynamical error: {:.4e}", approx.unwrap().dist_sqr(target));
+            let approx = approx.expect("Failed to converge");
+
+            let error = approx.dist_sqr(target);
+            println!("Dynamical error: {:.4e}", approx.dist_sqr(target));
             assert!(error < 1e-5);
         }
     }
@@ -161,8 +164,10 @@ mod tests
             let target = Cplx::new(0., 1.);
             let approx = param_plane.find_nearby_preperiodic_point(start, o);
 
-            let error = approx.unwrap().dist_sqr(target);
-            println!("Parameter error: {:.4e}", approx.unwrap().dist_sqr(target));
+            let approx = approx.expect("Failed to converge");
+
+            let error = approx.dist_sqr(target);
+            println!("Parameter error: {:.4e}", approx.dist_sqr(target));
             assert!(error < 1e-5);
         }
     }
@@ -211,6 +216,6 @@ mod tests
         let plane = QuadRatPer4::default();
         let c = Cplx::new(4.2, 0.0);
         let q = plane.escape_coeff(c);
-        assert!((q - 0.119960462401084).norm_sqr() < 1e-12)
+        assert!((q - 0.119_960_462_401_084).norm_sqr() < 1e-12)
     }
 }

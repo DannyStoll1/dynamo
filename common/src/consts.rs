@@ -5,8 +5,9 @@ pub const ZERO: Cplx = Cplx::new(0., 0.);
 pub const ONE: Cplx = Cplx::new(1., 0.);
 pub const TWO: Cplx = Cplx::new(2., 0.);
 pub const TAUI: Cplx = Cplx::new(0., 2. * PI);
-pub const OMEGA: Cplx = Cplx::new(-0.5, 0.866_025_403_784_439);
-pub const OMEGA_BAR: Cplx = Cplx::new(-0.5, -0.866_025_403_784_439);
+pub const SIN_60: Real = 0.866_025_403_784_439;
+pub const OMEGA: Cplx = Cplx::new(-0.5, SIN_60);
+pub const OMEGA_BAR: Cplx = Cplx::new(-0.5, -SIN_60);
 pub const ZETA_5_1: Cplx = Cplx::new(0.309_016_994_374_947, 0.951_056_516_295_154);
 pub const ZETA_5_2: Cplx = Cplx::new(-0.809_016_994_374_947, 0.587_785_252_292_473);
 

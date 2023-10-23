@@ -1,9 +1,14 @@
+use std::f32::consts::TAU;
+
 use crate::macros::{max, min};
 use egui::Color32;
-use image::Rgb;
+use image::{Pixel, Rgb};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+const SIN_60: f32 = 0.866_025_4;
+const TAU_3: f32 = std::f32::consts::TAU / 3.;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -11,32 +16,45 @@ pub struct Hsv
 {
     pub hue: f32,
     pub saturation: f32,
-    pub luminosity: f32,
+    pub intensity: f32,
 }
 impl Hsv
 {
     const WHITE: Self = Self {
         hue: 0.,
         saturation: 0.,
-        luminosity: 1.,
+        intensity: 1.,
     };
 
     #[must_use]
-    pub const fn new(hue: f32, saturation: f32, luminosity: f32) -> Self
+    pub const fn new(hue: f32, saturation: f32, intensity: f32) -> Self
     {
         Self {
             hue,
             saturation,
-            luminosity,
+            intensity,
         }
+    }
+
+    fn as_rgb_tuple_round(&self) -> (u8, u8, u8)
+    {
+        let c = self.saturation;
+        let h = self.hue * TAU;
+        let i = self.intensity;
+
+        let r = 127.5 * i * c.mul_add(h.cos(), 1.);
+        let g = 127.5 * i * c.mul_add((h - TAU_3).cos(), 1.);
+        let b = 127.5 * i * c.mul_add((h + TAU_3).cos(), 1.);
+
+        (r as u8, g as u8, b as u8)
     }
 
     fn as_rgb_tuple(&self) -> (u8, u8, u8)
     {
-        let c = self.luminosity * self.saturation;
+        let c = self.intensity * self.saturation;
         let mode = self.hue * 6.;
         let x = c * (1. - (mode % 2. - 1.).abs());
-        let m = self.luminosity - c;
+        let m = self.intensity - c;
 
         let (r_, g_, b_) = match (mode as i32) % 6
         {
@@ -54,7 +72,28 @@ impl Hsv
         (r, g, b)
     }
 
-    fn from_rgb_tuple(r: u8, g: u8, b: u8) -> Self
+    fn from_rgb_tuple_round(rgb: (u8, u8, u8)) -> Self
+    {
+        let r = rgb.0 as f32 / f32::from(u8::MAX - 1);
+        let g = rgb.1 as f32 / f32::from(u8::MAX - 1);
+        let b = rgb.2 as f32 / f32::from(u8::MAX - 1);
+
+        let alpha = r - (g + b) / 2.;
+        let beta = SIN_60 * (g - b);
+
+        let hue = beta.atan2(alpha) / TAU;
+        let chroma = alpha.hypot(beta);
+        // let intensity = (r.powi(2) + g.powi(2) + b.powi(2)).sqrt();
+        let intensity = Rgb([r, g, b]).to_luma().0[0];
+
+        Self {
+            hue,
+            saturation: chroma / intensity,
+            intensity,
+        }
+    }
+
+    fn from_rgb_tuple((r, g, b): (u8, u8, u8)) -> Self
     {
         let c_max = max!(r, g, b);
         let c_min = min!(r, g, b);
@@ -65,7 +104,7 @@ impl Hsv
             return Self {
                 hue: 0.,
                 saturation: 0.,
-                luminosity: 0.,
+                intensity: 0.,
             };
         }
 
@@ -94,7 +133,7 @@ impl Hsv
         Self {
             hue,
             saturation,
-            luminosity,
+            intensity: luminosity,
         }
     }
 }
@@ -122,14 +161,20 @@ impl From<Color32> for Hsv
         let g = color32.g();
         let b = color32.b();
 
-        Self::from_rgb_tuple(r, g, b)
+        Self::from_rgb_tuple((r, g, b))
     }
 }
 impl From<(u8, u8, u8)> for Hsv
 {
     fn from(rgb: (u8, u8, u8)) -> Self
     {
-        let (r, g, b) = rgb;
-        Self::from_rgb_tuple(r, g, b)
+        Self::from_rgb_tuple(rgb)
+    }
+}
+impl From<Rgb<u8>> for Hsv
+{
+    fn from(rgb: Rgb<u8>) -> Self
+    {
+        Self::from_rgb_tuple(rgb.0.into())
     }
 }

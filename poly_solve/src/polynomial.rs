@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::poly_traits::*;
-use num_traits::NumOps;
+use num_traits::{NumOps, Zero};
 
 #[derive(Clone, PartialEq, Eq, Debug, From)]
 pub struct Polynomial<T: Clone>
@@ -25,12 +25,14 @@ impl<T: VariableOps> Polynomial<T>
     };
 
     /// Degree of the polynomial
+    #[must_use]
     pub fn degree(&self) -> i32
     {
         (self.coeffs.len() - 1) as i32
     }
 
     /// 1 + degree of the polynomial
+    #[must_use]
     pub fn size(&self) -> usize
     {
         self.coeffs.len()
@@ -46,17 +48,19 @@ impl<T: VariableOps> Polynomial<T>
 
     fn clear_leading_zeros(&mut self)
     {
-        while self.coeffs.back().is_some_and(|a| a.is_zero())
+        while self.coeffs.back().is_some_and(Zero::is_zero)
         {
             self.coeffs.pop_back();
         }
     }
 
+    #[must_use]
     pub fn iter(&self) -> vec_deque::Iter<'_, T>
     {
         self.coeffs.iter()
     }
 
+    #[must_use]
     pub fn iter_mut(&mut self) -> vec_deque::IterMut<'_, T>
     {
         self.coeffs.iter_mut()
@@ -77,7 +81,7 @@ impl<T: VariableOps> Polynomial<T>
                 self.clear_leading_zeros();
                 return;
             }
-            _ =>
+            Ordering::Greater =>
             {}
         }
 
@@ -284,7 +288,7 @@ impl<T: VariableOps> MulConst for Polynomial<T>
 
     fn mul_const_assign(&mut self, c: Self::Var)
     {
-        self.iter_mut().for_each(|x| *x *= c.clone())
+        self.iter_mut().for_each(|x| *x *= c.clone());
     }
 }
 

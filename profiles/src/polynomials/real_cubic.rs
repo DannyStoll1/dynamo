@@ -23,6 +23,7 @@ impl Default for RealCubicRealCrit
     fractal_impl!();
 }
 
+#[allow(clippy::suboptimal_flops)]
 impl ParameterPlane for RealCubicRealCrit
 {
     type Param = RealPair;
@@ -106,6 +107,7 @@ impl Default for RealCubicImagCrit
     fractal_impl!();
 }
 
+#[allow(clippy::suboptimal_flops)]
 impl ParameterPlane for RealCubicImagCrit
 {
     type Param = RealPair;

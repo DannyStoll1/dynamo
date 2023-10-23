@@ -5,6 +5,7 @@ pub mod transpiler;
 pub use loader::Loader;
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests
 {
     use crate::parser::*;
@@ -31,7 +32,7 @@ mod tests
         let user_input: UnparsedUserInput =
             toml::from_str(&content).expect("Failed to parse the TOML content");
 
-        let transpiler = Transpiler::new(user_input);
+        let transpiler = Transpiler::new(user_input).expect("Failed to process input");
         println!("{}", transpiler.gen_rust_profile());
     }
 

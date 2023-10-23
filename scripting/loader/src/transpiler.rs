@@ -8,11 +8,10 @@ pub struct Transpiler
 
 impl Transpiler
 {
-    #[must_use]
-    pub fn new(unparsed_input: UnparsedUserInput) -> Self
+    pub fn new(unparsed_input: UnparsedUserInput) -> Result<Self, ScriptError>
     {
-        let parsed_input = unparsed_input.parse().unwrap();
-        Self { parsed_input }
+        let parsed_input = unparsed_input.parse()?;
+        Ok(Self { parsed_input })
     }
 
     pub fn from_toml_path(path: &Path) -> Result<Self, ScriptError>
@@ -20,7 +19,7 @@ impl Transpiler
         let content = std::fs::read_to_string(path).map_err(ScriptError::ErrorReadingToml)?;
         let user_input: UnparsedUserInput =
             toml::from_str(&content).map_err(ScriptError::ErrorParsingToml)?;
-        Ok(Self::new(user_input))
+        Self::new(user_input)
     }
 
     fn parameter_decl(&self) -> String

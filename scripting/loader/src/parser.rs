@@ -104,10 +104,12 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
         {
             lazy_static! {
                 static ref A_PLUS_BI: Regex =
-                    Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*\+\s*(-?[0-9]+\.?[0-9]*)?i").unwrap();
+                    Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*\+\s*(-?[0-9]+\.?[0-9]*)?i")
+                        .expect("Invalid regex");
                 static ref A_MINUS_BI: Regex =
-                    Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*-\s*(-?[0-9]+\.?[0-9]*)?i").unwrap();
-                static ref BI: Regex = Regex::new(r"(-?[0-9]+\.?[0-9]*)?i").unwrap();
+                    Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*-\s*(-?[0-9]+\.?[0-9]*)?i")
+                        .expect("Invalid regex");
+                static ref BI: Regex = Regex::new(r"(-?[0-9]+\.?[0-9]*)?i").expect("Invalid regex");
             }
 
             // Handle real numbers

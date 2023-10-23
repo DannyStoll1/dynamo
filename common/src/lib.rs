@@ -205,4 +205,20 @@ mod tests
         let s = format!("{:>13}", it);
         assert_eq!(s, "    p01101001");
     }
+
+    #[test]
+    fn hsv() {
+        use image::Rgb;
+        use crate::coloring::types::Hsv;
+
+        let hsv = Hsv::new(0., 1., 0.4);
+        let rgb = Rgb::from(hsv);
+        let hsv1 = Hsv::from(rgb);
+
+        dbg!(hsv, rgb, hsv1);
+
+        assert!(hsv.hue - hsv1.hue < 1e-2);
+        assert!(hsv.saturation - hsv1.saturation < 1e-2);
+        assert!(hsv.intensity - hsv1.intensity < 1e-2);
+    }
 }

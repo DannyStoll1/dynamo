@@ -193,7 +193,7 @@ impl HasDynamicalCovers for Unicritical<3>
                 const ANGLE: Cplx = Cplx::new(0.5 * SQRT_3, -0.5);
 
                 // ANGLE * (POLE_1 - POLE_0)
-                const VECT: Cplx = Cplx::new(-0.14216368142199037, -1.0789964666594938);
+                const VECT: Cplx = Cplx::new(-0.142_163_681_421_990_37, -1.078_996_466_659_493_8);
 
                 param_map = |t| {
                     let u = t * ANGLE;

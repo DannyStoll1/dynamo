@@ -20,7 +20,7 @@ struct RatioDef {
 #[cfg(feature = "serde")]
 impl From<RatioDef> for Rational {
     fn from(r: RatioDef) -> Self {
-        Rational::new(r.numer, r.denom)
+        Self::new(r.numer, r.denom)
     }
 }
 

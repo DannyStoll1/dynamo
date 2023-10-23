@@ -20,6 +20,7 @@ pub trait HasVar
 
 pub trait MulConst: HasVar
 {
+    #[must_use]
     fn mul_const(self, c: Self::Var) -> Self;
     fn mul_const_assign(&mut self, c: Self::Var);
 }
@@ -32,6 +33,7 @@ pub trait Eval: HasVar
 pub trait Normalize: Sized
 {
     /// Return a monic polynomial proportional to the input.
+    #[must_use]
     fn normalize(self) -> Self;
 
     /// Normalize a polynomial inplace to make it monic.
@@ -40,18 +42,21 @@ pub trait Normalize: Sized
 
 pub trait Differentiable: Sized
 {
+    #[must_use]
     fn derivative(&self) -> Self;
 }
 
 pub trait DivideByAffine: HasVar
 {
     /// Divide self by x - a0
+    #[must_use]
     fn divide_by_affine(&self, a0: Self::Var) -> Self;
 
     /// Divide self by x - a0 inplace
     fn divide_by_affine_inplace(&mut self, a0: Self::Var);
 
     /// Divide self by x
+    #[must_use]
     fn divide_by_var(&self) -> Self;
 
     /// Divide self by x inplace

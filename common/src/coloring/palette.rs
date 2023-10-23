@@ -167,7 +167,7 @@ impl ColorPalette
     }
 
     #[must_use]
-    pub fn with_phases(mut self, phase_r: f64, phase_g: f64, phase_b: f64) -> Self
+    pub const fn with_phases(mut self, phase_r: f64, phase_g: f64, phase_b: f64) -> Self
     {
         self.color_map_r.phase = phase_r;
         self.color_map_g.phase = phase_g;
@@ -294,7 +294,7 @@ impl DiscretePalette
         Hsv {
             hue,
             saturation: self.saturation,
-            luminosity: self.luminosity * luminosity_modifier,
+            intensity: self.luminosity * luminosity_modifier,
         }
     }
 

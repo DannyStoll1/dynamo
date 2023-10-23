@@ -54,7 +54,7 @@ impl Coloring
                 Hsv {
                     hue,
                     saturation: 0.8,
-                    luminosity: 1.0,
+                    intensity: 1.0,
                 }
                 .into()
             }
@@ -92,7 +92,7 @@ impl Coloring
                 Hsv {
                     hue,
                     saturation: 0.8,
-                    luminosity: 1.0,
+                    intensity: 1.0,
                 }
                 .into()
             }

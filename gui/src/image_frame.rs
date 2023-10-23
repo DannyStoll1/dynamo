@@ -5,7 +5,7 @@ use epaint::{ColorImage, Stroke, TextureHandle};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BorderMode
 {
@@ -14,7 +14,7 @@ pub struct BorderMode
 }
 impl BorderMode
 {
-    pub(super) fn stroke(&self) -> Stroke
+    pub(super) const fn stroke(&self) -> Stroke
     {
         use crate::colors::*;
         if self.live

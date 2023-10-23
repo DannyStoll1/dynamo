@@ -22,7 +22,7 @@ impl RepeatableTask
             *self = Self::Rerun;
         }
     }
-    pub fn pop(&mut self) -> RepeatableTask
+    pub fn pop(&mut self) -> Self
     {
         std::mem::take(self)
     }

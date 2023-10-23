@@ -707,7 +707,7 @@ impl PathCache
     {
         self.needs_refresh = false
     }
-    pub fn is_fresh(&self) -> bool
+    pub const fn is_fresh(&self) -> bool
     {
         !self.needs_refresh
     }
@@ -715,7 +715,7 @@ impl PathCache
     {
         self.needs_refresh = true
     }
-    pub fn is_stale(&self) -> bool
+    pub const fn is_stale(&self) -> bool
     {
         self.needs_refresh
     }

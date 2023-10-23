@@ -299,6 +299,7 @@ impl CirclePartition
         Self::from_circularly_ordered(partition_angles)
     }
 
+    #[must_use]
     pub fn identify(&self, theta: RationalAngle) -> KneadingSymbol
     {
         for (i, x) in self.angles.iter().enumerate().rev()
@@ -307,13 +308,13 @@ impl CirclePartition
             {
                 Ordering::Greater => return KneadingSymbol::Interior(i),
                 Ordering::Equal => return KneadingSymbol::Boundary(i),
-                _ =>
-                {}
+                Ordering::Less => {}
             }
         }
         KneadingSymbol::Interior(self.angles.len().saturating_sub(1))
     }
 
+    #[must_use]
     pub fn is_circularly_ordered(&self) -> bool
     {
         let Some((imin, xmin)) = self.angles.iter().enumerate().min_by_key(|(_i, x)| *x)
@@ -328,7 +329,7 @@ impl CirclePartition
             {
                 return false;
             }
-            x_curr = self.angles[i]
+            x_curr = self.angles[i];
         }
         for i in 0..imin
         {
@@ -336,11 +337,12 @@ impl CirclePartition
             {
                 return false;
             }
-            x_curr = self.angles[i]
+            x_curr = self.angles[i];
         }
         true
     }
 
+    #[must_use]
     pub fn size(&self) -> usize
     {
         self.angles.len()

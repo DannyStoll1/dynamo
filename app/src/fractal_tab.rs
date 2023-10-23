@@ -38,11 +38,11 @@ impl MenuState
     {
         *self = Self::Open
     }
-    pub fn is_open(&self) -> bool
+    pub const fn is_open(&self) -> bool
     {
         matches!(self, Self::Open)
     }
-    pub fn is_closed(&self) -> bool
+    pub const fn is_closed(&self) -> bool
     {
         matches!(self, Self::Closed)
     }
@@ -118,6 +118,7 @@ impl FractalTab
             self.coloring_menu(ui);
             #[cfg(feature = "scripting")]
             self.transpiled_scripts_menu(ui);
+            self.help_menu(ui);
         });
     }
 
@@ -319,7 +320,7 @@ impl FractalTab
     }
 
     #[cfg(not(feature = "scripting"))]
-    fn should_update_interface(&self) -> bool
+    const fn should_update_interface(&self) -> bool
     {
         self.menu_state.is_closed()
     }
@@ -612,7 +613,7 @@ impl FractalTab
                     "λ=exp(φτi)",
                     QuadRatPer1Lambda,
                     with_param,
-                    Cplx::new(-0.737368878078320, 0.675490294261524)
+                    Cplx::new(-0.737_368_878_078_320, 0.675_490_294_261_524)
                 );
             });
             ui.menu_button("QuadRat Per(2, λ)", |ui| {
@@ -696,6 +697,16 @@ impl FractalTab
             dynamo_menu_button!(self, ui, "Sailboat Param", SailboatParam);
             dynamo_menu_button!(self, ui, "Rulkov Map", Rulkov);
         });
+    }
+
+    fn help_menu(&mut self, _ui: &mut Ui)
+    {
+        // TODO: create help menu
+        // ui.menu_button("Help", |ui| {
+        //     if ui.button("About").clicked() {
+        //         self.show_about_window()
+        //     }
+        // });
     }
 
     fn change_fractal<P, J, C, M, T>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
