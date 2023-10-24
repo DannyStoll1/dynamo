@@ -522,10 +522,11 @@ where
         let path = PathBuf::from("images");
         let _ = std::fs::create_dir(&path);
         let mut file_dialog = FileDialog::save_file(Some(path))
-            .default_filename(format!("{}.png", self.parent.name()))
+            .title("Save Image")
             .show_rename(false)
             .show_new_folder(true);
         file_dialog.open();
+        let file_dialog = file_dialog.default_filename(format!("{}.png", self.parent.name()));
         self.dialog = Some(Dialog::Save {
             pane_selection,
             file_dialog,
@@ -538,10 +539,11 @@ where
         let path = PathBuf::from("palettes");
         let _ = std::fs::create_dir(&path);
         let mut file_dialog = FileDialog::save_file(Some(path))
-            .default_filename("palette.toml")
+            .title("Save Palette")
             .show_rename(false)
             .show_new_folder(true);
         file_dialog.open();
+        let file_dialog = file_dialog.default_filename("palette.toml");
         self.dialog = Some(Dialog::Save {
             pane_selection: panes,
             file_dialog,
@@ -554,9 +556,9 @@ where
         let path = PathBuf::from("palettes");
         let _ = std::fs::create_dir(&path);
         let mut file_dialog = FileDialog::open_file(Some(path))
-            .default_filename("palette.toml")
+            .title("Load Palette")
             .show_rename(false)
-            .show_new_folder(true);
+            .show_new_folder(false);
         file_dialog.open();
         self.dialog = Some(Dialog::Load {
             pane_selection,
