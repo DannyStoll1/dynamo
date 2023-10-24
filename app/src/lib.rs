@@ -38,9 +38,9 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab)
     {
-        tab.update(ui);
+        use dynamo_gui::interface::UiMessage::*;
 
-        use dynamo_gui::interface::UIMessage::*;
+        tab.update(ui);
         match tab.interface.pop_message()
         {
             Quit =>
@@ -67,10 +67,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
     fn on_add(&mut self, surface: SurfaceIndex, node: NodeIndex)
     {
-        let tab_id = TabID {
-            surface,
-            node,
-        };
+        let tab_id = TabID { surface, node };
         let tab = FractalTab::default().with_id(tab_id);
         self.added_nodes.push(tab);
     }
@@ -90,7 +87,10 @@ impl Default for FractalApp
 
         let dock_state = DockState::new(vec![tab0]);
 
-        Self { dock_state, tab_count: 1 }
+        Self {
+            dock_state,
+            tab_count: 1,
+        }
     }
 }
 
@@ -114,21 +114,22 @@ impl eframe::App for FractalApp
                     to_remove: &mut to_remove,
                 },
             );
-        for tab in added_nodes.into_iter()
+        for tab in added_nodes
         {
-            self.dock_state
-                .set_focused_node_and_surface(tab.id.into());
+            self.dock_state.set_focused_node_and_surface(tab.id.into());
             self.dock_state.push_to_focused_leaf(tab);
             self.tab_count += 1;
         }
-        for tab_id in to_remove.into_iter()
+        for tab_id in to_remove
         {
             self.tab_count -= 1;
-            if self.tab_count == 0 {
+            if self.tab_count == 0
+            {
                 std::process::exit(0);
             }
             let (surface, node) = tab_id.into();
-            self.dock_state.remove_tab((surface, node, self.tab_count.into()));
+            self.dock_state
+                .remove_tab((surface, node, self.tab_count.into()));
         }
     }
 }
@@ -142,8 +143,9 @@ mod tests
     fn gui_speedtest()
     {
         use dynamo_core::dynamics::julia::JuliaSet;
-        let height = 1024;
         use dynamo_gui::interface::{MainInterface, PanePair};
+
+        let height = 1024;
         let parameter_plane = dynamo_profiles::QuadRatPer2::default()
             .with_res_y(height)
             .with_max_iter(2048);

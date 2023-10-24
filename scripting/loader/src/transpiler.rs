@@ -33,7 +33,7 @@ impl Transpiler
             .parsed_input
             .param_names
             .iter()
-            .map(|name| format!("{}: Cplx,", name)) // adjust the format as needed
+            .map(|name| format!("{name}: Cplx,")) // adjust the format as needed
             .collect();
 
         let derives = "#[derive(Clone, Copy, Default, PartialEq, Debug)]";
@@ -49,7 +49,7 @@ impl Transpiler
         // Necessary impls aready provided for NoParam
         if self.parsed_input.param_names.is_empty()
         {
-            return "".to_owned();
+            return String::new();
         }
         let names = self
             .parsed_input
@@ -239,7 +239,7 @@ impl ExternalRays for UserPlane {{}}
             escaping_phase = self.parsed_input.optional.escaping_phase,
         )
     }
-    fn imports(&self) -> String
+    fn imports() -> String
     {
         "use dynamo_common::prelude::*;\n\
         use dynamo_core::prelude::*;\n\
@@ -248,7 +248,7 @@ impl ExternalRays for UserPlane {{}}
         .to_owned()
     }
 
-    fn constructor(&self) -> String
+    fn constructor() -> String
     {
         "#[no_mangle]\n\
         pub unsafe fn create_interface() -> *mut dyn Interface {\n\
@@ -261,6 +261,7 @@ impl ExternalRays for UserPlane {{}}
         .to_owned()
     }
 
+    #[must_use]
     pub fn gen_rust_profile(&self) -> String
     {
         format!(
@@ -271,16 +272,17 @@ impl ExternalRays for UserPlane {{}}
             {plane_impl}\n\
             {other_impls}\n\
             {constructor}",
-            imports = self.imports(),
+            imports = Self::imports(),
             param_decl = self.parameter_decl(),
             param_impls = self.parameter_impls(),
             struct_decl = self.user_struct_decl(),
             plane_impl = self.parameter_plane_impl(),
             other_impls = self.other_impls(),
-            constructor = self.constructor()
+            constructor = Self::constructor()
         )
     }
 
+    #[must_use]
     pub fn gen_mod_rs(&self) -> String
     {
         format!(

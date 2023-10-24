@@ -22,6 +22,7 @@ impl RepeatableTask
             *self = Self::Rerun;
         }
     }
+    #[must_use]
     pub fn pop(&mut self) -> Self
     {
         std::mem::take(self)
@@ -50,6 +51,7 @@ impl PaneTasks
             draw: task,
         }
     }
+    #[must_use]
     pub fn pop(&mut self) -> Self
     {
         let compute = self.compute.pop();

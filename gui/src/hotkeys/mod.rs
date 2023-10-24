@@ -20,10 +20,12 @@ pub struct Hotkey
 }
 impl Hotkey
 {
+    #[must_use]
     pub const fn action(&self) -> &Action
     {
         &self.action
     }
+    #[must_use]
     pub fn menu_action(&self) -> Option<&Action>
     {
         if self.show_in_menu
@@ -35,6 +37,7 @@ impl Hotkey
             None
         }
     }
+    #[must_use]
     pub fn shortcut_text(&self) -> Option<RichText>
     {
         Some(

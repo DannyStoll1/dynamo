@@ -107,7 +107,7 @@ where
             |meta| {
                 if let Some(local) = self.local_param.describe()
                 {
-                    Some(format!("[{}, {}]", meta, local))
+                    Some(format!("[{meta}, {local}]"))
                 }
                 else
                 {
@@ -130,7 +130,7 @@ where
             |meta| {
                 if let Some(local) = self.local_param.summarize()
                 {
-                    Some(format!("[{}, {}]", meta, local))
+                    Some(format!("[{meta}, {local}]"))
                 }
                 else
                 {

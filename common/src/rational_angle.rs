@@ -4,13 +4,13 @@ use derive_more::{From, Into};
 use num_traits::sign::Signed;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
-
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "serde")]
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "Rational")]
-struct RatioDef {
+struct RatioDef
+{
     #[serde(getter = "Rational::numer")]
     numer: AngleNum,
     #[serde(getter = "Rational::denom")]
@@ -18,8 +18,10 @@ struct RatioDef {
 }
 
 #[cfg(feature = "serde")]
-impl From<RatioDef> for Rational {
-    fn from(r: RatioDef) -> Self {
+impl From<RatioDef> for Rational
+{
+    fn from(r: RatioDef) -> Self
+    {
         Self::new(r.numer, r.denom)
     }
 }
@@ -37,10 +39,7 @@ impl From<RatioDef> for Rational {
 /// Wrapper class for num_rational::Rational that performs arithmetic mod 1
 #[derive(Clone, Copy, Debug, Hash, From, Into, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct RationalAngle(
-    #[cfg_attr(feature = "serde", serde(with = "RatioDef"))]
-    Rational
-);
+pub struct RationalAngle(#[cfg_attr(feature = "serde", serde(with = "RatioDef"))] Rational);
 
 impl RationalAngle
 {

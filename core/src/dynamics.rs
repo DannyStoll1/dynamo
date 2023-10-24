@@ -44,7 +44,7 @@ pub trait Variable:
 {
 }
 pub trait Parameter:
-    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize + std::fmt::Debug
+    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
 {
 }
 pub trait Derivative:
@@ -77,7 +77,7 @@ impl<V> Variable for V where
 {
 }
 impl<P> Parameter for P where
-    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize + std::fmt::Debug
+    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
 {
 }
 impl<D> Derivative for D where
@@ -292,7 +292,6 @@ pub trait ParameterPlane: Sync + Send
         (point.into(), Self::Deriv::one())
     }
 
-
     #[inline]
     fn get_meta_params(&self) -> Self::MetaParam
     {
@@ -503,8 +502,6 @@ pub trait ParameterPlane: Sync + Send
         find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
     }
 
-
-
     fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeState<Self::Var, Self::Deriv>
     {
         let orbit_params = OrbitParams {
@@ -560,7 +557,6 @@ pub trait ParameterPlane: Sync + Send
         );
         orbit.map(|(z, _s)| z).collect()
     }
-
 
     /// Default bounds for this plane
     fn default_bounds(&self) -> Bounds;
@@ -660,7 +656,7 @@ pub trait ParameterPlane: Sync + Send
     ) -> PointInfo<Self::Var, Self::Deriv>
     {
         let marked_points = self.get_marked_points(c);
-        for (zi, class_id) in marked_points.iter()
+        for (zi, class_id) in &marked_points
         {
             if data.value.dist_sqr(*zi) < self.marked_point_tolerance()
             {
@@ -671,7 +667,7 @@ pub trait ParameterPlane: Sync + Send
                 };
             }
         }
-        PointInfo::Periodic { data }
+        PointInfo::Periodic(data)
     }
 
     /// Internal: Since the internal potential coloring algorithm depends on the periodicity
@@ -689,7 +685,7 @@ pub trait ParameterPlane: Sync + Send
     {
         IncoloringAlgorithm::PreperiodPeriodSmooth {
             periodicity_tolerance: self.periodicity_tolerance(),
-            fill_rate: 0.04,
+            fill_rate: 0.01,
         }
     }
 }
@@ -704,6 +700,7 @@ pub enum PlaneType
 }
 impl PlaneType
 {
+    #[must_use]
     pub const fn is_dynamical(&self) -> bool
     {
         matches!(self, Self::Dynamical)
@@ -721,7 +718,8 @@ impl std::fmt::Display for PlaneType
     }
 }
 
-pub trait InfinityFirstReturnMap: ParameterPlane {
+pub trait InfinityFirstReturnMap: ParameterPlane
+{
     /// Order of vanishing of the first return map of $1/f(1/z)$ at $z=0$.
     ///
     /// Should be set to NAN if $f$ has an essential singularity at infinity,
@@ -749,7 +747,10 @@ pub trait InfinityFirstReturnMap: ParameterPlane {
     /// Used for computing external rays, for which we use an iterate of the map instead of the map
     /// itself.
     #[inline]
-    fn escaping_period(&self) -> Period { 1 }
+    fn escaping_period(&self) -> Period
+    {
+        1
+    }
 
     /// For very large values of the parameter, how many iterations before the variable
     /// value is large?
@@ -759,14 +760,20 @@ pub trait InfinityFirstReturnMap: ParameterPlane {
     ///
     /// Almost always 0 or 1.
     #[inline]
-    fn escaping_phase(&self) -> Period { 1 }
+    fn escaping_phase(&self) -> Period
+    {
+        1
+    }
 
     /// Argument of f_c^k(z0) for c very large with a given argument,
     /// where k = self.escaping_phase().
     ///
     /// Used to seed initial point for external rays.
     #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle { angle}
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle
+    }
 
     /// Leading coefficient of the self-return map at infinity.
     /// Used for computing external rays.
@@ -779,13 +786,14 @@ pub trait InfinityFirstReturnMap: ParameterPlane {
     /// Leading coefficient of the self-return map at infinity,
     /// together with its derivative.
     /// Used for computing external rays.
-    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx) {
+    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
+    {
         (ONE, ZERO)
     }
 }
 
-pub trait ExternalRays : ParameterPlane + InfinityFirstReturnMap {
-
+pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
+{
     fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         const R: Real = 16.0;
@@ -917,11 +925,14 @@ pub trait ExternalRays : ParameterPlane + InfinityFirstReturnMap {
     }
 }
 
-pub trait Equipotential: ParameterPlane {
+pub trait Equipotential: ParameterPlane
+{
     /// Compute an equipotential curve through a given point.
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>;
 }
-impl<P> Equipotential for P where P: ParameterPlane + InfinityFirstReturnMap
+impl<P> Equipotential for P
+where
+    P: ParameterPlane + InfinityFirstReturnMap,
 {
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
     {
@@ -979,7 +990,8 @@ impl<P> Equipotential for P where P: ParameterPlane + InfinityFirstReturnMap
     }
 }
 
-pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap {
+pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
+{
     /// Map temporary `EscapeState` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
     fn encode_escape_result(
         &self,
@@ -990,7 +1002,8 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap {
         match state
         {
             EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Bounded,
-            EscapeState::Periodic { data } => self.identify_marked_points(c, data),
+            EscapeState::Periodic(data) => self.identify_marked_points(c, data),
+            EscapeState::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
             EscapeState::Escaped { iters, final_value } =>
             {
                 self.encode_escaping_point(iters, final_value, c)
@@ -1015,15 +1028,14 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap {
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let q = self.escape_coeff(c).norm().log2();
-        let residual = ((u+q) / (v+q)).log(self.degree_real()) as IterCount;
+        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
-        PointInfo::Escaping {
-            potential
-        }
+        PointInfo::Escaping { potential }
     }
 }
 
-pub trait Computable: ParameterPlane + EscapeEncoding {
+pub trait Computable: ParameterPlane + EscapeEncoding
+{
     fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>;
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Var, Self::Deriv>);
@@ -1040,7 +1052,7 @@ pub trait Computable: ParameterPlane + EscapeEncoding {
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
-        let orbit = CycleDetectedOrbitFloyd::new(
+        let mut orbit = CycleDetectedOrbitFloyd::new(
             |z, c| self.map(z, c),
             |z, c| self.map_and_multiplier(z, c),
             |z, c| self.early_bailout(z, c),
@@ -1048,14 +1060,9 @@ pub trait Computable: ParameterPlane + EscapeEncoding {
             c,
             &orbit_params,
         );
-        if let Some((_, state)) = orbit.last()
-        {
-            self.encode_escape_result(state, c)
-        }
-        else
-        {
-            PointInfo::Bounded
-        }
+        let state = orbit.run_until_complete();
+
+        self.encode_escape_result(state, c)
     }
 
     fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Var, Self::Deriv>
@@ -1063,10 +1070,7 @@ pub trait Computable: ParameterPlane + EscapeEncoding {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         let result = self.run_and_encode_point(start, param);
-        OrbitInfo {
-            start,
-            result,
-        }
+        OrbitInfo { start, result }
     }
 
     fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Var, Self::Deriv>
@@ -1097,17 +1101,16 @@ pub trait Computable: ParameterPlane + EscapeEncoding {
         let result = self.encode_escape_result(final_state, param);
         OrbitAndInfo {
             orbit: trajectory,
-            info: OrbitInfo {
-                start,
-                result,
-            },
+            info: OrbitInfo { start, result },
         }
     }
 }
 
-impl<P> Computable for P where P: ParameterPlane + EscapeEncoding {
+impl<P> Computable for P
+where
+    P: ParameterPlane + EscapeEncoding,
+{
     fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>
-
     {
         let mut iter_plane = IterPlane::create(self.point_grid().clone());
         self.compute_into(&mut iter_plane);
@@ -1165,5 +1168,4 @@ impl<P> Computable for P where P: ParameterPlane + EscapeEncoding {
 }
 
 pub trait Displayable: ParameterPlane + ExternalRays + Equipotential + Computable {}
-impl<P> Displayable for P where
-P: ParameterPlane + ExternalRays + Equipotential + Computable {}
+impl<P> Displayable for P where P: ParameterPlane + ExternalRays + Equipotential + Computable {}

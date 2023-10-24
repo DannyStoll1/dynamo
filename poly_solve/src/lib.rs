@@ -7,16 +7,27 @@ pub mod polynomial;
 pub mod solve;
 pub mod utils;
 
+use num_complex::Complex64;
+use polynomial::Polynomial;
+use solve::JenkinsTraubSolver;
+
+/// Find all roots of a given polynomial.
+pub fn solve_polynomial<P>(poly: P) -> Vec<Complex64>
+where
+    P: Into<Polynomial<Complex64>>,
+{
+    let mut solver = JenkinsTraubSolver::new(poly.into());
+    solver.find_all_roots()
+}
+
 #[cfg(test)]
 mod tests
 {
     use num_complex::Complex64;
 
     use crate::{
-        newton::Newton,
-        poly_traits::Eval,
-        polynomial::Polynomial,
-        solve::{solve_polynomial, JenkinsTraubSolver},
+        newton::Newton, poly_traits::Eval, polynomial::Polynomial, solve::JenkinsTraubSolver,
+        solve_polynomial,
     };
     #[test]
     fn poly_division()
@@ -104,7 +115,7 @@ mod tests
 
         let sols = solver.find_all_roots();
 
-        for sol in sols.iter()
+        for sol in &sols
         {
             assert!(poly0.eval(*sol).norm_sqr() < 1e-14);
         }

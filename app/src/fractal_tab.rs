@@ -32,16 +32,18 @@ impl MenuState
 {
     pub fn close(&mut self)
     {
-        *self = Self::Closed
+        *self = Self::Closed;
     }
     pub fn open(&mut self)
     {
-        *self = Self::Open
+        *self = Self::Open;
     }
+    #[must_use]
     pub const fn is_open(&self) -> bool
     {
         matches!(self, Self::Open)
     }
+    #[must_use]
     pub const fn is_closed(&self) -> bool
     {
         matches!(self, Self::Closed)
@@ -54,8 +56,10 @@ pub struct TabID
     pub surface: SurfaceIndex,
     pub node: NodeIndex,
 }
-impl Default for TabID {
-    fn default() -> Self {
+impl Default for TabID
+{
+    fn default() -> Self
+    {
         Self {
             surface: SurfaceIndex::main(),
             node: NodeIndex(0),
@@ -83,10 +87,7 @@ pub struct FractalTab
 impl FractalTab
 {
     #[must_use]
-    pub const fn with_id(
-        mut self,
-        tab_id: TabID,
-    ) -> Self
+    pub const fn with_id(mut self, tab_id: TabID) -> Self
     {
         self.id = tab_id;
         self
@@ -126,9 +127,10 @@ impl FractalTab
     {
         ui.menu_button("File", |ui| {
             self.menu_state.open();
-            FILE_HOTKEYS.iter().for_each(|hotkey| {
+            for hotkey in &FILE_HOTKEYS
+            {
                 self.hotkey_button(ui, hotkey);
-            });
+            }
         });
     }
 
@@ -148,15 +150,17 @@ impl FractalTab
         ui.menu_button("Coloring", |ui| {
             self.menu_state.open();
             ui.menu_button("Palette", |ui| {
-                PALETTE_HOTKEYS.iter().for_each(|hotkey| {
+                for hotkey in &PALETTE_HOTKEYS
+                {
                     self.hotkey_button(ui, hotkey);
-                });
+                }
             });
 
             ui.menu_button("Incoloring", |ui| {
-                INCOLORING_HOTKEYS.iter().for_each(|hotkey| {
+                for hotkey in &INCOLORING_HOTKEYS
+                {
                     self.hotkey_button(ui, hotkey);
-                });
+                }
             });
             // ui.menu_button("Algorithm", |ui| {
             //     if ui.button("[0] Solid").clicked()
@@ -250,9 +254,10 @@ impl FractalTab
                 ui.close_menu();
             });
 
-            IMAGE_HOTKEYS.iter().for_each(|hotkey| {
+            for hotkey in &IMAGE_HOTKEYS
+            {
                 self.hotkey_button(ui, hotkey);
-            });
+            }
         });
     }
 
@@ -260,9 +265,10 @@ impl FractalTab
     {
         ui.menu_button("Selection", |ui| {
             self.menu_state.open();
-            SELECTION_HOTKEYS.iter().for_each(|hotkey| {
+            for hotkey in &SELECTION_HOTKEYS
+            {
                 self.hotkey_button(ui, hotkey);
-            });
+            }
         });
     }
 
@@ -270,9 +276,10 @@ impl FractalTab
     {
         ui.menu_button("Annotations", |ui| {
             self.menu_state.open();
-            ANNOTATION_HOTKEYS.iter().for_each(|hotkey| {
+            for hotkey in &ANNOTATION_HOTKEYS
+            {
                 self.hotkey_button(ui, hotkey);
-            });
+            }
         });
     }
 

@@ -275,7 +275,7 @@ impl<T: VariableOps> AddAssign for Polynomial<T>
 {
     fn add_assign(&mut self, rhs: Self)
     {
-        self.add_with(&rhs)
+        self.add_with(&rhs);
     }
 }
 

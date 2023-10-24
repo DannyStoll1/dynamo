@@ -50,7 +50,7 @@ impl ObjectKey for PointSetKey
             Self::SelectedPoint => Color32::WHITE,
             Self::CriticalPoints => Color32::RED,
             Self::PeriodicPoints(period) => palette.map(*period as f32, 1.),
-            Self::PreperiodicPoints(o) => palette.map_preperiodic(o),
+            Self::PreperiodicPoints(o) => palette.map_preperiodic(*o),
         }
     }
 
@@ -62,17 +62,13 @@ impl ObjectKey for PointSetKey
             Self::CriticalPoints => plane
                 .critical_points()
                 .into_iter()
-                .map(|z| z.into())
+                .map(Into::into)
                 .collect(),
-            Self::PeriodicPoints(period) => plane
-                .cycles(*period)
-                .into_iter()
-                .map(|z| z.into())
-                .collect(),
-            Self::PreperiodicPoints(o) =>
+            Self::PeriodicPoints(period) =>
             {
-                plane.precycles(*o).into_iter().map(|z| z.into()).collect()
+                plane.cycles(*period).into_iter().map(Into::into).collect()
             }
+            Self::PreperiodicPoints(o) => plane.precycles(*o).into_iter().map(Into::into).collect(),
         }
     }
 }
@@ -96,7 +92,7 @@ impl ObjectKey for CurveKey
             Self::Ray(angle) =>
             {
                 let o = angle.with_degree(degree).orbit_schema();
-                palette.map_preperiodic(&o)
+                palette.map_preperiodic(o)
             }
             Self::Equipotential(_) => Color32::YELLOW,
         }
@@ -106,7 +102,7 @@ impl ObjectKey for CurveKey
     {
         match self
         {
-            Self::Orbit => plane.iter_orbit(selection).map(|z| z.into()).collect(),
+            Self::Orbit => plane.iter_orbit(selection).map(Into::into).collect(),
             Self::Ray(angle) => plane.external_ray(*angle).unwrap_or_default(),
 
             Self::Equipotential(point) =>
@@ -229,13 +225,13 @@ where
             }
             MarkingTask::Disable(key) =>
             {
-                self.disable(key);
+                self.disable(&key);
             }
             MarkingTask::Toggle(key) =>
             {
                 if self.objects.contains_key(&key)
                 {
-                    self.disable(key);
+                    self.disable(&key);
                 }
                 else
                 {
@@ -278,9 +274,9 @@ where
         self.objects.insert(key, col_obj);
     }
 
-    fn disable(&mut self, key: K)
+    fn disable(&mut self, key: &K)
     {
-        self.objects.remove(&key);
+        self.objects.remove(key);
     }
 
     pub fn recolor_all(&mut self, palette: &DiscretePalette)
@@ -300,9 +296,10 @@ where
     fn process_all_tasks<P: Displayable>(&mut self, env: &EnvironmentInfo<P>)
     {
         let tasks: Vec<_> = self.tasks.drain(..).collect();
-        tasks.iter().for_each(|task| {
+        for task in &tasks
+        {
             self.process_task(task.clone(), env);
-        });
+        }
     }
 
     pub fn clear_all_tasks(&mut self)
@@ -429,7 +426,7 @@ impl Marking
 
     pub fn disable_orbit(&mut self)
     {
-        self.curves.disable(CurveKey::Orbit);
+        self.curves.disable(&CurveKey::Orbit);
         self.path_cache.borrow_mut().set_stale();
     }
 
@@ -440,11 +437,12 @@ impl Marking
             .objects
             .keys()
             .filter(|k| matches!(k, CurveKey::Equipotential(_)))
-            .cloned()
+            .copied()
             .collect();
-        to_remove.iter().for_each(|k| {
-            self.curves.objects.remove(k);
-        });
+        for key in &to_remove
+        {
+            self.curves.objects.remove(key);
+        }
         self.path_cache.borrow_mut().set_stale();
     }
 
@@ -455,11 +453,12 @@ impl Marking
             .objects
             .keys()
             .filter(|k| matches!(k, CurveKey::Ray(_)))
-            .cloned()
+            .copied()
             .collect();
-        to_remove.iter().for_each(|k| {
-            self.curves.objects.remove(k);
-        });
+        for key in &to_remove
+        {
+            self.curves.objects.remove(key);
+        }
         self.path_cache.borrow_mut().set_stale();
     }
 
@@ -575,7 +574,7 @@ impl Marking
                 let color = Rgb([r, g, b]);
                 curve
                     .iter()
-                    .cloned()
+                    .copied()
                     .map(|z| grid.locate_point(z))
                     .tuple_windows()
                     .for_each(|([x0, y0], [x1, y1])| {
@@ -705,16 +704,18 @@ impl PathCache
 {
     pub fn set_fresh(&mut self)
     {
-        self.needs_refresh = false
+        self.needs_refresh = false;
     }
+    #[must_use]
     pub const fn is_fresh(&self) -> bool
     {
         !self.needs_refresh
     }
     pub fn set_stale(&mut self)
     {
-        self.needs_refresh = true
+        self.needs_refresh = true;
     }
+    #[must_use]
     pub const fn is_stale(&self) -> bool
     {
         self.needs_refresh

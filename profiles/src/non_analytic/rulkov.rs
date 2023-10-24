@@ -1,4 +1,4 @@
-use crate::macros::{profile_imports, degree_impl};
+use crate::macros::{degree_impl, profile_imports};
 use dynamo_common::types::{
     variables::{Matrix2x2, Point},
     Cplx,

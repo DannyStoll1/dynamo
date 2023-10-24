@@ -346,6 +346,18 @@ where
     {
         self.orbit_info = None;
     }
+
+    #[inline]
+    fn select_point_keep_following(&mut self, point: Cplx)
+    {
+        if self.selection != point
+        {
+            self.selection = point;
+            self.marking.select_point(point);
+            self.child_task = ChildTask::UpdateParam;
+            self.schedule_redraw();
+        }
+    }
 }
 
 impl<P> From<P> for WindowPane<P>
@@ -470,13 +482,8 @@ where
     #[inline]
     fn select_point(&mut self, point: Cplx)
     {
-        if self.selection != point
-        {
-            self.selection = point;
-            self.marking.select_point(point);
-            self.child_task = ChildTask::UpdateParam;
-            self.schedule_redraw();
-        }
+        self.select_point_keep_following(point);
+        self.stop_following_ray_landing_point();
     }
 
     fn select_nearby_point(&mut self, o: OrbitSchema) -> FindPointResult<Cplx>
@@ -504,18 +511,7 @@ where
     {
         if let Some(approx_landing_point) = self.marking().ray_landing_point(angle)
         {
-            self.select_point(approx_landing_point);
-            // let orbit_schema = angle.orbit_schema(self.plane.degree_int());
-            // if let Some(landing_point) = self
-            //     .plane
-            //     .find_nearby_preperiodic_point(approx_landing_point, orbit_schema)
-            // {
-            //     self.select_point(landing_point);
-            // }
-            // else
-            // {
-            //     self.select_point(approx_landing_point);
-            // }
+            self.select_point_keep_following(approx_landing_point);
         }
     }
 
@@ -710,7 +706,7 @@ where
         self.selection
             .describe()
             .map_or_else(String::new, |description| {
-                format!("Selection: {}", description)
+                format!("Selection: {description}")
             })
     }
 

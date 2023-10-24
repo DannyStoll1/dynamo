@@ -32,16 +32,26 @@ pub struct Coloring
 impl Coloring
 {
     #[must_use]
+    pub const fn new(algorithm: IncoloringAlgorithm, palette: ColorPalette) -> Self
+    {
+        Self { algorithm, palette }
+    }
+
+    #[must_use]
     pub fn map_color32<V, D>(&self, point_info: PointInfo<V, D>) -> Color32
     where
         D: Polar<Real>,
         V: Clone,
     {
-        use PointInfo::{Bounded, Escaping, MarkedPoint, Periodic, Wandering};
+        use PointInfo::*;
         match point_info
         {
             Escaping { potential } => self.palette.map_color32(potential),
-            Periodic { data } => self.algorithm.color_periodic(self.palette, data),
+            Periodic(data) => self.algorithm.color_periodic(&self.palette, &data),
+            PeriodicKnownPotential(data) =>
+            {
+                self.algorithm.color_known_potential(&self.palette, &data)
+            }
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
             MarkedPoint {
@@ -67,36 +77,8 @@ impl Coloring
         D: Polar<Real>,
         V: Clone,
     {
-        use PointInfo::{Bounded, Escaping, MarkedPoint, Periodic, Wandering};
-        match point_info
-        {
-            Escaping { potential } => self.palette.map_rgb(potential),
-            Periodic { data } =>
-            {
-                let (r, g, b, _) = self.algorithm.color_periodic(self.palette, data).to_tuple();
-                Rgb([r, g, b])
-            }
-            Bounded => self.palette.map_rgb(0.),
-            Wandering =>
-            {
-                let (r, g, b, _a) = self.palette.wandering_color.to_tuple();
-                Rgb([r, g, b])
-            }
-            MarkedPoint {
-                class_id,
-                num_point_classes: num_points,
-                ..
-            } =>
-            {
-                let hue = (f32::from(class_id)) / (num_points as f32);
-                Hsv {
-                    hue,
-                    saturation: 0.8,
-                    intensity: 1.0,
-                }
-                .into()
-            }
-        }
+        let (r, g, b, _a) = self.map_color32(point_info).to_tuple();
+        Rgb([r, g, b])
     }
 
     pub fn set_palette(&mut self, palette: ColorPalette)

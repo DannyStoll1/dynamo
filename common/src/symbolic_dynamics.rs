@@ -109,12 +109,12 @@ impl FromStr for OrbitSchema
                 .as_str()
                 .parse()
                 .map_err(Err::Preperiodic)?;
-            Ok(Self { preperiod, period })
+            Ok(Self { period, preperiod })
         }
         else
         {
             text.parse::<Period>()
-                .map(|p| p.into())
+                .map(Into::into)
                 .map_err(Err::Periodic)
         }
     }
@@ -132,11 +132,13 @@ pub struct OrbitSchemaWithDegree
 impl OrbitSchemaWithDegree
 {
     /// Value m for which all angles with this orbit schema can be expressed in the form $k/m$.
+    #[must_use]
     pub const fn natural_denom(&self) -> AngleNum
     {
         (self.degree.pow(self.preperiod) * (self.degree.pow(self.period) - 1)).abs()
     }
 
+    #[must_use]
     pub fn active_angles(&self, include_suffixes: bool) -> VecDeque<RationalAngle>
     {
         if include_suffixes
@@ -150,6 +152,7 @@ impl OrbitSchemaWithDegree
     }
 
     /// All angles of the same period and preperiod
+    #[must_use]
     pub fn exact_angles(&self) -> VecDeque<RationalAngle>
     {
         let denom = self.natural_denom();
@@ -160,6 +163,7 @@ impl OrbitSchemaWithDegree
     }
 
     /// All angles of the same period and the same or smaller preperiod
+    #[must_use]
     pub fn child_angles(&self) -> VecDeque<RationalAngle>
     {
         let denom = self.natural_denom();
@@ -199,7 +203,7 @@ impl KneadingSymbol
     {
         match self
         {
-            Self::Interior(x) => format!("{}", x),
+            Self::Interior(x) => format!("{x}"),
             Self::Boundary(x) => format!("[{}|{}]", x, (x + 1) % partition_size),
         }
     }
@@ -207,7 +211,7 @@ impl KneadingSymbol
     {
         match self
         {
-            Self::Interior(x) => format!("{}", x),
+            Self::Interior(x) => format!("{x}"),
             Self::Boundary(_) => "*".to_owned(),
         }
     }
@@ -223,6 +227,7 @@ pub struct Itinerary
 }
 impl Itinerary
 {
+    #[must_use]
     pub fn orbit_schema(&self) -> OrbitSchema
     {
         OrbitSchema {
@@ -239,15 +244,13 @@ impl std::fmt::Display for Itinerary
             .preperiodic_part
             .iter()
             .map(|x| x.to_string_kneading())
-            .collect::<Vec<String>>()
-            .join("");
+            .collect::<String>();
         let per_str = self
             .periodic_part
             .iter()
             .map(|x| x.to_string_kneading())
-            .collect::<Vec<String>>()
-            .join("");
-        let formatted = format!("{}p{}", pre_str, per_str);
+            .collect::<String>();
+        let formatted = format!("{pre_str}p{per_str}");
         f.pad(&formatted)
     }
 }
@@ -308,7 +311,8 @@ impl CirclePartition
             {
                 Ordering::Greater => return KneadingSymbol::Interior(i),
                 Ordering::Equal => return KneadingSymbol::Boundary(i),
-                Ordering::Less => {}
+                Ordering::Less =>
+                {}
             }
         }
         KneadingSymbol::Interior(self.angles.len().saturating_sub(1))
@@ -369,6 +373,7 @@ impl AngleWithDegree
 {
     /// Preperiod and period under the angle tupling map
     /// Guaranteed to be finite, e.g. by pigeon hole principle.
+    #[must_use]
     pub fn orbit_schema(&self) -> OrbitSchema
     {
         let degree2 = self.degree * self.degree;
@@ -403,9 +408,10 @@ impl AngleWithDegree
             preperiod += 1;
         }
 
-        OrbitSchema { preperiod, period }
+        OrbitSchema { period, preperiod }
     }
 
+    #[must_use]
     pub fn itinerary(&self, partition: CirclePartition) -> Itinerary
     {
         let orbit_schema = self.orbit_schema();
@@ -443,6 +449,7 @@ impl AngleWithDegree
         }
     }
 
+    #[must_use]
     pub fn kneading_sequence(&self) -> Itinerary
     {
         let orbit_schema = self.orbit_schema();
@@ -460,6 +467,7 @@ impl AngleWithDegree
     }
 
     /// Canonical itinerary of self relative to `rel_angle`
+    #[must_use]
     pub fn canonical_itinerary(&self, rel_angle: RationalAngle) -> Itinerary
     {
         let orbit_schema = self.orbit_schema();
@@ -467,6 +475,7 @@ impl AngleWithDegree
     }
 
     /// Canonical itinerary of self relative to `rel_angle`
+    #[must_use]
     pub fn canonical_itinerary_given_orbit_schema(
         &self,
         orbit_schema: OrbitSchema,
@@ -530,12 +539,12 @@ impl std::fmt::Display for ParseAngleError
             Self::UnrecognizedFormat => write!(f, "Unrecognized angle format."),
             Self::Fraction(cause) =>
             {
-                write!(f, "Error parsing fraction string: {}", cause)
+                write!(f, "Error parsing fraction string: {cause}")
             }
-            Self::Dyadic(cause) => write!(f, "Error parsing dyadic string: {}", cause),
+            Self::Dyadic(cause) => write!(f, "Error parsing dyadic string: {cause}"),
             Self::Preperiodic(cause) =>
             {
-                write!(f, "Error parsing preperiodic string: {}", cause)
+                write!(f, "Error parsing preperiodic string: {cause}")
             }
         }
     }
@@ -548,9 +557,10 @@ impl std::error::Error for ParseAngleError
         match self
         {
             Self::UnrecognizedFormat => None,
-            Self::Fraction(cause) => Some(&**cause),
-            Self::Dyadic(cause) => Some(&**cause),
-            Self::Preperiodic(cause) => Some(&**cause),
+            Self::Fraction(cause) | Self::Dyadic(cause) | Self::Preperiodic(cause) =>
+            {
+                Some(&**cause)
+            }
         }
     }
 }
@@ -570,36 +580,27 @@ fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
         static ref FRACTION: Regex = Regex::new(r"^(-?\d+)/(\d+)$").unwrap();
     }
 
-    if let Some(captures) = FRACTION.captures(text)
+    let captures = FRACTION.captures(text)?;
+
+    let (num_str, den_str) = (captures.get(1)?, captures.get(2)?);
+
+    match (
+        num_str.as_str().parse::<AngleNum>(),
+        den_str.as_str().parse::<AngleNum>(),
+    )
     {
-        if let (Some(num_str), Some(den_str)) = (captures.get(1), captures.get(2))
+        (Ok(numer), Ok(denom)) =>
         {
-            match (
-                num_str.as_str().parse::<AngleNum>(),
-                den_str.as_str().parse::<AngleNum>(),
-            )
+            if denom == 0
             {
-                (Ok(numer), Ok(denom)) =>
-                {
-                    if denom != 0
-                    {
-                        return Some(Ok(RationalAngle::new(numer, denom)));
-                    }
-                    else
-                    {
-                        return Some(Err(ParseAngleError::Fraction(Box::new(
-                            DivisionByZeroError,
-                        ))));
-                    }
-                }
-                (Err(e), _) | (_, Err(e)) =>
-                {
-                    return Some(Err(ParseAngleError::Fraction(Box::new(e))));
-                }
+                return Some(Err(ParseAngleError::Fraction(Box::new(
+                    DivisionByZeroError,
+                ))));
             }
+            Some(Ok(RationalAngle::new(numer, denom)))
         }
+        (Err(e), _) | (_, Err(e)) => Some(Err(ParseAngleError::Fraction(Box::new(e)))),
     }
-    None
 }
 
 #[allow(clippy::unwrap_used)]
@@ -609,16 +610,8 @@ fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
         static ref BIN_ANGLE: Regex = Regex::new(r"^(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_ANGLE.captures(text)
-    else
-    {
-        return None;
-    };
-    let Some(bin_str) = captures.get(1)
-    else
-    {
-        return None;
-    };
+    let captures = BIN_ANGLE.captures(text)?;
+    let bin_str = captures.get(1)?;
 
     Some(
         AngleNum::from_str_radix(bin_str.as_str(), 2)
@@ -722,11 +715,11 @@ impl std::fmt::Display for ParseOrbitSchemaError
             Self::UnrecognizedFormat => write!(f, "Unrecognized angle format."),
             Self::Periodic(cause) =>
             {
-                write!(f, "Error parsing periodic string: {}", cause)
+                write!(f, "Error parsing periodic string: {cause}")
             }
             Self::Preperiodic(cause) =>
             {
-                write!(f, "Error parsing preperiodic string: {}", cause)
+                write!(f, "Error parsing preperiodic string: {cause}")
             }
         }
     }
@@ -739,8 +732,7 @@ impl std::error::Error for ParseOrbitSchemaError
         match self
         {
             Self::UnrecognizedFormat => None,
-            Self::Periodic(cause) => Some(cause),
-            Self::Preperiodic(cause) => Some(cause),
+            Self::Periodic(cause) | Self::Preperiodic(cause) => Some(cause),
         }
     }
 }

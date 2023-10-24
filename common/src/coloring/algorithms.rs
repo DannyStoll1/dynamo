@@ -2,6 +2,7 @@ use super::palette::ColorPalette;
 use super::types::Hsv;
 use crate::consts::TAU;
 use crate::orbit_info::PointInfoPeriodic;
+use crate::prelude::PointInfoKnownPotential;
 use crate::traits::Polar;
 use crate::types::{IterCount, Real};
 use egui::Color32;
@@ -53,8 +54,8 @@ impl IncoloringAlgorithm
     #[must_use]
     pub fn color_periodic<V, D>(
         &self,
-        palette: ColorPalette,
-        point_info: PointInfoPeriodic<V, D>,
+        palette: &ColorPalette,
+        point_info: &PointInfoPeriodic<V, D>,
     ) -> Color32
     where
         D: Polar<Real>,
@@ -94,77 +95,42 @@ impl IncoloringAlgorithm
                 periodicity_tolerance,
             } =>
             {
-                let per = IterCount::from(point_info.period);
-                let val: IterCount;
-
-                let mult_norm = point_info.multiplier.norm();
-
-                // Superattracting case
-                if mult_norm <= 1e-10
-                {
-                    let potential = 2.
-                        * (point_info.final_error.log(*periodicity_tolerance)).log2() as IterCount;
-                    val = per.mul_add(-potential, IterCount::from(point_info.preperiod));
-                }
-                // Parabolic case
-                else if 1. - mult_norm <= 1e-5
-                {
-                    let potential = point_info.final_error / periodicity_tolerance;
-                    val = per.mul_add(-potential, IterCount::from(point_info.preperiod));
-                }
-                else
-                {
-                    let mut potential = -(point_info.final_error / periodicity_tolerance)
-                        .log(mult_norm) as IterCount;
-                    if potential.is_infinite() || potential.is_nan()
-                    {
-                        potential = -0.2;
-                    }
-                    val = per.mul_add(potential, f64::from(point_info.preperiod));
-                }
-                palette.map_color32(val * val / per)
+                let val = Self::relative_potential(point_info, *periodicity_tolerance);
+                palette.map_color32(val)
             }
             Self::PreperiodPeriodSmooth {
                 periodicity_tolerance,
                 fill_rate,
             } =>
             {
-                let hue_id = IterCount::from(point_info.period);
-                let luminosity_modifier: IterCount;
+                let n = IterCount::from(point_info.period);
+                let k = IterCount::from(point_info.preperiod);
 
                 let mult_norm = point_info.multiplier.norm();
 
-                // Superattracting case
-                if mult_norm <= 1e-12
+                let potential = Self::internal_potential(
+                    point_info.final_error,
+                    *periodicity_tolerance,
+                    mult_norm,
+                );
+
+                let val = k / n - potential;
+                let luma = val.powi(2) * n;
+
+                let coloring_rate = if mult_norm <= 1e-10 || (1. - mult_norm).abs() < 1e-5
                 {
-                    let w = 2.
-                        * (point_info.final_error.log(*periodicity_tolerance)).log2() as IterCount;
-                    let v = hue_id.mul_add(-w, IterCount::from(point_info.preperiod));
-                    luminosity_modifier = (0.1 * v / hue_id).tanh();
-                }
-                // Parabolic case
-                else if 1. - mult_norm <= 1e-5
-                {
-                    let w = point_info.final_error / periodicity_tolerance;
-                    let v = hue_id.mul_add(-w, IterCount::from(point_info.preperiod));
-                    luminosity_modifier = (0.1 * v / hue_id).tanh();
+                    0.1
                 }
                 else
                 {
-                    let coloring_rate = Self::multiplier_coloring_rate(mult_norm, *fill_rate);
+                    Self::multiplier_coloring_rate(mult_norm, *fill_rate)
+                };
 
-                    let mut w = -(point_info.final_error / periodicity_tolerance).log(mult_norm)
-                        as IterCount;
-                    if w.is_infinite() || w.is_nan()
-                    {
-                        w = -0.2;
-                    }
-                    let v = hue_id.mul_add(w, f64::from(point_info.preperiod));
-                    luminosity_modifier = (v * coloring_rate / hue_id).tanh();
-                }
+                let luminosity_modifier = (coloring_rate * luma).tanh();
+
                 palette
                     .period_coloring
-                    .map(hue_id as f32, luminosity_modifier as f32)
+                    .map(point_info.period as f32, luminosity_modifier as f32)
             }
             Self::Multiplier => Hsv::new(
                 (point_info.multiplier.arg() / TAU) as f32 + 0.5,
@@ -172,102 +138,94 @@ impl IncoloringAlgorithm
                 point_info.multiplier.norm() as f32,
             )
             .into(),
-            // Self::PointBased { points, tolerance } =>
-            // {
-            //     for (i, pt) in points.iter().enumerate()
-            //     {
-            //         if (point_info.value - pt).norm_sqr() < *tolerance
-            //         {
-            //             let hue = (i as f32) / (points.len() as f32);
-            //             return Hsv {
-            //                 hue,
-            //                 saturation: 0.8,
-            //                 luminosity: 1.0,
-            //             }.into();
-            //         }
-            //     }
-            //     palette.in_color
-            // }
         }
     }
 
-    // pub fn encode_periodic(
-    //     &self,
-    //     period: Period,
-    //     preperiod: Period,
-    //     multiplier: ComplexNum,
-    //     final_error: ComplexNum,
-    // ) -> IterCount
-    // {
-    //     let hue: f64;
-    //     let luminosity: f64;
-    //     match self
-    //     {
-    //         Self::Solid => return 0.,
-    //         Self::Period =>
-    //         {
-    //             hue = IterCount::from(period);
-    //             luminosity = 1.;
-    //         }
-    //         Self::PeriodMultiplier =>
-    //         {
-    //             hue = IterCount::from(period);
-    //             luminosity = multiplier.norm();
-    //         }
-    //         Self::Preperiod =>
-    //         {
-    //             let coloring_rate = 0.02;
-    //
-    //             hue = IterCount::from(period);
-    //
-    //             let v = IterCount::from(preperiod);
-    //             luminosity = (v * coloring_rate / hue).tanh();
-    //         }
-    //         Self::PreperiodSmooth {
-    //             periodicity_tolerance,
-    //         } =>
-    //         {
-    //             hue = IterCount::from(period);
-    //             let mult_norm = multiplier.norm();
-    //
-    //             // Superattracting case
-    //             if mult_norm <= 1e-10
-    //             {
-    //                 let w = 2.
-    //                     * (final_error.norm_sqr().log2() / periodicity_tolerance.log2()).log2()
-    //                         as IterCount;
-    //                 let v = preperiod as IterCount - hue * w;
-    //                 luminosity = (0.1 * v / hue).tanh();
-    //             }
-    //             // Parabolic case
-    //             else if 1. - mult_norm <= 1e-5
-    //             {
-    //                 let w = final_error.norm_sqr() / periodicity_tolerance;
-    //                 let v = preperiod as IterCount - hue * w;
-    //                 luminosity = (0.1 * v / hue).tanh();
-    //             }
-    //             else
-    //             {
-    //                 let coloring_rate = multiplier_coloring_rate(multiplier);
-    //
-    //                 let mut w = -(final_error.norm_sqr() / periodicity_tolerance)
-    //                     .log(multiplier.norm()) as IterCount;
-    //                 if w.is_infinite() || w.is_nan()
-    //                 {
-    //                     w = -0.2;
-    //                 }
-    //                 let v = preperiod as IterCount + hue * w;
-    //                 luminosity = (v * coloring_rate / hue).tanh();
-    //             }
-    //         }
-    //         Self::Multiplier =>
-    //         {
-    //             hue = multiplier.arg() / TAU + 0.5;
-    //             luminosity = multiplier.norm();
-    //         }
-    //     }
-    //     -(hue + 0.9999 * luminosity)
-    // }
+    fn internal_potential(err: IterCount, tol: IterCount, mult_norm: IterCount) -> IterCount
+    {
+        // Superattracting case
+        let potential = if mult_norm <= 1e-10
+        {
+            2. * (err.log(tol)).log2() as IterCount
+        }
+        // Parabolic case
+        else if (1. - mult_norm).abs() <= 1e-5
+        {
+            err / tol
+        }
+        else
+        {
+            (err / tol).log(mult_norm) as IterCount
+        };
+
+        if !potential.is_finite()
+        {
+            return 0.2;
+        }
+        potential
+    }
+
+    fn relative_potential<V, D>(point_info: &PointInfoPeriodic<V, D>, tol: IterCount) -> IterCount
+    where
+        D: Polar<Real>,
+    {
+        let n = IterCount::from(point_info.period);
+        let k = IterCount::from(point_info.preperiod);
+
+        let mult_norm = point_info.multiplier.norm();
+
+        let potential = Self::internal_potential(point_info.final_error, tol, mult_norm);
+
+        let val = k / n - potential;
+
+        val.powi(2) * n
+    }
+
+    pub fn color_known_potential<D: Polar<Real>>(
+        &self,
+        palette: &ColorPalette,
+        info: &PointInfoKnownPotential<D>,
+    ) -> Color32
+    {
+        let rescaled_potential = info.potential.powi(2) / info.period as f64;
+        match self
+        {
+            Self::Solid => palette.in_color,
+            Self::Period => palette.period_coloring.map(info.period as f32, 0.75),
+            Self::PeriodMultiplier =>
+            {
+                let hue_id = info.period as f32;
+                let luminosity_modifier = info.multiplier.norm() as f32;
+                palette.period_coloring.map(hue_id, luminosity_modifier)
+            }
+            Self::Preperiod => palette.map_color32(rescaled_potential.floor()),
+            Self::PreperiodPeriod =>
+            {
+                let coloring_rate = 0.02;
+
+                let luma = (rescaled_potential * coloring_rate).tanh() as f32;
+                palette.period_coloring.map(info.period as f32, luma)
+            }
+            Self::InternalPotential { .. } => palette.map_color32(rescaled_potential),
+            Self::PreperiodPeriodSmooth { fill_rate, .. } =>
+            {
+                let n = IterCount::from(info.period);
+
+                let coloring_rate =
+                    Self::multiplier_coloring_rate(info.multiplier.norm(), *fill_rate);
+
+                let luma = (coloring_rate * rescaled_potential).tanh() as f32;
+
+                palette.period_coloring.map(n as f32, luma)
+            }
+            Self::Multiplier => Hsv::new(
+                (info.multiplier.arg() / TAU) as f32 + 0.5,
+                1.,
+                info.multiplier.norm() as f32,
+            )
+            .into(),
+        }
+    }
 }
 
 impl Default for IncoloringAlgorithm

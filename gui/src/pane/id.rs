@@ -55,7 +55,7 @@ impl std::fmt::Display for PaneSelection
         {
             if let Self::Id(pane_id) = self
             {
-                write!(f, " {:#}", pane_id)
+                write!(f, " {pane_id:#}")
             }
             else
             {
@@ -68,7 +68,7 @@ impl std::fmt::Display for PaneSelection
             {
                 Self::ActivePane => write!(f, " active pane"),
                 Self::BothPanes => write!(f, " both panes"),
-                Self::Id(pane_id) => write!(f, " {}", pane_id),
+                Self::Id(pane_id) => write!(f, " {pane_id}"),
             }
         }
     }

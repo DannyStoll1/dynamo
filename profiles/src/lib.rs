@@ -18,8 +18,10 @@ pub use non_analytic::*;
 mod tests
 {
     use crate::*;
+    use dynamo_common::coloring::palette::ColorPalette;
+    use dynamo_common::coloring::Coloring;
     use dynamo_common::point_grid::Bounds;
-    use dynamo_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema};
+    use dynamo_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema, PointInfo};
     use dynamo_common::rational_angle::RationalAngle;
     use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
     use dynamo_core::dynamics::julia::JuliaSet;
@@ -216,6 +218,30 @@ mod tests
         let plane = QuadRatPer4::default();
         let c = Cplx::new(4.2, 0.0);
         let q = plane.escape_coeff(c);
-        assert!((q - 0.119_960_462_401_084).norm_sqr() < 1e-12)
+        assert!((q - 0.119_960_462_401_084).norm_sqr() < 1e-12);
+    }
+
+    #[test]
+    fn internal_potential_coloring()
+    {
+        let plane = Mandelbrot::default();
+        let c0 = Cplx::from(-1.040_624);
+        // let c1 = Cplx::from(-0.140_626);
+
+        let res0 = plane.get_orbit_info(c0).result;
+        // let res1 = plane.get_orbit_info(c1).result;
+        dbg!(&res0);
+
+        let calg = plane.preperiod_smooth_coloring();
+        let palette = ColorPalette::default();
+        let mut coloring = Coloring::new(calg, palette);
+
+        coloring.load_palette("../palettes/test_palette.toml");
+
+        let col0 = coloring.map_color32(res0);
+        // let col1 = coloring.map_color32(res1);
+
+        dbg!(col0);
+        // dbg!(col1);
     }
 }

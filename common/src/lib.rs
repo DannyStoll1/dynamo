@@ -198,18 +198,19 @@ mod tests
     fn fmt_angle()
     {
         let angle = RationalAngle::new(7, 17);
-        let s0 = format!("{:>10}", angle);
+        let s0 = format!("{angle:>10}");
         assert_eq!(s0, "      7/17");
 
         let it = angle.with_degree(2);
-        let s = format!("{:>13}", it);
+        let s = format!("{it:>13}");
         assert_eq!(s, "    p01101001");
     }
 
     #[test]
-    fn hsv() {
-        use image::Rgb;
+    fn hsv()
+    {
         use crate::coloring::types::Hsv;
+        use image::Rgb;
 
         let hsv = Hsv::new(0., 1., 0.4);
         let rgb = Rgb::from(hsv);

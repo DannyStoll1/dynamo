@@ -50,7 +50,7 @@ mod tests
     {
         let angle = RationalAngle::new(3, 7).with_degree(2);
         let kneading_sequence = angle.kneading_sequence();
-        assert_eq!(kneading_sequence.to_string(), "p10*".to_owned())
+        assert_eq!(kneading_sequence.to_string(), "p10*".to_owned());
     }
 
     #[test]
@@ -71,22 +71,22 @@ mod tests
         let Ok(out0) = str0.parse::<RationalAngle>()
         else
         {
-            panic!("parse_angle returned None on input {}", str0)
+            panic!("parse_angle returned None on input {str0}")
         };
         let Ok(out1) = str1.parse::<RationalAngle>()
         else
         {
-            panic!("parse_angle returned None on input {}", str1)
+            panic!("parse_angle returned None on input {str1}")
         };
         let Ok(out2) = str2.parse::<RationalAngle>()
         else
         {
-            panic!("parse_angle returned None on input {}", str2)
+            panic!("parse_angle returned None on input {str2}")
         };
         let Ok(out3) = str3.parse::<RationalAngle>()
         else
         {
-            panic!("parse_angle returned None on input {}", str3)
+            panic!("parse_angle returned None on input {str3}")
         };
 
         assert_eq!(out0, val0);

@@ -1,17 +1,17 @@
 use crate::dynamics::ParameterPlane;
 use crate::macros::basic_plane_impl;
+use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use dynamo_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
-use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use num_traits::{One, Zero};
 
-use super::{EscapeEncoding, InfinityFirstReturnMap, PlaneType, ExternalRays};
+use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, PlaneType};
 
 #[derive(Clone)]
 pub struct JuliaSet<T>
 where
-    T: ParameterPlane + Clone,
+    T: ParameterPlane,
 {
     pub point_grid: PointGrid,
     pub max_iter: Period,
@@ -24,21 +24,23 @@ where
 
 impl<T> JuliaSet<T>
 where
-    T: ParameterPlane + Clone,
+    T: ParameterPlane,
 {
     #[must_use]
-    pub fn new(parent: T, parent_selection: Cplx, _max_iter: Period) -> Self
+    pub fn new(parent: T, parent_selection: Cplx, max_iter: Period) -> Self
     {
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
             .new_with_same_height(parent.default_julia_bounds(parent_selection, local_param));
+        let min_iter = parent.min_iter();
+        let meta_params = parent.get_meta_params();
         Self {
             point_grid,
-            parent: parent.clone(),
-            max_iter: parent.max_iter(),
-            min_iter: parent.min_iter(),
-            meta_params: parent.get_meta_params(),
+            max_iter,
+            min_iter,
+            parent,
+            meta_params,
             local_param,
             parent_selection,
         }
@@ -59,30 +61,19 @@ where
 
 impl<T> From<T> for JuliaSet<T>
 where
-    T: ParameterPlane + Clone,
+    T: ParameterPlane,
 {
     fn from(parent: T) -> Self
     {
-        let parent_selection = parent.default_selection();
-        let local_param = parent.param_map(parent_selection);
-        let point_grid = parent
-            .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(parent_selection, local_param));
-        Self {
-            point_grid,
-            parent: parent.clone(),
-            max_iter: parent.max_iter(),
-            min_iter: parent.min_iter(),
-            meta_params: parent.get_meta_params(),
-            local_param,
-            parent_selection,
-        }
+        let selection = parent.default_selection();
+        let max_iter = parent.max_iter();
+        Self::new(parent, selection, max_iter)
     }
 }
 
 impl<T> ParameterPlane for JuliaSet<T>
 where
-    T: ParameterPlane + Clone,
+    T: ParameterPlane,
 {
     type Var = T::Var;
     type Param = NoParam;
@@ -460,7 +451,7 @@ where
 
 impl<P> InfinityFirstReturnMap for JuliaSet<P>
 where
-    P: ParameterPlane + Clone + InfinityFirstReturnMap,
+    P: ParameterPlane + InfinityFirstReturnMap,
 {
     #[inline]
     fn degree_real(&self) -> f64
@@ -494,7 +485,7 @@ where
     }
 }
 
-impl<P: EscapeEncoding + Clone> EscapeEncoding for JuliaSet<P>
+impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
 {
     fn encode_escape_result(
         &self,
@@ -507,7 +498,8 @@ impl<P: EscapeEncoding + Clone> EscapeEncoding for JuliaSet<P>
 }
 
 impl<P> ExternalRays for JuliaSet<P>
-where P : InfinityFirstReturnMap + Clone
+where
+    P: InfinityFirstReturnMap,
 {
     fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {

@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum UIMessage
+pub enum UiMessage
 {
     #[default]
     DoNothing,
@@ -33,7 +33,7 @@ pub enum UIMessage
     Quit,
     NewTab,
 }
-impl UIMessage
+impl UiMessage
 {
     fn pop(&mut self) -> Self
     {
@@ -73,8 +73,8 @@ pub trait Interactive
     fn consume_click(&mut self);
     fn reset_click(&mut self);
     fn handle_input(&mut self, ctx: &Context);
-    fn get_message(&self) -> UIMessage;
-    fn pop_message(&mut self) -> UIMessage;
+    fn get_message(&self) -> UiMessage;
+    fn pop_message(&mut self) -> UiMessage;
     fn name(&self) -> String;
     fn get_image_height(&self) -> usize;
     fn change_height(&mut self, new_height: usize);
@@ -95,7 +95,7 @@ where
     dialog: Option<Dialog>,
     // save_task: SaveTask,
     click_used: bool,
-    pub message: UIMessage,
+    pub message: UiMessage,
 }
 
 impl<P, J, C, M, T> MainInterface<P, J>
@@ -117,7 +117,7 @@ where
             dialog: None,
             // save_task: SaveTask::Idle,
             click_used: false,
-            message: UIMessage::default(),
+            message: UiMessage::default(),
         }
     }
 
@@ -158,9 +158,11 @@ where
         &mut self,
         selection: PaneSelection,
         file_dialog: &FileDialog,
-        file_type: &SaveFileType,
+        file_type: SaveFileType,
     )
     {
+        use SaveFileType::*;
+
         // Ensure file selection was confirmed
         if !file_dialog.selected()
         {
@@ -175,7 +177,6 @@ where
 
         let pane_ids = self.get_selected_pane_ids(selection);
 
-        use SaveFileType::*;
         match file_type
         {
             Image =>
@@ -218,7 +219,7 @@ where
         self.set_active_pane(None);
     }
 
-    fn process_text_dialog_input(&mut self, input_type: TextInputType, text: String)
+    fn process_text_dialog_input(&mut self, input_type: TextInputType, text: &str)
     {
         use crate::dialog::TextInputType::*;
         match input_type
@@ -301,7 +302,7 @@ where
         }
     }
 
-    fn process_conf_ray_response(&mut self, ray_params: RayParams)
+    fn process_conf_ray_response(&mut self, ray_params: &RayParams)
     {
         let pane = self.get_pane_mut(ray_params.pane_id);
         pane.marking_mut().toggle_ray(ray_params.angle_info.angle);
@@ -380,17 +381,17 @@ where
 
     fn schedule_close(&mut self)
     {
-        self.message = UIMessage::CloseWindow;
+        self.message = UiMessage::CloseWindow;
     }
 
     fn schedule_quit(&mut self)
     {
-        self.message = UIMessage::Quit;
+        self.message = UiMessage::Quit;
     }
 
     fn schedule_new_tab(&mut self)
     {
-        self.message = UIMessage::NewTab;
+        self.message = UiMessage::NewTab;
     }
 
     fn toggle_live_mode(&mut self)
@@ -409,7 +410,7 @@ where
 
     fn has_visible_dialog(&self) -> bool
     {
-        self.dialog.as_ref().map(|x| x.visible()).unwrap_or(false)
+        self.dialog.as_ref().is_some_and(Dialog::visible)
     }
 }
 
@@ -723,7 +724,7 @@ where
                     pane_selection: panes,
                     file_dialog,
                     file_type,
-                } => self.handle_save_dialog(*panes, file_dialog, file_type),
+                } => self.handle_save_dialog(*panes, file_dialog, *file_type),
                 Dialog::Load {
                     file_dialog,
                     pane_selection,
@@ -732,14 +733,14 @@ where
                 {
                     if let crate::dialog::Response::Complete { data } = text_dialog.get_response()
                     {
-                        self.process_text_dialog_input(text_dialog.input_type, data);
+                        self.process_text_dialog_input(text_dialog.input_type, &data);
                     }
                 }
                 Dialog::ConfirmRay(conf_dialog) =>
                 {
                     if let crate::dialog::Response::Complete { data } = conf_dialog.get_response()
                     {
-                        self.process_conf_ray_response(data);
+                        self.process_conf_ray_response(&data);
                     }
                 }
                 Dialog::ConfirmActiveRays(conf_dialog) =>
@@ -764,13 +765,13 @@ where
     }
 
     #[inline]
-    fn get_message(&self) -> UIMessage
+    fn get_message(&self) -> UiMessage
     {
         self.message
     }
 
     #[inline]
-    fn pop_message(&mut self) -> UIMessage
+    fn pop_message(&mut self) -> UiMessage
     {
         self.message.pop()
     }
@@ -954,19 +955,19 @@ where
             }
             Action::DrawEquipotential =>
             {
-                self.get_active_pane_mut().map(|p| p.draw_equipotential());
+                self.get_active_pane_mut().map(Pane::draw_equipotential);
             }
             Action::ClearRays =>
             {
-                self.get_active_pane_mut().map(|p| p.clear_marked_rays());
+                self.get_active_pane_mut().map(Pane::clear_marked_rays);
             }
             Action::ClearEquipotentials =>
             {
-                self.get_active_pane_mut().map(|p| p.clear_equipotentials());
+                self.get_active_pane_mut().map(Pane::clear_equipotentials);
             }
             Action::ClearCurves =>
             {
-                self.get_active_pane_mut().map(|p| p.clear_curves());
+                self.get_active_pane_mut().map(Pane::clear_curves);
             }
             Action::ResetSelection => match self.active_pane
             {
@@ -981,7 +982,7 @@ where
             },
             Action::ResetView =>
             {
-                self.get_active_pane_mut().map(|p| p.reset());
+                self.get_active_pane_mut().map(Pane::reset);
             }
             Action::ToggleLiveMode => self.toggle_live_mode(),
             Action::CycleActivePlane =>

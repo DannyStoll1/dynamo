@@ -1,8 +1,8 @@
+use crate::pane::id::*;
 use dynamo_common::{
     coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
     types::{IterCount, Period},
 };
-use crate::pane::id::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -58,6 +58,7 @@ pub enum Action
 }
 impl Action
 {
+    #[must_use]
     pub fn description(&self) -> String
     {
         match self
@@ -66,9 +67,9 @@ impl Action
             Self::Quit => "Exit the application.".to_owned(),
             Self::Close => "Close the current tab.".to_owned(),
             Self::NewTab => "Open a new tab.".to_owned(),
-            Self::SaveImage(pane_id) => format!("Save the {} image to a file.", pane_id),
+            Self::SaveImage(pane_id) => format!("Save the {pane_id} image to a file."),
             Self::SavePalette(pane_id) => format!("Save the {pane_id} palette to a file."),
-            Self::LoadPalette(pane_id) => format!("Load palette for {} from file", pane_id),
+            Self::LoadPalette(pane_id) => format!("Load palette for {pane_id} from file"),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle selection marker on active image.".to_owned(),
@@ -214,6 +215,7 @@ impl Action
         }
     }
 
+    #[must_use]
     pub fn short_description(&self) -> String
     {
         match self
@@ -222,9 +224,9 @@ impl Action
             Self::Quit => "Exit".to_owned(),
             Self::Close => "Close Tab".to_owned(),
             Self::NewTab => "New Tab".to_owned(),
-            Self::SaveImage(pane_selection) => format!("Save{:#}", pane_selection),
-            Self::SavePalette(pane_selection) => format!("Save{:#} Palette", pane_selection),
-            Self::LoadPalette(pane_selection) => format!("Load{:#} Palette", pane_selection),
+            Self::SaveImage(pane_selection) => format!("Save{pane_selection:#}"),
+            Self::SavePalette(pane_selection) => format!("Save{pane_selection:#} Palette"),
+            Self::LoadPalette(pane_selection) => format!("Load{pane_selection:#} Palette"),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle Selection".to_owned(),

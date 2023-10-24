@@ -1,6 +1,6 @@
 use crate::consts::{OMEGA, OMEGA_BAR, ONE_THIRD};
 use crate::types::Cplx;
-pub use poly_solve::solve::solve_polynomial;
+pub use poly_solve::solve_polynomial;
 
 // Roots of the polynomial a + bx + x^2
 #[must_use]

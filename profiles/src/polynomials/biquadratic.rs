@@ -244,7 +244,7 @@ impl ParameterPlane for BiquadraticMult
             q1 * OMEGA_BAR,
         ]
         .iter()
-        .cloned()
+        .copied()
         .map(Bicomplex::PlaneA)
         .collect()
     }
@@ -526,7 +526,8 @@ impl ParameterPlane for BiquadraticMultParam
     }
 }
 
-impl InfinityFirstReturnMap for BiquadraticMultParam {
+impl InfinityFirstReturnMap for BiquadraticMultParam
+{
     degree_impl!(2);
 }
 
@@ -940,7 +941,6 @@ impl InfinityFirstReturnMap for BiquadraticMultSection
 {
     degree_impl!(2);
 }
-
 
 impl ExternalRays for Biquadratic {}
 impl ExternalRays for BiquadraticMult {}

@@ -30,4 +30,4 @@ poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"
 
 [features]
-serde = ["dep:serde", "dep:toml", "num-complex/serde"]
+serde = ["dep:serde", "dep:toml", "num-complex/serde", "egui/serde"]

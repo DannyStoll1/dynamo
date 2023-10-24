@@ -74,7 +74,6 @@ impl<'a> Loader<'a>
     fn orig_lib_path(&self) -> PathBuf
     {
         self.output_path
-            .to_path_buf()
             .join("..")
             .join("..")
             .join("target")
@@ -90,7 +89,6 @@ impl<'a> Loader<'a>
     fn orig_lib_path(&self) -> PathBuf
     {
         self.output_path
-            .to_path_buf()
             .join("..")
             .join("..")
             .join("target")
@@ -106,16 +104,12 @@ impl<'a> Loader<'a>
     {
         self.lib_path.get_or_insert_with(|| {
             let lib_id = &file_hash(self.toml_path).unwrap_or_default()[0..12];
-            self.output_path
-                .to_path_buf()
-                .join("..")
-                .join("compiled")
-                .join(format!(
-                    "{}scripts_{}{}",
-                    config::LIB_PRE,
-                    lib_id,
-                    config::LIB_EXT
-                ))
+            self.output_path.join("..").join("compiled").join(format!(
+                "{}scripts_{}{}",
+                config::LIB_PRE,
+                lib_id,
+                config::LIB_EXT
+            ))
         })
     }
 
@@ -161,11 +155,12 @@ impl<'a> Loader<'a>
     /// behavior.
     unsafe fn load<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
+        type Constructor = unsafe fn() -> *mut dyn Interface;
+
         // Load the dynamic library
         let lib = Library::new(self.dest_lib_path()).map_err(ScriptError::ErrorLoadingLibrary)?;
 
         // Get the constructor function from the dynamic library
-        type Constructor = unsafe fn() -> *mut dyn Interface;
         let constructor: Symbol<Constructor> = lib
             .get(b"create_interface")
             .map_err(ScriptError::ErrorLoadingLibrary)?;

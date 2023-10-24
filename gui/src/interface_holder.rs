@@ -1,4 +1,4 @@
-use crate::interface::{Interactive, Interface, UIMessage};
+use crate::interface::{Interactive, Interface, UiMessage};
 use egui::{Context, Ui};
 use libloading::Library;
 
@@ -9,6 +9,7 @@ pub struct InterfaceHolder<'i>
 }
 impl<'i> InterfaceHolder<'i>
 {
+    #[must_use]
     pub fn new(interface: Box<dyn Interface>, library: Library) -> Self
     {
         Self {
@@ -36,11 +37,11 @@ impl<'i> Interactive for InterfaceHolder<'i>
     {
         self.interface.reset_click();
     }
-    fn get_message(&self) -> UIMessage
+    fn get_message(&self) -> UiMessage
     {
         self.interface.get_message()
     }
-    fn pop_message(&mut self) -> UIMessage
+    fn pop_message(&mut self) -> UiMessage
     {
         self.interface.pop_message()
     }
@@ -70,6 +71,6 @@ impl<'i> Interface for InterfaceHolder<'i>
 {
     fn update(&mut self, ctx: &Context)
     {
-        self.interface.update(ctx)
+        self.interface.update(ctx);
     }
 }

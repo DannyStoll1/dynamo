@@ -220,18 +220,12 @@ impl ColorPalette
     #[must_use]
     pub fn map_color32(&self, value: IterCount) -> Color32
     {
-        // if value <= 0.0
-        // {
-        //     self.in_color
-        // }
-        // else
-        // {
         let potential = (value + 1.0 as IterCount).log2();
+
         let r = self.color_map_r.get_value_u8(potential);
         let g = self.color_map_g.get_value_u8(potential);
         let b = self.color_map_b.get_value_u8(potential);
         Color32::from_rgb(r, g, b)
-        // }
     }
 
     pub fn scale_period(&mut self, scale_factor: f64)
@@ -299,7 +293,7 @@ impl DiscretePalette
     }
 
     #[must_use]
-    fn map_preperiodic_hsv(&self, o: &OrbitSchema) -> Hsv
+    fn map_preperiodic_hsv(&self, o: OrbitSchema) -> Hsv
     {
         self.map_hsv(
             o.period as f32,
@@ -314,7 +308,7 @@ impl DiscretePalette
     }
 
     #[must_use]
-    pub fn map_preperiodic<T: From<Hsv>>(&self, orbit_schema: &OrbitSchema) -> T
+    pub fn map_preperiodic<T: From<Hsv>>(&self, orbit_schema: OrbitSchema) -> T
     {
         self.map_preperiodic_hsv(orbit_schema).into()
     }

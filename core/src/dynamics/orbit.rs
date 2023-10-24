@@ -278,15 +278,13 @@ where
                 iter as usize,
             )
             {
-                EscapeState::Periodic {
-                    data: PointInfoPeriodic {
-                        value: z_fast,
-                        preperiod: iter,
-                        period,
-                        multiplier,
-                        final_error: z_fast.dist_sqr(z_slow),
-                    },
-                }
+                EscapeState::Periodic(PointInfoPeriodic {
+                    value: z_fast,
+                    preperiod: iter,
+                    period,
+                    multiplier,
+                    final_error: z_fast.dist_sqr(z_slow),
+                })
             }
             else
             {

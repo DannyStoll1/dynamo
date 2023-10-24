@@ -13,10 +13,8 @@ pub enum PointInfo<V, D>
     {
         potential: IterCount,
     },
-    Periodic
-    {
-        data: PointInfoPeriodic<V, D>,
-    },
+    Periodic(PointInfoPeriodic<V, D>),
+    PeriodicKnownPotential(PointInfoKnownPotential<D>),
     #[default]
     Bounded,
     Wandering,
@@ -34,14 +32,14 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        use PointInfo::{Bounded, Escaping, MarkedPoint, Periodic, Wandering};
+        use PointInfo::*;
         let result_summary = match &self.result
         {
             Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
-            Periodic { data } => data.to_string(),
+            Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
+            PeriodicKnownPotential(data) => data.to_string(),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
-            MarkedPoint { data, .. } => data.to_string(),
         };
         write!(
             f,
@@ -92,6 +90,33 @@ where
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct PointInfoKnownPotential<D>
+{
+    pub period: Period,
+    pub multiplier: D,
+    pub potential: IterCount,
+}
+impl<D> std::fmt::Display for PointInfoKnownPotential<D>
+where
+    D: Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        write!(
+            f,
+            "Cycle detected.\n
+                Period: {period}\n\
+                Multiplier: {multiplier:.DISPLAY_PREC$}\n\
+                Potential: {potential:.DISPLAY_PREC$}",
+            period = self.period,
+            multiplier = self.multiplier,
+            potential = self.potential,
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EscapeState<V, D>
@@ -101,10 +126,8 @@ pub enum EscapeState<V, D>
         iters: Period,
         final_value: V,
     },
-    Periodic
-    {
-        data: PointInfoPeriodic<V, D>,
-    },
+    Periodic(PointInfoPeriodic<V, D>),
+    KnownPotential(PointInfoKnownPotential<D>),
     NotYetEscaped,
     Bounded,
 }

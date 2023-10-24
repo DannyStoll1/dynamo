@@ -73,7 +73,8 @@ pub enum TextInputType
 {
     ExternalRay
     {
-        pane_selection: PaneID, follow: bool
+        pane_selection: PaneID,
+        follow: bool,
     },
     ActiveRays
     {
@@ -150,17 +151,21 @@ impl TextDialogBuilder
             prompt: WidgetText::default(),
         }
     }
+    #[must_use]
     pub fn title(mut self, title: &str) -> Self
     {
         self.title = title.to_owned();
         self
     }
+
+    #[must_use]
     pub fn prompt(mut self, prompt: impl Into<WidgetText>) -> Self
     {
         self.prompt = prompt.into();
         self
     }
     #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn build(self) -> StructuredTextDialog
     {
         let dialog = TextDialog::new(self.title, self.prompt);
@@ -233,6 +238,7 @@ impl TextDialog
     }
 
     #[inline]
+    #[must_use]
     pub const fn visible(&self) -> bool
     {
         self.state.is_open()
@@ -258,6 +264,7 @@ impl TextDialog
     }
 
     #[inline]
+    #[must_use]
     pub fn get_input(&self) -> &str
     {
         &self.user_input
@@ -266,7 +273,7 @@ impl TextDialog
     #[inline]
     pub fn reset_input(&mut self)
     {
-        self.user_input = "".to_owned();
+        self.user_input.clear();
     }
 
     pub fn get_response(&mut self) -> Response<String>
@@ -363,11 +370,7 @@ impl Dialog
     {
         match self
         {
-            Self::Save { file_dialog, .. } =>
-            {
-                file_dialog.show(ctx);
-            }
-            Self::Load { file_dialog, .. } =>
+            Self::Save { file_dialog, .. } | Self::Load { file_dialog, .. } =>
             {
                 file_dialog.show(ctx);
             }
@@ -386,12 +389,15 @@ impl Dialog
         }
     }
 
+    #[must_use]
     pub fn visible(&self) -> bool
     {
         match self
         {
-            Self::Save { file_dialog, .. } => file_dialog.visible(),
-            Self::Load { file_dialog, .. } => file_dialog.visible(),
+            Self::Save { file_dialog, .. } | Self::Load { file_dialog, .. } =>
+            {
+                file_dialog.visible()
+            }
             Self::Text(text_dialog) => text_dialog.visible(),
             Self::ConfirmRay(conf_dialog) => conf_dialog.visible(),
             Self::ConfirmActiveRays(conf_dialog) => conf_dialog.visible(),
@@ -425,17 +431,16 @@ impl Dialog
         } = params.orbit_schema;
 
         let header = format!(
-            "The following angles are active with preperiod {} and period {}:",
-            preperiod, period
+            "The following angles are active with preperiod {preperiod} and period {period}:"
         );
 
         let pad = (period + preperiod + 1) as usize;
         let mut body = String::new();
-        for a in params.active_angles.iter()
+        for a in &params.active_angles
         {
             let _ = writeln!(&mut body, "{:>8} = {:>pad$}", a, a.with_degree(degree));
         }
-        let prompt = RichText::from(format!("{}\n{}", header, body)).monospace();
+        let prompt = RichText::from(format!("{header}\n{body}")).monospace();
         let conf_dialog = ConfirmationDialog::new(title, prompt, params);
         Self::ConfirmActiveRays(conf_dialog)
     }

@@ -453,3 +453,13 @@ impl Iterator for PointGridIterator
         Some(((self.idx_x, self.idx_y), z))
     }
 }
+
+impl IntoIterator for &PointGrid
+{
+    type IntoIter = PointGridIterator;
+    type Item = ((usize, usize), Cplx);
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter()
+    }
+}

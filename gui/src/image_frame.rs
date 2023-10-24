@@ -99,14 +99,17 @@ impl ImageFrame
     {
         self.border.live = false;
     }
+    #[must_use]
     pub fn height(&self) -> usize
     {
         self.image.height()
     }
+    #[must_use]
     pub fn width(&self) -> usize
     {
         self.image.width()
     }
+    #[must_use]
     pub fn image_dims(&self) -> Vec2
     {
         let [x, y] = self.image.size;
@@ -123,10 +126,12 @@ impl ImageFrame
         self.set_position(anchor);
         self.show(ui);
     }
+    #[must_use]
     pub fn to_local_coords(&self, absolute_pos: Pos2) -> Vec2
     {
         absolute_pos - self.region.min
     }
+    #[must_use]
     pub fn to_global_coords(&self, local_pos: Vec2) -> Pos2
     {
         self.region.min + local_pos

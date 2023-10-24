@@ -1,5 +1,5 @@
 use super::julia::JuliaSet;
-use super::{InfinityFirstReturnMap, ParameterPlane, EscapeEncoding, ExternalRays};
+use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, ParameterPlane};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use num_traits::One;
@@ -264,12 +264,14 @@ where
     }
 
     #[inline]
-    fn escaping_period(&self) -> Period {
+    fn escaping_period(&self) -> Period
+    {
         self.base_curve.escaping_period()
     }
 
     #[inline]
-    fn escaping_phase(&self) -> Period {
+    fn escaping_phase(&self) -> Period
+    {
         self.base_curve.escaping_phase()
     }
 
@@ -280,7 +282,8 @@ where
     }
 }
 
-impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C> {
+impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C>
+{
     #[inline]
     fn encode_escape_result(
         &self,
