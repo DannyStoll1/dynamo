@@ -60,7 +60,7 @@ pub static FILE_HOTKEYS: [Hotkey; 6] = [
     Hotkey {
         shortcut: Some(CTRL_W),
         action: Close,
-        show_in_menu: false,
+        show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {

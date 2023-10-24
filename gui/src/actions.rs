@@ -224,9 +224,9 @@ impl Action
             Self::Quit => "Exit".to_owned(),
             Self::Close => "Close Tab".to_owned(),
             Self::NewTab => "New Tab".to_owned(),
-            Self::SaveImage(pane_selection) => format!("Save{pane_selection:#}"),
-            Self::SavePalette(pane_selection) => format!("Save{pane_selection:#} Palette"),
-            Self::LoadPalette(pane_selection) => format!("Load{pane_selection:#} Palette"),
+            Self::SaveImage(pane_selection) => format!("Save{pane_selection:#}..."),
+            Self::SavePalette(pane_selection) => format!("Save{pane_selection:#} Palette..."),
+            Self::LoadPalette(pane_selection) => format!("Load{pane_selection:#} Palette..."),
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle Selection".to_owned(),

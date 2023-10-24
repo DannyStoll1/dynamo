@@ -64,6 +64,11 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         ZERO
     }
 
+    fn periodicity_tolerance(&self) -> Real
+    {
+        1e-18
+    }
+
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![Self::CRIT]
@@ -120,6 +125,13 @@ impl<const D: i32> InfinityFirstReturnMap for Unicritical<D>
         Self::D_FLOAT
     }
 
+    #[inline]
+    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    {
+        c * Self::D_FLOAT.powi(-D)
+    }
+
+    #[inline]
     fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
     {
         let a = Self::D_FLOAT.powi(-D);
