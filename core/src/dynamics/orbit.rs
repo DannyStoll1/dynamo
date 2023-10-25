@@ -1,6 +1,24 @@
 use dynamo_common::prelude::*;
 use num_traits::One;
 
+#[derive(Clone, Debug, Default)]
+pub enum EscapeResult<V, D>
+{
+    Escaped
+    {
+        iters: Period,
+        final_value: V,
+    },
+    Periodic
+    {
+        info: PointInfoPeriodic<D>,
+        final_value: V,
+    },
+    KnownPotential(PointInfoKnownPotential<D>),
+    #[default]
+    Bounded,
+}
+
 pub struct OrbitParams
 {
     pub max_iter: Period,
@@ -21,7 +39,7 @@ where
     escape_radius: Real,
     pub z: V,
     pub iter: Period,
-    pub state: EscapeState<V, V>,
+    pub state: Option<EscapeResult<V, V>>,
 }
 
 impl<V, P, F> SimpleOrbit<V, P, F>
@@ -39,43 +57,34 @@ where
             max_iter,
             escape_radius,
             iter: 0,
-            state: EscapeState::NotYetEscaped,
+            state: None,
         }
     }
 
-    fn apply_map(&self, z: V) -> V
+    #[inline]
+    fn apply_map(&mut self)
     {
-        (self.f)(z, self.param)
+        self.z = (self.f)(self.z, self.param);
     }
 
-    fn stop_condition(&self, iter: Period, z: V) -> EscapeState<V, V>
+    fn enforce_stop_condition(&mut self)
     {
-        if iter > self.max_iter
+        if self.iter > self.max_iter
         {
-            return EscapeState::Bounded;
+            self.state = Some(EscapeResult::Bounded);
+            return;
         }
 
-        let r = z.norm_sqr();
-        if r > self.escape_radius || z.is_nan()
+        let r = self.z.norm_sqr();
+        if r > self.escape_radius || self.z.is_nan()
         {
-            return EscapeState::Escaped {
-                iters: iter,
-                final_value: z,
-            };
+            self.state = Some(EscapeResult::Escaped {
+                // Subtract 1 to undo the offset from iteration start
+                iters: self.iter - 1,
+                final_value: self.z,
+            });
         }
-        EscapeState::NotYetEscaped
     }
-
-    // pub fn from_plane(plane: Box<dyn ParameterPlane>, param: V) -> Self
-    // {
-    //     let start = plane.start_point(param);
-    //     Self::new(
-    //         |z, c| plane.map(z, c),
-    //         |i, z| plane.stop_condition(i, z),
-    //         start,
-    //         param,
-    //     )
-    // }
 }
 
 impl<V, P, F> Iterator for SimpleOrbit<V, P, F>
@@ -84,23 +93,28 @@ where
     P: Copy,
     V: Norm<Real> + MaybeNan,
 {
-    type Item = (V, EscapeState<V, V>);
+    type Item = (V, Option<EscapeResult<V, V>>);
 
     fn next(&mut self) -> Option<Self::Item>
     {
         if self.iter == 0
         {
-            self.state = self.stop_condition(self.iter, self.z);
             self.iter = 1;
-            return Some((self.z, self.state));
+            self.enforce_stop_condition();
+            return Some((self.z, self.state.clone()));
         }
 
-        if matches!(self.state, EscapeState::NotYetEscaped)
+        if self.state.is_none()
         {
-            self.z = self.apply_map(self.z);
-            self.state = self.stop_condition(self.iter, self.z);
+            self.apply_map();
             self.iter += 1;
-            Some((self.z, self.state))
+            self.enforce_stop_condition();
+            Some((self.z, self.state.clone()))
+        }
+        else if self.escape_radius.is_finite()
+        {
+            self.escape_radius = Real::NAN;
+            Some((self.z, self.state.clone()))
         }
         else
         {
@@ -113,7 +127,6 @@ pub struct CycleDetectedOrbitFloyd<V, P, D, F, G, B>
 where
     F: Fn(V, P) -> V,
     G: Fn(V, P) -> (V, D),
-    B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
     V: Norm<Real> + Dist<Real>,
     D: Norm<Real> + std::ops::MulAssign + One,
@@ -130,14 +143,13 @@ where
     pub z_fast: V,
     pub multiplier: D,
     pub iter: Period,
-    pub state: EscapeState<V, D>,
+    pub state: Option<EscapeResult<V, D>>,
 }
 
 impl<V, P, D, F, G, B> CycleDetectedOrbitFloyd<V, P, D, F, G, B>
 where
     F: Fn(V, P) -> V,
     G: Fn(V, P) -> (V, D),
-    B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
     V: Norm<Real> + Dist<Real> + MaybeNan,
     D: Norm<Real> + std::ops::MulAssign + One,
@@ -160,7 +172,7 @@ where
             z_fast: z,
             multiplier: D::one(),
             iter: 0,
-            state: EscapeState::NotYetEscaped,
+            state: None,
             max_iter: orbit_params.max_iter,
             min_iter: orbit_params.min_iter,
             periodicity_tolerance: orbit_params.periodicity_tolerance,
@@ -183,7 +195,7 @@ where
     #[inline]
     fn apply_map_to_slow(&mut self)
     {
-        self.z_slow = (self.f)(self.z_slow, self.param)
+        self.z_slow = (self.f)(self.z_slow, self.param);
     }
 
     #[inline]
@@ -201,107 +213,116 @@ where
     }
 
     #[inline]
-    fn check_early_bailout(&mut self)
+    fn early_bailout_result(&mut self) -> Option<EscapeResult<V, D>>
+    where
+        B: Fn(V, P) -> Option<EscapeResult<V, D>>,
     {
-        self.state = (self.early_bailout)(self.z_slow, self.param);
+        (self.early_bailout)(self.z_slow, self.param)
     }
 
     pub fn reset(&mut self, param: P, start_point: V)
     {
+        self.state = None;
         self.param = param;
         self.z_slow = start_point;
         self.z_fast = start_point;
         self.multiplier = D::one();
         self.iter = 0;
-        self.state = EscapeState::NotYetEscaped;
     }
 
-    pub fn run_until_complete(&mut self) -> EscapeState<V, D>
+    pub fn run_until_complete(&mut self) -> EscapeResult<V, D>
+    where
+        B: Fn(V, P) -> Option<EscapeResult<V, D>>,
     {
-        self.check_early_bailout();
+        if let Some(res) = self.early_bailout_result()
+        {
+            return res;
+        }
 
-        while matches!(self.state, EscapeState::NotYetEscaped)
+        while self.state.is_none()
         {
             self.iter += 1;
             if self.iter % 2 == 1
             {
                 self.apply_map_to_slow();
                 self.apply_map_and_update_multiplier();
-                self.state = self.stop_condition();
+                self.enforce_stop_condition();
             }
             else
             {
                 self.apply_map_and_update_multiplier();
-                self.state =
-                    self.check_periodicity();
+                self.check_periodicity();
             }
         }
-        self.state
+        #[allow(clippy::unwrap_used)]
+        self.state.clone().unwrap()
     }
 
     #[inline]
-    fn stop_condition(&self) -> EscapeState<V, D>
+    fn enforce_stop_condition(&mut self)
     {
         if self.iter > self.max_iter
         {
-            return EscapeState::Bounded;
+            self.state = Some(EscapeResult::Bounded);
+            return;
         }
         if self.iter < self.min_iter
         {
-            return EscapeState::NotYetEscaped;
+            return;
         }
 
         let r = self.z_fast.norm_sqr();
         if r > self.escape_radius || self.z_fast.is_nan()
         {
-            return EscapeState::Escaped {
+            self.state = Some(EscapeResult::Escaped {
                 iters: self.iter,
                 final_value: self.z_fast,
-            }
+            });
         }
-        EscapeState::NotYetEscaped
     }
 
-    fn check_periodicity(&self) -> EscapeState<V, D>
+    fn check_periodicity(&mut self)
     {
         if self.iter > self.max_iter
         {
-            return EscapeState::Bounded;
+            self.state = Some(EscapeResult::Bounded);
+            return;
         }
         if self.iter < self.min_iter
         {
-            return EscapeState::NotYetEscaped;
+            return;
         }
 
         let r = self.z_fast.norm_sqr();
         if r > self.escape_radius || self.z_fast.is_nan()
         {
-            return EscapeState::Escaped {
+            self.state = Some(EscapeResult::Escaped {
                 iters: self.iter,
                 final_value: self.z_fast,
-            }
+            });
+            return;
         }
-        else if self.z_fast.dist_sqr(self.z_slow) < self.periodicity_tolerance
+        let error = self.z_fast.dist_sqr(self.z_slow);
+        if error < self.periodicity_tolerance
         {
-            if let Some((period, multiplier)) = self.compute_period(
-                self.periodicity_tolerance.powf(0.75),
-                self.iter as usize,
-            )
+            if let Some((period, multiplier)) =
+                self.compute_period(self.periodicity_tolerance.powf(0.75), self.iter as usize)
             {
-                return EscapeState::Periodic(PointInfoPeriodic {
-                    value: self.z_fast,
+                let info = PointInfoPeriodic {
                     preperiod: self.iter,
                     period,
                     multiplier,
-                    final_error: self.z_fast.dist_sqr(self.z_slow),
-                })
+                    final_error: error,
+                };
+                self.state = Some(EscapeResult::Periodic {
+                    info,
+                    final_value: self.z_fast,
+                });
             }
         }
-        EscapeState::NotYetEscaped
     }
 
-    fn compute_period(&self, tolerance: Real, patience: usize)
-        -> Option<(Period, D)>
+    fn compute_period(&self, tolerance: Real, patience: usize) -> Option<(Period, D)>
     {
         let mut z = self.z_fast;
         let mut dz: D;
@@ -312,7 +333,7 @@ where
             mult *= dz;
             if z.dist_sqr(self.z_fast) <= tolerance
             {
-                return Period::try_from(i).ok().map(|n|(n, mult))
+                return Period::try_from(i).ok().map(|n| (n, mult));
             }
         }
         None
@@ -323,16 +344,15 @@ impl<V, P, D, F, G, B> Iterator for CycleDetectedOrbitFloyd<V, P, D, F, G, B>
 where
     F: Fn(V, P) -> V,
     G: Fn(V, P) -> (V, D),
-    B: Fn(V, P) -> EscapeState<V, D>,
     P: Copy,
     V: Norm<Real> + Dist<Real> + MaybeNan,
     D: Norm<Real> + std::ops::MulAssign + One,
 {
-    type Item = (V, EscapeState<V, D>);
+    type Item = (V, Option<EscapeResult<V, D>>);
 
     fn next(&mut self) -> Option<Self::Item>
     {
-        if matches!(self.state, EscapeState::NotYetEscaped)
+        if self.state.is_none()
         {
             let retval = self.z_fast;
             self.iter += 1;
@@ -340,16 +360,19 @@ where
             {
                 self.apply_map_to_slow();
                 self.apply_map_and_update_multiplier();
-                self.state = self.stop_condition();
+                self.enforce_stop_condition();
             }
             else
             {
                 self.apply_map_and_update_multiplier();
-                // dbg!(self.z_fast.dist_sqr(self.z_slow));
-                self.state =
-                    self.check_periodicity();
+                self.check_periodicity();
             }
-            Some((retval, self.state))
+            Some((retval, self.state.clone()))
+        }
+        else if self.escape_radius.is_finite()
+        {
+            self.escape_radius = Real::NAN;
+            Some((self.z_fast, self.state.clone()))
         }
         else
         {
@@ -362,8 +385,8 @@ where
 // where
 //     F: Fn(V, P) -> V,
 //     G: Fn(V, P) -> (V, D),
-//     C: Fn(Period, V, V, P) -> EscapeState<V, D>,
-//     B: Fn(V, P) -> EscapeState<V, D>,
+//     C: Fn(Period, V, V, P) -> EscapeResult<V, D>,
+//     B: Fn(V, P) -> EscapeResult<V, D>,
 // {
 //     f: F,
 //     map_and_multiplier: G,
@@ -374,7 +397,7 @@ where
 //     pub z_fast: V,
 //     pub multiplier: V,
 //     pub iter: Period,
-//     pub state: EscapeState<V, D>,
+//     pub state: EscapeResult<V, D>,
 //     period_limit: Period,
 //     period: Period,
 // }
@@ -383,8 +406,8 @@ where
 // where
 //     F: Fn(V, P) -> V,
 //     G: Fn(V, P) -> (V, D),
-//     C: Fn(Period, V, V, P) -> EscapeState<V, D>,
-//     B: Fn(V, P) -> EscapeState<V, D>,
+//     C: Fn(Period, V, V, P) -> EscapeResult<V, D>,
+//     B: Fn(V, P) -> EscapeResult<V, D>,
 // {
 //     pub fn new(
 //         f: F,
@@ -407,7 +430,7 @@ where
 //             z_fast,
 //             multiplier,
 //             iter: 0,
-//             state: EscapeState::NotYetEscaped,
+//             state: EscapeResult::NotYetEscaped,
 //             period_limit: 1,
 //             period: 1,
 //         }
@@ -442,16 +465,16 @@ where
 //         self.z_fast = start_point;
 //         self.multiplier = (1.).into();
 //         self.iter = 0;
-//         self.state = EscapeState::NotYetEscaped;
+//         self.state = Some(EscapeResult::NotYetEscaped);
 //         self.period = 1;
 //         self.period_limit = 1;
 //     }
 //
-//     pub fn run_until_complete(&mut self) -> EscapeState<V, D>
+//     pub fn run_until_complete(&mut self) -> EscapeResult<V, D>
 //     {
 //         self.check_early_bailout();
 //
-//         while matches!(self.state, EscapeState::NotYetEscaped)
+//         while matches!(self.state, EscapeResult::NotYetEscaped)
 //         {
 //             if self.period_limit == self.period
 //             {
@@ -475,14 +498,14 @@ where
 // where
 //     F: Fn(V, P) -> V,
 //     G: Fn(V, P) -> (V, D),
-//     C: Fn(Period, V, V, P) -> EscapeState<V, D>,
-//     B: Fn(V, P) -> EscapeState<V, D>,
+//     C: Fn(Period, V, V, P) -> EscapeResult<V, D>,
+//     B: Fn(V, P) -> EscapeResult<V, D>,
 // {
-//     type Item = (V, EscapeState<V, D>);
+//     type Item = (V, EscapeResult<V, D>);
 //
 //     fn next(&mut self) -> Option<Self::Item>
 //     {
-//         if matches!(self.state, EscapeState::NotYetEscaped)
+//         if matches!(self.state, EscapeResult::NotYetEscaped)
 //         {
 //             let retval = self.z_fast;
 //             if self.period_limit == self.period

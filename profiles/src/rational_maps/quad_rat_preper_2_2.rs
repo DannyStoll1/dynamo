@@ -124,7 +124,7 @@ impl EscapeEncoding for QuadRatPreper22
         iters: Period,
         z: Cplx,
         CplxPair { a: _, b }: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {

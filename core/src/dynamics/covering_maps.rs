@@ -1,4 +1,5 @@
 use super::julia::JuliaSet;
+use super::orbit::EscapeResult;
 use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, ParameterPlane};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
@@ -66,7 +67,7 @@ where
         &self,
         start: Self::Var,
         param: Self::Param,
-    ) -> EscapeState<Self::Var, Self::Deriv>
+    ) -> Option<EscapeResult<C::Var, C::Deriv>>
     {
         self.base_curve.early_bailout(start, param)
     }
@@ -287,9 +288,9 @@ impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C>
     #[inline]
     fn encode_escape_result(
         &self,
-        state: EscapeState<C::Var, C::Deriv>,
+        state: EscapeResult<C::Var, C::Deriv>,
         base_param: C::Param,
-    ) -> PointInfo<C::Var, C::Deriv>
+    ) -> PointInfo<C::Deriv>
     {
         self.base_curve.encode_escape_result(state, base_param)
     }

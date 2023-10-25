@@ -1,4 +1,5 @@
-use crate::dynamics::ParameterPlane;
+use super::orbit::EscapeResult;
+use super::ParameterPlane;
 use crate::macros::basic_plane_impl;
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::prelude::*;
@@ -489,11 +490,11 @@ impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
 {
     fn encode_escape_result(
         &self,
-        state: EscapeState<Self::Var, Self::Deriv>,
-        _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+        result: EscapeResult<Self::Var, Self::Deriv>,
+        NoParam: Self::Param,
+    ) -> PointInfo<Self::Deriv>
     {
-        self.parent.encode_escape_result(state, self.local_param)
+        self.parent.encode_escape_result(result, self.local_param)
     }
 }
 

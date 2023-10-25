@@ -38,19 +38,18 @@ impl Coloring
     }
 
     #[must_use]
-    pub fn map_color32<V, D>(&self, point_info: PointInfo<V, D>) -> Color32
+    pub fn map_color32<D>(&self, point_info: &PointInfo<D>) -> Color32
     where
         D: Polar<Real>,
-        V: Clone,
     {
         use PointInfo::*;
         match point_info
         {
-            Escaping { potential } => self.palette.map_color32(potential),
-            Periodic(data) => self.algorithm.color_periodic(&self.palette, &data),
+            Escaping { potential } => self.palette.map_color32(*potential),
+            Periodic(data) => self.algorithm.color_periodic(&self.palette, data),
             PeriodicKnownPotential(data) =>
             {
-                self.algorithm.color_known_potential(&self.palette, &data)
+                self.algorithm.color_known_potential(&self.palette, data)
             }
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
@@ -60,7 +59,7 @@ impl Coloring
                 ..
             } =>
             {
-                let hue = (f32::from(class_id)) / (num_point_classes as f32);
+                let hue = (f32::from(*class_id)) / (*num_point_classes as f32);
                 Hsv {
                     hue,
                     saturation: 0.8,
@@ -72,10 +71,9 @@ impl Coloring
     }
 
     #[must_use]
-    pub fn map_rgb<V, D>(&self, point_info: PointInfo<V, D>) -> Rgb<u8>
+    pub fn map_rgb<D>(&self, point_info: &PointInfo<D>) -> Rgb<u8>
     where
         D: Polar<Real>,
-        V: Clone,
     {
         let (r, g, b, _a) = self.map_color32(point_info).to_tuple();
         Rgb([r, g, b])

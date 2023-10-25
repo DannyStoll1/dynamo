@@ -19,16 +19,15 @@ pub trait FractalImage
 }
 
 #[derive(Clone)]
-pub struct IterPlane<V, D>
+pub struct IterPlane<D>
 {
-    pub iter_counts: Array2<PointInfo<V, D>>,
+    pub iter_counts: Array2<PointInfo<D>>,
     pub point_grid: PointGrid,
 }
 
-impl<V, D> IterPlane<V, D>
+impl<D> IterPlane<D>
 where
     D: Clone,
-    V: Clone,
 {
     #[must_use]
     pub fn create(point_grid: PointGrid) -> Self
@@ -41,10 +40,9 @@ where
     }
 }
 
-impl<V, D> FractalImage for IterPlane<V, D>
+impl<D> FractalImage for IterPlane<D>
 where
     D: Polar<Real>,
-    V: Clone,
 {
     type Image = ImageBuffer<Rgb<u8>, Vec<u8>>;
     fn point_grid(&self) -> &PointGrid
@@ -60,7 +58,7 @@ where
         self.iter_counts
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
-                img.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info.clone());
+                img.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info);
             });
         img
     }
@@ -73,7 +71,7 @@ where
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
                 image.pixels[x + (height - y - 1) * width] =
-                    coloring.map_color32(point_info.clone());
+                    coloring.map_color32(point_info);
             });
     }
     fn save(&self, coloring: &Coloring, filename: String)
@@ -84,7 +82,7 @@ where
 
         for (x, y, pixel) in image.enumerate_pixels_mut()
         {
-            let iter_count = self.iter_counts[(x as usize, (res_y - y - 1) as usize)].clone();
+            let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map_rgb(iter_count);
         }
         if let Err(e) = image.save(filename.clone())
@@ -104,7 +102,7 @@ where
 
         for (x, y, pixel) in image.enumerate_pixels_mut()
         {
-            let iter_count = self.iter_counts[(x as usize, (res_y - y - 1) as usize)].clone();
+            let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map_rgb(iter_count);
         }
         image

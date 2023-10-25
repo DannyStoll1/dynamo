@@ -52,10 +52,10 @@ impl IncoloringAlgorithm
     }
 
     #[must_use]
-    pub fn color_periodic<V, D>(
+    pub fn color_periodic<D>(
         &self,
         palette: &ColorPalette,
-        point_info: &PointInfoPeriodic<V, D>,
+        point_info: &PointInfoPeriodic<D>,
     ) -> Color32
     where
         D: Polar<Real>,
@@ -165,7 +165,7 @@ impl IncoloringAlgorithm
         potential
     }
 
-    fn relative_potential<V, D>(point_info: &PointInfoPeriodic<V, D>, tol: IterCount) -> IterCount
+    fn relative_potential<D>(point_info: &PointInfoPeriodic<D>, tol: IterCount) -> IterCount
     where
         D: Polar<Real>,
     {

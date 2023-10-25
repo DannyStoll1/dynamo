@@ -16,8 +16,7 @@ pub mod error;
 pub mod julia;
 pub mod newton;
 pub mod orbit;
-// pub mod simple_parameter_plane;
-// pub mod functions;
+use orbit::EscapeResult;
 
 use julia::JuliaSet;
 use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
@@ -180,17 +179,18 @@ pub trait ParameterPlane: Sync + Send
     /// If certain regions in parameter space are known (e.g. the main cardioid in the Mandelbrot set), we can
     /// avoid having to compute orbits for parameters in those regions.
     ///
-    /// This function returns an `EscapeState`, depending on the starting point and parameter.
-    /// It is called once before computing each orbit.
-    /// If this function returns `EscapeState::NotYetEscaped`, then the orbit is computed;
-    /// otherwise, the output of this function is forwarded to `encode_escape_result`.
+    /// This function returns an `EscapeResult`, depending on the starting point and parameter,
+    /// if the result can be predicted. It is called once before computing each orbit.
+    ///
+    /// If this function returns `None`, then the orbit is computed.
+    /// Otherwise, the output of this function is forwarded to `encode_escape_result`.
     fn early_bailout(
         &self,
         _start: Self::Var,
         _c: Self::Param,
-    ) -> EscapeState<Self::Var, Self::Deriv>
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
-        EscapeState::NotYetEscaped
+        None
     }
 
     /// Minimum iterations before cycle detection is allowed.
@@ -502,7 +502,7 @@ pub trait ParameterPlane: Sync + Send
         find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
     }
 
-    fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeState<Self::Var, Self::Deriv>
+    fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeResult<Self::Var, Self::Deriv>
     {
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),
@@ -520,11 +520,11 @@ pub trait ParameterPlane: Sync + Send
         );
         if let Some((_, state)) = orbit.last()
         {
-            state
+            state.unwrap_or_default()
         }
         else
         {
-            EscapeState::Bounded
+            EscapeResult::Bounded
         }
     }
 
@@ -651,23 +651,24 @@ pub trait ParameterPlane: Sync + Send
     /// Internal: Detect if a periodic orbit has landed near a marked point.
     fn identify_marked_points(
         &self,
+        z: Self::Var,
         c: Self::Param,
-        data: PointInfoPeriodic<Self::Var, Self::Deriv>,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+        info: PointInfoPeriodic<Self::Deriv>,
+    ) -> PointInfo<Self::Deriv>
     {
         let marked_points = self.get_marked_points(c);
         for (zi, class_id) in &marked_points
         {
-            if data.value.dist_sqr(*zi) < self.marked_point_tolerance()
+            if z.dist_sqr(*zi) < self.marked_point_tolerance()
             {
                 return PointInfo::MarkedPoint {
-                    data,
+                    data: info,
                     class_id: *class_id,
                     num_point_classes: marked_points.len(),
                 };
             }
         }
-        PointInfo::Periodic(data)
+        PointInfo::Periodic(info)
     }
 
     /// Internal: Since the internal potential coloring algorithm depends on the periodicity
@@ -950,8 +951,8 @@ where
         let theta0 = 0.02;
 
         let orbit = SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
-        let state = orbit.last()?.1;
-        let EscapeState::Escaped { iters, final_value } = state
+        let result = orbit.last()?.1.unwrap_or_default();
+        let EscapeResult::Escaped { iters, final_value } = result
         else
         {
             return None;
@@ -997,19 +998,19 @@ where
 
 pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
 {
-    /// Map temporary `EscapeState` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
+    /// Map temporary `EscapeResult` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
     fn encode_escape_result(
         &self,
-        state: EscapeState<Self::Var, Self::Deriv>,
+        result: EscapeResult<Self::Var, Self::Deriv>,
         c: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
-        match state
+        match result
         {
-            EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Bounded,
-            EscapeState::Periodic(data) => self.identify_marked_points(c, data),
-            EscapeState::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-            EscapeState::Escaped { iters, final_value } =>
+            EscapeResult::Bounded => PointInfo::Bounded,
+            EscapeResult::Periodic{info, final_value} => self.identify_marked_points(final_value, c, info),
+            EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
+            EscapeResult::Escaped{ iters, final_value } =>
             {
                 self.encode_escaping_point(iters, final_value, c)
             }
@@ -1021,7 +1022,7 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
         iters: Period,
         z: Self::Var,
         c: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1041,15 +1042,15 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
 
 pub trait Computable: ParameterPlane + EscapeEncoding
 {
-    fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>;
+    fn compute(&self) -> IterPlane<Self::Deriv>;
 
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Var, Self::Deriv>);
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
 
     fn run_and_encode_point(
         &self,
         start: Self::Var,
         c: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),
@@ -1096,14 +1097,14 @@ pub trait Computable: ParameterPlane + EscapeEncoding
             param,
             &orbit_params,
         );
-        let mut final_state = EscapeState::Bounded;
+        let mut final_state = None;
         let trajectory: Vec<Self::Var> = orbit
             .map(|(z, s)| {
                 final_state = s;
                 z
             })
             .collect();
-        let result = self.encode_escape_result(final_state, param);
+        let result = self.encode_escape_result(final_state.unwrap_or_default(), param);
         OrbitAndInfo {
             orbit: trajectory,
             info: OrbitInfo { start, result },
@@ -1115,14 +1116,14 @@ impl<P> Computable for P
 where
     P: ParameterPlane + EscapeEncoding,
 {
-    fn compute(&self) -> IterPlane<Self::Var, Self::Deriv>
+    fn compute(&self) -> IterPlane<Self::Deriv>
     {
         let mut iter_plane = IterPlane::create(self.point_grid().clone());
         self.compute_into(&mut iter_plane);
         iter_plane
     }
 
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Var, Self::Deriv>)
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
     {
         if self.point_grid().is_nan()
         {

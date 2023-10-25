@@ -4,18 +4,9 @@ pub(crate) use dynamo_core::macros::*;
 macro_rules! profile_imports {
     () => {
         use crate::macros::parameter_plane_impl;
-        use dynamo_common::consts::*;
         use dynamo_common::math_utils::polynomial_roots::*;
-        use dynamo_common::point_grid::{Bounds, PointGrid};
         use dynamo_common::prelude::*;
-        use dynamo_core::dynamics::covering_maps::{CoveringMap, HasDynamicalCovers};
-        use dynamo_core::dynamics::julia::JuliaSet;
-        use dynamo_core::dynamics::{
-            Equipotential, EscapeEncoding, ExternalRays, InfinityFirstReturnMap, ParameterPlane,
-        };
-        use dynamo_core::macros::{
-            basic_escape_encoding, basic_plane_impl, default_bounds, default_name, fractal_impl,
-        };
+        use dynamo_core::prelude::*;
         use num_traits::ops::mul_add::MulAdd;
         use std::any::type_name;
 
@@ -130,16 +121,16 @@ macro_rules! degree_impl_transcendental {
         {
             fn encode_escape_result(
                 &self,
-                state: EscapeState<Self::Var, Self::Deriv>,
+                state: EscapeResult<Self::Var, Self::Deriv>,
                 base_param: Self::Param,
-            ) -> PointInfo<Self::Var, Self::Deriv>
+            ) -> PointInfo<Self::Deriv>
             {
                 match state
                 {
-                    EscapeState::NotYetEscaped | EscapeState::Bounded => PointInfo::Wandering,
-                    EscapeState::Periodic(data) => PointInfo::Periodic(data),
-                    EscapeState::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-                    EscapeState::Escaped { iters, final_value } =>
+                    EscapeResult::Bounded => PointInfo::Wandering,
+                    EscapeResult::Periodic { info, .. } => PointInfo::Periodic(info),
+                    EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
+                    EscapeResult::Escaped { iters, final_value } =>
                     {
                         self.encode_escaping_point(iters, final_value, base_param)
                     }
@@ -151,7 +142,7 @@ macro_rules! degree_impl_transcendental {
                 iters: Period,
                 z: Cplx,
                 _base_param: Cplx,
-            ) -> PointInfo<Self::Var, Self::Deriv>
+            ) -> PointInfo<Self::Deriv>
             {
                 use dynamo_common::math_utils::slog;
                 if z.is_nan()
@@ -470,7 +461,6 @@ macro_rules! ext_ray_impl_nonmonic_conj {
 //     };
 // }
 
-
 macro_rules! ext_ray_impl_nonmonic {
     () => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
@@ -486,7 +476,7 @@ macro_rules! ext_ray_impl_nonmonic {
             {
                 return None;
             }
-            let pixel_width = self.point_grid().pixel_width() * 0.08;
+            // let pixel_width = self.point_grid().pixel_width() * 0.08;
             let error = self.point_grid().res_x as Real * 1e-8;
 
             // let base_point = escape_radius * angle.to_circle();
@@ -543,7 +533,7 @@ macro_rules! ext_ray_impl_nonmonic {
                     // dbg!(target);
                     match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
                     {
-                        Ok((sol, t_k, d_k)) =>
+                        Ok((sol, _t_k, _d_k)) =>
                         {
                             t_curr = sol;
 

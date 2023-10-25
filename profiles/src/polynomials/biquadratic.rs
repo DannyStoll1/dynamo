@@ -100,7 +100,7 @@ impl EscapeEncoding for Biquadratic
         iters: Period,
         z: Self::Var,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -387,7 +387,7 @@ impl EscapeEncoding for BiquadraticMult
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -538,7 +538,7 @@ impl EscapeEncoding for BiquadraticMultParam
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -692,7 +692,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -908,7 +908,7 @@ impl EscapeEncoding for BiquadraticMultSection
         iters: Period,
         z: Self::Var,
         _base_param: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {

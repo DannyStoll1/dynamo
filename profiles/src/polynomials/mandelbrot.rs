@@ -68,7 +68,7 @@ impl ParameterPlane for Mandelbrot
         ONE
     }
 
-    fn early_bailout(&self, _start: Cplx, c: Self::Param) -> EscapeState<Cplx, Cplx>
+    fn early_bailout(&self, _start: Cplx, c: Self::Param) -> Option<EscapeResult<Cplx, Cplx>>
     {
         // Main cardioid
         let four_c = 4. * c;
@@ -84,11 +84,11 @@ impl ParameterPlane for Mandelbrot
             let fixed_point = 0.5 * multiplier;
             let init_dist = (c - fixed_point).norm_sqr();
             let potential = -2. * (init_dist / self.periodicity_tolerance()).log(mult_norm2);
-            return EscapeState::KnownPotential(PointInfoKnownPotential {
+            return Some(EscapeResult::KnownPotential(PointInfoKnownPotential {
                 period: 1,
                 multiplier,
                 potential,
-            });
+            }));
         }
 
         // Basilica bulb
@@ -99,14 +99,14 @@ impl ParameterPlane for Mandelbrot
             let fixed_point = -0.5 - 0.5 * (-four_c - 3.).sqrt();
             let init_dist = (c - fixed_point).norm_sqr();
             let potential = -4. * (init_dist / self.periodicity_tolerance()).log(mult_norm2);
-            return EscapeState::KnownPotential(PointInfoKnownPotential {
+            return Some(EscapeResult::KnownPotential(PointInfoKnownPotential {
                 period: 2,
                 potential,
                 multiplier: mu2,
-            });
+            }));
         }
 
-        EscapeState::NotYetEscaped
+        None
     }
 
     #[inline]

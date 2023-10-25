@@ -5,22 +5,22 @@ use std::fmt::Display;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum PointInfo<V, D>
+pub enum PointInfo<D>
 {
     Escaping
     {
         potential: IterCount,
     },
-    Periodic(PointInfoPeriodic<V, D>),
+    Periodic(PointInfoPeriodic<D>),
     PeriodicKnownPotential(PointInfoKnownPotential<D>),
     #[default]
     Bounded,
     Wandering,
     MarkedPoint
     {
-        data: PointInfoPeriodic<V, D>,
+        data: PointInfoPeriodic<D>,
         class_id: PointClassId,
         num_point_classes: usize,
     },
@@ -49,12 +49,12 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitInfo<V, D>
 {
     pub start: V,
-    pub result: PointInfo<V, D>,
+    pub result: PointInfo<D>,
 }
 pub struct OrbitAndInfo<V, D>
 {
@@ -64,22 +64,21 @@ pub struct OrbitAndInfo<V, D>
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct PointInfoPeriodic<V, D>
+pub struct PointInfoPeriodic<D>
 {
-    pub value: V,
     pub preperiod: Period,
     pub period: Period,
     pub multiplier: D,
     pub final_error: Real,
 }
-impl<V, D> ToString for PointInfoPeriodic<V, D>
+impl<D> std::fmt::Display for PointInfoPeriodic<D>
 where
-    V: Display,
     D: Display,
 {
-    fn to_string(&self) -> String
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        format!(
+        write!(
+            f,
             "Cycle detected after {preperiod} iterations.\n\
                 Period: {period}\n\
                 Multiplier: {multiplier:.DISPLAY_PREC$}",
@@ -114,28 +113,6 @@ where
             multiplier = self.multiplier,
             potential = self.potential,
         )
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum EscapeState<V, D>
-{
-    Escaped
-    {
-        iters: Period,
-        final_value: V,
-    },
-    Periodic(PointInfoPeriodic<V, D>),
-    KnownPotential(PointInfoKnownPotential<D>),
-    NotYetEscaped,
-    Bounded,
-}
-impl<V, D> Default for EscapeState<V, D>
-{
-    fn default() -> Self
-    {
-        Self::NotYetEscaped
     }
 }
 

@@ -145,7 +145,7 @@ impl EscapeEncoding for QuadRatSymmetryLocus
         iters: Period,
         z: Cplx,
         base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {

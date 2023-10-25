@@ -605,7 +605,7 @@ impl EscapeEncoding for CubicPer1_1
         iters: Period,
         z: Cplx,
         _base_param: Cplx,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {
@@ -1435,7 +1435,7 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         iters: Period,
         z: Self::Var,
         CplxPair { a, b: _ }: Self::Param,
-    ) -> PointInfo<Self::Var, Self::Deriv>
+    ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan()
         {

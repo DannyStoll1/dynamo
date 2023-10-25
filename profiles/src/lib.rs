@@ -20,13 +20,8 @@ mod tests
     use crate::*;
     use dynamo_common::coloring::palette::ColorPalette;
     use dynamo_common::coloring::Coloring;
-    use dynamo_common::point_grid::Bounds;
-    use dynamo_common::prelude::{Cplx, Dist, EscapeState, OrbitSchema, PointInfo};
-    use dynamo_common::rational_angle::RationalAngle;
-    use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
-    use dynamo_core::dynamics::julia::JuliaSet;
-    use dynamo_core::dynamics::orbit::{CycleDetectedOrbitFloyd, OrbitParams};
-    use dynamo_core::dynamics::*;
+    use dynamo_common::prelude::*;
+    use dynamo_core::prelude::*;
 
     #[test]
     fn test_horner()
@@ -108,8 +103,8 @@ mod tests
         );
 
         let result = orbit.run_until_complete();
-        dbg!(result);
-        assert!(matches!(result, EscapeState::Periodic { .. }));
+        dbg!(&result);
+        assert!(matches!(result, EscapeResult::Periodic { .. }));
     }
 
     #[test]
@@ -240,7 +235,7 @@ mod tests
             .load_palette("../palettes/test_palette.toml")
             .expect("Failed to load palette");
 
-        let col0 = coloring.map_color32(res0);
+        let col0 = coloring.map_color32(&res0);
         // let col1 = coloring.map_color32(res1);
 
         dbg!(col0);

@@ -256,7 +256,7 @@ where
 {
     pub plane: P,
     pub coloring: Coloring,
-    iter_plane: IterPlane<P::Var, P::Deriv>,
+    iter_plane: IterPlane<P::Deriv>,
     pub image_frame: ImageFrame,
     tasks: PaneTasks,
     selection: Cplx,
@@ -712,8 +712,8 @@ where
 
     fn describe_orbit_info(&self) -> String
     {
-        self.get_orbit_info()
-            .map_or_else(String::new, |orbit_info| orbit_info.to_string())
+        self.get_orbit_info().as_ref()
+            .map_or_else(String::new, ToString::to_string)
     }
 
     fn pop_child_task(&mut self) -> ChildTask
