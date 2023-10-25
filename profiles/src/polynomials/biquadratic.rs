@@ -60,8 +60,8 @@ impl ParameterPlane for Biquadratic
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * z + c),
-            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * w + self.multiplier),
+            Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z.powi(2) + c),
+            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w.powi(2) + self.multiplier),
         }
     }
 
@@ -70,25 +70,17 @@ impl ParameterPlane for Biquadratic
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * z + c), z + z),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * w + self.multiplier), w + w),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w.powi(2) + self.multiplier), 2. * w),
         }
     }
 
-    #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
-    {
-        let u: Cplx = zw.into();
-        u + u
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
+    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw
         {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => ZERO,
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z, ONE),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w.powi(2) + self.multiplier), 2. * w, ZERO),
         }
     }
 }
@@ -204,28 +196,21 @@ impl ParameterPlane for BiquadraticMult
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), z + z + c.a),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), w + w + c.b),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), 2. * w + c.b),
         }
     }
 
-    #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
+    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => z + z + c.a,
-            Bicomplex::PlaneB(w) => w + w + c.b,
-        }
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => -c.b / c.a,
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a, ONE),
+            Bicomplex::PlaneB(w) => (
+                Bicomplex::PlaneA(w * (w + c.b)),
+                2. * w + c.b,
+                -c.b.powi(2) / self.multiplier, // -l/t^2
+            ),
         }
     }
 
@@ -283,7 +268,7 @@ impl ParameterPlane for BiquadraticMult
             {
                 PlaneID::ZPlane =>
                 {
-                    let [r0, r1, r2] = solve_cubic(a * b - 1., a * a + b, a + a);
+                    let [r0, r1, r2] = solve_cubic(a * b - 1., a.powi(2) + b, 2. * a);
                     vec![
                         Bicomplex::PlaneA(ZERO),
                         Bicomplex::PlaneA(r0),
@@ -293,7 +278,7 @@ impl ParameterPlane for BiquadraticMult
                 }
                 PlaneID::WPlane =>
                 {
-                    let [r0, r1, r2] = solve_cubic(b * a - 1., b * b + a, b + b);
+                    let [r0, r1, r2] = solve_cubic(b * a - 1., b.powi(2) + a, 2. * b);
                     vec![
                         Bicomplex::PlaneB(ZERO),
                         Bicomplex::PlaneB(r0),
@@ -304,7 +289,7 @@ impl ParameterPlane for BiquadraticMult
             },
             4 =>
             {
-                let b2 = b * b;
+                let b2 = b.powi(2);
                 let b3 = b * b2;
                 let coeffs = [
                     a * b + 1.,
@@ -469,28 +454,8 @@ impl ParameterPlane for BiquadraticMultParam
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), z + z + c.a),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), w + w + c.b),
-        }
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(z) => z + z + c.a,
-            Bicomplex::PlaneB(w) => w + w + c.b,
-        }
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => -c.b / c.a,
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), 2. * w + c.b),
         }
     }
 
@@ -637,21 +602,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     {
         let a = self.multiplier / c;
         let w = z * (z + c);
-        (w * (w + a), (c + z + z) * (a + w + w))
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let a = self.multiplier / c;
-        let w = z * (z + c);
-        (c + z + z) * (a + w + w)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        2. * (z * z + c)
+        (w * (w + a), (c + 2. * z) * (a + 2. * w))
     }
 
     #[inline]
@@ -664,8 +615,8 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         let x2z = x2 * z;
         (
             w * x2,
-            x0 * x2 + w * (c + z + z) + x2z,
-            w * (z - a * a) + x2z,
+            x0 * x2 + w * (c + 2. * z) + x2z,
+            w * (z - a.powi(2)) + x2z,
         )
     }
 
@@ -789,28 +740,18 @@ impl ParameterPlane for BiquadraticMultSection
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), z + z + c),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), w + w + 1.),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1.),
         }
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
+    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => z + z + c,
-            Bicomplex::PlaneB(w) => w + w + 1.,
-        }
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => -c.inv(),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c, z),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1., ZERO),
         }
     }
 
@@ -821,7 +762,7 @@ impl ParameterPlane for BiquadraticMultSection
         {
             PlaneID::ZPlane =>
             {
-                let disc = (c * c - 2.).sqrt();
+                let disc = (c.powi(2) - 2.).sqrt();
                 vec![
                     Bicomplex::PlaneA(-0.5 * c),
                     Bicomplex::PlaneA(-0.5 * (c + disc)),
@@ -848,7 +789,7 @@ impl ParameterPlane for BiquadraticMultSection
             {
                 PlaneID::ZPlane =>
                 {
-                    let [r0, r1, r2] = solve_cubic(a - 1., a * a + 1., a + a);
+                    let [r0, r1, r2] = solve_cubic(a - 1., a.powi(2) + 1., 2. * a);
                     vec![
                         Bicomplex::PlaneA(ZERO),
                         Bicomplex::PlaneA(r0),
@@ -946,3 +887,11 @@ impl ExternalRays for Biquadratic {}
 impl ExternalRays for BiquadraticMult {}
 impl ExternalRays for BiquadraticMultParam {}
 impl ExternalRays for BiquadraticMultSection {}
+
+impl ToChildParam<Cplx> for BiquadraticMultParam
+{
+    fn to_child_param(&self, CplxPair { a, b }: Self::Param) -> Cplx
+    {
+        a * b
+    }
+}

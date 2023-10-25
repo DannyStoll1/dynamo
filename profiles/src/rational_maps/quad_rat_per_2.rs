@@ -55,16 +55,11 @@ impl ParameterPlane for QuadRatPer2
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let u = 1. / (z.powi(2) - 1.);
-        -2.0 * (c + 1.) * z * u.powi(2)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        (z.powi(2) - 1.).inv()
+        let z2 = z.powi(2);
+        let u = (z2 - 1.).inv();
+        ((c + z2) * u, -2.0 * z * (c + 1.) * u.powi(2), u)
     }
 
     #[inline]
@@ -130,7 +125,7 @@ impl ParameterPlane for QuadRatPer2
             {
                 let u = -27. * c;
                 let v = u - 11.;
-                let x0 = (0.5 * (u + (v * v - 256.).sqrt() - 11.)).powf(ONE_THIRD);
+                let x0 = (0.5 * (u + (v.powi(2) - 256.).sqrt() - 11.)).powf(ONE_THIRD);
                 let x1 = 4. / x0 * ONE_THIRD;
                 let x2 = x0 * ONE_THIRD;
                 let r1 = -x1 * OMEGA_BAR - x2 * OMEGA + ONE_THIRD;
@@ -767,7 +762,7 @@ impl HasDynamicalCovers for QuadRatPer2
                         horner!(t, B1, DB2, DB3, DB4, DB5, DB6, DB7, DB8, DB9, DB10, DB11, DB12);
                     (
                         -numer / denom,
-                        (numer * denom_d - numer_d * denom) / (denom * denom),
+                        (numer * denom_d - numer_d * denom) / denom.powi(2),
                     )
                 };
                 bounds = Bounds {
@@ -839,7 +834,7 @@ impl HasDynamicalCovers for QuadRatPer2
             4 =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
                     (t2 * t - 2. * t2 + 4. * t - 1., 3. * t2 - 4. * t - 4.)
                 };
                 bounds = Bounds {
@@ -858,7 +853,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     let angle = Cplx::new(1., 0.);
 
                     let u = angle / t + pole;
-                    let du = -angle / (t * t);
+                    let du = -angle / t.powi(2);
 
                     let numer = horner!(u, A0, A1, A2, A3, A4, A5, A6);
                     let d_numer = horner!(u, A1, A2D, A3D, A4D, A5D, A6D);
@@ -907,17 +902,17 @@ impl HasDynamicalCovers for QuadRatPer2
             (2, 1) =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
                     // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
                     let u = t2 * (131. * t2 - 102. * t - 106.) - 8. * t - 4.;
                     let du = t2 * (524. * t - 306.) - 212. * t - 8.;
-                    let v = 13. * t2 + t + t + 2.;
+                    let v = 13. * t2 + 2. * t + 2.;
                     let dv = 26. * t + 2.;
 
                     let num = 25. * t2 * u;
                     let d_num = 50. * t * u + 25. * t2 * du;
 
-                    let v2 = v * v;
+                    let v2 = v.powi(2);
                     let den = (v2 * v).inv();
                     let d_den = -3. * v2 * v2 * dv;
 
@@ -934,7 +929,7 @@ impl HasDynamicalCovers for QuadRatPer2
             {
                 param_map = |t| {
                     //(-t^4 + 2*t^2 + 1)/(2*t^4)
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
                     let t4 = t2 * t2;
                     (0.5 - (t2 + 0.5) / t4, 2. * (t2 + 1.) / (t4 * t))
                 };
@@ -996,15 +991,15 @@ impl ParameterPlane for QuadRatPer2Cover
     #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        let z2 = z * z;
-        (c * z2 + 1.) / (z2 - c * c)
+        let z2 = z.powi(2);
+        (c * z2 + 1.) / (z2 - c.powi(2))
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        let c2 = c * c;
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
         (
             (c * z2 + 1.) / (z2 - c2),
             2. * z * (c2 * c + 1.) / (z2 - c2),
@@ -1012,17 +1007,13 @@ impl ParameterPlane for QuadRatPer2Cover
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let c2 = c * c;
-        2. * z * (c2 * c + 1.) / (z * z - c2)
-    }
+        let z2 = z.powi(2);
+        let u = (c.powi(2) - z2).inv();
+        let v = u * (c * z2 + 1.);
 
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        let z2 = z * z;
-        horner_monic!(z2, 2. * c, c * c)
+        (-v, -2. * u * z * (c + v), u * (2. * c * v - z2))
     }
 
     #[inline]

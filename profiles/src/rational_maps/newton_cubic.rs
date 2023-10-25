@@ -38,13 +38,6 @@ impl ParameterPlane for NewtonCubic
         (2. * z * z2 + 1.) / (3. * z2 + c)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        let z2 = z * z;
-        let df = 3. * z2 + c;
-        6. * (z * (z2 + c) - 1.) * z / (df * df)
-    }
-
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
@@ -55,17 +48,19 @@ impl ParameterPlane for NewtonCubic
         (z - u, 6. * z * u / df)
     }
 
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let z2 = z.powi(2);
+        let u = 2. * z2 * z + 1.;
+        let df_inv = (c + 3. * z2).inv();
+        let g = u * df_inv;
+        (g, 6. * df_inv * z * (z - g), -u * df_inv.powi(2))
+    }
+
     #[inline]
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ZERO
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        let z2 = z * z;
-        let df = 3. * z2 + c;
-        (-1. - 2. * z * z2) / (df * df)
     }
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>

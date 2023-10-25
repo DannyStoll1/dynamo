@@ -137,18 +137,6 @@ where
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        self.base_curve.dynamical_derivative(z, c)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        self.base_curve.parameter_derivative(z, c)
-    }
-
-    #[inline]
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         self.base_curve.gradient(z, c)

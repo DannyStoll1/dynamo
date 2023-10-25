@@ -1,3 +1,4 @@
+use dynamo_core::prelude::{ParameterPlane, ToChildParam};
 use egui::{Color32, Pos2, Ui};
 use std::path::Path;
 
@@ -287,6 +288,13 @@ where
         {
             self.select_ray_landing_point(angle);
         }
+    }
+
+    pub fn to_child_param<T>(&self, c: P::Param) -> T
+    where
+        P: ToChildParam<T>
+    {
+        self.plane.to_child_param(c)
     }
 
     #[must_use]
@@ -712,7 +720,8 @@ where
 
     fn describe_orbit_info(&self) -> String
     {
-        self.get_orbit_info().as_ref()
+        self.get_orbit_info()
+            .as_ref()
             .map_or_else(String::new, ToString::to_string)
     }
 

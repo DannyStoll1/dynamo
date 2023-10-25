@@ -175,16 +175,6 @@ impl Transpiler
         {map_d}
     }}
 
-    fn dynamical_derivative(&self, {z}: Self::Var, param: Self::Param) -> Self::Deriv
-    {{
-        self.map_and_multiplier(z, param).1
-    }}
-
-    fn parameter_derivative(&self, {z}: Self::Var, param: Self::Param) -> Self::Deriv
-    {{
-        ONE
-    }}
-
     fn name(&self) -> String
     {{
         \"{name}\".to_owned()

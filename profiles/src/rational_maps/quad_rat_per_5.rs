@@ -27,8 +27,8 @@ fn top_coeff(a: Cplx, b: Cplx) -> Cplx
     let d1 =
         (x2 + x2) * horner!(x, -30., 10., 575., -1073., -991., 3069., -236., -2262., 494., 452.);
     let d2 =
-        (x + x) * horner!(x, -3., 96., 206., -1496., -233., 4850., -1085., -4841., 1371., 1239.);
-    let d3 = (x + x) * horner!(x, 21., -39., -847., 162., 4979., -1887., -6105., 2292., 1960.);
+        2. * x * horner!(x, -3., 96., 206., -1496., -233., 4850., -1085., -4841., 1371., 1239.);
+    let d3 = 2. * x * horner!(x, 21., -39., -847., 162., 4979., -1887., -6105., 2292., 1960.);
     let d4 = horner!(x, 1., -52., -624., 336., 7378., -3342., -10034., 5234., 3935.);
     let d5 = horner!(x, -2., -144., 288., 3928., -1398., -5412., 4368., 2580.);
     let d6 = horner!(x, -16., 144., 1430., 30., -1682., 2738., 1084.);
@@ -88,18 +88,6 @@ impl ParameterPlane for QuadRatPer5
         let z2 = z.powi(2);
         let az = c.a * z;
         (1. + (az + c.b) / z2, -(az + 2. * c.b) / (z2 * z))
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        let z2 = z.powi(2);
-        -(c.a * z + 2. * c.b) / (z2 * z)
-    }
-    #[inline]
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
     }
 
     #[inline]
@@ -164,7 +152,7 @@ impl ParameterPlane for QuadRatPer5
                     horner_monic!(a, b2 * (b - 2.), b * (5. * b + 6.), 7. * b, u - 2.),
                     horner_monic!(a, ub + b2, ub, u + b, 4.),
                     horner!(a, -b, u, 2. * b + 5., 2.),
-                    horner_monic!(a, b2 + b + b + 1., b + b + 2.),
+                    horner_monic!(a, b2 + 2. * b + 1., 2. * b + 2.),
                 ];
                 solve_polynomial(coeffs)
             }
@@ -224,8 +212,6 @@ impl EscapeEncoding for QuadRatPer5
         let v = z.norm_sqr().log2();
         let delta = top_coeff(a, b).norm_sqr().log2();
         let residual = ((u + delta) / (v + delta)).log2();
-        // let residual = ((v - 1.) / (u + u - 1.)).log2() + 1.;
-        // (F - M) / (2L - M)
         let potential = (residual as IterCount).mul_add(5., f64::from(iters));
         PointInfo::Escaping { potential }
     }

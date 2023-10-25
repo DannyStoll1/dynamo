@@ -23,7 +23,6 @@ impl Default for OddCubic
     fractal_impl!();
 }
 
-#[allow(clippy::suspicious_operation_groupings)]
 impl ParameterPlane for OddCubic
 {
     parameter_plane_impl!();
@@ -33,7 +32,7 @@ impl ParameterPlane for OddCubic
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        2. * (z * z * z / 3. - c * z)
+        2. * z * (z.powi(2) / 3. - c)
     }
 
     #[inline]
@@ -50,22 +49,18 @@ impl ParameterPlane for OddCubic
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        2. * (z * z - c)
-    }
-
-    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         (2. * z * (z2 / 3. - c), 2. * (z2 - c))
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        -(z + z)
+        let z2 = z.powi(2);
+        let u = 2. * z;
+        (u * (z2 / 3. - c), 2. * (z2 - c), -u)
     }
 
     #[inline]

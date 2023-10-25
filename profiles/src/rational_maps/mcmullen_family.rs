@@ -49,14 +49,15 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         )
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        Self::M_FLOAT * z.powi(Self::M_MINUS_1) - Self::N_FLOAT / (c * z.powi(N + 1))
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        -(c * c * z.powi(N)).inv()
+        let zm1 = z.powi(Self::M_MINUS_1);
+        let czn_inv = (c * z.powi(N)).inv();
+        (
+            zm1 * z + czn_inv,
+            Self::M_FLOAT * zm1 - Self::N_FLOAT * czn_inv / z,
+            -czn_inv / c,
+        )
     }
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>

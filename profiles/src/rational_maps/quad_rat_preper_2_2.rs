@@ -40,12 +40,6 @@ impl ParameterPlane for QuadRatPreper22
         a / z * (1. - z) / (b + z)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
-    {
-        let u = z * (b + z);
-        -a * (b + z * (2. - z)) / (u * u)
-    }
-
     fn map_and_multiplier(
         &self,
         z: Self::Var,
@@ -64,11 +58,6 @@ impl ParameterPlane for QuadRatPreper22
             a: -t2,
             b: t2 + t + t,
         }
-    }
-
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
     }
 
     fn start_point(&self, _t: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var

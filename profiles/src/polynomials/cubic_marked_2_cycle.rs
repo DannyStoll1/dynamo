@@ -34,16 +34,24 @@ impl ParameterPlane for CubicMarked2Cycle
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         (z + c) * z2 - (2. + c) * z + 1.
     }
 
     fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let x0 = c + 2.;
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let x1 = z + c;
-        (-x0 * z + x1 * z2 + 1., -x0 + z2 + x1 * (z + z))
+        (-x0 * z + x1 * z2 + 1., z2 - x0 + 2. * x1 * z)
+    }
+
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let x0 = c + 2.;
+        let x1 = z + c;
+        let z2 = z.powi(2);
+        (-x0 * z + x1 * z2 + 1., z2 - x0 + 2. * x1 * z, z2 - z)
     }
 
     #[inline]
@@ -55,25 +63,24 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
+    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let x0 = c * ONE_THIRD;
+        let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
+        let s = (c.re + 1.5).signum();
+        (
+            disc * s - x0,
+            ZERO,
+            (2. * c + 3.) * s / (18. * disc) - ONE_THIRD,
+        )
+    }
+
+    #[inline]
     fn critical_points_child(&self, c: Cplx) -> ComplexVec
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
         vec![(disc - x0), (-disc - x0)]
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let z2 = z * z;
-        let x1 = z + c;
-        -c + z2 + (x1 + x1) * z - 2.
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
-    {
-        z * (z - 1.)
     }
 
     #[inline]

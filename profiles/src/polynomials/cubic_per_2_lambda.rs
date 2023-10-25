@@ -54,18 +54,6 @@ impl ParameterPlane for CubicPer2Lambda
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
-    {
-        horner!(z, -a - 1., -(b + b), 3. * a)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z * (1. + z * z)
-    }
-
-    #[inline]
     fn start_point(&self, _m: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
         let disc = (3. * a * (a + 1.) + b * b).sqrt();
@@ -233,31 +221,42 @@ impl ParameterPlane for CubicPer2LambdaParam
     {
         let a = 0.25 * (1.0 - l);
         let f = horner!(z, a, -(a + 1.), -a, a);
-        let df = horner!(z, -(a + 1.), -(a + a), 3. * a);
+        let df = horner!(z, -(a + 1.), -2. * a, 3. * a);
         (f, df)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, _z: Self::Var, _a: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        unimplemented!()
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z
+        let a = 0.25 * (1.0 - l);
+        let z2 = z.powi(2);
+        let f = a - z * (a + 1.) + a * z2 * (z - 1.);
+        let df_dz = a * (3. * z2 - 2. * z - 1.) - 1.;
+        let df_dl = -0.25 * (z - 1.) * (z2 - 1.);
+        (f, df_dz, df_dl)
     }
 
     #[inline]
     fn start_point(&self, _point: Cplx, l: Self::Param) -> Self::Var
     {
         let a = (1.0 - l) * 0.25;
-        let disc = (a * (1. - l + 3.)).sqrt();
+        let disc = (a * (4. - l)).sqrt();
         match self.starting_crit
         {
             PlaneID::ZPlane => ONE_THIRD * (1. + disc / a),
             PlaneID::WPlane => ONE_THIRD * (1. - disc / a),
+        }
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let a = (1.0 - l) * 0.25;
+        let disc = (a * (4. - l)).sqrt();
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => (ONE_THIRD * (1. + disc / a), ZERO, 0.125 / (a * disc)),
+            PlaneID::WPlane => (ONE_THIRD * (1. - disc / a), ZERO, -0.125 / (a * disc)),
         }
     }
 
@@ -337,7 +336,7 @@ impl ParameterPlane for CubicPer2CritMarked
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        z * z * (z - c - 1. / c) + c
+        z.powi(2) * (z - c - c.inv()) + c
     }
 
     #[inline]
@@ -347,19 +346,19 @@ impl ParameterPlane for CubicPer2CritMarked
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        // let u = z * (3. * z - c - c - 2. / c) * (z / c).re.signum();
-        // u / u.norm()
-        z * (3. * z - c - c - 2. / c)
+        let z2 = z.powi(2);
+        let u = z - c - c.inv();
+        (c + z2 * u, z2 + 2. * z * u)
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let z2 = z * z;
-        let c2 = c * c;
-        1. + z2 / c2 + -z2
+        let z2 = z.powi(2);
+        let u = z - c - c.inv();
+        (c + z2 * u, z2 + 2. * z * u, z2 * (c.powi(-2) - 1.) + 1.)
     }
 
     #[inline]
@@ -526,5 +525,13 @@ impl HasDynamicalCovers for CubicPer2CritMarked
         };
         let grid = self.point_grid.new_with_same_height(bounds);
         CoveringMap::new(self, param_map, grid)
+    }
+}
+
+impl ToChildParam<Cplx> for CubicPer2LambdaParam
+{
+    fn to_child_param(&self, c: Self::Param) -> Cplx
+    {
+        c
     }
 }

@@ -1,5 +1,5 @@
 use super::orbit::EscapeResult;
-use super::ParameterPlane;
+use super::{ParameterPlane, ToChildParam};
 use crate::macros::basic_plane_impl;
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::prelude::*;
@@ -87,19 +87,6 @@ where
     fn map(&self, z: Self::Var, _c: Self::Param) -> Self::Var
     {
         self.parent.map(z, self.local_param)
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        self.parent.dynamical_derivative(z, self.local_param)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        Self::Deriv::zero()
-        // self.parent.parameter_derivative(z, self.local_param)
     }
 
     #[inline]

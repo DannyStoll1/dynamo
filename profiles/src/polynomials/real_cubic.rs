@@ -41,11 +41,6 @@ impl ParameterPlane for RealCubicRealCrit
         b + z * (z.powi(2) - 3. * a.powi(2))
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, RealPair { a, .. }: Self::Param) -> Self::Deriv
-    {
-        3. * (z.powi(2) - a.powi(2))
-    }
-
     #[inline]
     fn map_and_multiplier(
         &self,
@@ -56,11 +51,6 @@ impl ParameterPlane for RealCubicRealCrit
         let z2 = z.powi(2);
         let a2 = a.powi(2);
         (b + z * (z2 - 3. * a2), 3. * (z2 - a2))
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        -6. * c.a * z
     }
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
@@ -125,11 +115,6 @@ impl ParameterPlane for RealCubicImagCrit
         b + z * (z.powi(2) + 3. * a.powi(2))
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, RealPair { a, .. }: Self::Param) -> Self::Deriv
-    {
-        3. * (z.powi(2) + a.powi(2))
-    }
-
     #[inline]
     fn map_and_multiplier(
         &self,
@@ -140,11 +125,6 @@ impl ParameterPlane for RealCubicImagCrit
         let z2 = z.powi(2);
         let a2 = a.powi(2);
         (b + z * (z2 + 3. * a2), 3. * (z2 + a2))
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        6. * c.a * z
     }
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>

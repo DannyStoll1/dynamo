@@ -8,7 +8,7 @@ use dynamo_common::{
     coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
     prelude::*,
 };
-use dynamo_core::dynamics::Displayable;
+use dynamo_core::{dynamics::Displayable, prelude::{ParameterPlane, ToChildParam}};
 
 use crate::{
     actions::Action,
@@ -100,11 +100,11 @@ where
 
 impl<P, J, C, M, T> MainInterface<P, J>
 where
-    P: Displayable + Clone,
+    P: Displayable + Clone + ToChildParam<T>,
     J: Displayable<MetaParam = M, Child = C> + Clone,
     C: Displayable + From<J>,
     M: ParamList<Param = T>,
-    T: From<P::Param> + std::fmt::Display,
+    T: std::fmt::Display
 {
     pub fn new(parent: P, child: J, image_height: usize) -> Self
     {
@@ -131,18 +131,20 @@ where
         let offset = new_bounds.center() - old_default_center;
         let new_center = old_center + offset;
 
+        let child_param = self.parent.to_child_param(new_param);
+
         if offset.is_finite()
         {
             new_bounds.zoom(self.child.zoom_factor, new_center);
             new_bounds.recenter(new_center);
             self.child.grid_mut().change_bounds(new_bounds);
-            self.child.set_param(T::from(new_param));
+            self.child.set_param(child_param);
         }
         else
         {
             // Reset child bounds to default
             self.child.grid_mut().change_bounds(new_bounds);
-            self.child.set_param(T::from(new_param));
+            self.child.set_param(child_param);
             self.child.grid_mut().resize_y(self.image_height);
             self.child.schedule_compute();
         }
@@ -416,11 +418,11 @@ where
 
 impl<P, J, C, M, T> PanePair for MainInterface<P, J>
 where
-    P: Displayable + Clone,
+    P: Displayable + Clone + ToChildParam<T>,
     J: Displayable<MetaParam = M, Child = C> + Clone,
     C: Displayable + From<J>,
     M: ParamList<Param = T>,
-    T: From<P::Param> + std::fmt::Display,
+    T: std::fmt::Display
 {
     fn parent(&self) -> &dyn Pane
     {
@@ -677,11 +679,11 @@ where
 
 impl<P, J, C, M, T> Interactive for MainInterface<P, J>
 where
-    P: Displayable + Clone,
+    P: Displayable + Clone + ToChildParam<T>,
     J: Displayable<MetaParam = M, Child = C> + Clone,
     C: Displayable + From<J>,
     M: ParamList<Param = T>,
-    T: From<P::Param> + std::fmt::Display,
+    T: std::fmt::Display
 {
     fn handle_input(&mut self, ctx: &Context)
     {

@@ -58,7 +58,8 @@ impl ParameterPlane for QuadRatPer4
     #[inline]
     fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
     {
-        (c + c) * (c + c - 1.) / (c * (c + 1.) - 1.)
+        let c2 = c.powi(2);
+        2. * (2. * c2 - c) / (c2 + c - 1.)
     }
 
     #[inline]
@@ -94,27 +95,13 @@ impl ParameterPlane for QuadRatPer4
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let c2 = c.powi(2);
-        (4. * c2 - (c2 + c - 1.) * z - c - c) / ((c - 1.) * z.powi(3))
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let v = (c - 1.) * z;
-        (1. + (2. - c) * c * (z - 2.)) / v.powi(2)
-    }
-
-    #[inline]
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let v = c - 1.;
         let c2 = c.powi(2);
         let z2 = z.powi(2);
         let u = (v * z2).inv();
-        let two_c = c + c;
+        let two_c = 2. * c;
         (
             (z - c) * (c * z - z - two_c + 1.) * u,
             (c2 + v - (4. * c2 - two_c) / z) * u,

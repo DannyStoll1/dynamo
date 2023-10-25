@@ -51,16 +51,19 @@ impl ParameterPlane for QuadRatPer1Lambda
     default_name!();
     default_bounds!(Bounds::centered_square(3.));
 
+    #[inline]
     fn max_iter(&self) -> Period
     {
         self.general_plane.max_iter
     }
 
+    #[inline]
     fn max_iter_mut(&mut self) -> &mut Period
     {
         &mut self.general_plane.max_iter
     }
 
+    #[inline]
     fn set_max_iter(&mut self, new_max_iter: Period)
     {
         self.general_plane.max_iter = new_max_iter;
@@ -73,11 +76,13 @@ impl ParameterPlane for QuadRatPer1Lambda
         self
     }
 
+    #[inline]
     fn point_grid(&self) -> &PointGrid
     {
         &self.general_plane.point_grid
     }
 
+    #[inline]
     fn point_grid_mut(&mut self) -> &mut PointGrid
     {
         &mut self.general_plane.point_grid
@@ -89,11 +94,6 @@ impl ParameterPlane for QuadRatPer1Lambda
         self
     }
 
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
-    {
-        self.general_plane.map(z, c)
-    }
-
     fn param_map(&self, t: Cplx) -> Self::Param
     {
         let alpha = 0.25 * t / self.multiplier;
@@ -103,46 +103,55 @@ impl ParameterPlane for QuadRatPer1Lambda
         }
     }
 
+    #[inline]
+    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    {
+        self.general_plane.map(z, c)
+    }
+
+    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.general_plane.map_and_multiplier(z, c)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        self.general_plane.dynamical_derivative(z, c)
-    }
-
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
-    }
-
+    #[inline]
     fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
     {
         self.general_plane.start_point(t, c)
     }
 
+    #[inline]
+    fn start_point_d(&self, point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        self.general_plane.start_point_d(point, c)
+    }
+
+    #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         self.general_plane.critical_points_child(c)
     }
 
+    #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         self.general_plane.cycles_child(c, period)
     }
 
+    #[inline]
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.multiplier
     }
 
+    #[inline]
     fn periodicity_tolerance(&self) -> Real
     {
         self.tolerance
     }
 
+    #[inline]
     fn set_param(&mut self, lambda: <Self::MetaParam as ParamList>::Param)
     {
         self.multiplier = lambda;
@@ -292,22 +301,24 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, l: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = -4. * l / horner_monic!(l, 8., 12., 6.);
-        -(a + a) / (z * z * z)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        (z * z).inv()
+        let u = (l + 2.).powi(-4);
+        let z_i2 = z.powi(-2);
+        (1. + a * z_i2, -2. * a * z_i2 / z, 8. * (l - 1.) * u * z_i2)
     }
 
     #[inline]
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         ONE
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (ONE, ZERO, ZERO)
     }
 
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
@@ -382,16 +393,19 @@ impl ParameterPlane for QuadRatPer1_1
     default_name!();
     default_bounds!(Bounds::centered_square(3.));
 
+    #[inline]
     fn max_iter(&self) -> Period
     {
         self.general_plane.max_iter
     }
 
+    #[inline]
     fn max_iter_mut(&mut self) -> &mut Period
     {
         &mut self.general_plane.max_iter
     }
 
+    #[inline]
     fn set_max_iter(&mut self, new_max_iter: Period)
     {
         self.general_plane.max_iter = new_max_iter;
@@ -404,22 +418,26 @@ impl ParameterPlane for QuadRatPer1_1
         self
     }
 
+    #[inline]
     fn point_grid(&self) -> &PointGrid
     {
         &self.general_plane.point_grid
     }
 
+    #[inline]
     fn point_grid_mut(&mut self) -> &mut PointGrid
     {
         &mut self.general_plane.point_grid
     }
 
+    #[inline]
     fn with_point_grid(mut self, point_grid: PointGrid) -> Self
     {
         self.general_plane.point_grid = point_grid;
         self
     }
 
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         self.general_plane.map(z, c)
@@ -435,36 +453,31 @@ impl ParameterPlane for QuadRatPer1_1
         }
     }
 
+    #[inline]
     fn periodicity_tolerance(&self) -> Real
     {
         1e-6
     }
 
+    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.general_plane.map_and_multiplier(z, c)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        self.general_plane.dynamical_derivative(z, c)
-    }
-
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
-    }
-
+    #[inline]
     fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
     {
         self.general_plane.start_point(t, c)
     }
 
+    #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         self.general_plane.critical_points_child(c)
     }
 
+    #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         self.general_plane.cycles_child(c, period)
@@ -474,3 +487,11 @@ impl ParameterPlane for QuadRatPer1_1
 degree_impl!(QuadRatPer1Lambda, 1, 1);
 degree_impl!(QuadRatPer1LambdaParam, 1, 1);
 degree_impl!(QuadRatPer1_1, 1, 1);
+
+impl ToChildParam<Cplx> for QuadRatPer1LambdaParam
+{
+    fn to_child_param(&self, c: Self::Param) -> Cplx
+    {
+        c
+    }
+}

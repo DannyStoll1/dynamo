@@ -43,21 +43,17 @@ impl ParameterPlane for QuadRatPreper21
         (c * (z + 2. + u), c * (1. - u.powi(2)))
     }
 
+    #[inline]
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let u = z.inv();
+        let v = z + 2. + u;
+        (c * v, c * (1. - u.powi(2)), v)
+    }
+
     fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
     {
         (1.).into()
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        c * (1. - 1. / z.powi(2))
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
-    {
-        z + z.inv() + 2.
     }
 
     #[inline]

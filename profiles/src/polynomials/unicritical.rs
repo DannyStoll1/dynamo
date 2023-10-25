@@ -1,4 +1,4 @@
-use crate::macros::{degree_impl, horner_monic, profile_imports, ext_ray_impl_nonmonic};
+use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
 use dynamo_common::{horner, math_utils::roots_of_unity};
 profile_imports!();
 
@@ -29,21 +29,13 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     parameter_plane_impl!();
     default_bounds!();
 
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         c * (1. + z / Self::D_FLOAT).powi(D)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        c * (1. + z / Self::D_FLOAT).powi(D - 1)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        (1. + z / Self::D_FLOAT).powi(D)
-    }
-
+    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         let u = 1. + z / Self::D_FLOAT;
@@ -141,7 +133,8 @@ impl<const D: i32> InfinityFirstReturnMap for Unicritical<D>
 
 impl<const D: i32> EscapeEncoding for Unicritical<D> {}
 
-impl<const D: i32> ExternalRays for Unicritical<D> {
+impl<const D: i32> ExternalRays for Unicritical<D>
+{
     ext_ray_impl_nonmonic!();
 }
 

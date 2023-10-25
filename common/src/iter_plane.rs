@@ -70,8 +70,7 @@ where
         self.iter_counts
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
-                image.pixels[x + (height - y - 1) * width] =
-                    coloring.map_color32(point_info);
+                image.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info);
             });
     }
     fn save(&self, coloring: &Coloring, filename: String)

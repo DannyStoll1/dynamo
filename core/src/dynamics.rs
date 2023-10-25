@@ -138,12 +138,12 @@ pub trait ParameterPlane: Sync + Send
         self
     }
 
+    #[must_use]
+    fn with_max_iter(self, max_iter: Period) -> Self;
+
     fn max_iter(&self) -> Period;
     fn max_iter_mut(&mut self) -> &mut Period;
     fn set_max_iter(&mut self, new_max_iter: Period);
-
-    #[must_use]
-    fn with_max_iter(self, max_iter: Period) -> Self;
 
     fn name(&self) -> String;
     fn description(&self) -> String
@@ -154,26 +154,16 @@ pub trait ParameterPlane: Sync + Send
     /// The map defining the dynamical system.
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var;
 
-    /// Derivative of the map with respect to the dynamical variable. Used for smooth coloration.
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
-
-    /// Derivative of the map with respect to the paraameter. Used for external rays in parameter
-    /// planes.
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
-
     /// The dynamical map, together with its derivative. This is the primary computational
     /// bottleneck, and should usually be implemented manually for optimization purposes.
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        (self.map(z, c), self.dynamical_derivative(z, c))
-    }
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv);
 
     /// The dynamical map, together with its derivative and parameter derivative. Used to compute
     /// external rays in parameter planes.
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (fz, df_dz) = self.map_and_multiplier(z, c);
-        (fz, df_dz, self.parameter_derivative(z, c))
+        (fz, df_dz, Self::Deriv::one())
     }
 
     /// If certain regions in parameter space are known (e.g. the main cardioid in the Mandelbrot set), we can
@@ -273,7 +263,7 @@ pub trait ParameterPlane: Sync + Send
     #[inline]
     fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
     {
-        (point.into(), Self::Deriv::one())
+        (self.param_map(point), Self::Deriv::one())
     }
 
     /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
@@ -1008,9 +998,12 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
         match result
         {
             EscapeResult::Bounded => PointInfo::Bounded,
-            EscapeResult::Periodic{info, final_value} => self.identify_marked_points(final_value, c, info),
+            EscapeResult::Periodic { info, final_value } =>
+            {
+                self.identify_marked_points(final_value, c, info)
+            }
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-            EscapeResult::Escaped{ iters, final_value } =>
+            EscapeResult::Escaped { iters, final_value } =>
             {
                 self.encode_escaping_point(iters, final_value, c)
             }
@@ -1040,17 +1033,45 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
     }
 }
 
+pub trait ToChildParam<C>: ParameterPlane
+{
+    fn to_child_param(
+        &self,
+        c: Self::Param,
+    ) -> C;
+}
+impl<T, C> ToChildParam<C> for T
+where
+    T: ParameterPlane<Child = JuliaSet<T>, Param = C>,
+{
+    fn to_child_param(
+        &self,
+        c: Self::Param,
+    ) -> Self::Param
+    {
+        c
+    }
+}
+
+impl<T, C: Default> ToChildParam<C> for JuliaSet<T>
+where T: ParameterPlane,
+{
+    fn to_child_param(
+        &self,
+        _c: Self::Param,
+    ) -> C
+    {
+        Default::default()
+    }
+}
+
 pub trait Computable: ParameterPlane + EscapeEncoding
 {
     fn compute(&self) -> IterPlane<Self::Deriv>;
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
 
-    fn run_and_encode_point(
-        &self,
-        start: Self::Var,
-        c: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),

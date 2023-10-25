@@ -37,7 +37,7 @@ impl ParameterPlane for QuadRatGeneral
 
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         (z2 + a) / (z2 + b)
     }
 
@@ -52,20 +52,9 @@ impl ParameterPlane for QuadRatGeneral
         CplxPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let denom = (z2 + b).inv();
-        ((z2 + a) * denom, 2. * z * (b - a) * denom * denom)
-    }
-
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
-    {
-        let denom = z * z + b;
-        2. * z * (b - a) / (denom * denom)
-    }
-
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
+        ((z2 + a) * denom, 2. * z * (b - a) * denom.powi(2))
     }
 
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
@@ -86,17 +75,17 @@ impl ParameterPlane for QuadRatGeneral
             2 =>
             {
                 let denom = (b + 1.).inv();
-                solve_quadratic((a + b * b) * denom, (b - a) * denom).to_vec()
+                solve_quadratic((a + b.powi(2)) * denom, (b - a) * denom).to_vec()
             }
             3 =>
             {
-                let b2 = b * b;
+                let b2 = b.powi(2);
                 let b3 = b2 * b;
-                let b4 = b2 * b2;
+                let b4 = b2.powi(2);
                 let b5 = b3 * b2;
                 let u = (b + 1.) * (b + 1.);
                 let coeffs = [
-                    horner_monic!(a, b3 * b3, b4, 2. * (b2 + b3), 1.),
+                    horner_monic!(a, b3.powi(2), b4, 2. * (b2 + b3), 1.),
                     -horner_monic!(a, -b5, b4 - 2. * b3, 2. * b2 - b),
                     horner!(
                         a,
@@ -114,16 +103,16 @@ impl ParameterPlane for QuadRatGeneral
             }
             4 =>
             {
-                let b2 = b * b;
+                let b2 = b.powi(2);
                 let b3 = b * b2;
-                let b4 = b2 * b2;
+                let b4 = b2.powi(2);
                 let b5 = b2 * b3;
-                let b6 = b3 * b3;
+                let b6 = b3.powi(2);
                 let b7 = b3 * b4;
-                let b8 = b4 * b4;
+                let b8 = b4.powi(2);
                 let b9 = b4 * b5;
                 let b11 = b5 * b6;
-                let b12 = b6 * b6;
+                let b12 = b6.powi(2);
                 let u = 1. + 2. * b;
                 let coeffs = [
                     b12 + a
@@ -244,7 +233,7 @@ impl ParameterPlane for QuadRatGeneral
                         1. + b2 * horner_monic!(b, 2., 3., 3., 3.),
                         horner!(b, 6., 2., 4., 4.),
                         horner!(b, 11., 7., 5., 3.),
-                        b + b + 6.
+                        2. * b + 6.
                     ),
                 ];
                 solve_polynomial(coeffs)

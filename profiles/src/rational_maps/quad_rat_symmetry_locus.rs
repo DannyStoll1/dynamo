@@ -39,24 +39,20 @@ impl ParameterPlane for QuadRatSymmetryLocus
     fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
     {
         let u = z.inv();
-        (c * (z + u), c * (1. - u * u))
+        (c * (z + u), c * (1. - u.powi(2)))
+    }
+
+    #[inline]
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let u = z.inv();
+        let v = z + u;
+        (c * v, c * (1. - u.powi(2)), v)
     }
 
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
     {
         (1.).into()
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        c * (1. - 1. / (z * z))
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
-    {
-        z + 1. / z
     }
 
     #[inline]
@@ -85,7 +81,7 @@ impl ParameterPlane for QuadRatSymmetryLocus
                 {
                     return vec![];
                 }
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let u = 1. + c + c2;
                 let v = (c2 * u).inv();
                 let a2 = v * horner!(c, 1., -1., 2., 1., 3.);
@@ -105,8 +101,8 @@ impl ParameterPlane for QuadRatSymmetryLocus
                 {
                     return vec![];
                 }
-                let c2 = c * c;
-                let c4 = c2 * c2;
+                let c2 = c.powi(2);
+                let c4 = c2.powi(2);
                 let c_neg6 = (c2 * c4).inv();
                 let u = c2 * horner!(c2, 1., 2., 4.);
                 let v = horner!(c2, 1., 3., 4., 6.);

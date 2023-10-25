@@ -70,22 +70,6 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let u = 1. / (c.powi(2) - z.powi(2));
-        let v = c + 1.;
-        2.0 * (1. - c) * (u * v).powi(2) * z
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let r = c.powi(2) - z.powi(2);
-        let u2 = r.powi(-2);
-        (c + 1.) * u2 * (r - c * (r + 2.0 * (1.0 - z.powi(2))))
-    }
-
-    #[inline]
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);

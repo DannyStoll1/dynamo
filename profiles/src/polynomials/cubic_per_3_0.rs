@@ -37,7 +37,6 @@ impl ParameterPlane for CubicPer3_0
     default_bounds!();
 
     #[inline]
-
     fn map_and_multiplier(
         &self,
         z: Self::Var,
@@ -48,26 +47,18 @@ impl ParameterPlane for CubicPer3_0
         (1. + z2 * (b + a * z), z * (3. * a * z + b + b))
     }
 
+    #[inline]
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {
         horner!(z, 1., 0., b, a)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
-    {
-        z * (3. * a + b + b)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z * z * z
-    }
     fn param_map(&self, t: Cplx) -> Self::Param
     {
         let u = t + 1.;
-        let u2_inv = (u * u).inv();
+        let u2_inv = u.powi(-2);
         let a = 1. - t - 3. / u + u2_inv;
-        let b = t * t * t * u2_inv + u / t;
+        let b = t.powi(3) * u2_inv + u / t;
         CplxPair { a, b }
     }
     #[inline]
@@ -77,7 +68,7 @@ impl ParameterPlane for CubicPer3_0
     }
     fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
-        -(b + b) / (3. * a)
+        -TWO_THIRDS * b / a
     }
     fn start_point_d(
         &self,
