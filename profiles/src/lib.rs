@@ -197,7 +197,7 @@ mod tests
     fn ext_ray()
     {
         // let param_plane = Mandelbrot::default();
-        let param_plane: Chebyshev<1> = Default::default();
+        let param_plane: Chebyshev<2> = Default::default();
         let angle = RationalAngle::new(1, 3);
         let ray = param_plane.external_ray(angle);
         dbg!(ray);
@@ -236,7 +236,9 @@ mod tests
         let palette = ColorPalette::default();
         let mut coloring = Coloring::new(calg, palette);
 
-        coloring.load_palette("../palettes/test_palette.toml");
+        coloring
+            .load_palette("../palettes/test_palette.toml")
+            .expect("Failed to load palette");
 
         let col0 = coloring.map_color32(res0);
         // let col1 = coloring.map_color32(res1);

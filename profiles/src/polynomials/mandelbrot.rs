@@ -4,18 +4,6 @@ use crate::macros::{cplx_arr, degree_impl, horner, horner_monic, profile_imports
 
 profile_imports!();
 
-#[inline]
-fn f(z: Cplx, c: Cplx) -> Cplx
-{
-    z.powi(2) + c
-}
-
-#[inline]
-fn df_dz(z: Cplx, _c: Cplx) -> Cplx
-{
-    2. * z
-}
-
 #[derive(Clone, Debug)]
 pub struct Mandelbrot
 {
@@ -58,14 +46,21 @@ impl ParameterPlane for Mandelbrot
         ZERO
     }
 
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        f(z, c)
+        z.powi(2) + c
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        df_dz(z, c)
+        (z.powi(2) + c, 2. * z)
+    }
+
+    fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
+    {
+        2. * z
     }
 
     fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv

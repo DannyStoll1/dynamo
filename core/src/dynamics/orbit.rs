@@ -168,16 +168,25 @@ where
         }
     }
 
+    #[inline]
     fn get_map_value(&self, z: V) -> V
     {
         (self.f)(z, self.param)
     }
 
+    #[inline]
     fn get_map_value_and_derivative(&self, z: V) -> (V, D)
     {
         (self.map_and_multiplier)(z, self.param)
     }
 
+    #[inline]
+    fn apply_map_to_slow(&mut self)
+    {
+        self.z_slow = (self.f)(self.z_slow, self.param)
+    }
+
+    #[inline]
     fn apply_map_and_update_multiplier(&mut self)
     {
         let (z_new, deriv) = (self.map_and_multiplier)(self.z_fast, self.param);
@@ -185,11 +194,13 @@ where
         self.z_fast = z_new;
     }
 
+    #[inline]
     fn derivative(&self, z: V) -> D
     {
         (self.map_and_multiplier)(z, self.param).1
     }
 
+    #[inline]
     fn check_early_bailout(&mut self)
     {
         self.state = (self.early_bailout)(self.z_slow, self.param);
@@ -214,106 +225,94 @@ where
             self.iter += 1;
             if self.iter % 2 == 1
             {
-                self.z_slow = self.get_map_value(self.z_slow);
+                self.apply_map_to_slow();
                 self.apply_map_and_update_multiplier();
-                self.state = self.stop_condition(self.iter, self.z_fast);
+                self.state = self.stop_condition();
             }
             else
             {
                 self.apply_map_and_update_multiplier();
                 self.state =
-                    self.check_periodicity(self.iter, self.z_slow, self.z_fast, self.param);
+                    self.check_periodicity();
             }
         }
         self.state
     }
 
-    fn stop_condition(&self, iter: Period, z: V) -> EscapeState<V, D>
+    #[inline]
+    fn stop_condition(&self) -> EscapeState<V, D>
     {
-        if iter > self.max_iter
+        if self.iter > self.max_iter
         {
             return EscapeState::Bounded;
         }
-        if iter < self.min_iter
+        if self.iter < self.min_iter
         {
             return EscapeState::NotYetEscaped;
         }
 
-        let r = z.norm_sqr();
-        if r > self.escape_radius || z.is_nan()
+        let r = self.z_fast.norm_sqr();
+        if r > self.escape_radius || self.z_fast.is_nan()
         {
             return EscapeState::Escaped {
-                iters: iter,
-                final_value: z,
-            };
+                iters: self.iter,
+                final_value: self.z_fast,
+            }
         }
         EscapeState::NotYetEscaped
     }
 
-    fn check_periodicity(&self, iter: Period, z_slow: V, z_fast: V, param: P) -> EscapeState<V, D>
+    fn check_periodicity(&self) -> EscapeState<V, D>
     {
-        if iter > self.max_iter
+        if self.iter > self.max_iter
         {
             return EscapeState::Bounded;
         }
-        if iter < self.min_iter
+        if self.iter < self.min_iter
         {
             return EscapeState::NotYetEscaped;
         }
 
-        let r = z_fast.norm_sqr();
-        if r > self.escape_radius || z_fast.is_nan()
+        let r = self.z_fast.norm_sqr();
+        if r > self.escape_radius || self.z_fast.is_nan()
         {
-            EscapeState::Escaped {
-                iters: iter,
-                final_value: z_fast,
+            return EscapeState::Escaped {
+                iters: self.iter,
+                final_value: self.z_fast,
             }
         }
-        else if z_fast.dist_sqr(z_slow) < self.periodicity_tolerance
+        else if self.z_fast.dist_sqr(self.z_slow) < self.periodicity_tolerance
         {
             if let Some((period, multiplier)) = self.compute_period(
-                z_fast,
-                param,
                 self.periodicity_tolerance.powf(0.75),
-                iter as usize,
+                self.iter as usize,
             )
             {
-                EscapeState::Periodic(PointInfoPeriodic {
-                    value: z_fast,
-                    preperiod: iter,
+                return EscapeState::Periodic(PointInfoPeriodic {
+                    value: self.z_fast,
+                    preperiod: self.iter,
                     period,
                     multiplier,
-                    final_error: z_fast.dist_sqr(z_slow),
+                    final_error: self.z_fast.dist_sqr(self.z_slow),
                 })
             }
-            else
-            {
-                EscapeState::NotYetEscaped
-            }
         }
-        else
-        {
-            EscapeState::NotYetEscaped
-        }
+        EscapeState::NotYetEscaped
     }
 
-    fn compute_period(&self, z0: V, _c: P, tolerance: Real, patience: usize)
+    fn compute_period(&self, tolerance: Real, patience: usize)
         -> Option<(Period, D)>
     {
-        let mut z = z0;
+        let mut z = self.z_fast;
         let mut dz: D;
         let mut mult = D::one();
         for i in 1..=patience
         {
             (z, dz) = self.get_map_value_and_derivative(z);
             mult *= dz;
-            if z.dist_sqr(z0) <= tolerance
+            if z.dist_sqr(self.z_fast) <= tolerance
             {
-                if let Ok(period) = Period::try_from(i)
-                {
-                    return Some((period, mult));
-                }
-                return None;
+                return Period::try_from(i).ok().map(|n|(n, mult))
             }
         }
         None
@@ -339,16 +338,16 @@ where
             self.iter += 1;
             if self.iter % 2 == 1
             {
-                self.z_slow = self.get_map_value(self.z_slow);
+                self.apply_map_to_slow();
                 self.apply_map_and_update_multiplier();
-                self.state = self.stop_condition(self.iter, self.z_fast);
+                self.state = self.stop_condition();
             }
             else
             {
                 self.apply_map_and_update_multiplier();
                 // dbg!(self.z_fast.dist_sqr(self.z_slow));
                 self.state =
-                    self.check_periodicity(self.iter, self.z_slow, self.z_fast, self.param);
+                    self.check_periodicity();
             }
             Some((retval, self.state))
         }

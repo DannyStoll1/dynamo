@@ -511,7 +511,6 @@ where
         {
             return None;
         }
-        let deg_log2 = deg_real.log2();
 
         let pixel_width = self.point_grid().pixel_width() * 0.03;
         let error = self.point_grid().res_x as Real * 1e-8;
@@ -522,23 +521,31 @@ where
         let mut t_list = vec![];
 
         let deg_real = self.degree_real();
-        let angle_boost = self.escape_coeff_d(NoParam).0.arg() / TAU;
+        let a = self.escape_coeff(NoParam);
+        let angle_boost = a.arg() / TAU;
 
         // Target angle for the composite map at each step.
         // Initialized to value after self.escaping_phase() iterations.
         let mut target_angle = Real::from(self.angle_map_large_param(angle));
 
+        let factor = (-deg_real.log2() / Real::from(RAY_SHARPNESS)).exp2();
+        let du = a.norm().log2() / Real::from(RAY_SHARPNESS);
+
         for k in 0..RAY_DEPTH
         {
+            let v = target_angle.to_circle();
+            let mut u = escape_radius_log2;
+
             // Relative log2-norms of targets
             // jth target norm = escape_radius^deg^(-j/S)
             // u_j = log2(escape_radius) * deg^(-j/S)
-            let us = (0..RAY_SHARPNESS).map(|j| {
-                escape_radius_log2
-                    * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
+            let us = (0..RAY_SHARPNESS).map(|_| {
+                let u_i = u;
+                u *= factor;
+                u -= du;
+                u_i
             });
 
-            let v = target_angle.to_circle();
             let targets = us.map(|u| u.exp2() * v);
 
             let mut t_curr = *t_list.last().unwrap_or(&base_point);

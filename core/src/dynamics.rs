@@ -804,7 +804,6 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
         {
             return None;
         }
-        let deg_log2 = deg_real.log2();
 
         let pixel_width = self.point_grid().pixel_width() * 0.03;
         let error = self.point_grid().res_x as Real * 1e-8;
@@ -821,14 +820,20 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
         // Initialized to value after self.escaping_phase() iterations.
         let mut target_angle = self.angle_map_large_param(angle);
 
+        let factor = (-deg_real.log2() / Real::from(RAY_SHARPNESS)).exp2();
+
         for k in 0..RAY_DEPTH
         {
             // Relative log2-norms of targets
             // jth target norm = escape_radius^deg^(-j/S)
             // u_j = log2(escape_radius) * deg^(-j/S)
-            let us = (0..RAY_SHARPNESS).map(|j| {
-                escape_radius_log2
-                    * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
+            let mut u = Cplx::from(escape_radius_log2);
+            let us = (0..RAY_SHARPNESS).map(|_| {
+                let ui = u;
+                let a = self.escape_coeff(self.param_map(Cplx::from(u)));
+                u *= factor;
+                u -= a.log2() / Real::from(RAY_SHARPNESS);
+                ui
             });
 
             let v = target_angle.to_circle();
@@ -1126,7 +1131,7 @@ where
 
         let orbits = ThreadLocal::new();
 
-        let chunk_size = self.point_grid().res_y / num_cpus::get(); // or another value that gives optimal performance
+        let chunk_size = self.point_grid().res_y / num_cpus::get();
 
         iter_plane
             .iter_counts
