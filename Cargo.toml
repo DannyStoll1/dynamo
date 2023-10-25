@@ -5,6 +5,7 @@ members = [
     "app",
     "bin",
     "common",
+    "coloring",
     "core",
     "gui",
     "wasm",

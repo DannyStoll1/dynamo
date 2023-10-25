@@ -55,6 +55,11 @@ pub trait Describe: std::fmt::Display
     {
         Some(self.to_string())
     }
+
+    fn describe_in_orbit_info(&self) -> String
+    {
+        String::new()
+    }
 }
 
 /// Used to print the name and value of a variable in the GUI's format
@@ -179,3 +184,73 @@ try_round_impl!(f64, i64);
 try_round_impl!(f64, i32);
 try_round_impl!(f32, i64);
 try_round_impl!(f32, i32);
+
+use num_traits::{One, Zero};
+use std::fmt::Display;
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub};
+
+pub trait Variable:
+    Norm<Real>
+    + Dist<Real>
+    + Sub<Output = Self>
+    + MaybeNan
+    + Clone
+    + Send
+    + Default
+    + From<Cplx>
+    + Into<Cplx>
+    + Display
+{
+}
+pub trait Parameter:
+    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Describe + Summarize
+{
+}
+pub trait Derivative:
+    Polar<Real>
+    + Send
+    + Default
+    + Zero
+    + One
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + AddAssign
+    + MulAssign
+    + Display
+    + Into<Cplx>
+{
+}
+
+impl<V> Variable for V where
+    V: Norm<Real>
+        + Dist<Real>
+        + Sub<Output = Self>
+        + MaybeNan
+        + Clone
+        + Send
+        + Default
+        + From<Cplx>
+        + Into<Cplx>
+        + Display
+{
+}
+impl<P> Parameter for P where
+    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Describe + Summarize
+{
+}
+impl<D> Derivative for D where
+    D: Polar<Real>
+        + Send
+        + Default
+        + Zero
+        + One
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + Mul<Output = Self>
+        + AddAssign
+        + MulAssign
+        + Display
+        + Into<Cplx>
+{
+}

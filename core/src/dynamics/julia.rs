@@ -1,10 +1,11 @@
 use super::orbit::EscapeResult;
 use super::ParameterPlane;
 use crate::macros::basic_plane_impl;
+use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
+use dynamo_common::math_utils::newton::find_target_newton_err_d;
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
-use dynamo_common::{coloring::*, math_utils::newton::find_target_newton_err_d};
 use num_traits::{One, Zero};
 
 use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, PlaneType};
@@ -248,7 +249,9 @@ where
     #[inline]
     fn name(&self) -> String
     {
-        "JuliaSet".to_owned()
+        let parent_name = self.parent.name();
+
+        format!("Julia({parent_name})")
     }
 
     fn description(&self) -> String

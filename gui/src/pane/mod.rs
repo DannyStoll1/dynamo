@@ -3,10 +3,10 @@ use std::path::Path;
 
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
-use dynamo_common::coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette, Coloring};
+use dynamo_color::prelude::*;
 use dynamo_common::prelude::*;
-use dynamo_core::dynamics::error::FindPointResult;
-use dynamo_core::dynamics::{Displayable, PlaneType};
+use dynamo_core::error::FindPointResult;
+use dynamo_core::prelude::*;
 
 pub mod id;
 pub mod tasks;
@@ -52,8 +52,8 @@ pub trait Pane
     fn put_marked_curves(&self, ui: &mut Ui);
 
     fn plane_type(&self) -> PlaneType;
-    fn plane_name(&self) -> String;
     fn name(&self) -> String;
+    fn long_name(&self) -> String;
 
     fn grid(&self) -> &PointGrid;
 
@@ -101,7 +101,7 @@ pub trait Pane
         self.schedule_compute();
     }
 
-    fn change_palette(&mut self, palette: ColorPalette)
+    fn change_palette(&mut self, palette: Palette)
     {
         self.get_coloring_mut().set_palette(palette);
         self.marking_mut().sched_recolor_all();
@@ -260,7 +260,7 @@ where
     pub image_frame: ImageFrame,
     tasks: PaneTasks,
     selection: Cplx,
-    orbit_info: Option<OrbitInfo<P::Var, P::Deriv>>,
+    orbit_info: Option<OrbitInfo<P::Param, P::Var, P::Deriv>>,
     pub marking: Marking,
     pub zoom_factor: Real,
     pub ray_state: RayState,
@@ -327,17 +327,17 @@ where
     }
 
     #[inline]
-    const fn get_orbit_info(&self) -> &Option<OrbitInfo<P::Var, P::Deriv>>
+    const fn get_orbit_info(&self) -> &Option<OrbitInfo<P::Param, P::Var, P::Deriv>>
     {
         &self.orbit_info
     }
     #[inline]
-    fn get_orbit_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Var, P::Deriv>>
+    fn get_orbit_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Param, P::Var, P::Deriv>>
     {
         &mut self.orbit_info
     }
     #[inline]
-    fn set_orbit_info(&mut self, info: OrbitInfo<P::Var, P::Deriv>)
+    fn set_orbit_info(&mut self, info: OrbitInfo<P::Param, P::Var, P::Deriv>)
     {
         self.orbit_info = Some(info);
     }
@@ -712,7 +712,8 @@ where
 
     fn describe_orbit_info(&self) -> String
     {
-        self.get_orbit_info().as_ref()
+        self.get_orbit_info()
+            .as_ref()
             .map_or_else(String::new, ToString::to_string)
     }
 
@@ -728,16 +729,13 @@ where
         self.plane.plane_type()
     }
 
-    fn plane_name(&self) -> String
+    fn name(&self) -> String
     {
         self.plane.name()
     }
 
-    fn name(&self) -> String
+    fn long_name(&self) -> String
     {
-        self.plane.get_param().summarize().map_or_else(
-            || self.plane.name(),
-            |local| format!("{}: {}", self.plane.name(), local),
-        )
+        self.plane.name()
     }
 }

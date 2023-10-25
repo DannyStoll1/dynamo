@@ -1,99 +1,29 @@
-use dynamo_common::coloring::*;
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
 use dynamo_common::math_utils::{arithmetic::*, newton::*};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
+use dynamo_color::{Coloring, IncoloringAlgorithm};
+use num_traits::{One, Zero};
+
 use ndarray::{Array2, Axis};
 use num_cpus;
-use num_traits::{NumOps, One, Zero};
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::{cell::RefCell, f64::consts::TAU};
-use std::{fmt::Display, ops::AddAssign};
 use thread_local::ThreadLocal;
 
 pub mod covering_maps;
-pub mod error;
 pub mod julia;
 pub mod newton;
 pub mod orbit;
-use orbit::EscapeResult;
 
+use crate::error::{FindPointError, FindPointResult};
 use julia::JuliaSet;
-use orbit::{CycleDetectedOrbitFloyd, SimpleOrbit};
-use std::ops::{Add, Mul, MulAssign, Sub};
+use orbit::*;
 
-use self::error::{FindPointError, FindPointResult};
-use self::orbit::OrbitParams;
-// pub use simple_parameter_plane::SimpleParameterPlane;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-pub trait Variable:
-    Norm<Real>
-    + Dist<Real>
-    + Sub<Output = Self>
-    + MaybeNan
-    + Clone
-    + Send
-    + Default
-    + From<Cplx>
-    + Into<Cplx>
-    + Display
-{
-}
-pub trait Parameter:
-    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
-{
-}
-pub trait Derivative:
-    Polar<Real>
-    + Send
-    + Default
-    + Zero
-    + One
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + Mul<Output = Self>
-    + AddAssign
-    + MulAssign
-    + Display
-    + Into<Cplx>
-{
-}
-
-impl<V> Variable for V where
-    V: Norm<Real>
-        + Dist<Real>
-        + Sub<Output = Self>
-        + MaybeNan
-        + Clone
-        + Send
-        + Default
-        + From<Cplx>
-        + Into<Cplx>
-        + Display
-{
-}
-impl<P> Parameter for P where
-    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Summarize
-{
-}
-impl<D> Derivative for D where
-    D: Polar<Real>
-        + Send
-        + Default
-        + Zero
-        + One
-        + Add<Output = Self>
-        + Sub<Output = Self>
-        + Mul<Output = Self>
-        + AddAssign
-        + MulAssign
-        + Display
-        + Into<Cplx>
-{
-}
 
 pub trait ParameterPlane: Sync + Send
 {
@@ -146,6 +76,13 @@ pub trait ParameterPlane: Sync + Send
     fn with_max_iter(self, max_iter: Period) -> Self;
 
     fn name(&self) -> String;
+    fn long_name(&self) -> String {
+        let short_name = self.name();
+        self.get_param().summarize().map_or_else(
+            || self.name(),
+            |param_desc| format!("{short_name}: {param_desc}"),
+        )
+    }
     fn description(&self) -> String
     {
         String::new()
@@ -1071,15 +1008,15 @@ pub trait Computable: ParameterPlane + EscapeEncoding
         self.encode_escape_result(state, c)
     }
 
-    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Var, Self::Deriv>
+    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         let result = self.run_and_encode_point(start, param);
-        OrbitInfo { start, result }
+        OrbitInfo { param, start, result }
     }
 
-    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Var, Self::Deriv>
+    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
@@ -1107,7 +1044,7 @@ pub trait Computable: ParameterPlane + EscapeEncoding
         let result = self.encode_escape_result(final_state.unwrap_or_default(), param);
         OrbitAndInfo {
             orbit: trajectory,
-            info: OrbitInfo { start, result },
+            info: OrbitInfo { param, start, result },
         }
     }
 }

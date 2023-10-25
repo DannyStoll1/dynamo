@@ -706,6 +706,7 @@ impl FractalTab
         });
     }
 
+    #[allow(clippy::unused_self)]
     fn help_menu(&mut self, _ui: &mut Ui)
     {
         // TODO: create help menu

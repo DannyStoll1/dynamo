@@ -3,7 +3,7 @@ use crate::{
     actions::Action,
     pane::id::{PaneID::*, PaneSelection::*},
 };
-use dynamo_common::coloring::algorithms::IncoloringAlgorithm;
+use dynamo_color::IncoloringAlgorithm;
 use keyboard_shortcuts::*;
 use seq_macro::seq;
 

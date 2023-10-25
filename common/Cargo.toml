@@ -12,16 +12,11 @@ bindgen = {version = "0.66", optional = true}
 [dependencies]
 num = ">=0.4"
 num-complex = ">=0.4.3"
-rand = ">=0.8.5"
-rand_distr = ">=0.4.3"
 rayon = ">=1.7.0"
-image = "*"
-egui = "0.23.0"
 ndarray = ">=0.15.6"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 libc = {version = "0.2.147", optional = true}
 serde = { version = "1.0.166", features = ["derive"], optional = true }
-toml = { version = "0.8.4", optional = true }
 num-rational = "0.4.1"
 num-traits = "0.2.16"
 lazy_static = "1.4.0"
@@ -30,4 +25,4 @@ poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"
 
 [features]
-serde = ["dep:serde", "dep:toml", "num-complex/serde", "egui/serde"]
+serde = ["dep:serde", "num-complex/serde"]

@@ -4,10 +4,8 @@ use egui::{Context, CursorIcon, InputState, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
 
-use dynamo_common::{
-    coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
-    prelude::*,
-};
+use dynamo_color::{IncoloringAlgorithm, Palette};
+use dynamo_common::prelude::*;
 use dynamo_core::dynamics::Displayable;
 
 use crate::{
@@ -48,7 +46,7 @@ pub trait PanePair
     fn child(&self) -> &dyn Pane;
     fn child_mut(&mut self) -> &mut dyn Pane;
     fn randomize_palette(&mut self);
-    fn set_palette(&mut self, palette: ColorPalette);
+    fn set_palette(&mut self, palette: Palette);
     fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm);
 
     fn get_pane(&self, pane_id: PaneID) -> &dyn Pane;
@@ -440,7 +438,7 @@ where
     }
     fn randomize_palette(&mut self)
     {
-        let palette = ColorPalette::new_random(0.45, 0.38);
+        let palette = Palette::new_random(0.45, 0.38);
         self.parent.change_palette(palette);
         self.child.change_palette(palette);
     }
@@ -463,7 +461,7 @@ where
                         "Example formats: <15/56>, <110>, <p011>, <001p010>",
                     ),
                     ray_type,
-                    pane.plane_name()
+                    pane.name()
                 );
                 TextDialogBuilder::new(input_type)
                     .title("External ray angle input")
@@ -478,7 +476,7 @@ where
                         "Input the period to draw all active rays on {}.\n",
                         "Format: <period> or <preperiod, period>"
                     ),
-                    pane.plane_name()
+                    pane.name()
                 );
                 TextDialogBuilder::new(input_type)
                     .title("Draw active rays")
@@ -493,7 +491,7 @@ where
                         "Input the period to find a nearby point on {}.\n",
                         "Format: <period> or <preperiod, period>"
                     ),
-                    pane.plane_name()
+                    pane.name()
                 );
                 TextDialogBuilder::new(input_type)
                     .title("Find nearby point")
@@ -505,7 +503,7 @@ where
                 let pane = self.get_pane(pane_id);
                 let prompt = format!(
                     "Enter the coordinates of the point to select on {}",
-                    pane.plane_name()
+                    pane.name()
                 );
                 TextDialogBuilder::new(input_type)
                     .title("Input coordinates")
@@ -526,7 +524,7 @@ where
             .show_rename(false)
             .show_new_folder(true);
         file_dialog.open();
-        let file_dialog = file_dialog.default_filename(format!("{}.png", self.parent.name()));
+        let file_dialog = file_dialog.default_filename(format!("{}.png", self.parent.long_name()));
         self.dialog = Some(Dialog::Save {
             pane_selection,
             file_dialog,
@@ -631,7 +629,7 @@ where
         }
     }
 
-    fn set_palette(&mut self, palette: ColorPalette)
+    fn set_palette(&mut self, palette: Palette)
     {
         self.parent.change_palette(palette);
         self.child.change_palette(palette);
@@ -814,10 +812,10 @@ where
             .stick_to_bottom(true)
             .header(20.0, |mut header| {
                 header.col(|ui| {
-                    ui.heading(self.parent().name());
+                    ui.heading(self.parent().long_name());
                 });
                 header.col(|ui| {
-                    ui.heading(self.child().name());
+                    ui.heading(self.child().long_name());
                 });
             })
             .body(|mut body| {
@@ -1026,12 +1024,12 @@ where
             }
             Action::SetPaletteWhite =>
             {
-                let white_palette = ColorPalette::white(32.);
+                let white_palette = Palette::white(32.);
                 self.set_palette(white_palette);
             }
             Action::SetPaletteBlack =>
             {
-                let black_palette = ColorPalette::black(32.);
+                let black_palette = Palette::black(32.);
                 self.set_palette(black_palette);
             }
             Action::SetColoring(algorithm) =>

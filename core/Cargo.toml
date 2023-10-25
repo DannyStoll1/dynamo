@@ -8,15 +8,17 @@ repository = "https://github.com/dannystoll1/dynamo"
 description = "A tool for studying discrete time dynamical systems - Core Files"
 
 [dependencies]
-# num = ">=0.6.0"
+dynamo_common = { version = "*", path = "../common" }
+dynamo_color = { version = "*", path = "../coloring" }
+
 rayon = ">=1.7.0"
 thread_local = ">=1.1.7"
 num_cpus = ">=1.16.0"
 ndarray = ">=0.15.6"
+
+num-traits = "0.2.16"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 serde = { version = "1.0.166", features = ["derive"], optional = true }
-dynamo_common = { version = "*", path = "../common" }
-num-traits = "0.2.16"
 
 [features]
 serde = ["dep:serde", "dynamo_common/serde"]

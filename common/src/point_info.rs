@@ -25,42 +25,6 @@ pub enum PointInfo<D>
         num_point_classes: usize,
     },
 }
-impl<V, D> std::fmt::Display for OrbitInfo<V, D>
-where
-    V: std::fmt::Display,
-    D: std::fmt::Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
-    {
-        use PointInfo::*;
-        let result_summary = match &self.result
-        {
-            Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
-            Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
-            PeriodicKnownPotential(data) => data.to_string(),
-            Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
-            Wandering => "Wandering (appears to escape very slowly)".to_owned(),
-        };
-        write!(
-            f,
-            "Starting point: {:.*}\n{}",
-            DISPLAY_PREC, self.start, result_summary
-        )
-    }
-}
-
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct OrbitInfo<V, D>
-{
-    pub start: V,
-    pub result: PointInfo<D>,
-}
-pub struct OrbitAndInfo<V, D>
-{
-    pub orbit: Vec<V>,
-    pub info: OrbitInfo<V, D>,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

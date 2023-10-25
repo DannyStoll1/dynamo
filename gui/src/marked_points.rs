@@ -7,7 +7,7 @@ use image::{ImageBuffer, Rgb};
 use imageproc::drawing::{draw_filled_circle_mut, draw_polygon_mut};
 use itertools::Itertools;
 
-use dynamo_common::coloring::palette::DiscretePalette;
+use dynamo_color::palette::DiscretePalette;
 use dynamo_common::prelude::*;
 use dynamo_core::dynamics::Displayable;
 

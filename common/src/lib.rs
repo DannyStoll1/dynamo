@@ -1,13 +1,12 @@
 #![feature(const_fn_floating_point_arithmetic)]
 #![allow(dead_code)]
 
-pub mod coloring;
 pub mod consts;
 pub mod globals;
 pub mod iter_plane;
 pub mod macros;
 pub mod math_utils;
-pub mod orbit_info;
+pub mod point_info;
 pub mod point_grid;
 pub mod prelude;
 pub mod rational_angle;
@@ -204,22 +203,5 @@ mod tests
         let it = angle.with_degree(2);
         let s = format!("{it:>13}");
         assert_eq!(s, "    p01101001");
-    }
-
-    #[test]
-    fn hsv()
-    {
-        use crate::coloring::types::Hsv;
-        use image::Rgb;
-
-        let hsv = Hsv::new(0., 1., 0.4);
-        let rgb = Rgb::from(hsv);
-        let hsv1 = Hsv::from(rgb);
-
-        dbg!(hsv, rgb, hsv1);
-
-        assert!(hsv.hue - hsv1.hue < 1e-2);
-        assert!(hsv.saturation - hsv1.saturation < 1e-2);
-        assert!(hsv.intensity - hsv1.intensity < 1e-2);
     }
 }

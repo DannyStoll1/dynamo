@@ -155,7 +155,7 @@ impl Default for BiquadraticMult
 impl ParameterPlane for BiquadraticMult
 {
     type Var = Bicomplex;
-    type Param = CplxPair;
+    type Param = param::OuterParam;
     type Deriv = Cplx;
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
@@ -173,10 +173,7 @@ impl ParameterPlane for BiquadraticMult
     fn param_map(&self, point: Cplx) -> Self::Param
     {
         let point = -point.powf(ONE_THIRD);
-        Self::Param {
-            a: point,
-            b: self.multiplier / point,
-        }
+        Self::Param::by_multiplier(self.multiplier, point)
     }
 
     #[inline]
@@ -275,7 +272,11 @@ impl ParameterPlane for BiquadraticMult
         }
     }
 
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(
+        &self,
+        param::OuterParam(CplxPair { a, b }): Self::Param,
+        period: Period,
+    ) -> Vec<Self::Var>
     {
         match period
         {
@@ -438,7 +439,7 @@ impl Default for BiquadraticMultParam
 
 impl ParameterPlane for BiquadraticMultParam
 {
-    type Param = CplxPair;
+    type Param = param::OuterParam;
     type Var = Bicomplex;
     type Deriv = Cplx;
     type MetaParam = NoParam;
@@ -447,13 +448,11 @@ impl ParameterPlane for BiquadraticMultParam
     default_bounds!();
 
     #[inline]
-    fn param_map(&self, c: Cplx) -> Self::Param
+    fn param_map(&self, t: Cplx) -> Self::Param
     {
-        Self::Param {
-            a: 1e-4.into(),
-            b: c * 1e4,
-        }
+        t.into()
     }
+
     #[inline]
     fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
     {
@@ -946,3 +945,87 @@ impl ExternalRays for Biquadratic {}
 impl ExternalRays for BiquadraticMult {}
 impl ExternalRays for BiquadraticMultParam {}
 impl ExternalRays for BiquadraticMultSection {}
+
+pub mod param
+{
+    use dynamo_common::prelude::*;
+
+    #[derive(Clone, Copy, Default, Debug, PartialEq)]
+    pub struct OuterParam(pub CplxPair);
+
+    impl OuterParam
+    {
+        #[must_use]
+        pub const fn new(a: Cplx, b: Cplx) -> Self
+        {
+            Self(CplxPair { a, b })
+        }
+        pub fn by_multiplier<T>(mult: Cplx, t: T) -> Self
+        where
+            T: Copy + Into<Cplx>,
+            Cplx: std::ops::Div<T, Output = Cplx>,
+        {
+            Self(CplxPair {
+                a: t.into(),
+                b: mult / t,
+            })
+        }
+    }
+
+    impl std::fmt::Display for OuterParam
+    {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+        {
+            self.0.fmt(f)
+        }
+    }
+
+    impl std::ops::Deref for OuterParam
+    {
+        type Target = CplxPair;
+        fn deref(&self) -> &Self::Target
+        {
+            &self.0
+        }
+    }
+
+    impl std::ops::DerefMut for OuterParam
+    {
+        fn deref_mut(&mut self) -> &mut Self::Target
+        {
+            &mut self.0
+        }
+    }
+
+    impl From<OuterParam> for Cplx
+    {
+        fn from(x: OuterParam) -> Self
+        {
+            x.a * x.b
+        }
+    }
+
+    impl From<Cplx> for OuterParam
+    {
+        fn from(mu: Cplx) -> Self
+        {
+            Self::by_multiplier(mu, 1e-4)
+        }
+    }
+
+    impl Describe for OuterParam
+    {
+        fn describe(&self) -> Option<String>
+        {
+            self.0.describe()
+        }
+    }
+
+    impl Summarize for OuterParam
+    {
+        fn summarize(&self) -> Option<String>
+        {
+            self.0.summarize()
+        }
+    }
+}

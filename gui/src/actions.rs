@@ -1,8 +1,6 @@
 use crate::pane::id::*;
-use dynamo_common::{
-    coloring::{algorithms::IncoloringAlgorithm, palette::ColorPalette},
-    types::{IterCount, Period},
-};
+use dynamo_color::{IncoloringAlgorithm, Palette};
+use dynamo_common::types::{IterCount, Period};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -49,7 +47,7 @@ pub enum Action
     ScaleMaxIter(IterCount),
     // Coloring
     RandomizePalette,
-    SetPalette(ColorPalette),
+    SetPalette(Palette),
     SetPaletteWhite,
     SetPaletteBlack,
     SetColoring(IncoloringAlgorithm),

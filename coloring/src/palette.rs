@@ -1,6 +1,6 @@
 use super::Hsv;
-use crate::symbolic_dynamics::OrbitSchema;
-use crate::types::IterCount;
+use dynamo_common::symbolic_dynamics::OrbitSchema;
+use dynamo_common::types::IterCount;
 use egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
@@ -88,7 +88,7 @@ impl Default for Sinusoid
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ColorPalette
+pub struct Palette
 {
     pub color_map_r: Sinusoid,
     pub color_map_g: Sinusoid,
@@ -98,7 +98,7 @@ pub struct ColorPalette
     pub wandering_color: Color32,
 }
 
-impl ColorPalette
+impl Palette
 {
     #[must_use]
     pub const fn new(period_r: f64, period_g: f64, period_b: f64) -> Self
@@ -243,7 +243,7 @@ impl ColorPalette
     }
 }
 
-impl Default for ColorPalette
+impl Default for Palette
 {
     fn default() -> Self
     {

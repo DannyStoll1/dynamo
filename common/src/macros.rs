@@ -1,17 +1,3 @@
-macro_rules! max {
-    ($x:expr) => ( $x );
-    ($x:expr, $($xs:expr),+) => {
-        std::cmp::max($x, max!( $($xs),+ ))
-    };
-}
-
-macro_rules! min {
-    ($x:expr) => ( $x );
-    ($x:expr, $($xs:expr),+) => {
-        std::cmp::min($x, min!( $($xs),+ ))
-    };
-}
-
 #[macro_export]
 macro_rules! horner {
     ($c: expr) => ( $c );
@@ -32,4 +18,3 @@ macro_rules! horner_monic {
 }
 
 pub use {horner, horner_monic};
-pub(crate) use {max, min};

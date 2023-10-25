@@ -1,20 +1,18 @@
-use std::{
-    ops::{Deref, DerefMut},
-    path::Path,
-};
+#![allow(dead_code)]
 
-use crate::orbit_info::PointInfo;
-use crate::traits::Polar;
-use crate::types::Real;
+use dynamo_common::prelude::*;
+use egui::Color32;
+use image::Rgb;
+use std::path::Path;
 
 pub mod algorithms;
+pub mod fractal_image;
 pub mod palette;
+pub mod prelude;
 pub mod types;
 
 pub use algorithms::IncoloringAlgorithm;
-use egui::Color32;
-use image::Rgb;
-use palette::ColorPalette;
+pub use palette::Palette;
 use types::Hsv;
 
 #[cfg(feature = "serde")]
@@ -27,12 +25,12 @@ use self::palette::DiscretePalette;
 pub struct Coloring
 {
     algorithm: IncoloringAlgorithm,
-    palette: ColorPalette,
+    palette: Palette,
 }
 impl Coloring
 {
     #[must_use]
-    pub const fn new(algorithm: IncoloringAlgorithm, palette: ColorPalette) -> Self
+    pub const fn new(algorithm: IncoloringAlgorithm, palette: Palette) -> Self
     {
         Self { algorithm, palette }
     }
@@ -79,12 +77,12 @@ impl Coloring
         Rgb([r, g, b])
     }
 
-    pub fn set_palette(&mut self, palette: ColorPalette)
+    pub fn set_palette(&mut self, palette: Palette)
     {
         self.palette = palette;
     }
     #[must_use]
-    pub const fn get_palette(&self) -> &ColorPalette
+    pub const fn get_palette(&self) -> &Palette
     {
         &self.palette
     }
@@ -128,15 +126,15 @@ impl Coloring
         P: AsRef<Path>,
     {
         let content = std::fs::read_to_string(path)?;
-        let palette: ColorPalette = toml::from_str(&content)?;
+        let palette: Palette = toml::from_str(&content)?;
         self.palette = palette;
         Ok(())
     }
 }
 
-impl Deref for Coloring
+impl std::ops::Deref for Coloring
 {
-    type Target = ColorPalette;
+    type Target = Palette;
 
     fn deref(&self) -> &Self::Target
     {
@@ -144,10 +142,31 @@ impl Deref for Coloring
     }
 }
 
-impl DerefMut for Coloring
+impl std::ops::DerefMut for Coloring
 {
     fn deref_mut(&mut self) -> &mut Self::Target
     {
         &mut self.palette
+    }
+}
+
+#[cfg(test)]
+mod tests
+{
+    #[test]
+    fn hsv()
+    {
+        use crate::types::Hsv;
+        use image::Rgb;
+
+        let hsv = Hsv::new(0., 1., 0.4);
+        let rgb = Rgb::from(hsv);
+        let hsv1 = Hsv::from(rgb);
+
+        dbg!(hsv, rgb, hsv1);
+
+        assert!(hsv.hue - hsv1.hue < 1e-2);
+        assert!(hsv.saturation - hsv1.saturation < 1e-2);
+        assert!(hsv.intensity - hsv1.intensity < 1e-2);
     }
 }

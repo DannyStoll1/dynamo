@@ -1,6 +1,7 @@
 use super::julia::JuliaSet;
 use super::orbit::EscapeResult;
 use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, ParameterPlane};
+use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use num_traits::One;
@@ -194,7 +195,7 @@ where
     }
 
     #[inline]
-    fn default_coloring(&self) -> dynamo_common::coloring::Coloring
+    fn default_coloring(&self) -> Coloring
     {
         self.base_curve.default_coloring()
     }

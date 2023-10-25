@@ -1,10 +1,6 @@
-use super::palette::ColorPalette;
-use super::types::Hsv;
-use crate::consts::TAU;
-use crate::orbit_info::PointInfoPeriodic;
-use crate::prelude::PointInfoKnownPotential;
-use crate::traits::Polar;
-use crate::types::{IterCount, Real};
+use crate::palette::Palette;
+use crate::types::Hsv;
+use dynamo_common::prelude::*;
 use egui::Color32;
 
 #[cfg(feature = "serde")]
@@ -54,7 +50,7 @@ impl IncoloringAlgorithm
     #[must_use]
     pub fn color_periodic<D>(
         &self,
-        palette: &ColorPalette,
+        palette: &Palette,
         point_info: &PointInfoPeriodic<D>,
     ) -> Color32
     where
@@ -183,7 +179,7 @@ impl IncoloringAlgorithm
 
     pub fn color_known_potential<D: Polar<Real>>(
         &self,
-        palette: &ColorPalette,
+        palette: &Palette,
         info: &PointInfoKnownPotential<D>,
     ) -> Color32
     {

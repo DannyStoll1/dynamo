@@ -528,3 +528,46 @@ where
 //         }
 //     }
 // }
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct OrbitInfo<P, V, D>
+{
+    pub param: P,
+    pub start: V,
+    pub result: PointInfo<D>,
+}
+pub struct OrbitAndInfo<P, V, D>
+{
+    pub orbit: Vec<V>,
+    pub info: OrbitInfo<P, V, D>,
+}
+
+impl<P, V, D> std::fmt::Display for OrbitInfo<P, V, D>
+where
+    P: Describe,
+    V: std::fmt::Display,
+    D: std::fmt::Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        use PointInfo::*;
+        let result_summary = match &self.result
+        {
+            Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
+            Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
+            PeriodicKnownPotential(data) => data.to_string(),
+            Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
+            Wandering => "Wandering (appears to escape very slowly)".to_owned(),
+        };
+        write!(
+            f,
+            "Starting point: {start:.*}\n\
+            {param_desc}\
+            {result_summary}",
+            DISPLAY_PREC,
+            start = self.start,
+            param_desc = self.param.describe_in_orbit_info()
+        )
+    }
+}

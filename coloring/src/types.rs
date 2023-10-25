@@ -1,6 +1,5 @@
 use std::f32::consts::TAU;
 
-use crate::macros::{max, min};
 use egui::Color32;
 use image::{Pixel, Rgb};
 
@@ -95,8 +94,8 @@ impl Hsv
 
     fn from_rgb_tuple((r, g, b): (u8, u8, u8)) -> Self
     {
-        let c_max = max!(r, g, b);
-        let c_min = min!(r, g, b);
+        let c_max = r.max(g).max(b);
+        let c_min = r.min(g).min(b);
         let range = c_max - c_min;
 
         if range == 0
