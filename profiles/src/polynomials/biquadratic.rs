@@ -60,8 +60,8 @@ impl ParameterPlane for Biquadratic
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * z + c),
-            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * w + self.multiplier),
+            Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z.powi(2) + c),
+            Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w.powi(2) + self.multiplier),
         }
     }
 
@@ -70,8 +70,8 @@ impl ParameterPlane for Biquadratic
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * z + c), z + z),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * w + self.multiplier), w + w),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w.powi(2) + self.multiplier), 2. * w),
         }
     }
 
@@ -79,7 +79,7 @@ impl ParameterPlane for Biquadratic
     fn dynamical_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
     {
         let u: Cplx = zw.into();
-        u + u
+        2. * u
     }
 
     #[inline]
@@ -127,28 +127,30 @@ pub struct BiquadraticMult
     starting_plane: PlaneID,
 }
 
-impl BiquadraticMult
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.8,
-        max_x: 2.8,
-        min_y: -2.55,
-        max_y: 2.55,
-    };
-}
+// impl BiquadraticMult
+// {
+//     const DEFAULT_BOUNDS: Bounds = Bounds {
+//         min_x: -2.8,
+//         max_x: 2.8,
+//         min_y: -2.55,
+//         max_y: 2.55,
+//     };
+// }
 
 impl Default for BiquadraticMult
 {
     fn default() -> Self
     {
-        let bounds = Self::DEFAULT_BOUNDS;
+        let multiplier = Cplx::new(0.5, 0.0);
+        let bounds = Bounds::centered_square(2.5);
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
             max_iter: 1024,
-            multiplier: 0.5.into(),
+            multiplier,
             starting_plane: PlaneID::ZPlane,
         }
+        .with_default_bounds()
     }
 }
 
@@ -160,7 +162,11 @@ impl ParameterPlane for BiquadraticMult
     type MetaParam = Cplx;
     type Child = JuliaSet<Self>;
     basic_plane_impl!();
-    default_bounds!();
+
+    fn default_bounds(&self) -> Bounds
+    {
+        Bounds::square(14., self.default_selection())
+    }
 
     #[inline]
     fn name(&self) -> String
@@ -201,8 +207,8 @@ impl ParameterPlane for BiquadraticMult
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), z + z + c.a),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), w + w + c.b),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), 2. * w + c.b),
         }
     }
 
@@ -211,8 +217,8 @@ impl ParameterPlane for BiquadraticMult
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => z + z + c.a,
-            Bicomplex::PlaneB(w) => w + w + c.b,
+            Bicomplex::PlaneA(z) => 2. * z + c.a,
+            Bicomplex::PlaneB(w) => 2. * w + c.b,
         }
     }
 
@@ -230,15 +236,15 @@ impl ParameterPlane for BiquadraticMult
     {
         let l = self.multiplier;
         let d0 = ((l - 8.) * l + 32.).sqrt();
-        let q0 = (2. * (l - 4. + d0)).powf(ONE_THIRD);
-        let q1 = (2. * (l - 4. - d0)).powf(ONE_THIRD);
+        let q0 = -2. * (l - 4. + d0);
+        let q1 = -2. * (l - 4. - d0);
         [
             q0,
             q1,
-            q0 * OMEGA,
-            q1 * OMEGA,
-            q0 * OMEGA_BAR,
-            q1 * OMEGA_BAR,
+            // q0 * OMEGA,
+            // q1 * OMEGA,
+            // q0 * OMEGA_BAR,
+            // q1 * OMEGA_BAR,
         ]
         .iter()
         .copied()
@@ -284,7 +290,7 @@ impl ParameterPlane for BiquadraticMult
             {
                 PlaneID::ZPlane =>
                 {
-                    let [r0, r1, r2] = solve_cubic(a * b - 1., a * a + b, a + a);
+                    let [r0, r1, r2] = solve_cubic(a * b - 1., a.powi(2) + b, 2. * a);
                     vec![
                         Bicomplex::PlaneA(ZERO),
                         Bicomplex::PlaneA(r0),
@@ -294,7 +300,7 @@ impl ParameterPlane for BiquadraticMult
                 }
                 PlaneID::WPlane =>
                 {
-                    let [r0, r1, r2] = solve_cubic(b * a - 1., b * b + a, b + b);
+                    let [r0, r1, r2] = solve_cubic(b * a - 1., b.powi(2) + a, 2. * b);
                     vec![
                         Bicomplex::PlaneB(ZERO),
                         Bicomplex::PlaneB(r0),
@@ -305,7 +311,7 @@ impl ParameterPlane for BiquadraticMult
             },
             4 =>
             {
-                let b2 = b * b;
+                let b2 = b.powi(2);
                 let b3 = b * b2;
                 let coeffs = [
                     a * b + 1.,
@@ -352,7 +358,8 @@ impl ParameterPlane for BiquadraticMult
 
     fn default_selection(&self) -> Cplx
     {
-        Cplx::new(1.062_658_8, 0.)
+        8. - 4. * self.multiplier
+        // Cplx::new(1.062_658_8, 0.)
     }
 
     fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
@@ -468,8 +475,8 @@ impl ParameterPlane for BiquadraticMultParam
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), z + z + c.a),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), w + w + c.b),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), 2. * w + c.b),
         }
     }
 
@@ -478,8 +485,8 @@ impl ParameterPlane for BiquadraticMultParam
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => z + z + c.a,
-            Bicomplex::PlaneB(w) => w + w + c.b,
+            Bicomplex::PlaneA(z) => 2. * z + c.a,
+            Bicomplex::PlaneB(w) => 2. * w + c.b,
         }
     }
 
@@ -496,11 +503,7 @@ impl ParameterPlane for BiquadraticMultParam
     #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
-        match self.starting_plane
-        {
-            PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c.a),
-            PlaneID::WPlane => Bicomplex::PlaneB(-0.5 * c.b),
-        }
+        Bicomplex::PlaneA(-0.5 * c.a)
     }
 
     fn cycle_active_plane(&mut self)
@@ -560,15 +563,14 @@ impl From<BiquadraticMultParam> for BiquadraticMult
     {
         let point = parent.default_selection();
         let param = parent.param_map(point);
-        let point_grid = parent
-            .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, param));
+        let point_grid = parent.point_grid().clone();
         Self {
             point_grid,
             max_iter: parent.max_iter(),
             multiplier: param.a * param.b,
             starting_plane: parent.starting_plane,
         }
+        .with_default_bounds()
     }
 }
 
@@ -636,7 +638,7 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     {
         let a = self.multiplier / c;
         let w = z * (z + c);
-        (w * (w + a), (c + z + z) * (a + w + w))
+        (w * (w + a), (c + 2. * z) * (a + 2. * w))
     }
 
     #[inline]
@@ -644,13 +646,13 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     {
         let a = self.multiplier / c;
         let w = z * (z + c);
-        (c + z + z) * (a + w + w)
+        (c + 2. * z) * (a + 2. * w)
     }
 
     #[inline]
     fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        2. * (z * z + c)
+        2. * (z.powi(2) + c)
     }
 
     #[inline]
@@ -663,8 +665,8 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         let x2z = x2 * z;
         (
             w * x2,
-            x0 * x2 + w * (c + z + z) + x2z,
-            w * (z - a * a) + x2z,
+            x0 * x2 + w * (c + 2. * z) + x2z,
+            w * (z - a.powi(2)) + x2z,
         )
     }
 
@@ -788,8 +790,8 @@ impl ParameterPlane for BiquadraticMultSection
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), z + z + c),
-            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), w + w + 1.),
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1.),
         }
     }
 
@@ -798,8 +800,8 @@ impl ParameterPlane for BiquadraticMultSection
     {
         match zw
         {
-            Bicomplex::PlaneA(z) => z + z + c,
-            Bicomplex::PlaneB(w) => w + w + 1.,
+            Bicomplex::PlaneA(z) => 2. * z + c,
+            Bicomplex::PlaneB(w) => 2. * w + 1.,
         }
     }
 
@@ -820,7 +822,7 @@ impl ParameterPlane for BiquadraticMultSection
         {
             PlaneID::ZPlane =>
             {
-                let disc = (c * c - 2.).sqrt();
+                let disc = (c.powi(2) - 2.).sqrt();
                 vec![
                     Bicomplex::PlaneA(-0.5 * c),
                     Bicomplex::PlaneA(-0.5 * (c + disc)),
@@ -847,7 +849,7 @@ impl ParameterPlane for BiquadraticMultSection
             {
                 PlaneID::ZPlane =>
                 {
-                    let [r0, r1, r2] = solve_cubic(a - 1., a * a + 1., a + a);
+                    let [r0, r1, r2] = solve_cubic(a - 1., a.powi(2) + 1., 2. * a);
                     vec![
                         Bicomplex::PlaneA(ZERO),
                         Bicomplex::PlaneA(r0),
@@ -1015,9 +1017,9 @@ pub mod param
 
     impl Describe for OuterParam
     {
-        fn describe(&self) -> Option<String>
+        fn describe(&self, conf: &DescriptionConf) -> Option<String>
         {
-            self.0.describe()
+            self.0.describe(conf)
         }
     }
 

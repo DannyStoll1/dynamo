@@ -1,4 +1,4 @@
-use crate::macros::{degree_impl, horner_monic, profile_imports, ext_ray_impl_nonmonic};
+use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
 use dynamo_common::{horner, math_utils::roots_of_unity};
 profile_imports!();
 
@@ -141,7 +141,8 @@ impl<const D: i32> InfinityFirstReturnMap for Unicritical<D>
 
 impl<const D: i32> EscapeEncoding for Unicritical<D> {}
 
-impl<const D: i32> ExternalRays for Unicritical<D> {
+impl<const D: i32> ExternalRays for Unicritical<D>
+{
     ext_ray_impl_nonmonic!();
 }
 

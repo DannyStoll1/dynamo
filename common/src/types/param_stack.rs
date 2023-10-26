@@ -1,5 +1,8 @@
 use super::Cplx;
-use crate::traits::{Describe, Summarize};
+use crate::{
+    prelude::DescriptionConf,
+    traits::{Describe, Summarize},
+};
 use derive_more::Display;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
@@ -15,7 +18,7 @@ impl From<Cplx> for NoParam
 
 impl Describe for NoParam
 {
-    fn describe(&self) -> Option<String>
+    fn describe(&self, _desc_params: &DescriptionConf) -> Option<String>
     {
         None
     }
@@ -100,12 +103,12 @@ where
     T: Clone + Default + Summarize + Describe,
     H: Clone + Default + PartialEq + Summarize + Describe,
 {
-    fn describe(&self) -> Option<String>
+    fn describe(&self, desc_params: &DescriptionConf) -> Option<String>
     {
-        self.meta_params.describe().map_or_else(
-            || self.local_param.describe(),
+        self.meta_params.describe(desc_params).map_or_else(
+            || self.local_param.describe(desc_params),
             |meta| {
-                if let Some(local) = self.local_param.describe()
+                if let Some(local) = self.local_param.describe(desc_params)
                 {
                     Some(format!("[{meta}, {local}]"))
                 }

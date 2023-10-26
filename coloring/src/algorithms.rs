@@ -48,11 +48,7 @@ impl IncoloringAlgorithm
     }
 
     #[must_use]
-    pub fn color_periodic<D>(
-        &self,
-        palette: &Palette,
-        point_info: &PointInfoPeriodic<D>,
-    ) -> Color32
+    pub fn color_periodic<D>(&self, palette: &Palette, point_info: &PointInfoPeriodic<D>) -> Color32
     where
         D: Polar<Real>,
     {

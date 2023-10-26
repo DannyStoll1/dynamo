@@ -48,17 +48,54 @@ pub trait Named
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct DescriptionConf
+{
+    pub is_enabled: bool,
+    pub precision: usize,
+}
+impl DescriptionConf
+{
+    #[must_use]
+    pub const fn new() -> Self
+    {
+        Self {
+            is_enabled: false,
+            precision: DISPLAY_PREC,
+        }
+    }
+    #[must_use]
+    pub const fn enabled(self) -> Self
+    {
+        self.with_visibility(true)
+    }
+    #[must_use]
+    pub const fn with_visibility(mut self, visible: bool) -> Self
+    {
+        self.is_enabled = visible;
+        self
+    }
+    #[must_use]
+    pub const fn with_precision(mut self, prec: usize) -> Self
+    {
+        self.precision = prec;
+        self
+    }
+}
+impl Default for DescriptionConf
+{
+    fn default() -> Self
+    {
+        Self::new()
+    }
+}
+
 /// Used to print the value of a variable in the GUI's format
 pub trait Describe: std::fmt::Display
 {
-    fn describe(&self) -> Option<String>
+    fn describe(&self, desc_conf: &DescriptionConf) -> Option<String>
     {
-        Some(self.to_string())
-    }
-
-    fn describe_in_orbit_info(&self) -> String
-    {
-        String::new()
+        desc_conf.is_enabled.then(|| self.to_string())
     }
 }
 
@@ -85,7 +122,11 @@ where
 {
     fn summarize(&self) -> Option<String>
     {
-        Some(format!("{} = {}", self.name(), self.describe()?))
+        Some(format!(
+            "{} = {}",
+            self.name(),
+            self.describe(&DescriptionConf::new())?
+        ))
     }
 }
 
@@ -102,9 +143,11 @@ impl<T> Describe for T
 where
     T: FloatLike,
 {
-    fn describe(&self) -> Option<String>
+    fn describe(&self, params: &DescriptionConf) -> Option<String>
     {
-        Some(format!("{self:.DISPLAY_PREC$}"))
+        params
+            .is_enabled
+            .then(|| format!("{self:.prec$}", prec = params.precision))
     }
 }
 
@@ -118,9 +161,9 @@ impl Named for i32
 
 impl Describe for i32
 {
-    fn describe(&self) -> Option<String>
+    fn describe(&self, params: &DescriptionConf) -> Option<String>
     {
-        Some(format!("{self}"))
+        params.is_enabled.then(|| format!("{self}"))
     }
 }
 
@@ -191,7 +234,6 @@ use std::ops::{Add, AddAssign, Mul, MulAssign, Sub};
 
 pub trait Variable:
     Norm<Real>
-    + Dist<Real>
     + Sub<Output = Self>
     + MaybeNan
     + Clone
@@ -199,7 +241,7 @@ pub trait Variable:
     + Default
     + From<Cplx>
     + Into<Cplx>
-    + Display
+    + Describe
 {
 }
 pub trait Parameter:
@@ -224,7 +266,6 @@ pub trait Derivative:
 
 impl<V> Variable for V where
     V: Norm<Real>
-        + Dist<Real>
         + Sub<Output = Self>
         + MaybeNan
         + Clone
@@ -232,7 +273,7 @@ impl<V> Variable for V where
         + Default
         + From<Cplx>
         + Into<Cplx>
-        + Display
+        + Describe
 {
 }
 impl<P> Parameter for P where

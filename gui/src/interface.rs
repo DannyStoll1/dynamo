@@ -119,30 +119,33 @@ where
         }
     }
 
-    fn set_child_param(&mut self, point: Cplx, new_param: P::Param)
+    fn set_child_param(&mut self, new_param: P::Param)
     {
-        let mut new_bounds = self.parent.plane.default_julia_bounds(point, new_param);
-
-        // Set the new center to equal the old center plus whatever deviation the user has created
         let old_center = self.child.grid().center();
         let old_default_center = self.child.plane.default_bounds().center();
-        let offset = new_bounds.center() - old_default_center;
-        let new_center = old_center + offset;
 
-        if offset.is_finite()
+        if self.child.set_param(T::from(new_param))
         {
-            new_bounds.zoom(self.child.zoom_factor, new_center);
-            new_bounds.recenter(new_center);
-            self.child.grid_mut().change_bounds(new_bounds);
-            self.child.set_param(T::from(new_param));
-        }
-        else
-        {
-            // Reset child bounds to default
-            self.child.grid_mut().change_bounds(new_bounds);
-            self.child.set_param(T::from(new_param));
-            self.child.grid_mut().resize_y(self.image_height);
-            self.child.schedule_compute();
+            let mut new_bounds = self.child.plane.default_bounds();
+
+            // Set the new center to equal the old center plus whatever deviation the user has created
+            let offset = new_bounds.center() - old_default_center;
+            let new_center = old_center + offset;
+
+            if offset.is_finite()
+            {
+                new_bounds.zoom(self.child.zoom_factor, new_center);
+                new_bounds.recenter(new_center);
+                self.child.grid_mut().change_bounds(new_bounds);
+                self.child.schedule_recompute();
+            }
+            else
+            {
+                // Reset child bounds to default
+                self.child.grid_mut().change_bounds(new_bounds);
+                self.child.grid_mut().resize_y(self.image_height);
+                self.child.schedule_compute();
+            }
         }
     }
 
@@ -322,7 +325,7 @@ where
         {
             let parent_selection = self.parent.get_selection();
             let new_child_param = self.parent.plane.param_map(parent_selection);
-            self.set_child_param(parent_selection, new_child_param);
+            self.set_child_param(new_child_param);
         }
     }
 

@@ -1,5 +1,5 @@
-use dynamo_common::prelude::*;
 use crate::Coloring;
+use dynamo_common::prelude::*;
 use egui::{Color32, ColorImage};
 use image::{ImageBuffer, Rgb};
 

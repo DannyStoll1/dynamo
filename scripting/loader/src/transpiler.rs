@@ -83,8 +83,8 @@ impl Transpiler
         }}\n\
         {display_impl}\n\
         impl Describe for Parameters {{
-            fn describe(&self) -> Option<String> {{
-                Some(self.to_string())
+            fn describe(&self, conf: &DescriptionConf) -> Option<String> {{
+                conf.is_enabled.then(|| self.to_string())
             }}
         }}"
         )

@@ -1,8 +1,8 @@
+use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
 use dynamo_common::math_utils::{arithmetic::*, newton::*};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
-use dynamo_color::{Coloring, IncoloringAlgorithm};
 use num_traits::{One, Zero};
 
 use ndarray::{Array2, Axis};
@@ -20,10 +20,8 @@ use crate::error::{FindPointError, FindPointResult};
 use julia::JuliaSet;
 use orbit::*;
 
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
 
 pub trait ParameterPlane: Sync + Send
 {
@@ -46,6 +44,15 @@ pub trait ParameterPlane: Sync + Send
     {
         let point_grid = self.point_grid().new_with_same_height(bounds);
         self.with_point_grid(point_grid)
+    }
+
+    #[must_use]
+    fn with_default_bounds(self) -> Self
+    where
+        Self: Sized,
+    {
+        let bounds = self.default_bounds();
+        self.with_bounds(bounds)
     }
 
     /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio
@@ -76,7 +83,8 @@ pub trait ParameterPlane: Sync + Send
     fn with_max_iter(self, max_iter: Period) -> Self;
 
     fn name(&self) -> String;
-    fn long_name(&self) -> String {
+    fn long_name(&self) -> String
+    {
         let short_name = self.name();
         self.get_param().summarize().map_or_else(
             || self.name(),
@@ -945,9 +953,12 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
         match result
         {
             EscapeResult::Bounded => PointInfo::Bounded,
-            EscapeResult::Periodic{info, final_value} => self.identify_marked_points(final_value, c, info),
+            EscapeResult::Periodic { info, final_value } =>
+            {
+                self.identify_marked_points(final_value, c, info)
+            }
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-            EscapeResult::Escaped{ iters, final_value } =>
+            EscapeResult::Escaped { iters, final_value } =>
             {
                 self.encode_escaping_point(iters, final_value, c)
             }
@@ -983,11 +994,7 @@ pub trait Computable: ParameterPlane + EscapeEncoding
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
 
-    fn run_and_encode_point(
-        &self,
-        start: Self::Var,
-        c: Self::Param,
-    ) -> PointInfo<Self::Deriv>
+    fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
         let orbit_params = OrbitParams {
             max_iter: self.max_iter(),
@@ -1013,7 +1020,11 @@ pub trait Computable: ParameterPlane + EscapeEncoding
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         let result = self.run_and_encode_point(start, param);
-        OrbitInfo { param, start, result }
+        OrbitInfo {
+            param,
+            start,
+            result,
+        }
     }
 
     fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
@@ -1044,7 +1055,21 @@ pub trait Computable: ParameterPlane + EscapeEncoding
         let result = self.encode_escape_result(final_state.unwrap_or_default(), param);
         OrbitAndInfo {
             orbit: trajectory,
-            info: OrbitInfo { param, start, result },
+            info: OrbitInfo {
+                param,
+                start,
+                result,
+            },
+        }
+    }
+
+    fn orbit_summary_conf(&self) -> OrbitSummaryConf
+    {
+        OrbitSummaryConf {
+            show_parameter: true,
+            show_selection: true,
+            show_start_point: !self.plane_type().is_dynamical(),
+            float_prec: DISPLAY_PREC,
         }
     }
 }

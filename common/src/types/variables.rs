@@ -1,6 +1,6 @@
 use super::{Cplx, Real};
 use crate::consts::ZERO;
-use crate::traits::{Arg, Describe, MaybeNan, Norm, Summarize};
+use crate::traits::{Arg, Describe, DescriptionConf, MaybeNan, Norm, Summarize};
 use derive_more::{Add, Display, From};
 
 pub mod matrix;
@@ -24,9 +24,9 @@ impl<T> Describe for Pair<T>
 where
     T: std::fmt::Display,
 {
-    fn describe(&self) -> Option<String>
+    fn describe(&self, desc_params: &DescriptionConf) -> Option<String>
     {
-        Some(self.to_string())
+        desc_params.is_enabled.then(|| self.to_string())
     }
 }
 impl<T> Summarize for Pair<T> where T: std::fmt::Display {}
@@ -264,5 +264,13 @@ impl std::ops::Sub for Bicomplex
                 Self::PlaneB(w) => Self::PlaneB(z - w),
             },
         }
+    }
+}
+
+impl Describe for Bicomplex
+{
+    fn describe(&self, desc_conf: &DescriptionConf) -> Option<String>
+    {
+        desc_conf.is_enabled.then(|| self.to_string())
     }
 }

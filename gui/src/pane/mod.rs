@@ -270,16 +270,25 @@ impl<P> WindowPane<P>
 where
     P: Displayable + 'static,
 {
-    pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param)
+    /// Change the meta-parameter for the plane. Returns true if the new value is distinct from the
+    /// old one.
+    pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param) -> bool
     {
         let old_param = self.plane.get_param();
-        if old_param != new_param
+
+        let update: bool = if old_param == new_param
+        {
+            false
+        }
+        else
         {
             self.plane.set_param(new_param);
             self.select_point(self.plane.default_selection());
             self.schedule_recompute();
             self.schedule_redraw();
-        }
+            true
+        };
+
         self.clear_marked_orbit();
         self.clear_equipotentials();
 
@@ -287,6 +296,8 @@ where
         {
             self.select_ray_landing_point(angle);
         }
+
+        update
     }
 
     #[must_use]
@@ -703,8 +714,9 @@ where
 
     fn describe_selection(&self) -> String
     {
+        let conf = self.plane.orbit_summary_conf();
         self.selection
-            .describe()
+            .describe(&conf.selection_conf())
             .map_or_else(String::new, |description| {
                 format!("Selection: {description}")
             })
@@ -712,9 +724,10 @@ where
 
     fn describe_orbit_info(&self) -> String
     {
+        let conf = self.plane.orbit_summary_conf();
         self.get_orbit_info()
             .as_ref()
-            .map_or_else(String::new, ToString::to_string)
+            .map_or_else(String::new, |info| info.summary(&conf))
     }
 
     fn pop_child_task(&mut self) -> ChildTask
