@@ -185,6 +185,7 @@ impl UnparsedUserInput
         let py_constants = &constants;
         let py_param_names = &param_names;
 
+        // TODO: Replace with Context::run to prevent panics
         let context: Context = python! {
             from sympy import symbols, lambdify, parse_expr, cse
 

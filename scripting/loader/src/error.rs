@@ -1,3 +1,5 @@
+use pyo3::PyErr;
+
 #[derive(Debug)]
 pub enum ScriptError
 {
@@ -6,6 +8,7 @@ pub enum ScriptError
     UndefinedSymbol,
     ForbiddenKeyword,
     CompilationFailed,
+    PythonError(PyErr),
     ErrorWritingFile(std::io::Error),
     ErrorReadingToml(std::io::Error),
     ErrorParsingToml(toml::de::Error),

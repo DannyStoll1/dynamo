@@ -1,0 +1,16 @@
+[metadata]
+name = "Relaxed Newton Cubic"
+short_name = "relaxed_newton"
+
+[names]
+variable = "z"
+selection = "t"
+
+[constants]
+
+[parameters]
+h = "t"
+
+[dynamics] 
+start = "-(2*h/(h-3))**(1/3)"
+map = "z - h * (z**3 - 1)/(3*z**2)"
