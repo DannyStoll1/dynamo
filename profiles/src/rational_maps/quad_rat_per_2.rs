@@ -1002,7 +1002,7 @@ impl ParameterPlane for QuadRatPer2Cover
         let c2 = c.powi(2);
         (
             (c * z2 + 1.) / (z2 - c2),
-            2. * z * (c2 * c + 1.) / (z2 - c2),
+            2. * z * (c2 * c + 1.) / (z2 - c2).powi(2),
         )
     }
 
