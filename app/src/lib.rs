@@ -11,8 +11,11 @@ use fractal_tab::{FractalTab, TabID};
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
 {
+    use dynamo_common::prelude::{WIN_WIDTH, WIN_HEIGHT};
+
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(1280.0, 720.0)),
+        initial_window_size: Some(egui::vec2(WIN_WIDTH, WIN_HEIGHT)),
+        run_and_return: false,
         ..Default::default()
     };
 

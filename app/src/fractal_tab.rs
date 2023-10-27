@@ -1,11 +1,8 @@
 use crate::macros::{
     fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
 };
-use dynamo_common::consts::{OMEGA, ONE};
-use dynamo_common::types::{Cplx, ParamList};
-use dynamo_core::dynamics::covering_maps::HasDynamicalCovers;
-use dynamo_core::dynamics::julia::JuliaSet;
-use dynamo_core::dynamics::{Displayable, ParameterPlane};
+use dynamo_common::prelude::*;
+use dynamo_core::prelude::*;
 use dynamo_gui::hotkeys::{
     Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS,
     SELECTION_HOTKEYS,
@@ -796,7 +793,7 @@ impl Default for FractalTab
     {
         type Profile = Mandelbrot;
 
-        let height = 768;
+        let height = IMAGE_HEIGHT;
 
         let parent_plane = Profile::default().with_res_y(height).with_max_iter(1024);
         let child_plane = <Profile as ParameterPlane>::Child::from(parent_plane.clone());

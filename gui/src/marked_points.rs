@@ -4,7 +4,10 @@ use std::collections::{HashMap, VecDeque};
 use egui::{Color32, Painter};
 use epaint::{CircleShape, PathShape, Pos2, Stroke};
 use image::{ImageBuffer, Rgb};
-use imageproc::drawing::{draw_filled_circle_mut, draw_polygon_mut};
+use imageproc::drawing::{
+    draw_antialiased_line_segment_mut, draw_filled_circle_mut, draw_polygon_mut,
+};
+use imageproc::pixelops::interpolate;
 use itertools::Itertools;
 
 use dynamo_color::palette::DiscretePalette;
@@ -561,7 +564,6 @@ impl Marking
 
     fn draw_curves_to_image(&self, grid: &PointGrid, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
     {
-        use imageproc::point::Point;
         let thickness = CURVE_THICKNESS * (image.width() as f32) / 768.;
 
         self.iter_visible_curves().for_each(
@@ -572,41 +574,13 @@ impl Marking
              }| {
                 let (r, g, b, _a) = color.to_tuple();
                 let color = Rgb([r, g, b]);
-                curve
-                    .iter()
-                    .copied()
-                    .map(|z| grid.locate_point(z))
-                    .tuple_windows()
-                    .for_each(|([x0, y0], [x1, y1])| {
-                        let normal_x = y1 - y0;
-                        let normal_y = x0 - x1;
-                        let n_length = normal_x.hypot(normal_y);
-
-                        let nx = 0.5 * thickness * normal_x / n_length;
-                        let ny = 0.5 * thickness * normal_y / n_length;
-
-                        let corners = [
-                            (x0 - nx, y0 - ny),
-                            (x0 + nx, y0 + ny),
-                            (x1 + nx, y1 + ny),
-                            (x1 - nx, y1 - ny),
-                        ]
-                        .map(|(x, y)| Point::new(x as i32, y as i32));
-
-                        if corners[0] != corners[3]
-                        {
-                            draw_polygon_mut(image, &corners, color);
-                        }
-                    });
-                // curve
-                //     .iter()
-                //     .cloned()
-                //     .map(|z| grid.locate_point(z))
-                //     .map(|[x, y]| (x as i32, y as i32))
-                //     .tuple_windows()
-                //     .for_each(|(p0, p1)| {
-                //         draw_antialiased_line_segment_mut(image, p0, p1, color, interpolate);
-                //     });
+                CurveDrawJob {
+                    curve: &curve,
+                    color,
+                    thickness,
+                    grid,
+                }
+                .draw_to(image);
             },
         );
     }
@@ -719,5 +693,70 @@ impl PathCache
     pub const fn is_stale(&self) -> bool
     {
         self.needs_refresh
+    }
+}
+
+struct CurveDrawJob<'a>
+{
+    curve: &'a Curve,
+    color: Rgb<u8>,
+    thickness: f32,
+    grid: &'a PointGrid,
+}
+impl<'a> CurveDrawJob<'a>
+{
+    pub fn draw_thick(self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
+    {
+        self.curve
+            .iter()
+            .copied()
+            .map(|z| self.grid.locate_point(z))
+            .tuple_windows()
+            .for_each(|([x0, y0], [x1, y1])| {
+                let normal_x = y1 - y0;
+                let normal_y = x0 - x1;
+                let n_length = normal_x.hypot(normal_y);
+
+                let nx = 0.5 * self.thickness * normal_x / n_length;
+                let ny = 0.5 * self.thickness * normal_y / n_length;
+
+                let corners = [
+                    (x0 - nx, y0 - ny),
+                    (x0 + nx, y0 + ny),
+                    (x1 + nx, y1 + ny),
+                    (x1 - nx, y1 - ny),
+                ]
+                .map(|(x, y)| imageproc::point::Point::new(x as i32, y as i32));
+
+                if corners[0] != corners[3]
+                {
+                    draw_polygon_mut(image, &corners, self.color);
+                }
+            });
+    }
+
+    fn draw_thin(self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
+    {
+        self.curve
+            .iter()
+            .copied()
+            .map(|z| self.grid.locate_point(z))
+            .map(|[x, y]| (x as i32, y as i32))
+            .tuple_windows()
+            .for_each(|(p0, p1)| {
+                draw_antialiased_line_segment_mut(image, p0, p1, self.color, interpolate);
+            });
+    }
+
+    pub fn draw_to(self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
+    {
+        if self.thickness <= 1.0
+        {
+            self.draw_thin(image);
+        }
+        else
+        {
+            self.draw_thick(image);
+        }
     }
 }
