@@ -58,16 +58,6 @@ impl ParameterPlane for Mandelbrot
         (z.powi(2) + c, 2. * z)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        2. * z
-    }
-
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
-    }
-
     fn early_bailout(&self, _start: Cplx, c: Self::Param) -> Option<EscapeResult<Cplx, Cplx>>
     {
         // Main cardioid

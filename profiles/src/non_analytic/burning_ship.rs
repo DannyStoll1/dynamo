@@ -50,16 +50,17 @@ impl<const N: Period> ParameterPlane for BurningShip<N>
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Self::Deriv
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        Self::N_FLOAT * z.powf(Self::N_MINUS_1)
+        let znm1 = z.powf(Self::N_MINUS_1);
+        (znm1 * z + c, Self::N_FLOAT * znm1)
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        ONE
-        // Matrix2x2::identity()
+        let (f, df) = self.map_and_multiplier(z, c);
+        (f, df, ONE)
     }
 
     #[inline]
@@ -137,28 +138,20 @@ impl ParameterPlane for Sailboat
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
         let z = Cplx::new(z.re.abs(), z.im.abs()) + self.shift;
-        z * z + c
+        z.powi(2) + c
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let mut w = z + z;
-        w.re *= z.re.signum();
-        w.im *= z.im.signum();
-        w
+        (z.powi(2) + c, 2. * z)
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        ONE //TODO
-    }
-
-    #[inline]
-    fn gradient(&self, _z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        (ONE, ONE, ONE) //TODO
+        let (f, df) = self.map_and_multiplier(z, c);
+        (f, df, ONE)
     }
 
     #[inline]
@@ -228,28 +221,26 @@ impl ParameterPlane for SailboatParam
     fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
     {
         let z = Cplx::new(z.re.abs(), z.im.abs()) + a;
-        z * z
+        z.powi(2)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, _a: Self::Param) -> Self::Deriv
+    fn map_and_multiplier(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let mut w = z + z;
-        w.re *= z.re.signum();
-        w.im *= z.im.signum();
-        w
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
+        let z = Cplx::new(z.re.abs(), z.im.abs());
+        (z.powi(2) + a, 2. * z)
     }
 
     #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
-        -ONE_THIRD * (c + c)
+        -TWO_THIRDS * c
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (-TWO_THIRDS * c, ZERO, Cplx::new(-TWO_THIRDS, 0.))
     }
 
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
@@ -259,7 +250,7 @@ impl ParameterPlane for SailboatParam
 
     fn name(&self) -> String
     {
-        "Cubic Per(2, lambda) lambda-plane".to_owned()
+        "Sailboat Param".to_owned()
     }
 
     fn default_selection(&self) -> Cplx

@@ -53,22 +53,26 @@ impl ParameterPlane for QuadRatPer2Lambda
         self
     }
 
+    #[inline]
     fn point_grid(&self) -> &PointGrid
     {
         &self.general_plane.point_grid
     }
 
+    #[inline]
     fn point_grid_mut(&mut self) -> &mut PointGrid
     {
         &mut self.general_plane.point_grid
     }
 
+    #[inline]
     fn with_point_grid(mut self, point_grid: PointGrid) -> Self
     {
         self.general_plane.point_grid = point_grid;
         self
     }
 
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         self.general_plane.map(z, c)
@@ -84,46 +88,42 @@ impl ParameterPlane for QuadRatPer2Lambda
         }
     }
 
+    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.general_plane.map_and_multiplier(z, c)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        self.general_plane.dynamical_derivative(z, c)
-    }
-
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
-    }
-
+    #[inline]
     fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
     {
         self.general_plane.start_point(t, c)
     }
 
+    #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         self.general_plane.critical_points_child(c)
     }
 
+    #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         self.general_plane.cycles_child(c, period)
     }
+    #[inline]
 
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.multiplier
     }
-
+    #[inline]
     fn set_param(&mut self, lambda: <Self::MetaParam as ParamList>::Param)
     {
         self.multiplier = lambda;
     }
 
+    #[inline]
     fn name(&self) -> String
     {
         "QuadRat Per(2, λ)".to_owned()
@@ -174,7 +174,7 @@ impl ParameterPlane for QuadRatPer2LambdaParam
     fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
     {
         let a = 4. / l;
-        1. + a / (z * z)
+        1. + a / z.powi(2)
     }
 
     #[allow(clippy::suspicious_operation_groupings)]
@@ -182,21 +182,15 @@ impl ParameterPlane for QuadRatPer2LambdaParam
     fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
     {
         let a = 4. / l;
-        let z2 = z * z;
-        (1. + a / z2, -(a + a) / (z2 * z))
+        let u = a * z.powi(-2);
+        (1. + u, -2. * u / z)
     }
 
-    #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, l: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = 4. / l;
-        -(a + a) / (z * z * z)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        (z * z).inv()
+        let u = a * z.powi(-2);
+        (1. + u, -2. * u / z, -u / l)
     }
 
     #[inline]
@@ -209,6 +203,12 @@ impl ParameterPlane for QuadRatPer2LambdaParam
     fn param_map(&self, point: Cplx) -> Self::Param
     {
         point
+    }
+
+    #[inline]
+    fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
+    {
+        (point, ONE)
     }
 
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>

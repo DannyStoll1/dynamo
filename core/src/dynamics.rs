@@ -99,26 +99,16 @@ pub trait ParameterPlane: Sync + Send
     /// The map defining the dynamical system.
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var;
 
-    /// Derivative of the map with respect to the dynamical variable. Used for smooth coloration.
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
-
-    /// Derivative of the map with respect to the paraameter. Used for external rays in parameter
-    /// planes.
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
-
     /// The dynamical map, together with its derivative. This is the primary computational
     /// bottleneck, and should usually be implemented manually for optimization purposes.
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        (self.map(z, c), self.dynamical_derivative(z, c))
-    }
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv);
 
     /// The dynamical map, together with its derivative and parameter derivative. Used to compute
     /// external rays in parameter planes.
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (fz, df_dz) = self.map_and_multiplier(z, c);
-        (fz, df_dz, self.parameter_derivative(z, c))
+        (fz, df_dz, Self::Deriv::one())
     }
 
     /// If certain regions in parameter space are known (e.g. the main cardioid in the Mandelbrot set), we can
@@ -218,7 +208,7 @@ pub trait ParameterPlane: Sync + Send
     #[inline]
     fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
     {
-        (point.into(), Self::Deriv::one())
+        (self.param_map(point), Self::Deriv::one())
     }
 
     /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps

@@ -55,23 +55,17 @@ impl ParameterPlane for CubicPer1Lambda
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let u = z2 + c * z + self.multiplier;
-        (z * u, u + z * (c + z + z))
+        (z * u, u + z * (c + 2. * z))
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let u = z2 + c * z + self.multiplier;
-        u + z * (c + z + z)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z
+        (z * u, u + z * (c + 2. * z), z2)
     }
 
     #[inline]
@@ -81,6 +75,16 @@ impl ParameterPlane for CubicPer1Lambda
         {
             PlaneID::ZPlane => 0.5 * self.multiplier * t,
             PlaneID::WPlane => TWO_THIRDS / t,
+        }
+    }
+
+    #[inline]
+    fn start_point_d(&self, t: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => (0.5 * self.multiplier * t, 0.5 * self.multiplier, ZERO),
+            PlaneID::WPlane => (TWO_THIRDS / t, -ONE_THIRD / t.powi(2), ZERO),
         }
     }
 
@@ -97,7 +101,7 @@ impl ParameterPlane for CubicPer1Lambda
 
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        let disc = (c * c - 3. * self.multiplier).sqrt();
+        let disc = (c.powi(2) - 3. * self.multiplier).sqrt();
         vec![-ONE_THIRD * (c + disc), -ONE_THIRD * (c - disc)]
     }
 
@@ -130,13 +134,13 @@ impl ParameterPlane for CubicPer1Lambda
             3 =>
             {
                 let l = self.multiplier;
-                let l2 = l * l;
-                let l4 = l2 * l2;
-                let l8 = l4 * l4;
+                let l2 = l.powi(2);
+                let l4 = l2.powi(2);
+                let l8 = l4.powi(2);
                 let l12 = l8 * l4;
-                let l16 = l8 * l8;
+                let l16 = l8.powi(2);
                 let l20 = l12 * l8;
-                let l24 = l16 * l8;
+                let l24 = l12.powi(2);
                 let coeffs = [
                     horner!(
                         l,
@@ -237,12 +241,12 @@ impl ParameterPlane for CubicPer1Lambda
         {
             1 =>
             {
-                let disc = (c * c + 4. * (4. - self.multiplier)).sqrt();
+                let disc = (c.powi(2) + 4. * (4. - self.multiplier)).sqrt();
                 vec![ZERO, -0.5 * (c + disc), 0.5 * (disc - c)]
             }
             2 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let u = self.multiplier + 1.;
                 let coeffs = [
                     u,
@@ -368,24 +372,18 @@ impl ParameterPlane for CubicPer1LambdaParam
     fn map_and_multiplier(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv)
     {
         let c = Self::base_param(a);
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let u = z2 + c * z + a;
-        (z * u, u + z * (c + z + z))
+        (z * u, u + z * (c + 2. * z))
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, a: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let c = Self::base_param(a);
-        let z2 = z * z;
+        let z2 = z.powi(2);
         let u = z2 + c * z + a;
-        u + z * (c + z + z)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z
+        (z * u, u + z * (c + 2. * z), z2)
     }
 
     #[inline]
@@ -395,6 +393,15 @@ impl ParameterPlane for CubicPer1LambdaParam
         {
             PlaneID::ZPlane => 0.5 * c * Self::BASE_POINT,
             PlaneID::WPlane => TWO_THIRDS / Self::BASE_POINT,
+        }
+    }
+
+    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        match self.starting_crit
+        {
+            PlaneID::ZPlane => (0.5 * c * Self::BASE_POINT, ZERO, 0.5 * Self::BASE_POINT),
+            PlaneID::WPlane => (TWO_THIRDS / Self::BASE_POINT, ZERO, ZERO),
         }
     }
 
@@ -503,26 +510,38 @@ impl ParameterPlane for CubicPer1_1
     #[inline]
     fn map(&self, z: Cplx, c: Cplx) -> Cplx
     {
-        z * (z * (z + c) + 1.)
+        z.powi(2) * (z + c) + z
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, param: Cplx) -> Cplx
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        let u = (param * param - 3.).sqrt();
-        -(param + u * param.re.signum()) / 3.
+        (z.powi(2) * (z + c) + z, z * (3. * z + 2. * c) + 1.)
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        z * (2. * c + 3. * z) + 1.
+        let z2 = z.powi(2);
+        (z2 * (z + c) + z, z * (3. * z + 2. * c) + 1., z2)
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
     {
-        z * z
+        let u = (c.powi(2) - 3.).sqrt();
+        -(c + u * c.re.signum()) / 3.
+    }
+
+    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let u = (c.powi(2) - 3.).sqrt();
+        let s = c.re.signum();
+        (
+            -ONE_THIRD * (c + u * s),
+            ZERO,
+            -ONE_THIRD * (c * s / u - 1.),
+        )
     }
 
     #[inline]
@@ -542,13 +561,13 @@ impl ParameterPlane for CubicPer1_1
             }
             2 =>
             {
-                let u = c * c + 3.;
+                let u = c.powi(2) + 3.;
                 let coeffs = [TWO, 2. * c, u, 4. * c, u, 2. * c, ONE];
                 solve_polynomial(coeffs)
             }
             3 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let coeffs = [
                     Cplx::new(3., 0.),
                     6. * c,
@@ -658,7 +677,7 @@ impl ParameterPlane for CubicPer1_0
     #[allow(clippy::suspicious_operation_groupings)]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        z * z * (z + c)
+        z.powi(2) * (z + c)
     }
 
     #[inline]
@@ -673,19 +692,14 @@ impl ParameterPlane for CubicPer1_0
         (-TWO_THIRDS * c, ZERO, (-TWO_THIRDS).into())
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        z * (c + c + 3. * z)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z * z
+        (z.powi(2) * (z + c), z * (2. * c + 3. * z))
     }
 
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let z2 = z * z;
+        let z2 = z.powi(2);
         (z2 * (z + c), z * (2. * c + 3. * z), z2)
     }
 
@@ -705,13 +719,13 @@ impl ParameterPlane for CubicPer1_0
             }
             2 =>
             {
-                let u = c * c + 1.;
-                let coeffs = [ONE, c, u, c + c, u, c + c, ONE];
+                let u = c.powi(2) + 1.;
+                let coeffs = [ONE, c, u, 2. * c, u, 2. * c, ONE];
                 solve_polynomial(coeffs)
             }
             3 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let coeffs = [
                     ONE,
                     c,
@@ -743,7 +757,7 @@ impl ParameterPlane for CubicPer1_0
             }
             4 =>
             {
-                let c2 = c * c;
+                let c2 = c.powi(2);
                 let c3 = c2 * c;
                 let coeffs = [
                     ONE,
@@ -752,7 +766,7 @@ impl ParameterPlane for CubicPer1_0
                     c3,
                     c2 * 2.,
                     c3 + c,
-                    c3 * c3 + 3. * c2,
+                    c3.powi(2) + 3. * c2,
                     c * horner!(c2, 3., 0., 4.),
                     horner!(c2, 1., 0., 6., 2.),
                     c3 * horner_monic!(c2, 4., 10., 0.),
@@ -1051,7 +1065,7 @@ impl HasDynamicalCovers for CubicPer1_0
             {
                 param_map = |t| {
                     let u = t.inv();
-                    (u - t, -u * u - 1.)
+                    (u - t, -u.powi(2) - 1.)
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -1063,9 +1077,10 @@ impl HasDynamicalCovers for CubicPer1_0
             2 =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
+                    let t4 = t2.powi(2);
                     let u = (t2 + 1.).inv();
-                    ((t2 + 2.) * t * u, (2. + t2 + t2 * t2) * u * u)
+                    ((t2 + 2.) * t * u, (2. + t2 + t4) * u.powi(2))
                 };
                 bounds = Bounds {
                     min_x: -1.5,
@@ -1096,7 +1111,7 @@ impl HasDynamicalCovers for CubicPer1_0
             {
                 param_map = |t| {
                     let u = t.inv();
-                    (u - t, -u * u - 1.)
+                    (u - t, -u.powi(2) - 1.)
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -1108,7 +1123,7 @@ impl HasDynamicalCovers for CubicPer1_0
             2 =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
                     let u = t * horner!(t2, 2.25, -2., 4.);
                     let du = horner!(t2, 2.25, -6., 20.);
                     let v = horner!(t2, A0, A2, A4, I);
@@ -1141,9 +1156,10 @@ impl HasDynamicalCovers for CubicPer1_0
             (1, 1) =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
+                    let t4 = t2.powi(2);
                     (
-                        -(t2 * t2 + t2 + 1.) / (t * t2 + t),
+                        -(t4 + t2 + 1.) / (t * t2 + t),
                         -horner_monic!(t2, -1., -2., 2.) / (t2 * horner_monic!(t2, 1., 2.)),
                     )
                 };
@@ -1177,9 +1193,9 @@ impl HasDynamicalCovers for CubicPer1_1
             2 =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
+                    let t2 = t.powi(2);
                     let u = t2 + 1.;
-                    ((t2 + 3.) * t / (t2 + 1.), (t2 * t2 + 3.) / (u * u))
+                    ((t2 + 3.) * t / (t2 + 1.), (t2.powi(2) + 3.) / (u.powi(2)))
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -1209,13 +1225,13 @@ impl HasDynamicalCovers for CubicPer1_1
             2 =>
             {
                 param_map = |t| {
-                    let t2 = t * t;
-                    let t4 = t2 * t2;
+                    let t2 = t.powi(2);
+                    let t4 = t2.powi(2);
                     let u = -1. + t2 * (3. - t * (8. + t * (3. - t2)));
                     let du = 6. * t * (1. - 4. * t + (t2 - 2.) * t2);
                     let v = t * I2 * (t4 - 1.);
                     let dv = I10 * t4 - I2;
-                    (u / v, (du * v - u * dv) / (v * v))
+                    (u / v, (du * v - u * dv) / v.powi(2))
                 };
                 bounds = Bounds {
                     min_x: -4.8,
@@ -1244,7 +1260,7 @@ impl HasDynamicalCovers for CubicPer1_1
             {
                 param_map = |t| {
                     let u = t.inv();
-                    (t + u, 1. - u * u)
+                    (t + u, 1. - u.powi(2))
                 };
                 bounds = Bounds {
                     min_x: -2.5,
@@ -1308,7 +1324,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
     #[inline]
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
     {
-        z * (a * z * z + b) + 1.
+        z * (a * z.powi(2) + b) + 1.
     }
 
     #[inline]
@@ -1318,8 +1334,19 @@ impl ParameterPlane for CubicPer1LambdaModuli
         CplxPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
-        let az2 = a * z * z;
+        let az2 = a * z.powi(2);
         (z * (az2 + b) + 1., 3. * az2 + b)
+    }
+
+    fn gradient(
+        &self,
+        z: Self::Var,
+        CplxPair { a, b }: Self::Param,
+    ) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        // Impossible to define correctly with current typing
+        let az2 = a * z.powi(2);
+        (z * (az2 + b) + 1., 3. * az2 + b, z.powi(3) + z)
     }
 
     fn param_map(&self, t: Cplx) -> Self::Param
@@ -1328,7 +1355,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
 
         let l = self.multiplier;
         let u = t + 0.5 * (l - 3.);
-        let a = FOUR_27 * (l - t) * u * u;
+        let a = FOUR_27 * (l - t) * u.powi(2);
         CplxPair { a, b: t }
     }
 
@@ -1347,17 +1374,6 @@ impl ParameterPlane for CubicPer1LambdaModuli
         }
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
-    {
-        let z2 = z * z;
-        3. * a * z2 + b
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z * z
-    }
-
     fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
     {
         let disc = (-b / (3. * a)).sqrt();
@@ -1371,7 +1387,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
             1 => solve_cubic(a.inv(), (b - 1.) / a, ZERO).to_vec(),
             2 =>
             {
-                let a2 = a * a;
+                let a2 = a.powi(2);
                 let coeffs = [
                     a + b + 1.,
                     a * (2. * b + 1.),

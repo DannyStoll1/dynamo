@@ -177,21 +177,6 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         (c * zval, c * dval * w)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        let z2 = z * z * 0.25;
-        let mut iter = self.coeffs_d.iter().rev();
-
-        let an = *iter.next().unwrap_or(&0.0);
-        let mut result = Cplx::from(an);
-
-        for &a in iter
-        {
-            result = result * z2 + a;
-        }
-        c * result * z
-    }
-
     fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let w = z * 0.5;
@@ -216,23 +201,6 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         }
 
         (c * zval, c * dval * w, zval)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        let z2 = z * z * 0.25;
-
-        let mut z_iter = self.coeffs.iter().rev();
-
-        let an = *z_iter.next().unwrap_or(&0.0);
-
-        let mut zval = Cplx::from(an);
-
-        for &a in z_iter
-        {
-            zval = zval * z2 + a;
-        }
-        zval
     }
 
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>

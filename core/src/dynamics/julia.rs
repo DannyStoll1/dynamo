@@ -91,19 +91,6 @@ where
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        self.parent.dynamical_derivative(z, self.local_param)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        Self::Deriv::zero()
-        // self.parent.parameter_derivative(z, self.local_param)
-    }
-
-    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.parent.map_and_multiplier(z, self.local_param)

@@ -86,15 +86,15 @@ impl ParameterPlane for Rulkov
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        df_dz(z, c)
+        (f(z, c), df_dz(z, c))
     }
 
     #[inline]
-    fn parameter_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        df_dc(z, c)
+        (f(z, c), df_dz(z, c), df_dc(z, c))
     }
 
     #[inline]

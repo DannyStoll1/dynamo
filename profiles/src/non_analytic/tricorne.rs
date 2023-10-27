@@ -58,18 +58,6 @@ impl<const N: Period> ParameterPlane for Tricorne<N>
         ZERO
     }
 
-    #[inline]
-    fn dynamical_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        Self::N_FLOAT * z.powf(Self::N_MINUS_1)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
-    }
-
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]

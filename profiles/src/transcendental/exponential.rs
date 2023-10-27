@@ -46,22 +46,11 @@ impl ParameterPlane for Exponential
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, _lambda: Cplx) -> Cplx
-    {
-        z.exp()
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, _z: Cplx, _lambda: Cplx) -> Cplx
-    {
-        ONE
-    }
-
-    #[inline]
     fn gradient(&self, z: Cplx, lambda: Cplx) -> (Cplx, Cplx, Cplx)
     {
         let u = z.exp();
-        (u + lambda, u, ONE)
+        let v = lambda * u;
+        (v, v, u)
     }
 
     #[inline]
@@ -130,21 +119,21 @@ impl ParameterPlane for CosineAdd
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        -z.sin()
+        (z.cos() + c, -z.sin(), ONE)
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Cplx
+    fn param_map(&self, t: Cplx) -> Cplx
     {
-        ONE
+        t
     }
 
     #[inline]
-    fn param_map(&self, c: Cplx) -> Cplx
+    fn param_map_d(&self, t: Cplx) -> (Self::Param, Self::Deriv)
     {
-        c
+        (t, ONE)
     }
 
     #[inline]
@@ -200,15 +189,10 @@ impl ParameterPlane for Cosine
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, lambda: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, lambda: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        -z.sin() * lambda
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, _lambda: Cplx) -> Cplx
-    {
-        z.cos()
+        let cos = z.cos();
+        (cos * lambda, -z.sin() * lambda, cos)
     }
 
     #[inline]
@@ -265,15 +249,15 @@ impl ParameterPlane for SineWander
     }
 
     #[inline]
-    fn dynamical_derivative(&self, z: Cplx, _c: Cplx) -> Cplx
+    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        z.cos() + 1.
+        (z.sin() + z + TAU * c, z.cos() + 1.)
     }
 
     #[inline]
-    fn parameter_derivative(&self, _z: Cplx, _c: Cplx) -> Cplx
+    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        TAU.into()
+        (z.sin() + z + TAU * c, z.cos() + 1., TAU.into())
     }
 
     #[inline]

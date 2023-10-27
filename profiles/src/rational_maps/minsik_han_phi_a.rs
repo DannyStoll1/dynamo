@@ -54,15 +54,15 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
         )
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, a: Self::Param) -> Self::Deriv
+    fn gradient(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let u = z.powi(D) + Self::D_MINUS_1;
-        -a * (Self::D_MINUS_1) * (u - Self::D_MINUS_1 - 1.) / (u * u)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _a: Self::Param) -> Self::Deriv
-    {
-        z / (z.powi(D) + Self::D_MINUS_1)
+        let v = z / u;
+        (
+            a * v,
+            -a * (Self::D_MINUS_1) * (u - Self::D_FLOAT) / u.powi(2),
+            v,
+        )
     }
 
     fn start_point(&self, _point: Cplx, _a: Self::Param) -> Self::Var

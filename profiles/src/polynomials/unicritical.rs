@@ -29,21 +29,13 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     parameter_plane_impl!();
     default_bounds!();
 
+    #[inline]
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
         c * (1. + z / Self::D_FLOAT).powi(D)
     }
 
-    fn dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv
-    {
-        c * (1. + z / Self::D_FLOAT).powi(D - 1)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        (1. + z / Self::D_FLOAT).powi(D)
-    }
-
+    #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
         let u = 1. + z / Self::D_FLOAT;

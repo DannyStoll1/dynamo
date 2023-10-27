@@ -39,24 +39,36 @@ impl ParameterPlane for RiemannXi
         riemann_xi(s) + c
     }
     #[inline]
-    fn dynamical_derivative(&self, s: Self::Var, _c: Self::Param) -> Self::Deriv
+    fn map_and_multiplier(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        riemann_xi_d(s)[1]
+        let [u, du] = riemann_xi_d(s);
+        (u + c, du)
     }
     #[inline]
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
+    fn gradient(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        ONE
+        let (f, df) = self.map_and_multiplier(s, c);
+        (f, df, ONE)
     }
     #[inline]
-    fn param_map(&self, point: Cplx) -> Self::Param
+    fn param_map(&self, t: Cplx) -> Self::Param
     {
-        point
+        t
+    }
+    #[inline]
+    fn param_map_d(&self, t: Cplx) -> (Self::Param, Self::Deriv)
+    {
+        (t, ONE)
     }
     #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         c
+    }
+    #[inline]
+    fn start_point_d(&self, _t: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (c, ZERO, ONE)
     }
     #[inline]
     fn default_selection(&self) -> Cplx
@@ -132,14 +144,12 @@ impl ParameterPlane for RiemannXiNewton
         let z = z + c;
         (s - z / dz, z / d2z)
     }
-    fn dynamical_derivative(&self, s: Self::Var, _c: Self::Param) -> Self::Deriv
+    #[inline]
+    fn gradient(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let [z, _, d2z] = riemann_xi_d2(s);
-        z / d2z
-    }
-    fn parameter_derivative(&self, _z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        ONE
+        let [z, dz, d2z] = riemann_xi_d2(s);
+        let z = z + c;
+        (s - z / dz, z / d2z, -dz.inv())
     }
     fn param_map(&self, _point: Cplx) -> Self::Param
     {

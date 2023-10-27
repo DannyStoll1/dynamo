@@ -84,11 +84,14 @@ impl ParameterPlane for Biquadratic
 
     #[inline]
     fn parameter_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
+=======
+    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+>>>>>>> causes_compiler_error
     {
         match zw
         {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => ZERO,
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z, ONE),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w.powi(2) + self.multiplier), 2. * w, ZERO),
         }
     }
 }
@@ -212,11 +215,11 @@ impl ParameterPlane for BiquadraticMult
         }
     }
 
-    #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
+    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw
         {
+<<<<<<< HEAD
             Bicomplex::PlaneA(z) => 2. * z + c.a,
             Bicomplex::PlaneB(w) => 2. * w + c.b,
         }
@@ -229,6 +232,14 @@ impl ParameterPlane for BiquadraticMult
         {
             Bicomplex::PlaneA(_) => ONE,
             Bicomplex::PlaneB(_) => -c.b / c.a,
+=======
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a, ONE),
+            Bicomplex::PlaneB(w) => (
+                Bicomplex::PlaneA(w * (w + c.b)),
+                2. * w + c.b,
+                -c.b.powi(2) / self.multiplier, // -l/t^2
+            ),
+>>>>>>> causes_compiler_error
         }
     }
 
@@ -653,6 +664,8 @@ impl ParameterPlane for BiquadraticMultSecondIterate
     fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
     {
         2. * (z.powi(2) + c)
+=======
+>>>>>>> causes_compiler_error
     }
 
     #[inline]
@@ -796,10 +809,11 @@ impl ParameterPlane for BiquadraticMultSection
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
+    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw
         {
+<<<<<<< HEAD
             Bicomplex::PlaneA(z) => 2. * z + c,
             Bicomplex::PlaneB(w) => 2. * w + 1.,
         }
@@ -812,6 +826,10 @@ impl ParameterPlane for BiquadraticMultSection
         {
             Bicomplex::PlaneA(_) => ONE,
             Bicomplex::PlaneB(_) => -c.inv(),
+=======
+            Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c, z),
+            Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1., ZERO),
+>>>>>>> causes_compiler_error
         }
     }
 
