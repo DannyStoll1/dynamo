@@ -8,7 +8,7 @@ use dynamo_core::prelude::*;
 use dynamo_profiles::*;
 
 #[bench]
-fn compute_biquadratic(b: &mut Bencher)
+fn biquadratic(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = Biquadratic::default()
@@ -20,7 +20,7 @@ fn compute_biquadratic(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_per2(b: &mut Bencher)
+fn per2(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer2::default().with_res_y(768).with_max_iter(2048);
@@ -29,7 +29,7 @@ fn compute_per2(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_per2_julia(b: &mut Bencher)
+fn per2_julia(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer2::default().with_res_y(1024).with_max_iter(2048);
@@ -43,7 +43,7 @@ fn compute_per2_julia(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_per3(b: &mut Bencher)
+fn per3(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer3::default().with_res_y(768).with_max_iter(2048);
@@ -52,7 +52,7 @@ fn compute_per3(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_per4(b: &mut Bencher)
+fn per4(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer4::default().with_res_y(768).with_max_iter(2048);
@@ -61,7 +61,7 @@ fn compute_per4(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_per5(b: &mut Bencher)
+fn per5(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer5::default().with_res_y(768).with_max_iter(2048);
@@ -70,7 +70,7 @@ fn compute_per5(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_mandelbrot(b: &mut Bencher)
+fn mandelbrot(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = Mandelbrot::default().with_res_y(768).with_max_iter(2048);
@@ -89,7 +89,7 @@ fn quadratic_julia(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_preper21(b: &mut Bencher)
+fn preper21(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPreper21::default()
@@ -100,7 +100,7 @@ fn compute_preper21(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_symmetry_locus(b: &mut Bencher)
+fn symmetry_locus(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatSymmetryLocus::default()
@@ -111,7 +111,7 @@ fn compute_symmetry_locus(b: &mut Bencher)
 }
 
 #[bench]
-fn compute_rulkov(b: &mut Bencher)
+fn rulkov(b: &mut Bencher)
 {
     b.iter(|| {
         let mut plane = Rulkov::default().with_res_y(768).with_max_iter(2048);
