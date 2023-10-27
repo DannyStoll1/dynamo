@@ -3,7 +3,6 @@
 use dynamo_common::prelude::*;
 use egui::Color32;
 use image::Rgb;
-use std::path::Path;
 
 pub mod algorithms;
 pub mod fractal_image;
@@ -108,7 +107,7 @@ impl Coloring
     #[cfg(feature = "serde")]
     pub fn save_to_file<P>(&self, filename: P) -> std::io::Result<()>
     where
-        P: AsRef<Path>,
+        P: AsRef<std::path::Path>,
     {
         use std::io::Write;
 
@@ -123,7 +122,7 @@ impl Coloring
     #[cfg(feature = "serde")]
     pub fn load_palette<P>(&mut self, path: P) -> Result<(), Box<dyn std::error::Error>>
     where
-        P: AsRef<Path>,
+        P: AsRef<std::path::Path>,
     {
         let content = std::fs::read_to_string(path)?;
         let palette: Palette = toml::from_str(&content)?;

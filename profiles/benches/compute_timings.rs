@@ -126,3 +126,12 @@ fn compute_rulkov(b: &mut Bencher)
         plane.compute();
     });
 }
+
+#[bench]
+fn cubic_per3(b: &mut Bencher)
+{
+    b.iter(|| {
+        let plane = CubicPer3_0::default().with_res_y(1024).with_max_iter(2048);
+        plane.compute();
+    });
+}

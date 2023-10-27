@@ -23,6 +23,7 @@ bacon.toml
 .cargo
 
 # Notes
+.opt_notes
 perf_notes.txt
 notes.txt
 todo.txt

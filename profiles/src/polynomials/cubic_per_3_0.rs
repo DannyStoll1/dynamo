@@ -44,8 +44,9 @@ impl ParameterPlane for CubicPer3_0
         CplxPair { a, b }: Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
-        let z2 = z * z;
-        (1. + z2 * (b + a * z), z * (3. * a * z + b + b))
+        let z2 = z.powi(2);
+        let az = a*z;
+        (1. + z2 * (b + az), z * (3. * az + 2. * b))
     }
 
     fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
@@ -55,19 +56,19 @@ impl ParameterPlane for CubicPer3_0
 
     fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
     {
-        z * (3. * a + b + b)
+        z * (3. * a + 2. * b)
     }
 
     fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
     {
-        z * z * z
+        z.powi(3)
     }
     fn param_map(&self, t: Cplx) -> Self::Param
     {
         let u = t + 1.;
-        let u2_inv = (u * u).inv();
+        let u2_inv = u.powi(-2);
         let a = 1. - t - 3. / u + u2_inv;
-        let b = t * t * t * u2_inv + u / t;
+        let b = t.powi(3) * u2_inv + u / t;
         CplxPair { a, b }
     }
     #[inline]
@@ -77,7 +78,7 @@ impl ParameterPlane for CubicPer3_0
     }
     fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
     {
-        -(b + b) / (3. * a)
+        -TWO_THIRDS * b / a
     }
     fn start_point_d(
         &self,
@@ -87,11 +88,11 @@ impl ParameterPlane for CubicPer3_0
     {
         let dz_dt = -TWO_THIRDS * horner!(t, 1., 4., 6., 8., 7., 2.)
             / horner_monic!(t, 1., 4., 6., 6., 5., 2.);
-        (-(b + b) / (3. * a), dz_dt, ZERO)
+        (-TWO_THIRDS * b / a, dz_dt, ZERO)
     }
     fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
     {
-        vec![ZERO, -(b + b) / (3. * a)]
+        vec![ZERO, -TWO_THIRDS * b / a]
     }
     fn critical_points(&self) -> Vec<Self::Var>
     {
@@ -109,13 +110,13 @@ impl ParameterPlane for CubicPer3_0
             }
             2 =>
             {
-                let a2 = a * a;
+                let a2 = a.powi(2);
                 let coeffs = [
                     a + b + 1.,
                     a + b,
                     a + b * (b + 2. * a),
                     2. * a * (a + b),
-                    a * (a + b * b),
+                    a * (a + b.powi(2)),
                     2. * a2 * b,
                     a2 * a,
                 ];
