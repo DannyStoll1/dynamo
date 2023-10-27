@@ -4,7 +4,7 @@ version = "0.6.0"
 edition = "2021"
 authors = ["Danny Stoll"]
 repository = "https://github.com/dannystoll1/dynamo"
-description = "GUI for Fractal Explorer"
+description = "GUI for Dynamo"
 license = "GPL-3.0-or-later"
 
 [dependencies]

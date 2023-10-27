@@ -1,5 +1,5 @@
 [package]
-name = "fractal"
+name = "dynamo"
 version = "0.6.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
@@ -15,7 +15,7 @@ dynamo_app = { version = "*", path = "../app" }
 serde = ["dynamo_app/serde"]
 
 [package.metadata.bundle]
-name = "Fractal Explorer"
+name = "Dynamo"
 identifier = "io.github.dannystoll1.dynamo"
 version = "0.6.0"
 icon = ["../docs/icons/*.png", "../docs/icons/*.icns"]
