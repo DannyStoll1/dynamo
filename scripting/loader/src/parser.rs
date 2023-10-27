@@ -1,7 +1,7 @@
 use dynamo_common::types::Period;
-use inline_python::{python, Context};
 use lazy_static::lazy_static;
 use num_complex::Complex64;
+use pyo3::{Python, ToPyObject};
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
@@ -67,6 +67,16 @@ pub struct UnparsedUserInput
     pub optional: Option<EscapingReturnMapParams>,
 }
 
+#[derive(Clone, Debug)]
+pub struct PyParams
+{
+    pub param_map: String,
+    pub map: String,
+    pub map_d: String,
+    pub start: String,
+    pub start_d: String,
+}
+
 pub struct ParsedUserInput
 {
     pub metadata: Metadata,
@@ -74,7 +84,7 @@ pub struct ParsedUserInput
     pub param_names: Vec<String>,
     pub names: Names,
     pub optional: EscapingReturnMapParams,
-    pub context: Context,
+    pub py_params: PyParams,
 }
 impl TryFrom<UnparsedUserInput> for ParsedUserInput
 {
@@ -165,10 +175,8 @@ impl UnparsedUserInput
 {
     pub fn parse(self) -> Result<ParsedUserInput, ScriptError>
     {
-        let z = &self.names.variable;
-        let t = &self.names.selection;
-
         let const_names: Vec<String> = self.constants.keys().cloned().collect();
+        let param_names: Vec<String> = self.parameters.keys().cloned().collect();
         let constants: HashMap<String, Complex64> = self
             .constants
             .iter()
@@ -176,66 +184,80 @@ impl UnparsedUserInput
             .filter_map(Result::ok)
             .collect::<HashMap<String, Complex64>>();
 
-        let param_names: Vec<String> = self.parameters.keys().cloned().collect();
-        let params = &self.parameters;
+        let py_params = Python::with_gil(|py| {
+            let sys = py.import("sys")?;
+            sys.getattr("path")?.call_method1("append", ("python",))?;
+            sys.getattr("path")?
+                .call_method1("append", ("scripting/loader/python",))?;
 
-        let map_str = &json_to_string(&self.dynamics.map);
-        let start_str = &json_to_string(&self.dynamics.start);
+            // Convert to python types
+            let map_str = &json_to_string(&self.dynamics.map).to_object(py);
+            let start_str = &json_to_string(&self.dynamics.start).to_object(py);
+            let z_str = self.names.variable.to_object(py);
+            let t_str = self.names.selection.to_object(py);
 
-        let py_constants = &constants;
-        let py_param_names = &param_names;
+            let param_names_py = param_names.to_object(py);
+            let const_names_py = const_names.to_object(py);
 
-        // TODO: Replace with Context::run to prevent panics
-        let context: Context = python! {
-            from sympy import symbols, lambdify, parse_expr, cse
+            // Imports
+            let sympy = py.import("sympy")?;
+            let parse_expr = sympy.getattr("parse_expr")?;
+            let symbols = sympy.getattr("symbols")?;
+            let cse = sympy.getattr("cse")?;
 
-            import os, sys
-            sys.path.append("python")
-            sys.path.append(os.path.join("scripting", "loader", "python"))
-            from oxidize import *
+            let oxidize = py.import("oxidize")?;
+            let oxidize_expr = oxidize.getattr("oxidize_expr")?;
+            let oxidize_cse = oxidize.getattr("oxidize_cse")?;
+            let oxidize_pmap = oxidize.getattr("oxidize_param_map_cplx")?;
 
-            i = 1j
-            [z, t] = symbols(['z, 't])
-            const_names = symbols('const_names)
-            param_names = symbols('py_param_names)
-            param_dict = {
-                name: parse_expr(val) for (name, val) in 'params.items()
-            }
+            // Symbol declarations
+            symbols.call1(((&z_str, &t_str),))?;
+            symbols.call1((&param_names_py,))?;
+            symbols.call1((&const_names_py,))?;
 
-            consts = 'py_constants
-            z0 = parse_expr('start_str)
-            z0_t = z0.subs(param_dict)
-            z0_dz0 = cse([z0, z0.subs(param_dict).diff(t)], optimizations="basic")
+            // Parsing
+            let mut params_dict_py = HashMap::new();
 
-            f = parse_expr('map_str)
-            f_df = cse([f, f.diff(z)], optimizations="basic")
+            self.parameters.iter().try_for_each(|(name, val)| {
+                let parsed_val = parse_expr.call1((val,))?;
+                params_dict_py.insert(name, parsed_val);
+                Ok::<_, ScriptError>(())
+            })?;
+            let params_dict_py = params_dict_py.to_object(py);
 
-            z0_rs = oxidize_expr_cplx(z0)
-            f_rs = oxidize_expr_cplx(f)
-            z0_dz0_rs = oxidize_cse_cplx(z0_dz0)
-            f_df_rs = oxidize_cse_cplx(f_df)
-            param_map_rs = oxidize_param_map_cplx(param_dict)
-        };
+            let map_py = parse_expr.call1((map_str,))?;
+            let map_d_py = map_py.call_method1("diff", (z_str,))?;
+            let map_cse_py = cse.call1(([map_py, map_d_py],))?;
+            let map = oxidize_expr.call1((map_py,))?.to_string();
+            let map_d = oxidize_cse.call1((map_cse_py,))?.to_string();
+
+            let start_py = parse_expr.call1((start_str,))?;
+            let start_py = start_py.call_method1("subs", (&params_dict_py,))?;
+            let start_d_py = start_py.call_method1("diff", (t_str,))?;
+            let start_cse_py = cse.call1(([start_py, start_d_py],))?;
+            let start = oxidize_expr.call1((start_py,))?.to_string();
+            let start_d = oxidize_cse.call1((start_cse_py,))?.to_string();
+
+            let param_map = oxidize_pmap.call1((params_dict_py,))?.to_string();
+
+            let py_params = PyParams {
+                param_map,
+                map,
+                map_d,
+                start,
+                start_d,
+            };
+
+            Ok::<_, ScriptError>(py_params)
+        })?;
 
         Ok(ParsedUserInput {
             metadata: self.metadata,
             constants,
             param_names,
             names: self.names,
-            context,
             optional: self.optional.unwrap_or_default(),
+            py_params,
         })
     }
 }
-
-// let context = python! {
-//     from sympy import symbols, lambdify, parse_expr
-//
-//     parameters = 'parameters
-//     variables = 'variables
-//     all_symbols = symbols(parameters + variables)
-//     dynamics_expr = parse_expr('dynamics_str)
-//     print(dynamics_expr)
-//
-//     f = lambdify(all_symbols, dynamics_expr, "numpy")
-// };

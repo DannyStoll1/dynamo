@@ -291,7 +291,7 @@ impl TextDialog
     }
 }
 
-impl<T: Default> ConfirmationDialog<T>
+impl<T> ConfirmationDialog<T>
 {
     #[must_use]
     pub fn new(title: String, prompt: impl Into<WidgetText>, data: T) -> Self
@@ -351,6 +351,8 @@ impl<T: Default> ConfirmationDialog<T>
     }
 
     pub fn get_response(&mut self) -> Response<T>
+    where
+        T: Default,
     {
         match self.state
         {

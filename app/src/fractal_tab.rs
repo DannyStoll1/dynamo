@@ -14,7 +14,9 @@ use egui_dock::{NodeIndex, SurfaceIndex};
 use seq_macro::seq;
 
 #[cfg(feature = "scripting")]
-use crate::script_editor::{Popup, Response};
+use crate::script_editor::*;
+#[cfg(feature = "scripting")]
+use script_loader::error::ScriptError;
 #[cfg(feature = "scripting")]
 use std::path::Path;
 
@@ -79,6 +81,8 @@ pub struct FractalTab
     pub menu_state: MenuState,
     #[cfg(feature = "scripting")]
     pub popup: Option<Popup>,
+    #[cfg(feature = "scripting")]
+    pub error_report: Option<ErrorReport>,
 }
 
 impl FractalTab
@@ -284,9 +288,14 @@ impl FractalTab
     fn transpiled_scripts_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("User Scripts", |ui| {
-            if ui.button("Script Editor").clicked()
+            if ui.button("New script").clicked()
             {
-                self.popup = Some(Popup::edit());
+                self.popup = Some(Popup::new_script());
+                ui.close_menu();
+            }
+            if ui.button("Edit script...").clicked()
+            {
+                self.popup = Some(Popup::load_edit());
                 ui.close_menu();
             }
             if ui.button("Load script...").clicked()
@@ -309,11 +318,20 @@ impl FractalTab
             {
                 self.popup = None;
             }
-            Load(path) =>
+            Load(path) => match self.load_user_script(path)
             {
-                self.load_user_script(path);
-                self.popup = None;
-            }
+                Ok(()) =>
+                {
+                    self.popup = None;
+                }
+                Err(e) =>
+                {
+                    self.error_report = Some(ErrorReport::new(
+                        "Error parsing script".to_owned(),
+                        format!("{e:?}"),
+                    ));
+                }
+            },
         }
     }
 
@@ -737,24 +755,16 @@ impl FractalTab
     }
 
     #[cfg(feature = "scripting")]
-    fn load_user_script<P: AsRef<Path>>(&mut self, script_path: P)
+    fn load_user_script<P: AsRef<Path>>(&mut self, script_path: P) -> Result<(), ScriptError>
     {
         use script_loader::Loader;
         let image_height = self.interface.get_image_height();
         let loader = Loader::new(script_path.as_ref(), image_height);
         unsafe {
-            match loader.run()
-            {
-                Ok(int) =>
-                {
-                    self.interface = Box::new(int);
-                }
-                Err(e) =>
-                {
-                    println!("Error loading user profile: {:?}", e);
-                }
-            }
+            let int = loader.run()?;
+            self.interface = Box::new(int);
         }
+        Ok(())
     }
 
     fn hotkey_button(&mut self, ui: &mut Ui, hotkey: &Hotkey)
@@ -784,6 +794,13 @@ impl FractalTab
             let response = popup.pop_response();
             self.handle_popup_response(response);
         }
+        if let Some(error_report) = self.error_report.as_mut()
+        {
+            error_report.show(ui.ctx());
+            if !error_report.visible {
+                self.error_report = None;
+            }
+        }
     }
 }
 
@@ -806,6 +823,8 @@ impl Default for FractalTab
             id: TabID::default(),
             #[cfg(feature = "scripting")]
             popup: None,
+            #[cfg(feature = "scripting")]
+            error_report: None,
         }
     }
 }

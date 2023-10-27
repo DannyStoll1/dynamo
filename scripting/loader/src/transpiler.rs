@@ -188,11 +188,11 @@ impl Transpiler
             t = self.parsed_input.names.selection,
             z = self.parsed_input.names.variable,
             c = self.destructure_param(),
-            param_map = self.parsed_input.context.get::<String>("param_map_rs"),
-            map = self.parsed_input.context.get::<String>("f_rs"),
-            map_d = self.parsed_input.context.get::<String>("f_df_rs"),
-            start = self.parsed_input.context.get::<String>("z0_rs"),
-            start_d = self.parsed_input.context.get::<String>("z0_dz0_rs"),
+            param_map = self.parsed_input.py_params.param_map,
+            map = self.parsed_input.py_params.map,
+            map_d = self.parsed_input.py_params.map_d,
+            start = self.parsed_input.py_params.start,
+            start_d = self.parsed_input.py_params.start_d,
             name = self.parsed_input.metadata.name,
         )
     }

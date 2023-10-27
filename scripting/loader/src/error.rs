@@ -16,3 +16,11 @@ pub enum ScriptError
     ErrorLoadingLibrary(libloading::Error),
     CargoCommandFailed(std::io::Error),
 }
+
+impl From<PyErr> for ScriptError
+{
+    fn from(err: PyErr) -> Self
+    {
+        Self::PythonError(err)
+    }
+}

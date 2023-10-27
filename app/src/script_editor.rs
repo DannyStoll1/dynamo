@@ -1,10 +1,12 @@
-use egui_file::FileDialog;
 use script_loader::error::ScriptError;
 use script_loader::parser::UnparsedUserInput;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-mod config;
+pub(super) mod config;
 use config::SCRIPT_DIR;
+
+pub mod popup;
+pub use popup::*;
 
 #[derive(Clone, Debug, Default)]
 pub enum Response
@@ -13,62 +15,6 @@ pub enum Response
     DoNothing,
     Close,
     Load(PathBuf),
-}
-
-#[derive(Debug)]
-pub enum Popup
-{
-    Edit(ScriptEditor),
-    Load(FileDialog),
-}
-impl Popup
-{
-    pub fn show(&mut self, ctx: &egui::Context)
-    {
-        match self
-        {
-            Self::Edit(d) =>
-            {
-                d.show(ctx);
-            }
-            Self::Load(d) =>
-            {
-                d.show(ctx);
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn edit() -> Self
-    {
-        let mut editor = ScriptEditor::default();
-        editor.open();
-        Self::Edit(editor)
-    }
-
-    #[must_use]
-    pub fn load() -> Self
-    {
-        let path = Some((*SCRIPT_DIR).to_path_buf());
-        let _ = std::fs::create_dir("images");
-        let mut file_dialog = FileDialog::open_file(path).title("Select a script to load");
-        file_dialog.open();
-
-        Self::Load(file_dialog)
-    }
-
-    pub fn pop_response(&mut self) -> Response
-    {
-        match self
-        {
-            Self::Load(dialog) if dialog.selected() => dialog
-                .path()
-                .map(|path| Response::Load(path.to_path_buf()))
-                .unwrap_or(Response::Close),
-            Self::Load(_) => Response::DoNothing,
-            Self::Edit(editor) => editor.pop_response(),
-        }
-    }
 }
 
 #[derive(Clone, Default, Debug)]
@@ -114,6 +60,18 @@ impl Default for ScriptEditor
 }
 impl ScriptEditor
 {
+    #[must_use]
+    pub fn load<P>(script_file: P) -> std::io::Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let text = std::fs::read_to_string(script_file)?;
+        Ok(Self {
+            text,
+            ..Default::default()
+        })
+    }
+
     pub fn show(&mut self, ctx: &egui::Context)
     {
         if matches!(self.state, State::Editing)
@@ -139,7 +97,6 @@ impl ScriptEditor
                     if ui.button("Cancel").clicked()
                     {
                         self.hide();
-                        self.reset_text();
                     }
                 });
         }
@@ -163,12 +120,6 @@ impl ScriptEditor
         self.state = State::Closed;
     }
 
-    #[inline]
-    pub fn reset_text(&mut self)
-    {
-        self.text = config::DEFAULT_TEXT.clone();
-    }
-
     fn try_save(&mut self, run: bool)
     {
         match self.save_script()
@@ -184,7 +135,6 @@ impl ScriptEditor
                 {
                     self.hide();
                 }
-                self.reset_text();
             }
             Err(e) =>
             {
@@ -198,7 +148,7 @@ impl ScriptEditor
         let script_data: UnparsedUserInput =
             toml::from_str(&self.text).map_err(ScriptError::ErrorParsingToml)?;
         let filename = format!("{}.toml", script_data.metadata.short_name);
-        let save_path = config::SCRIPT_DIR.join(filename);
+        let save_path = SCRIPT_DIR.join(filename);
 
         std::fs::write(&save_path, self.text.clone()).map_err(ScriptError::ErrorWritingFile)?;
         Ok(save_path)
