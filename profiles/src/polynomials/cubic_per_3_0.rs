@@ -54,18 +54,6 @@ impl ParameterPlane for CubicPer3_0
         horner!(z, 1., 0., b, a)
     }
 
-<<<<<<< HEAD
-    fn dynamical_derivative(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Deriv
-    {
-        z * (3. * a + 2. * b)
-    }
-
-    fn parameter_derivative(&self, z: Self::Var, _c: Self::Param) -> Self::Deriv
-    {
-        z.powi(3)
-    }
-=======
->>>>>>> causes_compiler_error
     fn param_map(&self, t: Cplx) -> Self::Param
     {
         let u = t + 1.;

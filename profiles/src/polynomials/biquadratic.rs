@@ -75,18 +75,7 @@ impl ParameterPlane for Biquadratic
         }
     }
 
-    #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
-    {
-        let u: Cplx = zw.into();
-        2. * u
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, _c: Cplx) -> Cplx
-=======
     fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
->>>>>>> causes_compiler_error
     {
         match zw
         {
@@ -219,27 +208,12 @@ impl ParameterPlane for BiquadraticMult
     {
         match zw
         {
-<<<<<<< HEAD
-            Bicomplex::PlaneA(z) => 2. * z + c.a,
-            Bicomplex::PlaneB(w) => 2. * w + c.b,
-        }
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => -c.b / c.a,
-=======
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a, ONE),
             Bicomplex::PlaneB(w) => (
                 Bicomplex::PlaneA(w * (w + c.b)),
                 2. * w + c.b,
                 -c.b.powi(2) / self.multiplier, // -l/t^2
             ),
->>>>>>> causes_compiler_error
         }
     }
 
@@ -492,26 +466,6 @@ impl ParameterPlane for BiquadraticMultParam
     }
 
     #[inline]
-    fn dynamical_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(z) => 2. * z + c.a,
-            Bicomplex::PlaneB(w) => 2. * w + c.b,
-        }
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => -c.b / c.a,
-        }
-    }
-
-    #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         Bicomplex::PlaneA(-0.5 * c.a)
@@ -650,22 +604,6 @@ impl ParameterPlane for BiquadraticMultSecondIterate
         let a = self.multiplier / c;
         let w = z * (z + c);
         (w * (w + a), (c + 2. * z) * (a + 2. * w))
-    }
-
-    #[inline]
-    fn dynamical_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        let a = self.multiplier / c;
-        let w = z * (z + c);
-        (c + 2. * z) * (a + 2. * w)
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, z: Cplx, c: Cplx) -> Cplx
-    {
-        2. * (z.powi(2) + c)
-=======
->>>>>>> causes_compiler_error
     }
 
     #[inline]
@@ -813,23 +751,8 @@ impl ParameterPlane for BiquadraticMultSection
     {
         match zw
         {
-<<<<<<< HEAD
-            Bicomplex::PlaneA(z) => 2. * z + c,
-            Bicomplex::PlaneB(w) => 2. * w + 1.,
-        }
-    }
-
-    #[inline]
-    fn parameter_derivative(&self, zw: Self::Var, c: Self::Param) -> Cplx
-    {
-        match zw
-        {
-            Bicomplex::PlaneA(_) => ONE,
-            Bicomplex::PlaneB(_) => -c.inv(),
-=======
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c, z),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1., ZERO),
->>>>>>> causes_compiler_error
         }
     }
 
