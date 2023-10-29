@@ -1,4 +1,4 @@
-use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
+use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner, horner_monic, profile_imports, ext_ray_impl_rk};
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -232,6 +232,10 @@ impl InfinityFirstReturnMap for QuadRatPer3
 {
     degree_impl!(2, 3);
 
+    fn escaping_phase(&self) -> Period {
+        2
+    }
+
     fn escape_coeff(&self, c: Self::Param) -> Cplx
     {
         0.25 * (1. - c.inv())
@@ -251,4 +255,7 @@ impl InfinityFirstReturnMap for QuadRatPer3
 }
 
 impl EscapeEncoding for QuadRatPer3 {}
-impl ExternalRays for QuadRatPer3 {}
+impl ExternalRays for QuadRatPer3
+{
+    ext_ray_impl_rk!(0.01, 1e6);
+}

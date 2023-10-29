@@ -730,10 +730,12 @@ pub trait InfinityFirstReturnMap: ParameterPlane
 
 pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
 {
+    /// Default implementation of external rays. Only valid if the self-return map at infinity is
+    /// monic.
     fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         const R: Real = 16.0;
-        let escape_radius_log2 = R.log2() * self.degree_real().abs();
+        let escape_radius_log = R.ln() * self.degree_real().abs();
 
         let deg_real = self.degree_real().abs();
         if deg_real.is_nan()
@@ -758,27 +760,12 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
 
         let factor = (-deg_real.log2() / Real::from(RAY_SHARPNESS)).exp2();
 
+        // Assumes escape_coeff is constant
+        let a = self.escape_coeff(self.param_map(ONE));
+        let target_shift = a.ln() / Real::from(RAY_SHARPNESS);
+
         for k in 0..RAY_DEPTH
-        {
-            // Relative log2-norms of targets
-            // jth target norm = escape_radius^deg^(-j/S)
-            // u_j = log2(escape_radius) * deg^(-j/S)
-            let mut u = Cplx::from(escape_radius_log2);
-            let us = (0..RAY_SHARPNESS).map(|_| {
-                let ui = u;
-                let a = self.escape_coeff(self.param_map(Cplx::from(u)));
-                u *= factor;
-                u -= a.log2() / Real::from(RAY_SHARPNESS);
-                ui
-            });
-
-            let v = target_angle.to_circle();
-            let targets = us.map(|u| u.exp2() * v);
-
-            let mut t_curr = *t_list.last().unwrap_or(&base_point);
-            let mut dist: Real;
-
-            let num_iters = k * self.escaping_period() + self.escaping_phase();
+        {            let num_iters = k * self.escaping_period() + self.escaping_phase();
 
             let fk_and_dfk = |t: Cplx| {
                 let (c, dc_dt) = self.param_map_d(t);
@@ -795,8 +782,13 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
                 (z.into(), dz_dt.into())
             };
 
-            for target in targets
+            let mut u = escape_radius_log;
+            let mut v = Real::from(target_angle) * TAU;
+            let mut t_curr = *t_list.last().unwrap_or(&base_point);
+
+            for _j in 0..RAY_SHARPNESS
             {
+                let target = Cplx::new(u, v).exp();
                 match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
                 {
                     Ok((sol, t_k, d_k)) =>
@@ -811,7 +803,7 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
 
                         t_list.push(t_curr);
 
-                        dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
+                        let dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
                         if dist < pixel_width
                         {
                             return Some(t_list);
@@ -824,6 +816,9 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
                     _ =>
                     {}
                 }
+                u *= factor;
+                u -= target_shift.re;
+                v -= target_shift.im;
             }
             target_angle *= deg;
         }
@@ -836,7 +831,7 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
     /// but we stick to rationals for compatibility with other modules
     /// and to maintain precision.
     ///
-    /// Currently works correctly only for quadratic polynomials.
+    /// Currently only stable for quadratic polynomials.
     fn external_ray(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         // Remove off the end if distance is increasing,

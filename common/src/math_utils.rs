@@ -332,3 +332,14 @@ pub fn nth_roots(x: Cplx, degree: i32) -> impl Iterator<Item = Cplx>
     let theta = TAUI / f64::from(degree);
     (0..degree).map(move |k| u * (theta * f64::from(k)).exp())
 }
+
+pub fn runge_kutta_step<F>(f: &mut F, t: Cplx, step_size: Real) -> Cplx
+where
+    F: FnMut(Cplx) -> Cplx,
+{
+    let k0 = f(t);
+    let k1 = f(t + 0.5 * step_size * k0);
+    let k2 = f(t + 0.5 * step_size * k1);
+    let k3 = f(t + step_size * k2);
+    step_size / 6.0 * (k0 + 2. * (k1 + k2) + k3)
+}

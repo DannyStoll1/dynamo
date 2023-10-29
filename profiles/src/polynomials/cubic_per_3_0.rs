@@ -44,7 +44,7 @@ impl ParameterPlane for CubicPer3_0
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
-        let az = a*z;
+        let az = a * z;
         (1. + z2 * (b + az), z * (3. * az + 2. * b))
     }
 

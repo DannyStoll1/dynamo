@@ -1,31 +1,3 @@
-// macro_rules! action_buttons {
-//     ($self: expr, $ui: expr $(, $actions: expr)+ $(,)?) => {
-//         $(
-//             if $ui.button($actions.short_description()).clicked()
-//             {
-//                 $self.interface.process_action(&$actions);
-//                 $self.interface.consume_click();
-//                 $ui.close_menu();
-//             }
-//         )+
-//     };
-// }
-
-// macro_rules! hotkey_buttons {
-//     ($self: expr, $ui: expr $(, $hotkey: expr)+ $(,)?) => {
-//         $(
-//             let action = $hotkey.menu_action_override
-//                                 .unwrap_or($hotkey.action);
-//             if $ui.button(action.short_description()).clicked()
-//             {
-//                 $self.interface.process_action(&action);
-//                 $self.interface.consume_click();
-//                 $ui.close_menu();
-//             }
-//         )+
-//     };
-// }
-
 macro_rules! fractal_menu_button {
     ($self: ident, $ui: ident, $name: expr, $fractal: ty) => {
         if $ui.button($name).clicked()

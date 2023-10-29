@@ -1,4 +1,4 @@
-use crate::macros::{ext_ray_impl_nonmonic, profile_imports};
+use crate::macros::{ext_ray_impl_rk, profile_imports};
 use std::f64::consts::SQRT_2;
 profile_imports!();
 use std::iter::once;
@@ -264,5 +264,5 @@ impl<const D: Period> InfinityFirstReturnMap for Chebyshev<D>
 impl<const D: Period> EscapeEncoding for Chebyshev<D> {}
 impl<const D: Period> ExternalRays for Chebyshev<D>
 {
-    ext_ray_impl_nonmonic!();
+    ext_ray_impl_rk!();
 }

@@ -135,3 +135,63 @@ fn cubic_per3(b: &mut Bencher)
         plane.compute();
     });
 }
+
+#[bench]
+fn exp(b: &mut Bencher)
+{
+    use test::black_box;
+    b.iter(|| {
+        let mut r = 0.42_f64;
+        for _ in 0..10_000
+        {
+            let u = Cplx::new(r, r.ln()).exp();
+            black_box(u);
+            r = r + TAU % 1.0;
+        }
+    });
+}
+
+#[bench]
+fn exp2(b: &mut Bencher)
+{
+    use test::black_box;
+    b.iter(|| {
+        let mut r = 0.42_f64;
+        for _ in 0..10_000
+        {
+            let u = Cplx::new(r, r.log2()).exp2();
+            black_box(u);
+            r = r + TAU % 1.0;
+        }
+    });
+}
+
+#[bench]
+fn norm(b: &mut Bencher)
+{
+    use test::black_box;
+    b.iter(|| {
+        let mut r = 0.42_f64;
+        for _ in 0..10_000
+        {
+            let u = Cplx::new(r, 1.3).norm();
+            black_box(u);
+            r = r + TAU % 1.0;
+        }
+    });
+}
+
+#[bench]
+fn norm_sqr(b: &mut Bencher)
+{
+    use test::black_box;
+    b.iter(|| {
+        let mut r = 0.42_f64;
+        for _ in 0..10_000
+        {
+            let u = Cplx::new(r, 1.3).norm_sqr();
+            black_box(u);
+            r = r + TAU % 1.0;
+        }
+    });
+}

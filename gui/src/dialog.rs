@@ -432,9 +432,20 @@ impl Dialog
             degree,
         } = params.orbit_schema;
 
-        let header = format!(
-            "The following angles are active with preperiod {preperiod} and period {period}:"
-        );
+        let header = if params.include_suffixes
+        {
+            format!(
+                "The following angles are active with preperiod at most \
+                {preperiod} and period {period}:"
+            )
+        }
+        else
+        {
+            format!(
+                "The following angles are active with preperiod \
+                {preperiod} and period {period}:"
+            )
+        };
 
         let pad = (period + preperiod + 1) as usize;
         let mut body = String::new();
