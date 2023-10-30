@@ -230,6 +230,7 @@ pub trait Pane
 
     fn select_preperiod_smooth_coloring(&mut self);
     fn select_preperiod_period_smooth_coloring(&mut self);
+    fn select_preperiod_coloring(&mut self);
 
     fn marking(&self) -> &Marking;
     fn marking_mut(&mut self) -> &mut Marking;
@@ -603,13 +604,19 @@ where
 
     fn select_preperiod_smooth_coloring(&mut self)
     {
-        let coloring_algorithm = self.plane.preperiod_smooth_coloring();
+        let coloring_algorithm = self.plane.internal_potential_coloring();
         self.set_coloring_algorithm(coloring_algorithm);
     }
 
     fn select_preperiod_period_smooth_coloring(&mut self)
     {
-        let coloring_algorithm = self.plane.preperiod_period_smooth_coloring();
+        let coloring_algorithm = self.plane.potential_and_period_coloring();
+        self.set_coloring_algorithm(coloring_algorithm);
+    }
+
+    fn select_preperiod_coloring(&mut self)
+    {
+        let coloring_algorithm = self.plane.preperiod_coloring();
         self.set_coloring_algorithm(coloring_algorithm);
     }
 

@@ -18,12 +18,15 @@ pub enum IncoloringAlgorithm
         periodicity_tolerance: f64,
     },
     Preperiod,
-    PreperiodPeriodSmooth
+    PotentialAndPeriod
     {
         periodicity_tolerance: f64,
         fill_rate: f64,
     },
-    PreperiodPeriod,
+    PreperiodPeriod
+    {
+        fill_rate: f64,
+    },
     Multiplier,
     // PointBased
     // {
@@ -73,14 +76,12 @@ impl IncoloringAlgorithm
 
                 palette.map_color32(val * val / per)
             }
-            Self::PreperiodPeriod =>
+            Self::PreperiodPeriod { fill_rate } =>
             {
-                let coloring_rate = 0.02;
-
                 let per = IterCount::from(point_info.period);
                 let val = IterCount::from(point_info.preperiod);
 
-                let potential = (val * coloring_rate / per).tanh();
+                let potential = (val * fill_rate / per).tanh();
                 palette.period_coloring.map(per as f32, potential as f32)
             }
             Self::InternalPotential {
@@ -90,7 +91,7 @@ impl IncoloringAlgorithm
                 let val = Self::relative_potential(point_info, *periodicity_tolerance);
                 palette.map_color32(val)
             }
-            Self::PreperiodPeriodSmooth {
+            Self::PotentialAndPeriod {
                 periodicity_tolerance,
                 fill_rate,
             } =>
@@ -191,15 +192,13 @@ impl IncoloringAlgorithm
                 palette.period_coloring.map(hue_id, luminosity_modifier)
             }
             Self::Preperiod => palette.map_color32(rescaled_potential.floor()),
-            Self::PreperiodPeriod =>
+            Self::PreperiodPeriod { fill_rate } =>
             {
-                let coloring_rate = 0.02;
-
-                let luma = (rescaled_potential * coloring_rate).tanh() as f32;
+                let luma = (rescaled_potential * fill_rate).tanh() as f32;
                 palette.period_coloring.map(info.period as f32, luma)
             }
             Self::InternalPotential { .. } => palette.map_color32(rescaled_potential),
-            Self::PreperiodPeriodSmooth { fill_rate, .. } =>
+            Self::PotentialAndPeriod { fill_rate, .. } =>
             {
                 let n = IterCount::from(info.period);
 

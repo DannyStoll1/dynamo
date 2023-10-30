@@ -51,6 +51,9 @@ pub enum Action
     SetPaletteWhite,
     SetPaletteBlack,
     SetColoring(IncoloringAlgorithm),
+    SetColoringInternalPotential,
+    SetColoringPotentialPeriod,
+    SetColoringPreperiodPeriod,
     ScalePalettePeriod(f64),
     ShiftPalettePhase(f64),
 }
@@ -197,13 +200,28 @@ impl Action
                     {
                         "Color bounded components by internal potential (Kœnigs or Böttcher map)"
                     }
-                    PreperiodPeriod => "Color bounded components by period and convergence time",
-                    PreperiodPeriodSmooth { .. } =>
+                    PreperiodPeriod { .. } =>
+                    {
+                        "Color bounded components by period and convergence time"
+                    }
+                    PotentialAndPeriod { .. } =>
                     {
                         "Color bounded components by period and internal potential"
                     }
                 };
                 desc.to_owned()
+            }
+            Self::SetColoringInternalPotential =>
+            {
+                "Color bounded components by internal potential (Kœnigs or Böttcher map)".to_owned()
+            }
+            Self::SetColoringPotentialPeriod =>
+            {
+                "Color bounded components by period and internal potential".to_owned()
+            }
+            Self::SetColoringPreperiodPeriod =>
+            {
+                "Color bounded components by period and convergence time".to_owned()
             }
             Self::ScalePalettePeriod(scale) =>
             {
@@ -290,11 +308,14 @@ impl Action
                     Multiplier => "Multiplier",
                     Preperiod => "Convergence time",
                     InternalPotential { .. } => "Internal Potential",
-                    PreperiodPeriod => "Period + Conv. Time",
-                    PreperiodPeriodSmooth { .. } => "Period + Potential",
+                    PreperiodPeriod { .. } => "Period + Conv. Time",
+                    PotentialAndPeriod { .. } => "Period + Potential",
                 };
                 desc.to_owned()
             }
+            Self::SetColoringInternalPotential => "Internal Potential".to_owned(),
+            Self::SetColoringPotentialPeriod => "Period + Potential".to_owned(),
+            Self::SetColoringPreperiodPeriod => "Period + Conv. Time".to_owned(),
             Self::ScalePalettePeriod(scale) => format!("{} density", inc_or_dec(1.0 / scale)),
             Self::ShiftPalettePhase(_) => "Adjust Phase".to_owned(),
         }

@@ -143,6 +143,7 @@ impl FractalTab
             self.rational_maps_menu(ui);
             self.transcendental_menu(ui);
             self.non_analytic_menu(ui);
+            self.arithmetic_menu(ui);
         });
     }
 
@@ -163,62 +164,6 @@ impl FractalTab
                     self.hotkey_button(ui, hotkey);
                 }
             });
-            // ui.menu_button("Algorithm", |ui| {
-            //     if ui.button("[0] Solid").clicked()
-            //     {
-            //         self.interface
-            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Solid);
-            //     }
-            //     else if ui.button("[1] Period").clicked()
-            //     {
-            //         self.interface
-            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Period);
-            //     }
-            //     else if ui.button("[2] Period and Multiplier").clicked()
-            //     {
-            //         self.interface
-            //             .set_coloring_algorithm(InteriorColoringAlgorithm::PeriodMultiplier);
-            //     }
-            //     else if ui.button("[3] Multiplier").clicked()
-            //     {
-            //         self.interface
-            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Multiplier);
-            //     }
-            //     else if ui.button("[4] Preperiod").clicked()
-            //     {
-            //         self.interface
-            //             .set_coloring_algorithm(InteriorColoringAlgorithm::Preperiod);
-            //     }
-            //     else if ui.button("[5] Internal potential").clicked()
-            //     {
-            //         self.interface
-            //             .parent_mut()
-            //             .select_preperiod_smooth_coloring();
-            //         self.interface
-            //             .child_mut()
-            //             .select_preperiod_smooth_coloring();
-            //     }
-            //     else if ui.button("Preperiod and Period").clicked()
-            //     {
-            //         self.interface
-            //             .set_coloring_algorithm(InteriorColoringAlgorithm::PreperiodPeriod);
-            //     }
-            //     else if ui.button("Internal potential and Period").clicked()
-            //     {
-            //         self.interface
-            //             .parent_mut()
-            //             .select_preperiod_period_smooth_coloring();
-            //         self.interface
-            //             .child_mut()
-            //             .select_preperiod_period_smooth_coloring();
-            //     }
-            //     else
-            //     {
-            //         return;
-            //     }
-            //     self.interface.consume_click();
-            //     ui.close_menu();
-            // });
         });
     }
 
@@ -718,6 +663,29 @@ impl FractalTab
             });
             fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam);
             fractal_menu_button!(self, ui, "Rulkov Map", Rulkov);
+            fractal_menu_button!(self, ui, "Eisenstein Int Mandel", EisensteinMandel<17, 0>);
+        });
+    }
+
+    fn arithmetic_menu(&mut self, ui: &mut Ui)
+    {
+        ui.menu_button("Arithmetic dynamics", |ui| {
+            ui.menu_button("Gaussian Int Mandel", |ui| {
+                fractal_menu_button!(self, ui, "Mod 2+ω", GaussianMandel<2, 1>);
+                fractal_menu_button!(self, ui, "Mod 5+2ω", GaussianMandel<5, 2>);
+                fractal_menu_button!(self, ui, "Mod 7", GaussianMandel<7, 0>);
+                fractal_menu_button!(self, ui, "Mod 11", GaussianMandel<11, 0>);
+                fractal_menu_button!(self, ui, "Mod 19", GaussianMandel<19, 0>);
+                fractal_menu_button!(self, ui, "Mod 109", GaussianMandel<109, 0>);
+            });
+            ui.menu_button("Eisenstein Int Mandel", |ui| {
+                fractal_menu_button!(self, ui, "Mod 2+ω", EisensteinMandel<2, 1>);
+                fractal_menu_button!(self, ui, "Mod 5", EisensteinMandel<5, 0>);
+                fractal_menu_button!(self, ui, "Mod 5+2ω", EisensteinMandel<5, 2>);
+                fractal_menu_button!(self, ui, "Mod 11", EisensteinMandel<11, 0>);
+                fractal_menu_button!(self, ui, "Mod 17", EisensteinMandel<17, 0>);
+                fractal_menu_button!(self, ui, "Mod 107", EisensteinMandel<107, 0>);
+            });
         });
     }
 
@@ -797,7 +765,8 @@ impl FractalTab
         if let Some(error_report) = self.error_report.as_mut()
         {
             error_report.show(ui.ctx());
-            if !error_report.visible {
+            if !error_report.visible
+            {
                 self.error_report = None;
             }
         }

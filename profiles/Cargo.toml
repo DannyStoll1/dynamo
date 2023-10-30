@@ -4,8 +4,9 @@ version = "0.6.1"
 edition = "2021"
 
 [dependencies]
-dynamo_common = {version = "*", path = "../common", features = ["serde"]}
+dynamo_common = {version = "*", path = "../common"}
 dynamo_core = {version = "*", path = "../core"}
+dynamo_color = { version = "*", path = "../coloring" }
 num-traits = "0.2.17"
 seq-macro = "0.3.5"
 

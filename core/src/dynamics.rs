@@ -560,6 +560,13 @@ pub trait ParameterPlane: Sync + Send
         coloring
     }
 
+    /// Default coloring algorithm to apply when loading the Julia set.
+    fn default_coloring_child(&self) -> Coloring
+    {
+        Coloring::default()
+            .with_interior_algorithm(self.internal_potential_coloring())
+    }
+
     /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
     /// color Newton parameter planes according to which root the critical orbit converges to.
     #[inline]
@@ -606,9 +613,15 @@ pub trait ParameterPlane: Sync + Send
         PointInfo::Periodic(info)
     }
 
+    /// Define a custom fill rate for perperiod based coloring.
+    fn preperiod_coloring(&self) -> IncoloringAlgorithm
+    {
+        IncoloringAlgorithm::PreperiodPeriod { fill_rate: 0.02 } 
+    }
+
     /// Internal: Since the internal potential coloring algorithm depends on the periodicity
     /// tolerance, we need to obtain it from this trait.
-    fn preperiod_smooth_coloring(&self) -> IncoloringAlgorithm
+    fn internal_potential_coloring(&self) -> IncoloringAlgorithm
     {
         IncoloringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
@@ -617,9 +630,9 @@ pub trait ParameterPlane: Sync + Send
 
     /// Internal: Since the period + internal potential coloring algorithm depends on the periodicity
     /// tolerance, we need to obtain it from this trait.
-    fn preperiod_period_smooth_coloring(&self) -> IncoloringAlgorithm
+    fn potential_and_period_coloring(&self) -> IncoloringAlgorithm
     {
-        IncoloringAlgorithm::PreperiodPeriodSmooth {
+        IncoloringAlgorithm::PotentialAndPeriod {
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 0.01,
         }
@@ -973,12 +986,48 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
     }
 }
 
-pub trait Computable: ParameterPlane + EscapeEncoding
+pub trait Computable: ParameterPlane
 {
-    fn compute(&self) -> IterPlane<Self::Deriv>;
+    fn compute(&self) -> IterPlane<Self::Deriv>
+    {
+        let mut iter_plane = IterPlane::create(self.point_grid().clone());
+        self.compute_into(&mut iter_plane);
+        iter_plane
+    }
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
 
+    fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>;
+
+    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Param, Self::Var, Self::Deriv>
+    {
+        let param = self.param_map(point);
+        let start = self.start_point(point, param);
+        let result = self.run_and_encode_point(start, param);
+        OrbitInfo {
+            param,
+            start,
+            result,
+        }
+    }
+
+    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>;
+
+    fn orbit_summary_conf(&self) -> OrbitSummaryConf
+    {
+        OrbitSummaryConf {
+            show_parameter: true,
+            show_selection: true,
+            show_start_point: !self.plane_type().is_dynamical(),
+            float_prec: DISPLAY_PREC,
+        }
+    }
+}
+
+impl<P> Computable for P
+where
+    P: ParameterPlane + EscapeEncoding,
+{
     fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
         let orbit_params = OrbitParams {
@@ -998,18 +1047,6 @@ pub trait Computable: ParameterPlane + EscapeEncoding
         let state = orbit.run_until_complete();
 
         self.encode_escape_result(state, c)
-    }
-
-    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Param, Self::Var, Self::Deriv>
-    {
-        let param = self.param_map(point);
-        let start = self.start_point(point, param);
-        let result = self.run_and_encode_point(start, param);
-        OrbitInfo {
-            param,
-            start,
-            result,
-        }
     }
 
     fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
@@ -1046,28 +1083,6 @@ pub trait Computable: ParameterPlane + EscapeEncoding
                 result,
             },
         }
-    }
-
-    fn orbit_summary_conf(&self) -> OrbitSummaryConf
-    {
-        OrbitSummaryConf {
-            show_parameter: true,
-            show_selection: true,
-            show_start_point: !self.plane_type().is_dynamical(),
-            float_prec: DISPLAY_PREC,
-        }
-    }
-}
-
-impl<P> Computable for P
-where
-    P: ParameterPlane + EscapeEncoding,
-{
-    fn compute(&self) -> IterPlane<Self::Deriv>
-    {
-        let mut iter_plane = IterPlane::create(self.point_grid().clone());
-        self.compute_into(&mut iter_plane);
-        iter_plane
     }
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)

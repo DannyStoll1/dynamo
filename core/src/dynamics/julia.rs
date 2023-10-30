@@ -254,25 +254,22 @@ where
 
     fn default_coloring(&self) -> Coloring
     {
-        let mut coloring = Coloring::default();
-        let _periodicity_tolerance = self.periodicity_tolerance();
-        coloring.set_interior_algorithm(self.preperiod_smooth_coloring());
-        coloring
+        self.parent.default_coloring_child()
     }
 
-    fn preperiod_smooth_coloring(&self) -> IncoloringAlgorithm
+    fn internal_potential_coloring(&self) -> IncoloringAlgorithm
     {
-        IncoloringAlgorithm::InternalPotential {
-            periodicity_tolerance: self.periodicity_tolerance(),
-        }
+        self.parent.internal_potential_coloring()
     }
 
-    fn preperiod_period_smooth_coloring(&self) -> IncoloringAlgorithm
+    fn potential_and_period_coloring(&self) -> IncoloringAlgorithm
     {
-        IncoloringAlgorithm::PreperiodPeriodSmooth {
-            periodicity_tolerance: self.periodicity_tolerance(),
-            fill_rate: 0.015,
-        }
+        self.parent.potential_and_period_coloring()
+    }
+
+    fn preperiod_coloring(&self) -> IncoloringAlgorithm
+    {
+        self.parent.preperiod_coloring()
     }
 
     #[inline]

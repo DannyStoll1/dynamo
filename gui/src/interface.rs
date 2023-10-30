@@ -647,7 +647,7 @@ where
                 self.parent_mut().select_preperiod_smooth_coloring();
                 self.child_mut().select_preperiod_smooth_coloring();
             }
-            IncoloringAlgorithm::PreperiodPeriodSmooth { .. } =>
+            IncoloringAlgorithm::PotentialAndPeriod { .. } =>
             {
                 self.parent_mut().select_preperiod_period_smooth_coloring();
                 self.child_mut().select_preperiod_period_smooth_coloring();
@@ -1039,6 +1039,21 @@ where
             {
                 self.get_active_pane_mut()
                     .map(|p| p.set_coloring_algorithm(algorithm.clone()));
+            }
+            Action::SetColoringInternalPotential =>
+            {
+                self.get_active_pane_mut()
+                    .map(|p| p.select_preperiod_smooth_coloring());
+            }
+            Action::SetColoringPreperiodPeriod =>
+            {
+                self.get_active_pane_mut()
+                    .map(|p| p.select_preperiod_coloring());
+            }
+            Action::SetColoringPotentialPeriod=>
+            {
+                self.get_active_pane_mut()
+                    .map(|p| p.select_preperiod_period_smooth_coloring());
             }
             Action::ScalePalettePeriod(factor) =>
             {

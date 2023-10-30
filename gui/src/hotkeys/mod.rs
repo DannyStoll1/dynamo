@@ -394,24 +394,19 @@ pub static INCOLORING_HOTKEYS: [Hotkey; 8] = [
     },
     Hotkey {
         shortcut: Some(KEY_5),
-        action: SetColoring(IncoloringAlgorithm::InternalPotential {
-            periodicity_tolerance: 1e-14,
-        }),
+        action: SetColoringInternalPotential,
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
-        shortcut: None,
-        action: SetColoring(IncoloringAlgorithm::PreperiodPeriod),
+        shortcut: Some(KEY_6),
+        action: SetColoringPreperiodPeriod,
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
-        shortcut: None,
-        action: SetColoring(IncoloringAlgorithm::PreperiodPeriodSmooth {
-            periodicity_tolerance: 1e-4,
-            fill_rate: 0.04,
-        }),
+        shortcut: Some(KEY_7),
+        action: SetColoringPotentialPeriod,
         show_in_menu: true,
         menu_action_override: None,
     },

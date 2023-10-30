@@ -80,15 +80,26 @@ impl Coloring
     {
         self.palette = palette;
     }
+
     #[must_use]
     pub const fn get_palette(&self) -> &Palette
     {
         &self.palette
     }
     #[must_use]
+    pub fn get_palette_mut(&mut self) -> &mut Palette
+    {
+        &mut self.palette
+    }
+    #[must_use]
     pub const fn get_period_coloring(&self) -> &DiscretePalette
     {
         &self.palette.period_coloring
+    }
+    #[must_use]
+    pub fn get_period_coloring_mut(&mut self) -> &mut DiscretePalette
+    {
+        &mut self.palette.period_coloring
     }
     #[must_use]
     pub const fn get_algorithm(&self) -> &IncoloringAlgorithm
@@ -102,6 +113,12 @@ impl Coloring
     pub fn set_interior_algorithm(&mut self, algorithm: IncoloringAlgorithm)
     {
         self.algorithm = algorithm;
+    }
+    #[must_use]
+    pub const fn with_interior_algorithm(mut self, algorithm: IncoloringAlgorithm) -> Self
+    {
+        self.algorithm = algorithm;
+        self
     }
 
     #[cfg(feature = "serde")]

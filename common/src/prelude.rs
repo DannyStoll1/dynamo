@@ -7,3 +7,4 @@ pub use crate::rational_angle::*;
 pub use crate::symbolic_dynamics::*;
 pub use crate::traits::*;
 pub use crate::types::*;
+// pub use crate::math_utils::taylor::{Taylor1, Taylor2};

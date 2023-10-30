@@ -14,6 +14,9 @@ pub use transcendental::*;
 pub mod non_analytic;
 pub use non_analytic::*;
 
+pub mod arithmetic;
+pub use arithmetic::*;
+
 #[cfg(test)]
 mod tests
 {
@@ -193,7 +196,7 @@ mod tests
         // let param_plane: Chebyshev<2> = Default::default();
         let param_plane: QuadRatPer3 = Default::default();
         let angle = RationalAngle::new(1, 3);
-        let ray = param_plane.external_ray(angle);
+        let _ray = param_plane.external_ray(angle);
         // dbg!(ray);
         // let target = Cplx::new(-0.125, 0.649519052838329);
         // assert!((ray.last().unwrap() - target).norm_sqr() < 1e-4);

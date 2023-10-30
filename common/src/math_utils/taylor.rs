@@ -70,12 +70,14 @@ impl<T: LinOps, const N: usize> Taylor2<T, N>
     }
 }
 
+/// Evaluate a quadratic form defined by matrix `mat` on a vector `v`
 fn quad_form<const N: usize, T: LinOps>(v: [T; N], mat: [[T; N]; N]) -> T
 {
     let v_at = matvec(mat, v);
     dot_prod(v_at, v)
 }
 
+/// Evaluate the dot product of two vectors
 fn dot_prod<const N: usize, T: LinOps>(v: [T; N], w: [T; N]) -> T
 {
     (0..N).map(|i| v[i] * w[i]).fold(T::zero(), |a, b| a + b)
