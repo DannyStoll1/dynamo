@@ -23,10 +23,7 @@ bacon.toml
 .cargo
 
 # Notes
-.opt_notes
-perf_notes.txt
-notes.txt
-todo.txt
+notes
 
 # Experiments
 profiles/src/rational_maps/quad_rat_per_4_1_experiments.rs

@@ -13,6 +13,7 @@ use std::f64::consts::PI;
 pub mod arithmetic;
 pub mod newton;
 pub mod polynomial_roots;
+pub mod taylor;
 
 #[must_use]
 pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cplx)
