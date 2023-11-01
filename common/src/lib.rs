@@ -76,8 +76,7 @@ mod tests
         let d = Cplx::new(7., 0.);
 
         let roots = solve_quartic(a, b, c, d);
-        for r in &roots
-        {
+        for r in &roots {
             let val = horner_monic!(r, a, b, c, d);
             assert!(val.norm() < 1e-13);
         }
@@ -90,8 +89,7 @@ mod tests
         let s = Cplx::new(0.5, 14.134_725_141_734_695);
         let mut val = Cplx::default();
         let mut dval = Cplx::default();
-        for _ in 0..50000
-        {
+        for _ in 0..50000 {
             [val, dval] = riemann_zeta_d(s);
         }
         let err = val.norm();
@@ -111,8 +109,7 @@ mod tests
         let mut val1 = Cplx::default();
         let mut val2 = Cplx::default();
 
-        for _ in 0..50000
-        {
+        for _ in 0..50000 {
             [val0, val1, val2] = riemann_zeta_d2(s);
         }
 
@@ -137,8 +134,7 @@ mod tests
         let mut val1 = Cplx::default();
         let mut val2 = Cplx::default();
 
-        for _ in 0..50000
-        {
+        for _ in 0..50000 {
             [val0, val1, val2] = riemann_xi_d2(s);
         }
 
@@ -160,8 +156,7 @@ mod tests
         use crate::math_utils::riemann_zeta;
         let s = Cplx::new(0.5, 14.134_725_141_734_695);
         let mut val = Cplx::default();
-        for _ in 0..10000
-        {
+        for _ in 0..10000 {
             val = riemann_zeta(s);
         }
         let err = val.norm();
@@ -175,8 +170,7 @@ mod tests
         use spfunc::zeta::zeta;
         let s = Cplx::new(0.5, 14.134_725_141_734_695);
         let mut val = Cplx::default();
-        for _ in 0..10000
-        {
+        for _ in 0..10000 {
             val = zeta(s);
         }
         let err = val.norm();
@@ -190,8 +184,7 @@ mod tests
         use spfunc::gamma::polygamma;
         let s = Cplx::new(0.5, 14.134_725_141_734_695);
         let mut val = Cplx::default();
-        for _ in 0..10000
-        {
+        for _ in 0..10000 {
             val = polygamma(s, 1);
         }
         dbg!(val);

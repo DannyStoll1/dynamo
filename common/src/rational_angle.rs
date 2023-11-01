@@ -72,8 +72,7 @@ impl RationalAngle
     fn mod_1(mut self) -> Self
     {
         self.0 = self.0.fract();
-        if self.0.is_negative()
-        {
+        if self.0.is_negative() {
             self.0 += 1;
         }
         self
@@ -83,8 +82,7 @@ impl RationalAngle
     fn reduce_mod_1(&mut self)
     {
         self.0 = self.0.fract();
-        if *self.0.numer() < 0
-        {
+        if *self.0.numer() < 0 {
             self.0 += 1;
         }
     }

@@ -13,8 +13,7 @@ impl<const N: Period> Tricorne<N>
 {
     const N_FLOAT: Real = N as Real;
     const N_MINUS_1: Real = (N - 1) as Real;
-    const DEFAULT_BOUNDS: Bounds = match N
-    {
+    const DEFAULT_BOUNDS: Bounds = match N {
         2 => Bounds {
             min_x: -2.4,
             max_x: 1.5,

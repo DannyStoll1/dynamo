@@ -58,8 +58,7 @@ impl ParameterPlane for CubicPer2Lambda
     {
         let disc = (3. * a * (a + 1.) + b * b).sqrt();
 
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => (b + disc) / (3. * a),
             PlaneID::WPlane => (b - disc) / (3. * a),
         }
@@ -74,15 +73,12 @@ impl ParameterPlane for CubicPer2Lambda
 
     fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let u = b / a;
                 solve_cubic(u, 2. / a - 1., -u).to_vec()
             }
-            2 =>
-            {
+            2 => {
                 let b2 = b * b;
                 let u = 2. * b * a * a;
                 let coeffs = [
@@ -241,8 +237,7 @@ impl ParameterPlane for CubicPer2LambdaParam
     {
         let a = (1.0 - l) * 0.25;
         let disc = (a * (4. - l)).sqrt();
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => ONE_THIRD * (1. + disc / a),
             PlaneID::WPlane => ONE_THIRD * (1. - disc / a),
         }
@@ -253,8 +248,7 @@ impl ParameterPlane for CubicPer2LambdaParam
     {
         let a = (1.0 - l) * 0.25;
         let disc = (a * (4. - l)).sqrt();
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => (ONE_THIRD * (1. + disc / a), ZERO, 0.125 / (a * disc)),
             PlaneID::WPlane => (ONE_THIRD * (1. - disc / a), ZERO, -0.125 / (a * disc)),
         }
@@ -370,18 +364,15 @@ impl ParameterPlane for CubicPer2CritMarked
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(c, -ONE, -c - c.inv()).to_vec(),
-            2 =>
-            {
+            2 => {
                 let cinv = c.inv();
                 let cinv2 = cinv * cinv;
                 let [r2, r3, r4, r5] = solve_quartic(cinv2, c - cinv, cinv2 + 1., -c - cinv - cinv);
                 vec![ZERO, c, r2, r3, r4, r5]
             }
-            3 =>
-            {
+            3 => {
                 let c2 = c * c;
                 let c3 = c * c2;
                 let c4 = c2 * c2;
@@ -451,10 +442,8 @@ impl HasDynamicalCovers for CubicPer2CritMarked
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let g2 = 0.5.into();
                     let g3 = Cplx::new(-0.0625, 0.);
@@ -470,8 +459,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                     max_y: 3.5,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| {
                     let u = t.inv();
                     (t + u, 1. - u * u)
@@ -483,8 +471,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                     max_y: 2.8,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -498,10 +485,8 @@ impl HasDynamicalCovers for CubicPer2CritMarked
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let g2 = 0.5.into();
                     let g3 = Cplx::new(-0.0625, 0.);
@@ -517,8 +502,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                     max_y: 3.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }

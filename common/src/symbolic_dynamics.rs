@@ -51,8 +51,7 @@ impl PartialOrd for OrbitSchema
     }
     fn partial_cmp(&self, other: &Self) -> Option<Ordering>
     {
-        if self.period != other.period
-        {
+        if self.period != other.period {
             return None;
         }
         Some(self.preperiod.cmp(&other.preperiod))
@@ -95,8 +94,7 @@ impl FromStr for OrbitSchema
             static ref PREPERIOD: Regex = Regex::new(r"^\s*(\d+)\s*,\s*(\d+)\s*$").unwrap();
         }
 
-        if let Some(captures) = PREPERIOD.captures(text)
-        {
+        if let Some(captures) = PREPERIOD.captures(text) {
             let preperiod = captures
                 .get(1)
                 .ok_or(Err::UnrecognizedFormat)?
@@ -110,9 +108,7 @@ impl FromStr for OrbitSchema
                 .parse()
                 .map_err(Err::Preperiodic)?;
             Ok(Self { period, preperiod })
-        }
-        else
-        {
+        } else {
             text.parse::<Period>()
                 .map(Into::into)
                 .map_err(Err::Periodic)
@@ -141,12 +137,9 @@ impl OrbitSchemaWithDegree
     #[must_use]
     pub fn active_angles(&self, include_suffixes: bool) -> VecDeque<RationalAngle>
     {
-        if include_suffixes
-        {
+        if include_suffixes {
             self.child_angles()
-        }
-        else
-        {
+        } else {
             self.exact_angles()
         }
     }
@@ -201,16 +194,14 @@ impl KneadingSymbol
 {
     fn to_string(self, partition_size: usize) -> String
     {
-        match self
-        {
+        match self {
             Self::Interior(x) => format!("{x}"),
             Self::Boundary(x) => format!("[{}|{}]", x, (x + 1) % partition_size),
         }
     }
     fn to_string_kneading(self) -> String
     {
-        match self
-        {
+        match self {
             Self::Interior(x) => format!("{x}"),
             Self::Boundary(_) => "*".to_owned(),
         }
@@ -305,14 +296,11 @@ impl CirclePartition
     #[must_use]
     pub fn identify(&self, theta: RationalAngle) -> KneadingSymbol
     {
-        for (i, x) in self.angles.iter().enumerate().rev()
-        {
-            match theta.cmp(x)
-            {
+        for (i, x) in self.angles.iter().enumerate().rev() {
+            match theta.cmp(x) {
                 Ordering::Greater => return KneadingSymbol::Interior(i),
                 Ordering::Equal => return KneadingSymbol::Boundary(i),
-                Ordering::Less =>
-                {}
+                Ordering::Less => {}
             }
         }
         KneadingSymbol::Interior(self.angles.len().saturating_sub(1))
@@ -321,24 +309,18 @@ impl CirclePartition
     #[must_use]
     pub fn is_circularly_ordered(&self) -> bool
     {
-        let Some((imin, xmin)) = self.angles.iter().enumerate().min_by_key(|(_i, x)| *x)
-        else
-        {
+        let Some((imin, xmin)) = self.angles.iter().enumerate().min_by_key(|(_i, x)| *x) else {
             return true;
         };
         let mut x_curr = *xmin;
-        for i in (imin + 1)..self.angles.len()
-        {
-            if self.angles[i] < x_curr
-            {
+        for i in (imin + 1)..self.angles.len() {
+            if self.angles[i] < x_curr {
                 return false;
             }
             x_curr = self.angles[i];
         }
-        for i in 0..imin
-        {
-            if self.angles[i] < x_curr
-            {
+        for i in 0..imin {
+            if self.angles[i] < x_curr {
                 return false;
             }
             x_curr = self.angles[i];
@@ -380,12 +362,10 @@ impl AngleWithDegree
         let mut slow = self.angle;
         let mut fast = self.angle;
 
-        loop
-        {
+        loop {
             slow *= self.degree;
             fast *= degree2;
-            if fast == slow
-            {
+            if fast == slow {
                 break;
             }
         }
@@ -393,16 +373,14 @@ impl AngleWithDegree
         let mut period = 1;
         slow *= self.degree;
 
-        while slow != fast
-        {
+        while slow != fast {
             slow *= self.degree;
             period += 1;
         }
 
         let mut preperiod = 0;
         slow = self.angle;
-        while slow != fast
-        {
+        while slow != fast {
             slow *= self.degree;
             fast *= self.degree;
             preperiod += 1;
@@ -534,16 +512,13 @@ impl std::fmt::Display for ParseAngleError
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        match self
-        {
+        match self {
             Self::UnrecognizedFormat => write!(f, "Unrecognized angle format."),
-            Self::Fraction(cause) =>
-            {
+            Self::Fraction(cause) => {
                 write!(f, "Error parsing fraction string: {cause}")
             }
             Self::Dyadic(cause) => write!(f, "Error parsing dyadic string: {cause}"),
-            Self::Preperiodic(cause) =>
-            {
+            Self::Preperiodic(cause) => {
                 write!(f, "Error parsing preperiodic string: {cause}")
             }
         }
@@ -554,11 +529,9 @@ impl std::error::Error for ParseAngleError
 {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)>
     {
-        match self
-        {
+        match self {
             Self::UnrecognizedFormat => None,
-            Self::Fraction(cause) | Self::Dyadic(cause) | Self::Preperiodic(cause) =>
-            {
+            Self::Fraction(cause) | Self::Dyadic(cause) | Self::Preperiodic(cause) => {
                 Some(&**cause)
             }
         }
@@ -587,12 +560,9 @@ fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
     match (
         num_str.as_str().parse::<AngleNum>(),
         den_str.as_str().parse::<AngleNum>(),
-    )
-    {
-        (Ok(numer), Ok(denom)) =>
-        {
-            if denom == 0
-            {
+    ) {
+        (Ok(numer), Ok(denom)) => {
+            if denom == 0 {
                 return Some(Err(ParseAngleError::Fraction(Box::new(
                     DivisionByZeroError,
                 ))));
@@ -627,28 +597,21 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
         static ref BIN_PREPER: Regex = Regex::new(r"^(\d*)p(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_PREPER.captures(text)
-    else
-    {
+    let Some(captures) = BIN_PREPER.captures(text) else {
         return None;
     };
-    if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2))
-    {
+    if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2)) {
         let per_str = per_match.as_str();
         let pre_str = pre_match.as_str();
 
-        if pre_str.is_empty()
-        {
-            match AngleNum::from_str_radix(per_str, 2)
-            {
-                Ok(num_per) =>
-                {
+        if pre_str.is_empty() {
+            match AngleNum::from_str_radix(per_str, 2) {
+                Ok(num_per) => {
                     let den_per = (1 << per_str.len()) - 1;
                     let per = RationalAngle::new(num_per, den_per);
                     return Some(Ok(per));
                 }
-                Err(e) =>
-                {
+                Err(e) => {
                     return Some(Err(ParseAngleError::Preperiodic(Box::new(e))));
                 }
             }
@@ -657,10 +620,8 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
         match (
             AngleNum::from_str_radix(pre_str, 2),
             AngleNum::from_str_radix(per_str, 2),
-        )
-        {
-            (Ok(num_pre), Ok(num_per)) =>
-            {
+        ) {
+            (Ok(num_pre), Ok(num_per)) => {
                 let den_pre = 1 << pre_str.len();
                 let den_per = den_pre * ((1 << per_str.len()) - 1);
 
@@ -668,8 +629,7 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
                 let per = RationalAngle::new(num_per, den_per);
                 return Some(Ok(pre + per));
             }
-            (Err(e), _) | (_, Err(e)) =>
-            {
+            (Err(e), _) | (_, Err(e)) => {
                 return Some(Err(ParseAngleError::Preperiodic(Box::new(e))));
             }
         }
@@ -710,15 +670,12 @@ impl std::fmt::Display for ParseOrbitSchemaError
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        match self
-        {
+        match self {
             Self::UnrecognizedFormat => write!(f, "Unrecognized angle format."),
-            Self::Periodic(cause) =>
-            {
+            Self::Periodic(cause) => {
                 write!(f, "Error parsing periodic string: {cause}")
             }
-            Self::Preperiodic(cause) =>
-            {
+            Self::Preperiodic(cause) => {
                 write!(f, "Error parsing preperiodic string: {cause}")
             }
         }
@@ -729,8 +686,7 @@ impl std::error::Error for ParseOrbitSchemaError
 {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)>
     {
-        match self
-        {
+        match self {
             Self::UnrecognizedFormat => None,
             Self::Periodic(cause) | Self::Preperiodic(cause) => Some(cause),
         }
@@ -740,15 +696,11 @@ impl std::error::Error for ParseOrbitSchemaError
 /// Sort a VecDeque assuming it is circularly ordered.
 pub(crate) fn sort_circularly_ordered<T: PartialOrd>(angles: &mut VecDeque<T>)
 {
-    let Some(mut prev) = angles.front()
-    else
-    {
+    let Some(mut prev) = angles.front() else {
         return;
     };
-    for (i, x) in angles.iter().enumerate()
-    {
-        if x < prev
-        {
+    for (i, x) in angles.iter().enumerate() {
+        if x < prev {
             angles.rotate_left(i);
             return;
         }

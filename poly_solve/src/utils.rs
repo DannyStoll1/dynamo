@@ -15,8 +15,7 @@ impl<T> Collapse for EitherOrBoth<T, T>
     where
         F: Fn(T, T) -> T,
     {
-        match self
-        {
+        match self {
             Self::Left(x) | Self::Right(x) => x,
             Self::Both(x, y) => f(x, y),
         }

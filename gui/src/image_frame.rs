@@ -17,22 +17,18 @@ impl BorderMode
     pub(super) const fn stroke(&self) -> Stroke
     {
         use crate::colors::*;
-        if self.live
-        {
+        if self.live {
             return Stroke {
                 color: LIVE,
                 width: 2.,
             };
         }
-        if self.selected
-        {
+        if self.selected {
             Stroke {
                 color: SELECTED,
                 width: 2.,
             }
-        }
-        else
-        {
+        } else {
             Stroke {
                 color: INACTIVE,
                 width: 2.,
@@ -138,8 +134,7 @@ impl ImageFrame
     }
     pub fn update_texture(&mut self)
     {
-        if let Some(handle) = self.texture_id.as_mut()
-        {
+        if let Some(handle) = self.texture_id.as_mut() {
             handle.set(self.image.clone(), Default::default());
         }
     }

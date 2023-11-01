@@ -19,11 +19,9 @@ where
         let mut z = start;
         let mut z_next: Self::Var;
 
-        for _ in 0..Self::MAX_ITERS
-        {
+        for _ in 0..Self::MAX_ITERS {
             z_next = z.clone() - self.eval(z.clone()) / deriv.eval(z.clone());
-            if z.dist_semi(z_next.clone()) < error
-            {
+            if z.dist_semi(z_next.clone()) < error {
                 return Some(z_next);
             }
             z = z_next;

@@ -67,8 +67,7 @@ impl ParameterPlane for Mandelbrot
         let mu_norm2 = temp.mul_add(temp, y2);
         let a = mu_norm2 * mu_norm2.mul_add(0.25, temp);
 
-        if a < y2
-        {
+        if a < y2 {
             let multiplier = 1. - (1. - four_c).sqrt();
             let mult_norm2 = multiplier.norm_sqr();
             let fixed_point = 0.5 * multiplier;
@@ -84,8 +83,7 @@ impl ParameterPlane for Mandelbrot
         // Basilica bulb
         let mu2 = four_c + 4.;
         let mult_norm2 = mu2.norm_sqr();
-        if mult_norm2 < 1.
-        {
+        if mult_norm2 < 1. {
             let fixed_point = -0.5 - 0.5 * (-four_c - 3.).sqrt();
             let init_dist = (c - fixed_point).norm_sqr();
             let potential = -4. * (init_dist / self.periodicity_tolerance()).log(mult_norm2);
@@ -124,18 +122,15 @@ impl ParameterPlane for Mandelbrot
 
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => vec![ZERO],
             2 => vec![-ONE],
             3 => solve_cubic(ONE, ONE, TWO).to_vec(),
-            4 =>
-            {
+            4 => {
                 const COEFFS: [Cplx; 6] = cplx_arr!([1, 2, 3, 3, 3, 1]);
                 solve_polynomial(COEFFS)
             }
-            5 =>
-            {
+            5 => {
                 const COEFFS: [Cplx; 16] =
                     cplx_arr!([1, 1, 2, 5, 14, 26, 44, 69, 94, 114, 116, 94, 60, 28, 8, 1]);
                 solve_polynomial(COEFFS)
@@ -147,20 +142,16 @@ impl ParameterPlane for Mandelbrot
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
         use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let u = (1. - 4. * c).sqrt();
                 vec![0.5 * (1. + u), 0.5 * (1. - u)]
             }
-            2 =>
-            {
+            2 => {
                 let u = (-3. - 4. * c).sqrt();
                 vec![0.5 * (-1. + u), -0.5 * (1. + u)]
             }
-            3 =>
-            {
+            3 => {
                 let c2 = c * c;
                 let coeffs = vec![
                     1. + c + (2. + c) * c2,
@@ -173,8 +164,7 @@ impl ParameterPlane for Mandelbrot
                 ];
                 solve_polynomial(coeffs)
             }
-            4 =>
-            {
+            4 => {
                 let c2 = c * c;
                 let coeffs = vec![
                     1. + c2 * horner_monic!(c, 2., 3., 3., 3.),
@@ -193,8 +183,7 @@ impl ParameterPlane for Mandelbrot
                 ];
                 solve_polynomial(coeffs)
             }
-            5 =>
-            {
+            5 => {
                 let v = horner_monic!(
                     c, 1., 2., 5., 14., 26., 44., 69., 94., 114., 116., 94., 60., 28., 8.
                 );
@@ -256,8 +245,7 @@ impl ParameterPlane for Mandelbrot
                 ];
                 solve_polynomial(coeffs)
             }
-            6 =>
-            {
+            6 => {
                 let c2 = c * c;
                 let coeffs = [
                     horner_monic!(
@@ -865,24 +853,20 @@ impl ParameterPlane for Mandelbrot
     fn precycles_child(&self, c: Cplx, orbit_schema: OrbitSchema) -> ComplexVec
     {
         use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
-        match (orbit_schema.preperiod, orbit_schema.period)
-        {
-            (2, 1) =>
-            {
+        match (orbit_schema.preperiod, orbit_schema.period) {
+            (2, 1) => {
                 let u = 0.5 * (1. - 4. * c).sqrt();
                 let v0 = (-0.5 + u - c).sqrt();
                 let v1 = (-0.5 - u - c).sqrt();
                 vec![v0, -v0, v1, -v1]
             }
-            (2, 2) =>
-            {
+            (2, 2) => {
                 let u = 0.5 * (-3. - 4. * c).sqrt();
                 let v0 = (0.5 + u - c).sqrt();
                 let v1 = (0.5 - u - c).sqrt();
                 vec![v0, -v0, v1, -v1]
             }
-            (2, 3) =>
-            {
+            (2, 3) => {
                 let coeffs = [
                     horner_monic!(c, 1., 0., 1., 2., 2., 2.),
                     horner!(c, -1., 0., 2., 4., 7., 6.),
@@ -895,8 +879,7 @@ impl ParameterPlane for Mandelbrot
                 let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
-            (2, 4) =>
-            {
+            (2, 4) => {
                 let coeffs = [
                     horner_monic!(c, 1., 0., 0., 2., 6., 8., 11., 18., 23., 22., 15., 6.),
                     c * horner!(c, -2., -2., 8., 15., 20., 54., 104., 135., 120., 60., 12.),
@@ -915,8 +898,7 @@ impl ParameterPlane for Mandelbrot
                 let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
-            (3, 3) =>
-            {
+            (3, 3) => {
                 let coeffs = [
                     horner!(c, 1., 0., 0., 2., 5., 6., 10., 16., 18., 18., 14., 6., 1.),
                     c * horner!(c, -2., 0., 8., 8., 20., 56., 80., 104., 110., 60., 12.),
@@ -935,8 +917,7 @@ impl ParameterPlane for Mandelbrot
                 let zs = solve_polynomial(coeffs);
                 zs.iter().map(|z| z.sqrt()).flat_map(|w| [w, -w]).collect()
             }
-            (3, 4) =>
-            {
+            (3, 4) => {
                 let c2 = c * c;
                 let coeffs = [
                     horner!(
@@ -1086,10 +1067,8 @@ impl HasDynamicalCovers for Mandelbrot
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |c| (0.25 - c * c, -2. * c);
                 bounds = Bounds {
                     min_x: -1.8,
@@ -1116,8 +1095,7 @@ impl HasDynamicalCovers for Mandelbrot
                 // };
                 // bounds = Bounds::square(16., 8.0.into());
             }
-            3 =>
-            {
+            3 => {
                 param_map = |t| (-1.75 * (1. + 7. * t * t), -24.5 * t);
                 bounds = Bounds {
                     min_x: -0.3,
@@ -1151,8 +1129,7 @@ impl HasDynamicalCovers for Mandelbrot
             //     };
             //     bounds = Bounds::centered_square(4.);
             // }
-            4 =>
-            {
+            4 => {
                 param_map = |t| {
                     let t2 = t * t;
                     (-0.25 * t2 - 0.75 - t.inv(), 0.5 * t - t2.inv())
@@ -1164,8 +1141,7 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 3.1,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1179,10 +1155,8 @@ impl HasDynamicalCovers for Mandelbrot
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |c| (0.25 - c * c, -2. * c);
                 bounds = Bounds {
                     min_x: -1.8,
@@ -1191,8 +1165,7 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 1.0,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| {
                     let u = 9. / (t * t);
                     ((t - 1.) * u - 3., (t - 2.) * u / t)
@@ -1204,8 +1177,7 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 2.7,
                 };
             }
-            3 =>
-            {
+            3 => {
                 param_map = |t| {
                     let t2 = t * t;
 
@@ -1226,8 +1198,7 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 3.,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1240,10 +1211,8 @@ impl HasDynamicalCovers for Mandelbrot
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match (preperiod, period)
-        {
-            (2, 1) =>
-            {
+        match (preperiod, period) {
+            (2, 1) => {
                 param_map = |t| {
                     let t2 = t * t;
                     let u = (t2 - 1.).inv();
@@ -1257,8 +1226,7 @@ impl HasDynamicalCovers for Mandelbrot
                     max_y: 3.0,
                 };
             }
-            (2, 2) =>
-            {
+            (2, 2) => {
                 param_map = |c| {
                     let c2 = c * c;
                     (
@@ -1287,8 +1255,7 @@ impl HasDynamicalCovers for Mandelbrot
             //         max_y: 2.5,
             //     };
             // }
-            (_, _) =>
-            {
+            (_, _) => {
                 param_map = |c| (c, ONE);
                 bounds = self.point_grid.bounds.clone();
             }

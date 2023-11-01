@@ -35,8 +35,7 @@ fn per2_julia(b: &mut Bencher)
         let plane = QuadRatPer2::default().with_res_y(1024).with_max_iter(2048);
         let julia = JuliaSet::from(plane);
         let mut iter_plane = julia.compute();
-        for _ in 0..9
-        {
+        for _ in 0..9 {
             julia.compute_into(&mut iter_plane);
         }
     });
@@ -142,8 +141,7 @@ fn exp(b: &mut Bencher)
     use test::black_box;
     b.iter(|| {
         let mut r = 0.42_f64;
-        for _ in 0..10_000
-        {
+        for _ in 0..10_000 {
             let u = Cplx::new(r, r.ln()).exp();
             black_box(u);
             r = r + TAU % 1.0;
@@ -157,8 +155,7 @@ fn exp2(b: &mut Bencher)
     use test::black_box;
     b.iter(|| {
         let mut r = 0.42_f64;
-        for _ in 0..10_000
-        {
+        for _ in 0..10_000 {
             let u = Cplx::new(r, r.log2()).exp2();
             black_box(u);
             r = r + TAU % 1.0;
@@ -172,8 +169,7 @@ fn norm(b: &mut Bencher)
     use test::black_box;
     b.iter(|| {
         let mut r = 0.42_f64;
-        for _ in 0..10_000
-        {
+        for _ in 0..10_000 {
             let u = Cplx::new(r, 1.3).norm();
             black_box(u);
             r = r + TAU % 1.0;
@@ -187,8 +183,7 @@ fn norm_sqr(b: &mut Bencher)
     use test::black_box;
     b.iter(|| {
         let mut r = 0.42_f64;
-        for _ in 0..10_000
-        {
+        for _ in 0..10_000 {
             let u = Cplx::new(r, 1.3).norm_sqr();
             black_box(u);
             r = r + TAU % 1.0;

@@ -63,22 +63,17 @@ impl ParameterPlane for QuadRatSymmetryLocus
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let disc = (c / (1. - c)).sqrt();
                 vec![disc, -disc]
             }
-            2 =>
-            {
+            2 => {
                 let disc = (-c / (1. + c)).sqrt();
                 vec![disc, -disc]
             }
-            3 =>
-            {
-                if c.norm_sqr() < 1e-20
-                {
+            3 => {
+                if c.norm_sqr() < 1e-20 {
                     return vec![];
                 }
                 let c2 = c.powi(2);
@@ -95,10 +90,8 @@ impl ParameterPlane for QuadRatSymmetryLocus
                     })
                     .collect()
             }
-            4 =>
-            {
-                if c.norm_sqr() < 1e-20
-                {
+            4 => {
+                if c.norm_sqr() < 1e-20 {
                     return vec![];
                 }
                 let c2 = c.powi(2);
@@ -143,8 +136,7 @@ impl EscapeEncoding for QuadRatSymmetryLocus
         base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 2.,
             };

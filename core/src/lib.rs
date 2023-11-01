@@ -69,24 +69,16 @@ mod tests
         let str3 = "011p10";
         let val3 = RationalAngle::new(11, 24);
 
-        let Ok(out0) = str0.parse::<RationalAngle>()
-        else
-        {
+        let Ok(out0) = str0.parse::<RationalAngle>() else {
             panic!("parse_angle returned None on input {str0}")
         };
-        let Ok(out1) = str1.parse::<RationalAngle>()
-        else
-        {
+        let Ok(out1) = str1.parse::<RationalAngle>() else {
             panic!("parse_angle returned None on input {str1}")
         };
-        let Ok(out2) = str2.parse::<RationalAngle>()
-        else
-        {
+        let Ok(out2) = str2.parse::<RationalAngle>() else {
             panic!("parse_angle returned None on input {str2}")
         };
-        let Ok(out3) = str3.parse::<RationalAngle>()
-        else
-        {
+        let Ok(out3) = str3.parse::<RationalAngle>() else {
             panic!("parse_angle returned None on input {str3}")
         };
 

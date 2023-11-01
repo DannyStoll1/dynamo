@@ -48,8 +48,7 @@ impl ObjectKey for PointSetKey
     type Object = Vec<Cplx>;
     fn color_with(&self, palette: &DiscretePalette, _degree: AngleNum) -> Color32
     {
-        match self
-        {
+        match self {
             Self::SelectedPoint => Color32::WHITE,
             Self::CriticalPoints => Color32::RED,
             Self::PeriodicPoints(period) => palette.map(*period as f32, 1.),
@@ -59,16 +58,14 @@ impl ObjectKey for PointSetKey
 
     fn compute<P: Displayable>(&self, plane: &P, selection: Cplx) -> Vec<Cplx>
     {
-        match self
-        {
+        match self {
             Self::SelectedPoint => vec![selection],
             Self::CriticalPoints => plane
                 .critical_points()
                 .into_iter()
                 .map(Into::into)
                 .collect(),
-            Self::PeriodicPoints(period) =>
-            {
+            Self::PeriodicPoints(period) => {
                 plane.cycles(*period).into_iter().map(Into::into).collect()
             }
             Self::PreperiodicPoints(o) => plane.precycles(*o).into_iter().map(Into::into).collect(),
@@ -89,11 +86,9 @@ impl ObjectKey for CurveKey
     type Object = Curve;
     fn color_with(&self, palette: &DiscretePalette, degree: AngleNum) -> Color32
     {
-        match self
-        {
+        match self {
             Self::Orbit => Color32::GREEN,
-            Self::Ray(angle) =>
-            {
+            Self::Ray(angle) => {
                 let o = angle.with_degree(degree).orbit_schema();
                 palette.map_preperiodic(o)
             }
@@ -103,13 +98,11 @@ impl ObjectKey for CurveKey
 
     fn compute<P: Displayable>(&self, plane: &P, selection: Cplx) -> Curve
     {
-        match self
-        {
+        match self {
             Self::Orbit => plane.iter_orbit(selection).map(Into::into).collect(),
             Self::Ray(angle) => plane.external_ray(*angle).unwrap_or_default(),
 
-            Self::Equipotential(point) =>
-            {
+            Self::Equipotential(point) => {
                 plane.equipotential(Cplx::from(*point)).unwrap_or_default()
             }
         }
@@ -220,48 +213,35 @@ where
 
     fn process_task<P: Displayable>(&mut self, task: MarkingTask<K>, e: &EnvironmentInfo<P>)
     {
-        match task
-        {
-            MarkingTask::Enable(key) =>
-            {
+        match task {
+            MarkingTask::Enable(key) => {
                 self.enable(key, e);
             }
-            MarkingTask::Disable(key) =>
-            {
+            MarkingTask::Disable(key) => {
                 self.disable(&key);
             }
-            MarkingTask::Toggle(key) =>
-            {
-                if self.objects.contains_key(&key)
-                {
+            MarkingTask::Toggle(key) => {
+                if self.objects.contains_key(&key) {
                     self.disable(&key);
-                }
-                else
-                {
+                } else {
                     self.enable(key, e);
                 }
             }
-            MarkingTask::Recompute(key) =>
-            {
-                if let Some(col_obj) = self.objects.get_mut(&key)
-                {
+            MarkingTask::Recompute(key) => {
+                if let Some(col_obj) = self.objects.get_mut(&key) {
                     col_obj.object = key.compute(e.plane, e.selection);
                     col_obj.color = key.color_with(e.palette, self.degree);
                 }
             }
-            MarkingTask::Recolor(key) =>
-            {
-                if let Some(col_obj) = self.objects.get_mut(&key)
-                {
+            MarkingTask::Recolor(key) => {
+                if let Some(col_obj) = self.objects.get_mut(&key) {
                     col_obj.color = key.color_with(e.palette, self.degree);
                 }
             }
-            MarkingTask::RecomputeAll =>
-            {
+            MarkingTask::RecomputeAll => {
                 self.recompute_all(e.plane, e.selection);
             }
-            MarkingTask::RecolorAll =>
-            {
+            MarkingTask::RecolorAll => {
                 self.recolor_all(e.palette);
             }
         }
@@ -299,8 +279,7 @@ where
     fn process_all_tasks<P: Displayable>(&mut self, env: &EnvironmentInfo<P>)
     {
         let tasks: Vec<_> = self.tasks.drain(..).collect();
-        for task in &tasks
-        {
+        for task in &tasks {
             self.process_task(task.clone(), env);
         }
     }
@@ -345,8 +324,7 @@ impl Marking
 
     pub fn select_point(&mut self, point: Cplx)
     {
-        if let Some(selection) = self.point_sets.objects.get_mut(&PointSetKey::SelectedPoint)
-        {
+        if let Some(selection) = self.point_sets.objects.get_mut(&PointSetKey::SelectedPoint) {
             selection.object = vec![point];
         }
     }
@@ -442,8 +420,7 @@ impl Marking
             .filter(|k| matches!(k, CurveKey::Equipotential(_)))
             .copied()
             .collect();
-        for key in &to_remove
-        {
+        for key in &to_remove {
             self.curves.objects.remove(key);
         }
         self.path_cache.borrow_mut().set_stale();
@@ -458,8 +435,7 @@ impl Marking
             .filter(|k| matches!(k, CurveKey::Ray(_)))
             .copied()
             .collect();
-        for key in &to_remove
-        {
+        for key in &to_remove {
             self.curves.objects.remove(key);
         }
         self.path_cache.borrow_mut().set_stale();
@@ -536,8 +512,7 @@ impl Marking
 
     pub fn draw_points(&self, painter: &Painter, grid: &PointGrid, frame: &ImageFrame)
     {
-        for ColoredPoint { point: z, color } in self.iter_points()
-        {
+        for ColoredPoint { point: z, color } in self.iter_points() {
             let point = frame.to_global_coords(grid.locate_point(z).into());
             let patch = CircleShape::filled(point, POINT_RADIUS, color);
             painter.add(patch);
@@ -546,8 +521,7 @@ impl Marking
 
     pub fn draw_curves(&self, painter: &Painter, grid: &PointGrid, frame: &ImageFrame)
     {
-        if self.path_cache.borrow().is_stale()
-        {
+        if self.path_cache.borrow().is_stale() {
             self.update_cache(grid, frame);
         }
         self.path_cache.borrow().paths.iter().for_each(
@@ -728,8 +702,7 @@ impl<'a> CurveDrawJob<'a>
                 ]
                 .map(|(x, y)| imageproc::point::Point::new(x as i32, y as i32));
 
-                if corners[0] != corners[3]
-                {
+                if corners[0] != corners[3] {
                     draw_polygon_mut(image, &corners, self.color);
                 }
             });
@@ -750,12 +723,9 @@ impl<'a> CurveDrawJob<'a>
 
     pub fn draw_to(self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
     {
-        if self.thickness <= 1.0
-        {
+        if self.thickness <= 1.0 {
             self.draw_thin(image);
-        }
-        else
-        {
+        } else {
             self.draw_thick(image);
         }
     }

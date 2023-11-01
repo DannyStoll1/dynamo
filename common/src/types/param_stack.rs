@@ -108,12 +108,9 @@ where
         self.meta_params.describe(desc_params).map_or_else(
             || self.local_param.describe(desc_params),
             |meta| {
-                if let Some(local) = self.local_param.describe(desc_params)
-                {
+                if let Some(local) = self.local_param.describe(desc_params) {
                     Some(format!("[{meta}, {local}]"))
-                }
-                else
-                {
+                } else {
                     Some(meta)
                 }
             },
@@ -131,12 +128,9 @@ where
         self.meta_params.summarize().map_or_else(
             || self.local_param.summarize(),
             |meta| {
-                if let Some(local) = self.local_param.summarize()
-                {
+                if let Some(local) = self.local_param.summarize() {
                     Some(format!("[{meta}, {local}]"))
-                }
-                else
-                {
+                } else {
                     Some(meta)
                 }
             },

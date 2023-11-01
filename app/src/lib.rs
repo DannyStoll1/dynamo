@@ -11,7 +11,7 @@ use fractal_tab::{FractalTab, TabID};
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
 {
-    use dynamo_common::prelude::{WIN_WIDTH, WIN_HEIGHT};
+    use dynamo_common::prelude::{WIN_HEIGHT, WIN_WIDTH};
 
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(WIN_WIDTH, WIN_HEIGHT)),
@@ -44,22 +44,17 @@ impl egui_dock::TabViewer for TabViewer<'_>
         use dynamo_gui::interface::UiMessage::*;
 
         tab.update(ui);
-        match tab.interface.pop_message()
-        {
-            Quit =>
-            {
+        match tab.interface.pop_message() {
+            Quit => {
                 std::process::exit(0);
             }
-            CloseWindow =>
-            {
+            CloseWindow => {
                 self.to_remove.push(tab.id);
             }
-            NewTab =>
-            {
+            NewTab => {
                 self.on_add(tab.id.surface, tab.id.node);
             }
-            DoNothing =>
-            {}
+            DoNothing => {}
         }
     }
 
@@ -117,17 +112,14 @@ impl eframe::App for FractalApp
                     to_remove: &mut to_remove,
                 },
             );
-        for tab in added_nodes
-        {
+        for tab in added_nodes {
             self.dock_state.set_focused_node_and_surface(tab.id.into());
             self.dock_state.push_to_focused_leaf(tab);
             self.tab_count += 1;
         }
-        for tab_id in to_remove
-        {
+        for tab_id in to_remove {
             self.tab_count -= 1;
-            if self.tab_count == 0
-            {
+            if self.tab_count == 0 {
                 std::process::exit(0);
             }
             let (surface, node) = tab_id.into();
@@ -156,8 +148,7 @@ mod tests
         let dynamical_plane = JuliaSet::from(parameter_plane.clone());
 
         let mut interface = Box::new(MainInterface::new(parameter_plane, dynamical_plane, height));
-        for _ in 0..10
-        {
+        for _ in 0..10 {
             interface.child_mut().recompute();
         }
     }

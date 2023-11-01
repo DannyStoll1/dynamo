@@ -28,12 +28,9 @@ impl Hotkey
     #[must_use]
     pub fn menu_action(&self) -> Option<&Action>
     {
-        if self.show_in_menu
-        {
+        if self.show_in_menu {
             self.menu_action_override.as_ref().or(Some(&self.action))
-        }
-        else
-        {
+        } else {
             None
         }
     }
@@ -145,8 +142,9 @@ pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
         menu_action_override: None,
     },
 ];
+
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 21] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
@@ -172,13 +170,13 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
         show_in_menu: true,
         menu_action_override: None,
     },
-    // Active rays
-    Hotkey {
-        shortcut: Some(CTRL_A),
-        action: DrawActiveRays,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    // // Active rays
+    // Hotkey {
+    //     shortcut: Some(CTRL_A),
+    //     action: DrawActiveRays,
+    //     show_in_menu: true,
+    //     menu_action_override: None,
+    // },
     // Equipotential
     Hotkey {
         shortcut: Some(KEY_G),

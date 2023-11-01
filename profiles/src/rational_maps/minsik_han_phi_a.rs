@@ -80,17 +80,13 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
     #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let u = (c + 1. - Self::D_FLOAT).powf(1. / Self::D_FLOAT);
                 roots_of_unity(D).map(|z| z * u).collect()
             }
-            2 =>
-            {
-                if D < 2
-                {
+            2 => {
+                if D < 2 {
                     return vec![];
                 }
 
@@ -98,8 +94,7 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
 
                 let coeffs: VecDeque<Cplx> = (0..D)
                     .map(|i| {
-                        if i == 0
-                        {
+                        if i == 0 {
                             return -u - 1.;
                         }
                         let mut val = ONE;

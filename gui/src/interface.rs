@@ -15,7 +15,11 @@ use crate::{
         keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS,
         INCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
-    pane::{id::*, tasks::ChildTask, Pane, WindowPane},
+    pane::{
+        id::*,
+        tasks::{ChildTask, SelectOrFollow},
+        Pane, WindowPane,
+    },
 };
 
 #[cfg(feature = "serde")]
@@ -124,23 +128,19 @@ where
         let old_center = self.child.grid().center();
         let old_default_center = self.child.plane.default_bounds().center();
 
-        if self.child.set_param(T::from(new_param))
-        {
+        if self.child.set_param(T::from(new_param)) {
             let mut new_bounds = self.child.plane.default_bounds();
 
             // Set the new center to equal the old center plus whatever deviation the user has created
             let offset = new_bounds.center() - old_default_center;
             let new_center = old_center + offset;
 
-            if offset.is_finite()
-            {
+            if offset.is_finite() {
                 new_bounds.zoom(self.child.zoom_factor, new_center);
                 new_bounds.recenter(new_center);
                 self.child.grid_mut().change_bounds(new_bounds);
                 self.child.schedule_recompute();
-            }
-            else
-            {
+            } else {
                 // Reset child bounds to default
                 self.child.grid_mut().change_bounds(new_bounds);
                 self.child.grid_mut().resize_y(self.image_height);
@@ -165,30 +165,24 @@ where
         use SaveFileType::*;
 
         // Ensure file selection was confirmed
-        if !file_dialog.selected()
-        {
+        if !file_dialog.selected() {
             return;
         }
 
-        let Some(path) = file_dialog.path()
-        else
-        {
+        let Some(path) = file_dialog.path() else {
             return;
         };
 
         let pane_ids = self.get_selected_pane_ids(selection);
 
-        match file_type
-        {
-            Image =>
-            {
+        match file_type {
+            Image => {
                 let image_width: usize = 4096; // You can make this dynamic as per your requirement
                 pane_ids
                     .into_iter()
                     .for_each(|pane_id| self.get_pane_mut(pane_id).save_image(image_width, path));
             }
-            Palette =>
-            {
+            Palette => {
                 pane_ids
                     .into_iter()
                     .for_each(|pane_id| self.get_pane_mut(pane_id).save_palette(path));
@@ -200,14 +194,11 @@ where
     fn handle_load_dialog(&mut self, file_dialog: &FileDialog, pane_selection: PaneSelection)
     {
         // Ensure file selection was confirmed
-        if !file_dialog.selected()
-        {
+        if !file_dialog.selected() {
             return;
         }
 
-        let Some(path) = file_dialog.path()
-        else
-        {
+        let Some(path) = file_dialog.path() else {
             return;
         };
 
@@ -220,79 +211,75 @@ where
         self.set_active_pane(None);
     }
 
-    fn process_text_dialog_input(&mut self, input_type: TextInputType, text: &str)
+    fn process_text_dialog_input(
+        &mut self,
+        input_type: TextInputType,
+        text: &str,
+        toggle_map: &ToggleMap,
+    )
     {
         use crate::dialog::TextInputType::*;
-        match input_type
-        {
-            ExternalRay {
-                pane_selection: pane_id,
-                follow,
-            } =>
-            {
-                if let Ok(angle) = text.parse::<RationalAngle>()
-                {
-                    let pane = self.get_pane(pane_id);
-                    let angle_info = angle.with_degree(pane.degree()).to_angle_info();
-                    let ray_type = pane.plane_type();
+        use crate::dialog::ToggleKey::*;
+        match input_type {
+            ExternalRay { .. } => {
+                if let Ok(angle) = text.parse::<RationalAngle>() {
+                    let angle_info = angle.with_degree(self.child.degree()).to_angle_info();
+
+                    let follow_task = if toggle_map.get(FollowPoint) {
+                        SelectOrFollow::Follow
+                    } else if toggle_map.get(SelectPoint) {
+                        SelectOrFollow::Select
+                    } else {
+                        SelectOrFollow::DoNothing
+                    };
+
                     let ray_params = RayParams {
-                        pane_id,
+                        do_parent: toggle_map.get(DoParent),
+                        do_child: toggle_map.get(DoChild),
                         angle_info,
-                        follow,
-                        ray_type,
+                        follow_task,
                     };
                     let dialog = Dialog::confirm_ray(ray_params);
                     self.dialog = Some(dialog);
                 }
             }
-            ActiveRays {
-                pane_id,
-                include_suffixes,
-            } =>
-            {
-                if let Ok(o) = text.parse::<OrbitSchema>()
-                {
-                    let pane = self.get_pane(pane_id);
-                    let degree = pane.degree();
+            ActiveRays { pane_id } => {
+                if let Ok(o) = text.parse::<OrbitSchema>() {
+                    let include_suffixes = toggle_map.get(ToggleKey::PrefixAngles);
+
+                    let degree = self.get_pane(pane_id).degree();
                     let od = o.with_degree(degree);
                     let active_angles = od.active_angles(include_suffixes);
 
                     let params = AllActiveRayParams {
-                        panes: pane_id,
+                        do_parent: toggle_map.get(ToggleKey::DoParent),
+                        do_child: toggle_map.get(ToggleKey::DoChild),
                         orbit_schema: o.with_degree(degree),
                         active_angles,
                         include_suffixes,
                     };
+
                     let dialog = Dialog::confirm_active_rays(params);
                     self.dialog = Some(dialog);
                 }
             }
-            Coordinates { pane_id } =>
-            {
-                if let Ok(point) = text.parse::<Cplx>()
-                {
+            Coordinates { pane_id } => {
+                if let Ok(point) = text.parse::<Cplx>() {
                     let pane = self.get_pane_mut(pane_id);
                     pane.select_point(point);
                 }
             }
-            FindPeriodic { pane_id } =>
-            {
-                if let Ok(o) = text.parse::<OrbitSchema>()
-                {
-                    match pane_id
-                    {
-                        PaneID::Child =>
-                        {
+            FindPeriodic { pane_id } => {
+                if let Ok(o) = text.parse::<OrbitSchema>() {
+                    match pane_id {
+                        PaneID::Child => {
                             let pane = self.child_mut();
-                            if let Ok(selection) = pane.select_nearby_point(o)
-                            {
+                            if let Ok(selection) = pane.select_nearby_point(o) {
                                 pane.mark_orbit_and_info(selection);
                             }
                         }
-                        PaneID::Parent =>
-                        {
-                            if let Ok(selection) = self.parent_mut().select_nearby_point(o)
-                            {
+                        PaneID::Parent => {
+                            if let Ok(selection) = self.parent_mut().select_nearby_point(o) {
                                 self.process_child_task();
                                 self.child_mut().mark_orbit_and_info(selection);
                             }
@@ -303,26 +290,27 @@ where
         }
     }
 
+    /// Draw a ray, and possibly select or follow it, according to the ray_params provided from a
+    /// confirmation dialog response.
     fn process_conf_ray_response(&mut self, ray_params: &RayParams)
     {
-        let pane = self.get_pane_mut(ray_params.pane_id);
-        pane.marking_mut().toggle_ray(ray_params.angle_info.angle);
-        pane.schedule_redraw();
-
-        if ray_params.follow
-        {
-            pane.follow_ray_landing_point(ray_params.angle_info.angle);
+        if ray_params.do_parent {
+            let pane = self.get_pane_mut(PaneID::Parent);
+            ray_params
+                .follow_task
+                .run_on(pane, ray_params.angle_info.angle);
         }
-        else
-        {
-            pane.stop_following_ray_landing_point();
+        if ray_params.do_child {
+            let pane = self.get_pane_mut(PaneID::Child);
+            ray_params
+                .follow_task
+                .run_on(pane, ray_params.angle_info.angle);
         }
     }
 
     fn process_child_task(&mut self)
     {
-        if self.parent.pop_child_task() == ChildTask::UpdateParam
-        {
+        if self.parent.pop_child_task() == ChildTask::UpdateParam {
             let parent_selection = self.parent.get_selection();
             let new_child_param = self.parent.plane.param_map(parent_selection);
             self.set_child_param(new_child_param);
@@ -336,14 +324,11 @@ where
 
         self.reset_click();
 
-        let Some(pointer_pos) = ctx.pointer_latest_pos()
-        else
-        {
+        let Some(pointer_pos) = ctx.pointer_latest_pos() else {
             return;
         };
 
-        if self.parent().frame_contains_pixel(pointer_pos)
-        {
+        if self.parent().frame_contains_pixel(pointer_pos) {
             ctx.set_cursor_icon(CursorIcon::Crosshair);
             self.set_active_pane(Some(PaneID::Parent));
             let reselect_point = self.live_mode || clicked;
@@ -352,30 +337,24 @@ where
                 .process_mouse_input(pointer_value, zoom_factor, reselect_point);
             self.process_child_task();
 
-            if clicked
-            {
+            if clicked {
                 self.consume_click();
                 let param = self.parent.plane.param_map(pointer_value);
                 let start = self.parent.plane.start_point(pointer_value, param);
                 self.child_mut().mark_orbit_and_info(start.into());
             }
-        }
-        else if self.child().frame_contains_pixel(pointer_pos)
-        {
+        } else if self.child().frame_contains_pixel(pointer_pos) {
             ctx.set_cursor_icon(CursorIcon::Crosshair);
             self.set_active_pane(Some(PaneID::Child));
             let pointer_value = self.child().map_pixel(pointer_pos);
             self.child_mut()
                 .process_mouse_input(pointer_value, zoom_factor, clicked);
 
-            if clicked
-            {
+            if clicked {
                 self.consume_click();
                 self.child_mut().mark_orbit_and_info(pointer_value);
             }
-        }
-        else
-        {
+        } else {
             ctx.set_cursor_icon(CursorIcon::Default);
         }
     }
@@ -398,13 +377,10 @@ where
     fn toggle_live_mode(&mut self)
     {
         self.live_mode ^= true;
-        if self.live_mode
-        {
+        if self.live_mode {
             self.parent.stop_following_ray_landing_point();
             self.child.frame_mut().set_live();
-        }
-        else
-        {
+        } else {
             self.child.frame_mut().unset_live();
         }
     }
@@ -449,45 +425,40 @@ where
     fn prompt_text(&mut self, input_type: TextInputType)
     {
         use TextInputType::*;
-        let text_dialog = match input_type
-        {
+        let text_dialog = match input_type {
             ExternalRay {
-                pane_selection: pane_id,
-                ..
-            } =>
-            {
-                let pane = self.get_pane(pane_id);
-                let ray_type = pane.plane_type();
-                let prompt = format!(
-                    concat!(
-                        "Input an angle for {} ray on {}\n",
-                        "Example formats: <15/56>, <110>, <p011>, <001p010>",
-                    ),
-                    ray_type,
-                    pane.name()
-                );
+                pane_id,
+                select_landing_point,
+            } => {
+                let prompt = format!(concat!(
+                    "Input an angle to draw a ray\n",
+                    "Example formats: <15/56>, <110>, <p011>, <001p010>",
+                ),);
                 TextDialogBuilder::new(input_type)
                     .title("External ray angle input")
                     .prompt(prompt)
+                    .pane_toggles("Draw on", pane_id)
+                    .add_toggle_with_default(
+                        ToggleKey::SelectPoint,
+                        "Select landing point",
+                        select_landing_point,
+                    )
+                    .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point")
                     .build()
             }
-            ActiveRays { pane_id, .. } =>
-            {
-                let pane = self.get_pane(pane_id);
-                let prompt = format!(
-                    concat!(
-                        "Input the period to draw all active rays on {}.\n",
-                        "Format: <period> or <preperiod, period>"
-                    ),
-                    pane.name()
-                );
+            ActiveRays { pane_id } => {
+                let prompt = format!(concat!(
+                    "Input the period to draw all active rays.\n",
+                    "Format: <period> or <preperiod, period>"
+                ),);
                 TextDialogBuilder::new(input_type)
                     .title("Draw active rays")
                     .prompt(prompt)
+                    .pane_toggles("Draw on", pane_id)
+                    .add_toggle(ToggleKey::PrefixAngles, "Include rays of shorter preperiod")
                     .build()
             }
-            FindPeriodic { pane_id } =>
-            {
+            FindPeriodic { pane_id } => {
                 let pane = self.get_pane(pane_id);
                 let prompt = format!(
                     concat!(
@@ -501,8 +472,7 @@ where
                     .prompt(prompt)
                     .build()
             }
-            Coordinates { pane_id } =>
-            {
+            Coordinates { pane_id } => {
                 let pane = self.get_pane(pane_id);
                 let prompt = format!(
                     "Enter the coordinates of the point to select on {}",
@@ -570,20 +540,16 @@ where
     fn set_active_pane(&mut self, pane_id: Option<PaneID>)
     {
         self.active_pane = pane_id;
-        match pane_id
-        {
-            None =>
-            {
+        match pane_id {
+            None => {
                 self.child_mut().frame_mut().deselect();
                 self.parent_mut().frame_mut().deselect();
             }
-            Some(PaneID::Child) =>
-            {
+            Some(PaneID::Child) => {
                 self.child_mut().frame_mut().select();
                 self.parent_mut().frame_mut().deselect();
             }
-            Some(PaneID::Parent) =>
-            {
+            Some(PaneID::Parent) => {
                 self.parent_mut().frame_mut().select();
                 self.child_mut().frame_mut().deselect();
             }
@@ -592,8 +558,7 @@ where
 
     fn get_pane(&self, pane_id: PaneID) -> &dyn Pane
     {
-        match pane_id
-        {
+        match pane_id {
             PaneID::Parent => self.parent(),
             PaneID::Child => self.child(),
         }
@@ -601,8 +566,7 @@ where
 
     fn get_pane_mut(&mut self, pane_id: PaneID) -> &mut dyn Pane
     {
-        match pane_id
-        {
+        match pane_id {
             PaneID::Parent => self.parent_mut(),
             PaneID::Child => self.child_mut(),
         }
@@ -621,8 +585,7 @@ where
     fn get_selected_pane_ids(&self, selection: PaneSelection) -> Vec<PaneID>
     {
         use PaneSelection::*;
-        match selection
-        {
+        match selection {
             ActivePane => self
                 .active_pane
                 .map(|pane_id| vec![pane_id])
@@ -640,20 +603,16 @@ where
 
     fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm)
     {
-        match coloring_algorithm
-        {
-            IncoloringAlgorithm::InternalPotential { .. } =>
-            {
+        match coloring_algorithm {
+            IncoloringAlgorithm::InternalPotential { .. } => {
                 self.parent_mut().select_preperiod_smooth_coloring();
                 self.child_mut().select_preperiod_smooth_coloring();
             }
-            IncoloringAlgorithm::PotentialAndPeriod { .. } =>
-            {
+            IncoloringAlgorithm::PotentialAndPeriod { .. } => {
                 self.parent_mut().select_preperiod_period_smooth_coloring();
                 self.child_mut().select_preperiod_period_smooth_coloring();
             }
-            _ =>
-            {
+            _ => {
                 self.parent_mut()
                     .set_coloring_algorithm(coloring_algorithm.clone());
                 self.child_mut().set_coloring_algorithm(coloring_algorithm);
@@ -687,8 +646,7 @@ where
     fn handle_input(&mut self, ctx: &Context)
     {
         // Don't process input if the user is in a dialog
-        if self.has_visible_dialog()
-        {
+        if self.has_visible_dialog() {
             ctx.set_cursor_icon(CursorIcon::Default);
             return;
         }
@@ -702,10 +660,8 @@ where
             .chain(INCOLORING_HOTKEYS.iter())
             .chain(PALETTE_HOTKEYS.iter())
         {
-            if let Some(s) = shortcut.as_ref()
-            {
-                if shortcut_used!(ctx, s)
-                {
+            if let Some(s) = shortcut.as_ref() {
+                if shortcut_used!(ctx, s) {
                     self.process_action(action);
                 }
             }
@@ -717,12 +673,10 @@ where
     {
         let dialog = self.dialog.take();
 
-        if let Some(mut dialog) = dialog
-        {
+        if let Some(mut dialog) = dialog {
             dialog.show(ctx);
 
-            match &mut dialog
-            {
+            match &mut dialog {
                 Dialog::Save {
                     pane_selection: panes,
                     file_dialog,
@@ -732,36 +686,38 @@ where
                     file_dialog,
                     pane_selection,
                 } => self.handle_load_dialog(file_dialog, *pane_selection),
-                Dialog::Text(text_dialog) =>
-                {
-                    if let crate::dialog::Response::Complete { data } = text_dialog.get_response()
-                    {
-                        self.process_text_dialog_input(text_dialog.input_type, &data);
+                Dialog::Text(text_dialog) => {
+                    if let crate::dialog::Response::Complete { data } = text_dialog.get_response() {
+                        let (text, toggle_map) = data;
+                        self.process_text_dialog_input(text_dialog.input_type, &text, &toggle_map);
                     }
                 }
-                Dialog::ConfirmRay(conf_dialog) =>
-                {
-                    if let crate::dialog::Response::Complete { data } = conf_dialog.get_response()
-                    {
+                Dialog::ConfirmRay(conf_dialog) => {
+                    if let crate::dialog::Response::Complete { data } = conf_dialog.get_response() {
                         self.process_conf_ray_response(&data);
                     }
                 }
-                Dialog::ConfirmActiveRays(conf_dialog) =>
-                {
-                    if let crate::dialog::Response::Complete { data } = conf_dialog.get_response()
-                    {
-                        let pane = self.get_pane_mut(data.panes);
-                        for angle in data.active_angles
-                        {
-                            pane.marking_mut().enable_ray(angle);
+                Dialog::ConfirmActiveRays(conf_dialog) => {
+                    if let crate::dialog::Response::Complete { data } = conf_dialog.get_response() {
+                        let mut draw_rays = |pane_id| {
+                            let pane = self.get_pane_mut(pane_id);
+                            for angle in &data.active_angles {
+                                pane.marking_mut().enable_ray(*angle);
+                            }
+                            pane.schedule_redraw();
+                        };
+
+                        if data.do_child {
+                            draw_rays(PaneID::Child);
                         }
-                        pane.schedule_redraw();
+                        if data.do_parent {
+                            draw_rays(PaneID::Parent);
+                        }
                     }
                 }
             }
 
-            if dialog.visible()
-            {
+            if dialog.visible() {
                 self.dialog = Some(dialog);
             }
         }
@@ -854,24 +810,20 @@ where
     #[allow(clippy::option_map_unit_fn)]
     fn process_action(&mut self, action: &Action)
     {
-        match action
-        {
+        match action {
             Action::Quit => self.schedule_quit(),
             Action::Close => self.schedule_close(),
             Action::NewTab => self.schedule_new_tab(),
             Action::SaveImage(panes) => self.prompt_save_image(*panes),
             Action::SavePalette(panes) => self.prompt_save_palette(*panes),
             Action::LoadPalette(panes) => self.prompt_load_palette(*panes),
-            Action::ToggleSelectionMarker =>
-            {
-                if let Some(pane) = self.get_active_pane_mut()
-                {
+            Action::ToggleSelectionMarker => {
+                if let Some(pane) = self.get_active_pane_mut() {
                     pane.marking_mut().toggle_selection();
                     pane.schedule_redraw();
                 }
             }
-            Action::ToggleCritical(selection) =>
-            {
+            Action::ToggleCritical(selection) => {
                 self.get_selected_pane_ids(*selection)
                     .into_iter()
                     .for_each(|pane_id| {
@@ -880,8 +832,7 @@ where
                         pane.schedule_redraw();
                     });
             }
-            Action::ToggleCycles(selection, period) =>
-            {
+            Action::ToggleCycles(selection, period) => {
                 self.get_selected_pane_ids(*selection)
                     .into_iter()
                     .for_each(|pane_id| {
@@ -890,177 +841,134 @@ where
                         pane.schedule_redraw();
                     });
             }
-            Action::FindPeriodicPoint =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
+            Action::FindPeriodicPoint => {
+                if let Some(pane_id) = self.active_pane {
                     let input_type = TextInputType::FindPeriodic { pane_id };
                     self.prompt_text(input_type);
                 }
             }
-            Action::EnterCoordinates =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
+            Action::EnterCoordinates => {
+                if let Some(pane_id) = self.active_pane {
                     let input_type = TextInputType::Coordinates { pane_id };
                     self.prompt_text(input_type);
                 }
             }
-            Action::MapSelection =>
-            {
+            Action::MapSelection => {
                 let plane = self.child_mut();
                 plane.map_selection();
             }
-            Action::DrawOrbit =>
-            {
+            Action::DrawOrbit => {
                 let plane = self.child_mut();
                 let selection = plane.get_selection();
                 plane.mark_orbit_and_info(selection);
             }
-            Action::ClearOrbit =>
-            {
+            Action::ClearOrbit => {
                 self.child_mut().clear_marked_orbit();
             }
             Action::DrawExternalRay {
                 select_landing_point,
-            } =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
+            } => {
+                if let Some(pane_id) = self.active_pane {
                     let input_type = TextInputType::ExternalRay {
-                        pane_selection: pane_id,
-                        follow: *select_landing_point,
-                    };
-                    self.prompt_text(input_type);
-                }
-            }
-            Action::DrawRaysOfPeriod =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
-                    let input_type = TextInputType::ActiveRays {
                         pane_id,
-                        include_suffixes: false,
+                        select_landing_point: *select_landing_point,
                     };
                     self.prompt_text(input_type);
                 }
             }
-            Action::DrawActiveRays =>
-            {
-                if let Some(pane_id) = self.active_pane
-                {
-                    let input_type = TextInputType::ActiveRays {
-                        pane_id,
-                        include_suffixes: true,
-                    };
+            Action::DrawRaysOfPeriod => {
+                if let Some(pane_id) = self.active_pane {
+                    let input_type = TextInputType::ActiveRays { pane_id };
                     self.prompt_text(input_type);
                 }
             }
-            Action::DrawEquipotential =>
-            {
+            Action::DrawActiveRays => {
+                if let Some(pane_id) = self.active_pane {
+                    let input_type = TextInputType::ActiveRays { pane_id };
+                    self.prompt_text(input_type);
+                }
+            }
+            Action::DrawEquipotential => {
                 self.get_active_pane_mut().map(Pane::draw_equipotential);
             }
-            Action::ClearRays =>
-            {
+            Action::ClearRays => {
                 self.get_active_pane_mut().map(Pane::clear_marked_rays);
             }
-            Action::ClearEquipotentials =>
-            {
+            Action::ClearEquipotentials => {
                 self.get_active_pane_mut().map(Pane::clear_equipotentials);
             }
-            Action::ClearCurves =>
-            {
+            Action::ClearCurves => {
                 self.get_active_pane_mut().map(Pane::clear_curves);
             }
-            Action::ResetSelection => match self.active_pane
-            {
+            Action::ResetSelection => match self.active_pane {
                 Some(PaneID::Parent) => self.parent.reset_selection(),
-                Some(PaneID::Child) =>
-                {
+                Some(PaneID::Child) => {
                     self.child.reset_selection();
                     self.child.clear_marked_orbit();
                 }
-                None =>
-                {}
+                None => {}
             },
-            Action::ResetView =>
-            {
+            Action::ResetView => {
                 self.get_active_pane_mut().map(Pane::reset);
             }
             Action::ToggleLiveMode => self.toggle_live_mode(),
-            Action::CycleActivePlane =>
-            {
+            Action::CycleActivePlane => {
                 self.parent_mut().cycle_active_plane();
                 self.child_mut().cycle_active_plane();
             }
-            Action::PromptImageHeight =>
-            {
+            Action::PromptImageHeight => {
                 // TODO: Fill in with actual handling
             }
-            Action::Pan(x, y) =>
-            {
+            Action::Pan(x, y) => {
                 self.get_active_pane_mut().map(|p| p.pan_relative(*x, *y));
             }
-            Action::Zoom(scale) =>
-            {
+            Action::Zoom(scale) => {
                 self.get_active_pane_mut()
                     .map(|p| p.zoom(*scale, p.get_selection()));
             }
-            Action::CenterOnSelection =>
-            {
-                if let Some(pane) = self.get_active_pane_mut()
-                {
+            Action::CenterOnSelection => {
+                if let Some(pane) = self.get_active_pane_mut() {
                     let selection = pane.get_selection();
                     pane.grid_mut().recenter(selection);
                     pane.schedule_recompute();
                 }
             }
-            Action::ScaleMaxIter(factor) =>
-            {
+            Action::ScaleMaxIter(factor) => {
                 self.get_active_pane_mut()
                     .map(|p| p.scale_max_iter(*factor));
             }
             Action::RandomizePalette => self.randomize_palette(),
-            Action::SetPalette(palette) =>
-            {
+            Action::SetPalette(palette) => {
                 self.set_palette(*palette);
             }
-            Action::SetPaletteWhite =>
-            {
+            Action::SetPaletteWhite => {
                 let white_palette = Palette::white(32.);
                 self.set_palette(white_palette);
             }
-            Action::SetPaletteBlack =>
-            {
+            Action::SetPaletteBlack => {
                 let black_palette = Palette::black(32.);
                 self.set_palette(black_palette);
             }
-            Action::SetColoring(algorithm) =>
-            {
+            Action::SetColoring(algorithm) => {
                 self.get_active_pane_mut()
                     .map(|p| p.set_coloring_algorithm(algorithm.clone()));
             }
-            Action::SetColoringInternalPotential =>
-            {
+            Action::SetColoringInternalPotential => {
                 self.get_active_pane_mut()
                     .map(|p| p.select_preperiod_smooth_coloring());
             }
-            Action::SetColoringPreperiodPeriod =>
-            {
+            Action::SetColoringPreperiodPeriod => {
                 self.get_active_pane_mut()
                     .map(|p| p.select_preperiod_coloring());
             }
-            Action::SetColoringPotentialPeriod=>
-            {
+            Action::SetColoringPotentialPeriod => {
                 self.get_active_pane_mut()
                     .map(|p| p.select_preperiod_period_smooth_coloring());
             }
-            Action::ScalePalettePeriod(factor) =>
-            {
+            Action::ScalePalettePeriod(factor) => {
                 self.get_active_pane_mut().map(|p| p.scale_palette(*factor));
             }
-            Action::ShiftPalettePhase(phase) =>
-            {
+            Action::ShiftPalettePhase(phase) => {
                 self.get_active_pane_mut().map(|p| p.shift_palette(*phase));
             }
         }

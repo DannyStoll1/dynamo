@@ -438,8 +438,7 @@ impl Iterator for PointGridIterator
         self.idx_x += 1;
         self.idx_y += self.idx_x / self.res_x;
 
-        if self.idx_y == self.res_y
-        {
+        if self.idx_y == self.res_y {
             return None;
         }
 

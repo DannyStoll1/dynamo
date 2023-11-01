@@ -11,8 +11,7 @@ impl<T> Error<T>
     where
         F: FnOnce(T) -> U,
     {
-        match self
-        {
+        match self {
             Self::FailedToConverge(val) => Error::FailedToConverge(f(val)),
             Self::NanEncountered => Error::NanEncountered,
         }

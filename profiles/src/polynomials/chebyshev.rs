@@ -30,13 +30,10 @@ impl ChebyshevCoeffTable
         let n = self.coeffs.len();
         let coeff0 = self.coeffs[n - 2].iter().chain(once(&0));
 
-        let new_coeff: Vec<i32> = if n % 2 == 0
-        {
+        let new_coeff: Vec<i32> = if n % 2 == 0 {
             let coeff1 = once(&0).chain(self.coeffs[n - 1].iter());
             coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect()
-        }
-        else
-        {
+        } else {
             let coeff1 = self.coeffs[n - 1].iter();
             coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect()
         };
@@ -46,8 +43,7 @@ impl ChebyshevCoeffTable
 
     pub fn extend_to(&mut self, degree: usize)
     {
-        while self.coeffs.len() <= degree
-        {
+        while self.coeffs.len() <= degree {
             self.extend();
         }
     }
@@ -143,8 +139,7 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 
         let mut zval = Cplx::from(an);
 
-        for &a in z_iter
-        {
+        for &a in z_iter {
             zval = zval * w + a;
         }
 
@@ -165,12 +160,10 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         let mut zval = Cplx::from(an);
         let mut dval = Cplx::from(bn);
 
-        for &a in z_iter
-        {
+        for &a in z_iter {
             zval = zval * w2 + a;
         }
-        for &b in d_iter
-        {
+        for &b in d_iter {
             dval = dval * w2 + b;
         }
 
@@ -191,12 +184,10 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         let mut zval = Cplx::from(an);
         let mut dval = Cplx::from(bn);
 
-        for &a in z_iter
-        {
+        for &a in z_iter {
             zval = zval * w2 + a;
         }
-        for &b in d_iter
-        {
+        for &b in d_iter {
             dval = dval * w2 + b;
         }
 
@@ -205,15 +196,12 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
 
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
-        match D
-        {
-            2 =>
-            {
+        match D {
+            2 => {
                 let sqrt2 = SQRT_2.into();
                 vec![ZERO, sqrt2, -sqrt2]
             }
-            3 =>
-            {
+            3 => {
                 let sqrt3 = SQRT_3.into();
                 vec![ZERO, sqrt3, -sqrt3, ONE, -ONE]
             }
@@ -250,12 +238,9 @@ impl<const D: Period> InfinityFirstReturnMap for Chebyshev<D>
 
     fn escape_coeff_d(&self, param: Self::Param) -> (Cplx, Cplx)
     {
-        if D % 2 == 0
-        {
+        if D % 2 == 0 {
             (0.5 * param, Cplx::new(0.5, 0.))
-        }
-        else
-        {
+        } else {
             (-0.5 * param, Cplx::new(-0.5, 0.))
         }
     }

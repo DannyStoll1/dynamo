@@ -90,23 +90,19 @@ impl ParameterPlane for QuadRatPer2
     #[allow(clippy::match_same_arms)]
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => vec![ZERO],
             2 => vec![],
             3 => solve_quadratic(ONE, -ONE).to_vec(),
-            4 =>
-            {
+            4 => {
                 const COEFFS: [Cplx; 5] = cplx_arr!([1, -4, 6, -3, 1]);
                 solve_polynomial(COEFFS)
             }
-            5 =>
-            {
+            5 => {
                 const COEFFS: [Cplx; 11] = cplx_arr!([1, -9, 33, -64, 76, -66, 50, -31, 15, -5, 1]);
                 solve_polynomial(COEFFS)
             }
-            6 =>
-            {
+            6 => {
                 const COEFFS: [Cplx; 19] = cplx_arr!([
                     1, -19, 162, -822, 2781, -6677, 11858, -16093, 17187, -14858, 10683, -6549,
                     3486, -1617, 645, -213, 55, -10, 1
@@ -119,10 +115,8 @@ impl ParameterPlane for QuadRatPer2
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let u = -27. * c;
                 let v = u - 11.;
                 let x0 = (0.5 * (u + (v.powi(2) - 256.).sqrt() - 11.)).powf(ONE_THIRD);
@@ -132,12 +126,10 @@ impl ParameterPlane for QuadRatPer2
                 let r2 = -x1 * OMEGA - x2 * OMEGA_BAR + ONE_THIRD;
                 vec![-x1 - x2 + ONE_THIRD, r1, r2]
             }
-            2 =>
-            {
+            2 => {
                 vec![(1.).into()]
             }
-            3 =>
-            {
+            3 => {
                 let coeffs = [
                     horner_monic!(c, 1., -1.),
                     -c - 1.,
@@ -149,8 +141,7 @@ impl ParameterPlane for QuadRatPer2
                 ];
                 solve_polynomial(coeffs)
             }
-            4 =>
-            {
+            4 => {
                 let coeffs = [
                     horner_monic!(c, 1., -4., 6., -3.),
                     -c * horner_monic!(c, 2., -3.),
@@ -168,8 +159,7 @@ impl ParameterPlane for QuadRatPer2
                 ];
                 solve_polynomial(coeffs)
             }
-            5 =>
-            {
+            5 => {
                 let coeffs = [
                     horner_monic!(c, 1., -9., 33., -64., 76., -66., 50., -31., 15., -5.),
                     -horner_monic!(c, 1., -7., 20., -26., 8., 18., -23., 15., -5.),
@@ -205,8 +195,7 @@ impl ParameterPlane for QuadRatPer2
                 ];
                 solve_polynomial(coeffs)
             }
-            6 =>
-            {
+            6 => {
                 let coeffs = [
                     horner_monic!(
                         c, 1., -19., 162., -822., 2781., -6677., 11858., -16093., 17187., -14858.,
@@ -681,10 +670,8 @@ impl HasDynamicalCovers for QuadRatPer2
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     (
                         0.125 * (4. - t * (t + 2.)) * t,
@@ -698,8 +685,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 3.0,
                 };
             }
-            3 =>
-            {
+            3 => {
                 const A0: Cplx = Cplx::new(1. + OMEGA.re, OMEGA.im);
                 const A1: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
                 const A2: Cplx = Cplx::new(-OMEGA.re - 2., -OMEGA.im);
@@ -712,8 +698,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 1.2,
                 };
             }
-            4 =>
-            {
+            4 => {
                 const A0: Cplx = Cplx::new(-23.000_000_000_000_0, -14.000_000_000_000_0);
                 const A1: Cplx = Cplx::new(-43.595_214_843_750_0, -198.812_988_281_250);
                 const A2: Cplx = Cplx::new(393.670_501_828_194, -585.061_190_664_768);
@@ -772,8 +757,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 4.,
                 }
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -814,10 +798,8 @@ impl HasDynamicalCovers for QuadRatPer2
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     (
                         0.125 * (4. - t * (t + 2.)) * t,
@@ -831,8 +813,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 3.0,
                 };
             }
-            4 =>
-            {
+            4 => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     (t2 * t - 2. * t2 + 4. * t - 1., 3. * t2 - 4. * t - 4.)
@@ -844,8 +825,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 2.2,
                 };
             }
-            5 =>
-            {
+            5 => {
                 param_map = |t| {
                     // t = sqrt(-2235)
                     // ((-2043332879690812551104*t + 322671215001188162496)*c^6 + (-7211787718815174272*t + 38457203855637713472)*c^5 + (-10445615819508480*t + 113836835145028800)*c^4 + (-7931553616080*t + 135137329840080)*c^3 + (-3321323160*t + 79799557200)*c^2 + (-724598*t + 23400162)*c + (-64*t + 2724))/((-165726073638468871360*t + 59671792608719217337728)*c^6 + (-532082528560799520*t + 218792941658814953376)*c^5 + (-681491680626360*t + 334169395252260120)*c^4 + (-435333784880*t + 272101938829200)*c^3 + (-138715290*t + 124564255830)*c^2 + (-17640*t + 30391956)*c + 3087)
@@ -872,8 +852,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 8.,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |c| (c, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -887,10 +866,8 @@ impl HasDynamicalCovers for QuadRatPer2
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match (preperiod, period)
-        {
-            (1, 1) =>
-            {
+        match (preperiod, period) {
+            (1, 1) => {
                 param_map = |t| (t * (1. - t * (t + 1.)), (t + 1.) * (1. - 3. * t));
                 bounds = Bounds {
                     min_x: -3.4,
@@ -899,8 +876,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 3.1,
                 };
             }
-            (2, 1) =>
-            {
+            (2, 1) => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
@@ -925,8 +901,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 5.1,
                 };
             }
-            (2, 2) =>
-            {
+            (2, 2) => {
                 param_map = |t| {
                     //(-t^4 + 2*t^2 + 1)/(2*t^4)
                     let t2 = t.powi(2);
@@ -940,8 +915,7 @@ impl HasDynamicalCovers for QuadRatPer2
                     max_y: 4.,
                 };
             }
-            (_, _) =>
-            {
+            (_, _) => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }

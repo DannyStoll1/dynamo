@@ -105,12 +105,9 @@ pub trait Summarize: std::fmt::Display
     fn summarize(&self) -> Option<String>
     {
         let s = self.to_string();
-        if s.is_empty()
-        {
+        if s.is_empty() {
             None
-        }
-        else
-        {
+        } else {
             Some(s)
         }
     }
@@ -213,9 +210,7 @@ macro_rules! try_round_impl {
                 if self.is_finite() && self > <$int>::MIN as $float && self < <$int>::MAX as $float
                 {
                     Ok(self.round() as $int)
-                }
-                else
-                {
+                } else {
                     Err(FloatToIntError)
                 }
             }

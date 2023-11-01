@@ -12,9 +12,6 @@ pub mod id;
 pub mod tasks;
 use tasks::*;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 pub trait Pane
 {
     fn tasks(&self) -> &PaneTasks;
@@ -176,29 +173,21 @@ pub trait Pane
         self.process_marking_tasks();
 
         let tasks = self.tasks_mut().pop();
-        match tasks.compute
-        {
-            RepeatableTask::Rerun =>
-            {
+        match tasks.compute {
+            RepeatableTask::Rerun => {
                 self.recompute();
             }
-            RepeatableTask::DoNothing =>
-            {}
-            RepeatableTask::InitRun =>
-            {
+            RepeatableTask::DoNothing => {}
+            RepeatableTask::InitRun => {
                 self.compute();
             }
         }
-        match tasks.draw
-        {
-            RepeatableTask::Rerun =>
-            {
+        match tasks.draw {
+            RepeatableTask::Rerun => {
                 self.redraw();
             }
-            RepeatableTask::DoNothing =>
-            {}
-            RepeatableTask::InitRun =>
-            {
+            RepeatableTask::DoNothing => {}
+            RepeatableTask::InitRun => {
                 self.draw();
             }
         }
@@ -217,13 +206,11 @@ pub trait Pane
 
     fn process_mouse_input(&mut self, pointer_value: Cplx, zoom_factor: f32, reselect_point: bool)
     {
-        if (zoom_factor - 1.0).abs() > f32::EPSILON
-        {
+        if (zoom_factor - 1.0).abs() > f32::EPSILON {
             self.zoom((1. / zoom_factor).into(), pointer_value);
         }
 
-        if reselect_point
-        {
+        if reselect_point {
             self.select_point(pointer_value);
         }
     }
@@ -277,14 +264,13 @@ where
     {
         let old_param = self.plane.get_param();
 
-        let update: bool = if old_param == new_param
-        {
+        let update: bool = if old_param == new_param {
             false
-        }
-        else
-        {
+        } else {
             self.plane.set_param(new_param);
-            self.select_point(self.plane.default_selection());
+            if matches!(self.ray_state, RayState::Idle) {
+                self.select_point(self.plane.default_selection());
+            }
             self.schedule_recompute();
             self.schedule_redraw();
             true
@@ -293,9 +279,8 @@ where
         self.clear_marked_orbit();
         self.clear_equipotentials();
 
-        if let RayState::Following(angle) = self.ray_state()
-        {
-            self.select_ray_landing_point(angle);
+        if let RayState::Following(angle) = self.ray_state() {
+            self.select_ray_landing_point_now(angle);
         }
 
         update
@@ -362,12 +347,19 @@ where
     #[inline]
     fn select_point_keep_following(&mut self, point: Cplx)
     {
-        if self.selection != point
-        {
+        if self.selection != point {
             self.selection = point;
             self.marking.select_point(point);
             self.child_task = ChildTask::UpdateParam;
             self.schedule_redraw();
+        }
+    }
+
+    #[inline]
+    fn select_ray_landing_point_now(&mut self, angle: RationalAngle)
+    {
+        if let Some(approx_landing_point) = self.marking().ray_landing_point(angle) {
+            self.select_point_keep_following(approx_landing_point);
         }
     }
 }
@@ -510,8 +502,7 @@ where
 
     fn map_selection(&mut self)
     {
-        if self.plane_type().is_dynamical()
-        {
+        if self.plane_type().is_dynamical() {
             let c = self.plane.param_map(self.selection);
             let mut z = self.plane.start_point(self.selection, c);
             z = self.plane.map(z, c);
@@ -519,17 +510,14 @@ where
         }
     }
 
-    fn select_ray_landing_point(&mut self, angle: RationalAngle)
-    {
-        if let Some(approx_landing_point) = self.marking().ray_landing_point(angle)
-        {
-            self.select_point_keep_following(approx_landing_point);
-        }
-    }
-
     fn follow_ray_landing_point(&mut self, angle: RationalAngle)
     {
         self.ray_state = RayState::Following(angle);
+    }
+
+    fn select_ray_landing_point(&mut self, angle: RationalAngle)
+    {
+        self.ray_state = RayState::SelectOnce(angle);
     }
 
     #[inline]
@@ -569,9 +557,15 @@ where
         let period_coloring = self.coloring.get_period_coloring();
         self.marking
             .process_all_tasks(&self.plane, self.selection, period_coloring);
-        if let RayState::Following(angle) = self.ray_state
-        {
-            self.select_ray_landing_point(angle);
+        match self.ray_state {
+            RayState::SelectOnce(angle) => {
+                self.select_ray_landing_point_now(angle);
+                self.ray_state = RayState::Idle;
+            }
+            RayState::Following(angle) => {
+                self.select_ray_landing_point_now(angle);
+            }
+            _ => {}
         }
     }
 
@@ -630,12 +624,9 @@ where
         let mut image = iter_plane.write_image(self.get_coloring());
         self.marking.mark_image(self.grid(), &mut image);
 
-        if let Err(e) = image.save(filename)
-        {
+        if let Err(e) = image.save(filename) {
             println!("Error saving file: {e:?}");
-        }
-        else
-        {
+        } else {
             println!("Image saved to {}", filename.to_string_lossy());
         }
 
@@ -644,20 +635,16 @@ where
 
     fn save_palette(&mut self, filename: &Path)
     {
-        if let Err(e) = self.coloring.save_to_file(filename)
-        {
+        if let Err(e) = self.coloring.save_to_file(filename) {
             println!("Error saving palette: {e:?}");
-        }
-        else
-        {
+        } else {
             println!("Palette saved to {}", filename.to_string_lossy());
         }
     }
 
     fn load_palette(&mut self, filename: &Path)
     {
-        if let Err(e) = self.coloring.load_palette(filename)
-        {
+        if let Err(e) = self.coloring.load_palette(filename) {
             println!("Error loading palette: {e:?}");
         }
         self.schedule_redraw();

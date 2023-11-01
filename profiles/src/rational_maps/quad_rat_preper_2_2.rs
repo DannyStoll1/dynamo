@@ -74,12 +74,10 @@ impl ParameterPlane for QuadRatPreper22
     #[inline]
     fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(-a, a, b).to_vec(),
             2 => vec![ZERO],
-            3 =>
-            {
+            3 => {
                 let a2 = a * a;
                 let b2 = b * b;
                 let b3 = b * b2;
@@ -115,8 +113,7 @@ impl EscapeEncoding for QuadRatPreper22
         CplxPair { a: _, b }: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 2.,
             };

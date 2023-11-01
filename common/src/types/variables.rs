@@ -128,8 +128,7 @@ impl PlaneID
     #[must_use]
     pub const fn swap(&self) -> Self
     {
-        match self
-        {
+        match self {
             Self::ZPlane => Self::WPlane,
             Self::WPlane => Self::ZPlane,
         }
@@ -159,8 +158,7 @@ impl From<Bicomplex> for Cplx
     fn from(value: Bicomplex) -> Self
     {
         use Bicomplex::{PlaneA, PlaneB};
-        match value
-        {
+        match value {
             PlaneA(z) | PlaneB(z) => z,
         }
     }
@@ -169,15 +167,13 @@ impl Norm<Real> for Bicomplex
 {
     fn norm(&self) -> Real
     {
-        match self
-        {
+        match self {
             Self::PlaneA(z) | Self::PlaneB(z) => z.norm(),
         }
     }
     fn norm_sqr(&self) -> Real
     {
-        match self
-        {
+        match self {
             Self::PlaneA(z) | Self::PlaneB(z) => z.norm_sqr(),
         }
     }
@@ -186,8 +182,7 @@ impl Arg<Real> for Bicomplex
 {
     fn arg(&self) -> Real
     {
-        match self
-        {
+        match self {
             Self::PlaneA(z) | Self::PlaneB(z) => z.arg(),
         }
     }
@@ -196,8 +191,7 @@ impl MaybeNan for Bicomplex
 {
     fn is_nan(&self) -> bool
     {
-        match self
-        {
+        match self {
             Self::PlaneA(z) | Self::PlaneB(z) => z.is_nan(),
         }
     }
@@ -252,15 +246,12 @@ impl std::ops::Sub for Bicomplex
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output
     {
-        match self
-        {
-            Self::PlaneA(z) => match rhs
-            {
+        match self {
+            Self::PlaneA(z) => match rhs {
                 Self::PlaneA(w) => Self::PlaneA(z - w),
                 Self::PlaneB(_) => Self::PlaneA(crate::consts::NAN),
             },
-            Self::PlaneB(z) => match rhs
-            {
+            Self::PlaneB(z) => match rhs {
                 Self::PlaneA(_) => Self::PlaneB(crate::consts::NAN),
                 Self::PlaneB(w) => Self::PlaneB(z - w),
             },
@@ -417,24 +408,21 @@ impl From<Cplx> for EisensteinInteger
 
         corner += 1.;
         let dist = (corner - z).norm_sqr();
-        if dist < best_dist
-        {
+        if dist < best_dist {
             best_dist = dist;
             closest = (1, 0);
         }
 
         corner += OMEGA;
         let dist = (corner - z).norm_sqr();
-        if dist < best_dist
-        {
+        if dist < best_dist {
             best_dist = dist;
             closest = (1, 1);
         }
 
         corner -= 1.;
         let dist = (corner - z).norm_sqr();
-        if dist < best_dist
-        {
+        if dist < best_dist {
             closest = (0, 1);
         }
 

@@ -58,8 +58,7 @@ impl ParameterPlane for Biquadratic
     #[inline]
     fn map(&self, zw: Self::Var, c: Cplx) -> Self::Var
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z.powi(2) + c),
             Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w.powi(2) + self.multiplier),
         }
@@ -68,8 +67,7 @@ impl ParameterPlane for Biquadratic
     #[inline]
     fn map_and_multiplier(&self, zw: Self::Var, c: Cplx) -> (Self::Var, Cplx)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w.powi(2) + self.multiplier), 2. * w),
         }
@@ -77,8 +75,7 @@ impl ParameterPlane for Biquadratic
 
     fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z, ONE),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w.powi(2) + self.multiplier), 2. * w, ZERO),
         }
@@ -94,8 +91,7 @@ impl EscapeEncoding for Biquadratic
         _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };
@@ -177,8 +173,7 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
-        match self.starting_plane
-        {
+        match self.starting_plane {
             PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c.a),
             PlaneID::WPlane => Bicomplex::PlaneB(-0.5 * c.b),
         }
@@ -187,8 +182,7 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c.a)),
             Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * (w + c.b)),
         }
@@ -197,8 +191,7 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), 2. * w + c.b),
         }
@@ -206,8 +199,7 @@ impl ParameterPlane for BiquadraticMult
 
     fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a, ONE),
             Bicomplex::PlaneB(w) => (
                 Bicomplex::PlaneA(w * (w + c.b)),
@@ -240,10 +232,8 @@ impl ParameterPlane for BiquadraticMult
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        match self.starting_plane
-        {
-            PlaneID::ZPlane =>
-            {
+        match self.starting_plane {
+            PlaneID::ZPlane => {
                 let disc = (c.a * c.a - c.b - c.b).sqrt();
                 vec![
                     Bicomplex::PlaneA(-0.5 * c.a),
@@ -251,8 +241,7 @@ impl ParameterPlane for BiquadraticMult
                     Bicomplex::PlaneA(-0.5 * (c.a - disc)),
                 ]
             }
-            PlaneID::WPlane =>
-            {
+            PlaneID::WPlane => {
                 let disc = (c.b * c.b - c.a - c.a).sqrt();
                 vec![
                     Bicomplex::PlaneB(-0.5 * c.b),
@@ -269,12 +258,9 @@ impl ParameterPlane for BiquadraticMult
         period: Period,
     ) -> Vec<Self::Var>
     {
-        match period
-        {
-            2 => match self.starting_plane
-            {
-                PlaneID::ZPlane =>
-                {
+        match period {
+            2 => match self.starting_plane {
+                PlaneID::ZPlane => {
                     let [r0, r1, r2] = solve_cubic(a * b - 1., a.powi(2) + b, 2. * a);
                     vec![
                         Bicomplex::PlaneA(ZERO),
@@ -283,8 +269,7 @@ impl ParameterPlane for BiquadraticMult
                         Bicomplex::PlaneA(r2),
                     ]
                 }
-                PlaneID::WPlane =>
-                {
+                PlaneID::WPlane => {
                     let [r0, r1, r2] = solve_cubic(b * a - 1., b.powi(2) + a, 2. * b);
                     vec![
                         Bicomplex::PlaneB(ZERO),
@@ -294,8 +279,7 @@ impl ParameterPlane for BiquadraticMult
                     ]
                 }
             },
-            4 =>
-            {
+            4 => {
                 let b2 = b.powi(2);
                 let b3 = b * b2;
                 let coeffs = [
@@ -329,8 +313,7 @@ impl ParameterPlane for BiquadraticMult
 
     fn dynam_map(&self, point: Cplx) -> Self::Var
     {
-        match self.starting_plane
-        {
+        match self.starting_plane {
             PlaneID::ZPlane => Bicomplex::PlaneA(point),
             PlaneID::WPlane => Bicomplex::PlaneB(point),
         }
@@ -382,8 +365,7 @@ impl EscapeEncoding for BiquadraticMult
         _base_param: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };
@@ -448,8 +430,7 @@ impl ParameterPlane for BiquadraticMultParam
     #[inline]
     fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c.a)),
             Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * (w + c.b)),
         }
@@ -458,8 +439,7 @@ impl ParameterPlane for BiquadraticMultParam
     #[inline]
     fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + c.b)), 2. * w + c.b),
         }
@@ -507,8 +487,7 @@ impl EscapeEncoding for BiquadraticMultParam
         _base_param: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };
@@ -646,8 +625,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };
@@ -719,8 +697,7 @@ impl ParameterPlane for BiquadraticMultSection
     #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
-        match self.starting_plane
-        {
+        match self.starting_plane {
             PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c),
             PlaneID::WPlane => Bicomplex::PlaneB(Cplx::from(-0.5)),
         }
@@ -729,8 +706,7 @@ impl ParameterPlane for BiquadraticMultSection
     #[inline]
     fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c)),
             Bicomplex::PlaneB(w) => Bicomplex::PlaneA(w * (w + 1.)),
         }
@@ -739,8 +715,7 @@ impl ParameterPlane for BiquadraticMultSection
     #[inline]
     fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1.),
         }
@@ -749,8 +724,7 @@ impl ParameterPlane for BiquadraticMultSection
     #[inline]
     fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        match zw
-        {
+        match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c, z),
             Bicomplex::PlaneB(w) => (Bicomplex::PlaneA(w * (w + 1.)), 2. * w + 1., ZERO),
         }
@@ -759,10 +733,8 @@ impl ParameterPlane for BiquadraticMultSection
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        match self.starting_plane
-        {
-            PlaneID::ZPlane =>
-            {
+        match self.starting_plane {
+            PlaneID::ZPlane => {
                 let disc = (c.powi(2) - 2.).sqrt();
                 vec![
                     Bicomplex::PlaneA(-0.5 * c),
@@ -770,8 +742,7 @@ impl ParameterPlane for BiquadraticMultSection
                     Bicomplex::PlaneA(-0.5 * (c - disc)),
                 ]
             }
-            PlaneID::WPlane =>
-            {
+            PlaneID::WPlane => {
                 let disc = (1. - c - c).sqrt();
                 vec![
                     Bicomplex::PlaneB((-0.5).into()),
@@ -784,12 +755,9 @@ impl ParameterPlane for BiquadraticMultSection
 
     fn cycles_child(&self, a: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            2 => match self.starting_plane
-            {
-                PlaneID::ZPlane =>
-                {
+        match period {
+            2 => match self.starting_plane {
+                PlaneID::ZPlane => {
                     let [r0, r1, r2] = solve_cubic(a - 1., a.powi(2) + 1., 2. * a);
                     vec![
                         Bicomplex::PlaneA(ZERO),
@@ -798,8 +766,7 @@ impl ParameterPlane for BiquadraticMultSection
                         Bicomplex::PlaneA(r2),
                     ]
                 }
-                PlaneID::WPlane =>
-                {
+                PlaneID::WPlane => {
                     let [r0, r1, r2] = solve_cubic(a - 1., 1. + a, TWO);
                     vec![
                         Bicomplex::PlaneB(ZERO),
@@ -820,8 +787,7 @@ impl ParameterPlane for BiquadraticMultSection
 
     fn dynam_map(&self, point: Cplx) -> Self::Var
     {
-        match self.starting_plane
-        {
+        match self.starting_plane {
             PlaneID::ZPlane => Bicomplex::PlaneA(point),
             PlaneID::WPlane => Bicomplex::PlaneB(point),
         }
@@ -852,8 +818,7 @@ impl EscapeEncoding for BiquadraticMultSection
         _base_param: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };

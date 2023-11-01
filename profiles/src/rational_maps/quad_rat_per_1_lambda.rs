@@ -32,8 +32,7 @@ impl QuadRatPer1Lambda
     fn compute_tolerance(multiplier: Cplx) -> Real
     {
         let err = multiplier.norm() - 1.;
-        if err > 1e-3
-        {
+        if err > 1e-3 {
             return 1e-12;
         }
         let err2 = -1e8 * err * err;
@@ -316,7 +315,8 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ONE, ZERO, ZERO)
     }

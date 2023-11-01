@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 
 use dynamo_common::rational_angle::RationalAngle;
 use dynamo_common::symbolic_dynamics::{AngleInfo, OrbitSchemaWithDegree};
-use dynamo_core::dynamics::PlaneType;
 use egui::{self, Key, RichText, WidgetText};
 use egui::{vec2, Window};
 use egui_file::FileDialog;
@@ -12,6 +11,62 @@ use std::fmt::Write;
 use serde::{Deserialize, Serialize};
 
 use crate::pane::id::{PaneID, PaneSelection};
+use crate::pane::tasks::SelectOrFollow;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ToggleKey
+{
+    DoParent,
+    DoChild,
+    SelectPoint,
+    FollowPoint,
+    DrawOrbit,
+    PrefixAngles,
+}
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Toggle
+{
+    pub key: ToggleKey,
+    pub text: String,
+    pub enabled: bool,
+    pub conditional: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ToggleMap(Vec<Toggle>);
+
+impl ToggleMap
+{
+    #[must_use]
+    pub const fn new() -> Self
+    {
+        Self(Vec::new())
+    }
+    pub fn get(&self, key: ToggleKey) -> bool
+    {
+        self.0
+            .iter()
+            .find(|x| x.key == key)
+            .map(|x| x.enabled)
+            .unwrap_or(false)
+    }
+    pub fn push(&mut self, toggle: Toggle)
+    {
+        self.0.push(toggle)
+    }
+    pub fn iter(&self) -> std::slice::Iter<'_, Toggle>
+    {
+        self.0.iter()
+    }
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Toggle>
+    {
+        self.0.iter_mut()
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -25,17 +80,18 @@ pub enum SaveFileType
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RayParams
 {
-    pub pane_id: PaneID,
+    pub do_parent: bool,
+    pub do_child: bool,
     pub angle_info: AngleInfo,
-    pub follow: bool,
-    pub ray_type: PlaneType,
+    pub follow_task: SelectOrFollow,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AllActiveRayParams
 {
-    pub panes: PaneID,
+    pub do_parent: bool,
+    pub do_child: bool,
     pub orbit_schema: OrbitSchemaWithDegree,
     pub active_angles: VecDeque<RationalAngle>,
     pub include_suffixes: bool,
@@ -73,13 +129,12 @@ pub enum TextInputType
 {
     ExternalRay
     {
-        pane_selection: PaneID,
-        follow: bool,
+        pane_id: PaneID,
+        select_landing_point: bool,
     },
     ActiveRays
     {
-        pane_id: PaneID,
-        include_suffixes: bool,
+        pane_id: PaneID
     },
     FindPeriodic
     {
@@ -108,12 +163,13 @@ pub struct TextDialogBuilder
     input_type: TextInputType,
     title: String,
     prompt: WidgetText,
+    toggles: ToggleMap,
 }
 
 pub struct StructuredTextDialog
 {
-    pub input_type: TextInputType,
     pub dialog: TextDialog,
+    pub input_type: TextInputType,
 }
 
 pub struct TextDialog
@@ -121,6 +177,7 @@ pub struct TextDialog
     pub title: String,
     pub prompt: WidgetText,
     pub user_input: String,
+    pub toggle_map: ToggleMap,
     pub state: State,
 }
 
@@ -149,6 +206,7 @@ impl TextDialogBuilder
             input_type,
             title: String::new(),
             prompt: WidgetText::default(),
+            toggles: ToggleMap::new(),
         }
     }
     #[must_use]
@@ -164,11 +222,72 @@ impl TextDialogBuilder
         self.prompt = prompt.into();
         self
     }
+
+    #[must_use]
+    pub fn add_toggle(mut self, key: ToggleKey, name: impl ToString) -> Self
+    {
+        self.toggles.push(Toggle {
+            key,
+            enabled: false,
+            text: name.to_string(),
+            conditional: false,
+        });
+        self
+    }
+
+    /// Add a toggle that is greyed out if the previous toggle is disabled.
+    /// Currently can only point to the last toggle.
+    /// Will not be greyed out if there are no previous toggles.
+    #[must_use]
+    pub fn add_cond_toggle(mut self, key: ToggleKey, name: impl ToString) -> Self
+    {
+        self.toggles.push(Toggle {
+            key,
+            enabled: false,
+            text: name.to_string(),
+            conditional: true,
+        });
+        self
+    }
+
+    #[must_use]
+    pub fn add_toggle_with_default(
+        mut self,
+        key: ToggleKey,
+        name: impl ToString,
+        default_state: bool,
+    ) -> Self
+    {
+        self.toggles.push(Toggle {
+            key,
+            enabled: default_state,
+            text: name.to_string(),
+            conditional: false,
+        });
+        self
+    }
+
+    #[must_use]
+    pub fn pane_toggles(self, text_prefix: impl std::fmt::Display, pane_id: PaneID) -> Self
+    {
+        self.add_toggle_with_default(
+            ToggleKey::DoParent,
+            format!("{} parent", text_prefix),
+            matches!(pane_id, PaneID::Parent),
+        )
+        .add_toggle_with_default(
+            ToggleKey::DoChild,
+            format!("{} child", text_prefix),
+            matches!(pane_id, PaneID::Child),
+        )
+    }
+
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn build(self) -> StructuredTextDialog
     {
-        let dialog = TextDialog::new(self.title, self.prompt);
+        let dialog = TextDialog::new(self.title, self.prompt, self.toggles);
+
         StructuredTextDialog {
             input_type: self.input_type,
             dialog,
@@ -197,20 +316,20 @@ impl std::ops::DerefMut for StructuredTextDialog
 impl TextDialog
 {
     #[must_use]
-    pub fn new(title: String, prompt: impl Into<WidgetText>) -> Self
+    pub fn new(title: String, prompt: impl Into<WidgetText>, toggle_map: ToggleMap) -> Self
     {
         Self {
             title,
             prompt: prompt.into(),
             user_input: String::new(),
+            toggle_map,
             state: State::JustOpened,
         }
     }
 
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        if self.visible()
-        {
+        if self.visible() {
             Window::new(self.title.clone())
                 .title_bar(false)
                 .collapsible(false)
@@ -224,11 +343,20 @@ impl TextDialog
                         ui.memory_mut(|mem| mem.request_focus(response.id));
                     });
 
-                    if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter))
-                    {
-                        self.state = State::Completed;
+                    let mut last_toggle_enabled = true;
+                    for toggle in self.toggle_map.iter_mut() {
+                        let checkbox = egui::Checkbox::new(&mut toggle.enabled, &toggle.text);
+                        if toggle.conditional {
+                            ui.add_enabled(last_toggle_enabled, checkbox);
+                        } else {
+                            ui.add(checkbox);
+                            last_toggle_enabled = toggle.enabled;
+                        }
                     }
-                    else if ui.button("Cancel").clicked()
+
+                    if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter)) {
+                        self.state = State::Completed;
+                    } else if ui.button("Cancel").clicked()
                         || ctx.input(|i| i.key_pressed(Key::Escape))
                     {
                         self.disable();
@@ -276,16 +404,17 @@ impl TextDialog
         self.user_input.clear();
     }
 
-    pub fn get_response(&mut self) -> Response<String>
+    pub fn get_response(&mut self) -> Response<(String, ToggleMap)>
     {
-        match self.state
-        {
+        match self.state {
             State::InProgress | State::JustOpened => Response::InProgress,
             State::Closed => Response::Cancelled,
-            State::Completed =>
-            {
+            State::Completed => {
                 let text = std::mem::take(&mut self.user_input);
-                Response::Complete { data: text }
+                let toggles = std::mem::take(&mut self.toggle_map);
+                Response::Complete {
+                    data: (text, toggles),
+                }
             }
         }
     }
@@ -306,8 +435,7 @@ impl<T> ConfirmationDialog<T>
 
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        if self.visible()
-        {
+        if self.visible() {
             Window::new(self.title.clone())
                 .title_bar(false)
                 .collapsible(false)
@@ -319,11 +447,9 @@ impl<T> ConfirmationDialog<T>
                         ui.label(self.prompt.clone());
                     });
 
-                    if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter))
-                    {
+                    if ui.button("OK").clicked() || ctx.input(|i| i.key_pressed(Key::Enter)) {
                         self.state = State::Completed;
-                    }
-                    else if ui.button("Cancel").clicked()
+                    } else if ui.button("Cancel").clicked()
                         || ctx.input(|i| i.key_pressed(Key::Escape))
                     {
                         self.disable();
@@ -354,12 +480,10 @@ impl<T> ConfirmationDialog<T>
     where
         T: Default,
     {
-        match self.state
-        {
+        match self.state {
             State::InProgress | State::JustOpened => Response::InProgress,
             State::Closed => Response::Cancelled,
-            State::Completed =>
-            {
+            State::Completed => {
                 let data = std::mem::take(&mut self.data);
                 Response::Complete { data }
             }
@@ -370,22 +494,17 @@ impl Dialog
 {
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        match self
-        {
-            Self::Save { file_dialog, .. } | Self::Load { file_dialog, .. } =>
-            {
+        match self {
+            Self::Save { file_dialog, .. } | Self::Load { file_dialog, .. } => {
                 file_dialog.show(ctx);
             }
-            Self::Text(text_dialog) =>
-            {
+            Self::Text(text_dialog) => {
                 text_dialog.show(ctx);
             }
-            Self::ConfirmRay(conf_dialog) =>
-            {
+            Self::ConfirmRay(conf_dialog) => {
                 conf_dialog.show(ctx);
             }
-            Self::ConfirmActiveRays(conf_dialog) =>
-            {
+            Self::ConfirmActiveRays(conf_dialog) => {
                 conf_dialog.show(ctx);
             }
         }
@@ -394,10 +513,8 @@ impl Dialog
     #[must_use]
     pub fn visible(&self) -> bool
     {
-        match self
-        {
-            Self::Save { file_dialog, .. } | Self::Load { file_dialog, .. } =>
-            {
+        match self {
+            Self::Save { file_dialog, .. } | Self::Load { file_dialog, .. } => {
                 file_dialog.visible()
             }
             Self::Text(text_dialog) => text_dialog.visible(),
@@ -411,8 +528,10 @@ impl Dialog
     {
         let title = "Confirm external ray".to_owned();
         let prompt = format!(
-            "The {} ray at angle {} has preperiod {} and period {}.\nThe associated kneading sequence is {}",
-            ray_params.ray_type,
+            "\
+                The ray at angle {} has preperiod {} and period {}.\n\
+                The associated kneading sequence is {}
+            ",
             ray_params.angle_info.angle,
             ray_params.angle_info.orbit_schema.preperiod,
             ray_params.angle_info.orbit_schema.period,
@@ -432,15 +551,12 @@ impl Dialog
             degree,
         } = params.orbit_schema;
 
-        let header = if params.include_suffixes
-        {
+        let header = if params.include_suffixes {
             format!(
                 "The following angles are active with preperiod at most \
                 {preperiod} and period {period}:"
             )
-        }
-        else
-        {
+        } else {
             format!(
                 "The following angles are active with preperiod \
                 {preperiod} and period {period}:"
@@ -449,9 +565,15 @@ impl Dialog
 
         let pad = (period + preperiod + 1) as usize;
         let mut body = String::new();
-        for a in &params.active_angles
-        {
-            let _ = writeln!(&mut body, "{:>8} = {:>pad$}", a, a.with_degree(degree));
+        for a in &params.active_angles {
+            let ad = a.with_degree(degree);
+            let _ = writeln!(
+                &mut body,
+                "{:>8} = {:>pad$}, KS: {}",
+                a,
+                ad,
+                ad.kneading_sequence()
+            );
         }
         let prompt = RichText::from(format!("{header}\n{body}")).monospace();
         let conf_dialog = ConfirmationDialog::new(title, prompt, params);

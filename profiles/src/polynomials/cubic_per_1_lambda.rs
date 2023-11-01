@@ -71,8 +71,7 @@ impl ParameterPlane for CubicPer1Lambda
     #[inline]
     fn start_point(&self, t: Cplx, _c: Self::Param) -> Self::Var
     {
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => 0.5 * self.multiplier * t,
             PlaneID::WPlane => TWO_THIRDS / t,
         }
@@ -81,8 +80,7 @@ impl ParameterPlane for CubicPer1Lambda
     #[inline]
     fn start_point_d(&self, t: Cplx, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => (0.5 * self.multiplier * t, 0.5 * self.multiplier, ZERO),
             PlaneID::WPlane => (TWO_THIRDS / t, -ONE_THIRD / t.powi(2), ZERO),
         }
@@ -107,15 +105,12 @@ impl ParameterPlane for CubicPer1Lambda
 
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let u = (self.multiplier - 2.).sqrt() * 2. / self.multiplier;
                 vec![u, -u, ZERO]
             }
-            2 =>
-            {
+            2 => {
                 let l_n1 = self.multiplier.inv();
                 let l_n2 = l_n1 * l_n1;
                 let l_n4 = l_n2 * l_n2;
@@ -131,8 +126,7 @@ impl ParameterPlane for CubicPer1Lambda
                 })
                 .collect()
             }
-            3 =>
-            {
+            3 => {
                 let l = self.multiplier;
                 let l2 = l.powi(2);
                 let l4 = l2.powi(2);
@@ -237,15 +231,12 @@ impl ParameterPlane for CubicPer1Lambda
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let disc = (c.powi(2) + 4. * (4. - self.multiplier)).sqrt();
                 vec![ZERO, -0.5 * (c + disc), 0.5 * (disc - c)]
             }
-            2 =>
-            {
+            2 => {
                 let c2 = c.powi(2);
                 let u = self.multiplier + 1.;
                 let coeffs = [
@@ -389,8 +380,7 @@ impl ParameterPlane for CubicPer1LambdaParam
     #[inline]
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => 0.5 * c * Self::BASE_POINT,
             PlaneID::WPlane => TWO_THIRDS / Self::BASE_POINT,
         }
@@ -398,8 +388,7 @@ impl ParameterPlane for CubicPer1LambdaParam
 
     fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        match self.starting_crit
-        {
+        match self.starting_crit {
             PlaneID::ZPlane => (0.5 * c * Self::BASE_POINT, ZERO, 0.5 * Self::BASE_POINT),
             PlaneID::WPlane => (TWO_THIRDS / Self::BASE_POINT, ZERO, ZERO),
         }
@@ -553,20 +542,16 @@ impl ParameterPlane for CubicPer1_1
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 vec![ZERO, -c]
             }
-            2 =>
-            {
+            2 => {
                 let u = c.powi(2) + 3.;
                 let coeffs = [TWO, 2. * c, u, 4. * c, u, 2. * c, ONE];
                 solve_polynomial(coeffs)
             }
-            3 =>
-            {
+            3 => {
                 let c2 = c.powi(2);
                 let coeffs = [
                     Cplx::new(3., 0.),
@@ -626,8 +611,7 @@ impl EscapeEncoding for CubicPer1_1
         _base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };
@@ -710,21 +694,17 @@ impl ParameterPlane for CubicPer1_0
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let [r1, r2] = solve_quadratic(-ONE, c);
                 vec![ZERO, r1, r2]
             }
-            2 =>
-            {
+            2 => {
                 let u = c.powi(2) + 1.;
                 let coeffs = [ONE, c, u, 2. * c, u, 2. * c, ONE];
                 solve_polynomial(coeffs)
             }
-            3 =>
-            {
+            3 => {
                 let c2 = c.powi(2);
                 let coeffs = [
                     ONE,
@@ -755,8 +735,7 @@ impl ParameterPlane for CubicPer1_0
                 ];
                 solve_polynomial(coeffs)
             }
-            4 =>
-            {
+            4 => {
                 let c2 = c.powi(2);
                 let c3 = c2 * c;
                 let coeffs = [
@@ -1010,8 +989,7 @@ impl ParameterPlane for CubicPer1_0
                     c * horner!(c2, 24.),
                     ONE,
                 ];
-                for (i, x) in coeffs.iter().enumerate()
-                {
+                for (i, x) in coeffs.iter().enumerate() {
                     println!("{}: {}", i, x.re);
                 }
                 let res = solve_polynomial(coeffs);
@@ -1024,12 +1002,9 @@ impl ParameterPlane for CubicPer1_0
 
     fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
     {
-        if c.is_nan()
-        {
+        if c.is_nan() {
             Bounds::centered_square(2.5)
-        }
-        else
-        {
+        } else {
             Bounds::square(2.5, -ONE_THIRD * c)
         }
     }
@@ -1059,10 +1034,8 @@ impl HasDynamicalCovers for CubicPer1_0
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let u = t.inv();
                     (u - t, -u.powi(2) - 1.)
@@ -1074,8 +1047,7 @@ impl HasDynamicalCovers for CubicPer1_0
                     max_y: 2.5,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     let t4 = t2.powi(2);
@@ -1089,8 +1061,7 @@ impl HasDynamicalCovers for CubicPer1_0
                     max_y: 3.2,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1105,10 +1076,8 @@ impl HasDynamicalCovers for CubicPer1_0
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let u = t.inv();
                     (u - t, -u.powi(2) - 1.)
@@ -1120,8 +1089,7 @@ impl HasDynamicalCovers for CubicPer1_0
                     max_y: 2.5,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     let u = t * horner!(t2, 2.25, -2., 4.);
@@ -1137,8 +1105,7 @@ impl HasDynamicalCovers for CubicPer1_0
                     max_y: 2.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1151,10 +1118,8 @@ impl HasDynamicalCovers for CubicPer1_0
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match (preperiod, period)
-        {
-            (1, 1) =>
-            {
+        match (preperiod, period) {
+            (1, 1) => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     let t4 = t2.powi(2);
@@ -1170,8 +1135,7 @@ impl HasDynamicalCovers for CubicPer1_0
                     max_y: 2.8,
                 };
             }
-            (_, _) =>
-            {
+            (_, _) => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1188,10 +1152,8 @@ impl HasDynamicalCovers for CubicPer1_1
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            2 =>
-            {
+        match period {
+            2 => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     let u = t2 + 1.;
@@ -1204,8 +1166,7 @@ impl HasDynamicalCovers for CubicPer1_1
                     max_y: 2.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1220,10 +1181,8 @@ impl HasDynamicalCovers for CubicPer1_1
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            2 =>
-            {
+        match period {
+            2 => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     let t4 = t2.powi(2);
@@ -1240,8 +1199,7 @@ impl HasDynamicalCovers for CubicPer1_1
                     max_y: 5.0,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1254,10 +1212,8 @@ impl HasDynamicalCovers for CubicPer1_1
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match (preperiod, period)
-        {
-            (1, 1) =>
-            {
+        match (preperiod, period) {
+            (1, 1) => {
                 param_map = |t| {
                     let u = t.inv();
                     (t + u, 1. - u.powi(2))
@@ -1269,8 +1225,7 @@ impl HasDynamicalCovers for CubicPer1_1
                     max_y: 2.5,
                 };
             }
-            (_, _) =>
-            {
+            (_, _) => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -1367,8 +1322,7 @@ impl ParameterPlane for CubicPer1LambdaModuli
         let u = b / (3. * a);
         let crit = (-u).sqrt();
         let sign = u.im.signum() * point.im.signum();
-        match self.starting_crit
-        {
+        match self.starting_crit {
             ZPlane => sign * crit,
             WPlane => -sign * crit,
         }
@@ -1382,11 +1336,9 @@ impl ParameterPlane for CubicPer1LambdaModuli
 
     fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(a.inv(), (b - 1.) / a, ZERO).to_vec(),
-            2 =>
-            {
+            2 => {
                 let a2 = a.powi(2);
                 let coeffs = [
                     a + b + 1.,
@@ -1453,8 +1405,7 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         CplxPair { a, b: _ }: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
             };

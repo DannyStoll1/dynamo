@@ -34,8 +34,7 @@ pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cpl
     let mut tmp: Cplx;
     let mut four_dp_2: Cplx;
 
-    for _ in 0..num_iters
-    {
+    for _ in 0..num_iters {
         p_2 = p * p;
         dp_2 = p * (4. * p_2 - g2) - g3;
         ddp = 6. * p_2 - g2 / 2.;
@@ -52,28 +51,20 @@ pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cpl
 #[must_use]
 pub fn slog(x: Real) -> Real
 {
-    if x.is_infinite()
-    {
+    if x.is_infinite() {
         1000.
-    }
-    else if x <= 0.
-    {
+    } else if x <= 0. {
         slog(x.exp()) - 1.
-    }
-    else if x > 1.
-    {
+    } else if x > 1. {
         1. + slog(x.ln())
-    }
-    else
-    {
+    } else {
         x - 1.
     }
 }
 
 const fn bernoulli(n: u64) -> f64
 {
-    match n
-    {
+    match n {
         0 => 1.,
         1 => -0.5,
         2 => 0.166_666_666_666_667,
@@ -111,8 +102,7 @@ const fn bernoulli(n: u64) -> f64
 
 fn factorial(n: u64) -> f64
 {
-    match n
-    {
+    match n {
         0 | 1 => 1.,
         2 => 2.,
         4 => 24.,
@@ -260,8 +250,7 @@ pub fn riemann_xi(s: Cplx) -> Cplx
 #[must_use]
 pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
 {
-    if s.re < -5.
-    {
+    if s.re < -5. {
         // avoid underflow issues for large neative s
         let [z0, z1] = riemann_xi_d(1.0 - s);
         return [z0, -z1];
@@ -283,8 +272,7 @@ pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
 #[must_use]
 pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
 {
-    if s.re < -5.
-    {
+    if s.re < -5. {
         // avoid underflow issues for large neative s
         let [z0, z1, z2] = riemann_xi_d2(1.0 - s);
         return [z0, -z1, z2];

@@ -1,10 +1,9 @@
 use crate::macros::*;
-use dynamo_common::cache::Cache;
 use dynamo_color::prelude::*;
+use dynamo_common::cache::Cache;
 profile_imports!();
 
 type EInt = EisensteinInteger;
-
 
 #[derive(Clone, Debug)]
 pub struct EisensteinMandel<const A: i64, const B: i64>
@@ -118,23 +117,25 @@ impl<const A: i64, const B: i64> InfinityFirstReturnMap for EisensteinMandel<A, 
 
 impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
 {
-    fn encode_escape_result(&self, result: EscapeResult<EInt, EInt>, start: EInt, c: EInt) -> PointInfo<EInt>
+    fn encode_escape_result(
+        &self,
+        result: EscapeResult<EInt, EInt>,
+        start: EInt,
+        c: EInt,
+    ) -> PointInfo<EInt>
     {
         self.cache.insert((start, c), result.clone());
-        match result
-        {
+        match result {
             EscapeResult::Bounded => PointInfo::Bounded,
             EscapeResult::Periodic {
                 mut info,
                 final_value,
-            } =>
-            {
+            } => {
                 info.multiplier = info.multiplier % Self::MOD;
                 self.identify_marked_points(final_value, c, info)
             }
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-            EscapeResult::Escaped { iters, final_value } =>
-            {
+            EscapeResult::Escaped { iters, final_value } => {
                 self.encode_escaping_point(iters, final_value, c)
             }
         }
@@ -142,8 +143,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
 
     fn encode_escaping_point(&self, iters: Period, z: EInt, c: EInt) -> PointInfo<EInt>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: Real::from(iters) - 1.,
             };

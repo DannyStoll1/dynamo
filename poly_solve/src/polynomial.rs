@@ -48,8 +48,7 @@ impl<T: VariableOps> Polynomial<T>
 
     fn clear_leading_zeros(&mut self)
     {
-        while self.coeffs.back().is_some_and(Zero::is_zero)
-        {
+        while self.coeffs.back().is_some_and(Zero::is_zero) {
             self.coeffs.pop_back();
         }
     }
@@ -68,27 +67,22 @@ impl<T: VariableOps> Polynomial<T>
 
     pub fn add_with(&mut self, rhs: &Self)
     {
-        match rhs.size().cmp(&self.size())
-        {
-            Ordering::Less =>
-            {
+        match rhs.size().cmp(&self.size()) {
+            Ordering::Less => {
                 self.add_assign_lower_degree_poly(rhs);
                 return;
             }
-            Ordering::Equal =>
-            {
+            Ordering::Equal => {
                 self.add_assign_lower_degree_poly(rhs);
                 self.clear_leading_zeros();
                 return;
             }
-            Ordering::Greater =>
-            {}
+            Ordering::Greater => {}
         }
 
         let a_s = self.iter_mut();
         let mut b_s = rhs.iter().cloned();
-        for a in a_s
-        {
+        for a in a_s {
             #[allow(clippy::unwrap_used)]
             let b = b_s.next().unwrap(); // Guaranteed to be Some since rhs has higher degree
             *a += b;
@@ -158,8 +152,7 @@ where
     fn eval(&self, x: Self::Var) -> Self::Var
     {
         let mut u = Self::Var::zero();
-        for a in self.iter().rev().cloned()
-        {
+        for a in self.iter().rev().cloned() {
             u.mul_add_assign(x.clone(), a);
         }
         u
@@ -172,9 +165,7 @@ where
 {
     fn normalize(self) -> Self
     {
-        let Some(an) = self.coeffs.back().cloned()
-        else
-        {
+        let Some(an) = self.coeffs.back().cloned() else {
             return Self::ZERO;
         };
         self.into_iter().map(|a| a / an.clone()).collect()
@@ -183,9 +174,7 @@ where
     fn normalize_inplace(&mut self)
     {
         self.clear_leading_zeros();
-        let Some(an_ref) = self.coeffs.back()
-        else
-        {
+        let Some(an_ref) = self.coeffs.back() else {
             return;
         };
         let an = an_ref.clone();
@@ -256,14 +245,10 @@ impl<T: VariableOps> Add for Polynomial<T>
             .zip_longest(rhs.coeffs)
             .map(|ab| ab.collapse(|a, b| a + b))
             .collect::<VecDeque<_>>();
-        while let Some(a) = coeffs.back()
-        {
-            if a.is_zero()
-            {
+        while let Some(a) = coeffs.back() {
+            if a.is_zero() {
                 coeffs.pop_back();
-            }
-            else
-            {
+            } else {
                 break;
             }
         }

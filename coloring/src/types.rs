@@ -55,8 +55,7 @@ impl Hsv
         let x = c * (1. - (mode % 2. - 1.).abs());
         let m = self.intensity - c;
 
-        let (r_, g_, b_) = match (mode as i32) % 6
-        {
+        let (r_, g_, b_) = match (mode as i32) % 6 {
             0 => (c, x, 0.),
             1 => (x, c, 0.),
             2 => (0., c, x),
@@ -98,8 +97,7 @@ impl Hsv
         let c_min = r.min(g).min(b);
         let range = c_max - c_min;
 
-        if range == 0
-        {
+        if range == 0 {
             return Self {
                 hue: 0.,
                 saturation: 0.,
@@ -112,16 +110,11 @@ impl Hsv
 
         let normalization = 1. / (6. * range);
         let hue = {
-            if c_max == r
-            {
+            if c_max == r {
                 (f32::from(g - b) * normalization) % 1.
-            }
-            else if c_max == g
-            {
+            } else if c_max == g {
                 f32::from(b - r).mul_add(normalization, 1. / 3.)
-            }
-            else
-            {
+            } else {
                 f32::from(r - g).mul_add(normalization, 2. / 3.)
             }
         };

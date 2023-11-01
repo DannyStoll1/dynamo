@@ -98,8 +98,7 @@ impl FractalTab
     {
         ui.label(self.interface.name());
         self.show_menu(ui);
-        if self.should_update_interface()
-        {
+        if self.should_update_interface() {
             self.interface.update(ui.ctx());
         }
         self.interface.show(ui);
@@ -128,8 +127,7 @@ impl FractalTab
     {
         ui.menu_button("File", |ui| {
             self.menu_state.open();
-            for hotkey in &FILE_HOTKEYS
-            {
+            for hotkey in &FILE_HOTKEYS {
                 self.hotkey_button(ui, hotkey);
             }
         });
@@ -152,15 +150,13 @@ impl FractalTab
         ui.menu_button("Coloring", |ui| {
             self.menu_state.open();
             ui.menu_button("Palette", |ui| {
-                for hotkey in &PALETTE_HOTKEYS
-                {
+                for hotkey in &PALETTE_HOTKEYS {
                     self.hotkey_button(ui, hotkey);
                 }
             });
 
             ui.menu_button("Incoloring", |ui| {
-                for hotkey in &INCOLORING_HOTKEYS
-                {
+                for hotkey in &INCOLORING_HOTKEYS {
                     self.hotkey_button(ui, hotkey);
                 }
             });
@@ -172,36 +168,24 @@ impl FractalTab
         ui.menu_button("Image", |ui| {
             self.menu_state.open();
             ui.menu_button("Set height", |ui| {
-                if ui.button("256").clicked()
-                {
+                if ui.button("256").clicked() {
                     self.interface.change_height(256);
-                }
-                else if ui.button("512").clicked()
-                {
+                } else if ui.button("512").clicked() {
                     self.interface.change_height(512);
-                }
-                else if ui.button("768").clicked()
-                {
+                } else if ui.button("768").clicked() {
                     self.interface.change_height(768);
-                }
-                else if ui.button("1024").clicked()
-                {
+                } else if ui.button("1024").clicked() {
                     self.interface.change_height(1024);
-                }
-                else if ui.button("1536").clicked()
-                {
+                } else if ui.button("1536").clicked() {
                     self.interface.change_height(1536);
-                }
-                else
-                {
+                } else {
                     return;
                 }
                 self.interface.consume_click();
                 ui.close_menu();
             });
 
-            for hotkey in &IMAGE_HOTKEYS
-            {
+            for hotkey in &IMAGE_HOTKEYS {
                 self.hotkey_button(ui, hotkey);
             }
         });
@@ -211,8 +195,7 @@ impl FractalTab
     {
         ui.menu_button("Selection", |ui| {
             self.menu_state.open();
-            for hotkey in &SELECTION_HOTKEYS
-            {
+            for hotkey in &SELECTION_HOTKEYS {
                 self.hotkey_button(ui, hotkey);
             }
         });
@@ -222,8 +205,7 @@ impl FractalTab
     {
         ui.menu_button("Annotations", |ui| {
             self.menu_state.open();
-            for hotkey in &ANNOTATION_HOTKEYS
-            {
+            for hotkey in &ANNOTATION_HOTKEYS {
                 self.hotkey_button(ui, hotkey);
             }
         });
@@ -233,18 +215,15 @@ impl FractalTab
     fn transpiled_scripts_menu(&mut self, ui: &mut Ui)
     {
         ui.menu_button("User Scripts", |ui| {
-            if ui.button("New script").clicked()
-            {
+            if ui.button("New script").clicked() {
                 self.popup = Some(Popup::new_script());
                 ui.close_menu();
             }
-            if ui.button("Edit script...").clicked()
-            {
+            if ui.button("Edit script...").clicked() {
                 self.popup = Some(Popup::load_edit());
                 ui.close_menu();
             }
-            if ui.button("Load script...").clicked()
-            {
+            if ui.button("Load script...").clicked() {
                 self.popup = Some(Popup::load());
                 ui.close_menu();
             }
@@ -255,22 +234,16 @@ impl FractalTab
     fn handle_popup_response(&mut self, response: Response)
     {
         use Response::*;
-        match response
-        {
-            DoNothing =>
-            {}
-            Close =>
-            {
+        match response {
+            DoNothing => {}
+            Close => {
                 self.popup = None;
             }
-            Load(path) => match self.load_user_script(path)
-            {
-                Ok(()) =>
-                {
+            Load(path) => match self.load_user_script(path) {
+                Ok(()) => {
                     self.popup = None;
                 }
-                Err(e) =>
-                {
+                Err(e) => {
                     self.error_report = Some(ErrorReport::new(
                         "Error parsing script".to_owned(),
                         format!("{e:?}"),
@@ -738,8 +711,7 @@ impl FractalTab
 
     fn hotkey_button(&mut self, ui: &mut Ui, hotkey: &Hotkey)
     {
-        if let Some(action) = hotkey.menu_action()
-        {
+        if let Some(action) = hotkey.menu_action() {
             if ui
                 .add(
                     egui::Button::new(action.short_description())
@@ -757,17 +729,14 @@ impl FractalTab
     #[cfg(feature = "scripting")]
     fn show_popup(&mut self, ui: &mut Ui)
     {
-        if let Some(popup) = self.popup.as_mut()
-        {
+        if let Some(popup) = self.popup.as_mut() {
             popup.show(ui.ctx());
             let response = popup.pop_response();
             self.handle_popup_response(response);
         }
-        if let Some(error_report) = self.error_report.as_mut()
-        {
+        if let Some(error_report) = self.error_report.as_mut() {
             error_report.show(ui.ctx());
-            if !error_report.visible
-            {
+            if !error_report.visible {
                 self.error_report = None;
             }
         }

@@ -24,8 +24,7 @@ impl Transpiler
 
     fn parameter_decl(&self) -> String
     {
-        if self.parsed_input.param_names.is_empty()
-        {
+        if self.parsed_input.param_names.is_empty() {
             return "type Parameters = NoParam;".to_owned();
         }
 
@@ -47,8 +46,7 @@ impl Transpiler
     fn parameter_impls(&self) -> String
     {
         // Necessary impls aready provided for NoParam
-        if self.parsed_input.param_names.is_empty()
-        {
+        if self.parsed_input.param_names.is_empty() {
             return String::new();
         }
         let names = self

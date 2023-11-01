@@ -1,4 +1,6 @@
-use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner, horner_monic, profile_imports, ext_ray_impl_rk};
+use crate::macros::{
+    degree_impl, ext_ray_impl_nonmonic, ext_ray_impl_rk, horner, horner_monic, profile_imports,
+};
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
@@ -93,10 +95,8 @@ impl ParameterPlane for QuadRatPer3
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let x0 = c.powi(2);
                 let x1 = c * x0;
                 let x2 = 3. * x0 + 1.;
@@ -108,13 +108,11 @@ impl ParameterPlane for QuadRatPer3
                 let r2 = -x4 * OMEGA - x5 * OMEGA_BAR + ONE_THIRD;
                 vec![-x4 - x5 + ONE_THIRD, r1, r2]
             }
-            2 =>
-            {
+            2 => {
                 let disc = (c * (5. * c + 6.) + 5.).sqrt();
                 vec![-0.5 * (c - disc + 1.), -0.5 * (c + disc + 1.)]
             }
-            3 =>
-            {
+            3 => {
                 let c2 = c.powi(2);
                 let u = (c - 1.).inv();
                 let a0 = u * (1. + c + c2 + c2 * c2);
@@ -123,8 +121,7 @@ impl ParameterPlane for QuadRatPer3
                 let [r0, r1, r2] = solve_cubic(a0, a1, a2);
                 vec![ONE, -c, r0, r1, r2]
             }
-            4 =>
-            {
+            4 => {
                 let c2 = c.powi(2);
                 let coeffs = [
                     horner_monic!(c, -1., -4., -7., -2., 13., 29., 29., 15., -3., -8., -6., 0., 0.),
@@ -160,10 +157,8 @@ impl HasDynamicalCovers for QuadRatPer3
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let pole = 1.324_717_957_244_75;
                     let u = 1. / t + pole;
@@ -186,8 +181,7 @@ impl HasDynamicalCovers for QuadRatPer3
                     max_y: 5.32,
                 };
             }
-            4 =>
-            {
+            4 => {
                 param_map = |c| {
                     let t = (13.0 as Real).sqrt();
                     let g2 = Cplx::new(-8.0 / 3.0, 0.);
@@ -217,8 +211,7 @@ impl HasDynamicalCovers for QuadRatPer3
                     max_y: 2.6,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -232,7 +225,8 @@ impl InfinityFirstReturnMap for QuadRatPer3
 {
     degree_impl!(2, 3);
 
-    fn escaping_phase(&self) -> Period {
+    fn escaping_phase(&self) -> Period
+    {
         2
     }
 

@@ -14,8 +14,7 @@ impl<const N: Period> BurningShip<N>
 {
     const N_FLOAT: Real = N as Real;
     const N_MINUS_1: Real = (N - 1) as Real;
-    const DEFAULT_BOUNDS: Bounds = match N
-    {
+    const DEFAULT_BOUNDS: Bounds = match N {
         2 => Bounds {
             min_x: -2.2,
             max_x: 1.25,
@@ -78,10 +77,8 @@ impl<const N: Period> ParameterPlane for BurningShip<N>
     #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let disc = (1. - 4. * c).sqrt();
                 vec![0.5 * (1. - disc), 0.5 * (1. + disc)]
             }

@@ -29,14 +29,11 @@ impl State
 {
     pub fn pop_if_ready(&mut self) -> Option<PathBuf>
     {
-        if let Self::ReadyToRun(p) = self
-        {
+        if let Self::ReadyToRun(p) = self {
             let path = std::mem::take(p);
             *self = Self::Closed;
             Some(path)
-        }
-        else
-        {
+        } else {
             None
         }
     }
@@ -74,8 +71,7 @@ impl ScriptEditor
 
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        if matches!(self.state, State::Editing)
-        {
+        if matches!(self.state, State::Editing) {
             egui::Window::new("Script Editor")
                 .vscroll(true)
                 .default_height(720.)
@@ -86,16 +82,13 @@ impl ScriptEditor
                         .desired_rows(30)
                         .desired_width(std::f32::INFINITY)
                         .show(ui);
-                    if ui.button("Save").clicked()
-                    {
+                    if ui.button("Save").clicked() {
                         self.try_save(false);
                     }
-                    if ui.button("Save and Run").clicked()
-                    {
+                    if ui.button("Save and Run").clicked() {
                         self.try_save(true);
                     }
-                    if ui.button("Cancel").clicked()
-                    {
+                    if ui.button("Cancel").clicked() {
                         self.hide();
                     }
                 });
@@ -122,22 +115,16 @@ impl ScriptEditor
 
     fn try_save(&mut self, run: bool)
     {
-        match self.save_script()
-        {
-            Ok(script_path) =>
-            {
+        match self.save_script() {
+            Ok(script_path) => {
                 println!("Script saved to {}.", script_path.display());
-                if run
-                {
+                if run {
                     self.state = State::ReadyToRun(script_path);
-                }
-                else
-                {
+                } else {
                     self.hide();
                 }
             }
-            Err(e) =>
-            {
+            Err(e) => {
                 println!("Error saving script: {e:?}");
             }
         }
@@ -156,8 +143,7 @@ impl ScriptEditor
 
     fn pop_response(&mut self) -> Response
     {
-        match self.state.pop_if_ready()
-        {
+        match self.state.pop_if_ready() {
             Some(path) => Response::Load(path),
             None if self.enabled() => Response::DoNothing,
             None => Response::Close,

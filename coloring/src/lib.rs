@@ -40,12 +40,10 @@ impl Coloring
         D: Polar<Real>,
     {
         use PointInfo::*;
-        match point_info
-        {
+        match point_info {
             Escaping { potential } => self.palette.map_color32(*potential),
             Periodic(data) => self.algorithm.color_periodic(&self.palette, data),
-            PeriodicKnownPotential(data) =>
-            {
+            PeriodicKnownPotential(data) => {
                 self.algorithm.color_known_potential(&self.palette, data)
             }
             Bounded => self.palette.in_color,
@@ -54,8 +52,7 @@ impl Coloring
                 class_id,
                 num_point_classes,
                 ..
-            } =>
-            {
+            } => {
                 let hue = (f32::from(*class_id)) / (*num_point_classes as f32);
                 Hsv {
                     hue,

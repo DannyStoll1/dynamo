@@ -14,8 +14,7 @@ where
     T: Sub<Output = T> + Div<Output = T> + AddAssign + Copy,
 {
     let mut z = start;
-    for _ in 0..iters
-    {
+    for _ in 0..iters {
         let (f, df) = f_and_df(z);
         z += (target - f) / df;
     }
@@ -34,8 +33,7 @@ where
 
     let mut error = Real::INFINITY;
 
-    while error > tolerance
-    {
+    while error > tolerance {
         let (f, df) = f_and_df(z);
         z += (target - f) / df;
         error = z.dist_sqr(z_old);
@@ -65,8 +63,7 @@ where
     let f: T = T::default();
     let df: T = T::default();
 
-    while error > tolerance
-    {
+    while error > tolerance {
         let (f, df) = f_and_df(z);
         z += (target - f) / df;
         error = z.dist_sqr(z_old);
@@ -88,28 +85,21 @@ where
     let mut f = start;
     let mut df = start;
 
-    for _ in 0..NEWTON_MAX_ITERS
-    {
+    for _ in 0..NEWTON_MAX_ITERS {
         z_old = z;
         (f, df) = f_and_df(z);
         z -= f / df;
 
         // Terminate early if we are below min error threshold
-        if z.dist_sqr(z_old) < NEWTON_MIN_ERR
-        {
+        if z.dist_sqr(z_old) < NEWTON_MIN_ERR {
             return Ok((z, f, df));
-        }
-        else if z.is_nan()
-        {
+        } else if z.is_nan() {
             return Err(NanEncountered);
         }
     }
-    if z.dist_sqr(z_old) < NEWTON_MAX_ERR
-    {
+    if z.dist_sqr(z_old) < NEWTON_MAX_ERR {
         Ok((z, f, df))
-    }
-    else
-    {
+    } else {
         Err(FailedToConverge((z, f, df)))
     }
 }
@@ -144,28 +134,21 @@ where
     let mut f = start;
     let mut df = start;
 
-    for _ in 0..NEWTON_MAX_ITERS
-    {
+    for _ in 0..NEWTON_MAX_ITERS {
         z_old = z;
         (f, df) = f_and_df(z);
         z += (target - f) / df;
 
         // Terminate early if we are below min error threshold
-        if z.dist_sqr(z_old) < NEWTON_MIN_ERR
-        {
+        if z.dist_sqr(z_old) < NEWTON_MIN_ERR {
             return Ok((z, f, df));
-        }
-        else if z.is_nan()
-        {
+        } else if z.is_nan() {
             return Err(NanEncountered);
         }
     }
-    if z.dist_sqr(z_old) < error
-    {
+    if z.dist_sqr(z_old) < error {
         Ok((z, f, df))
-    }
-    else
-    {
+    } else {
         Err(FailedToConverge((z, f, df)))
     }
 }
@@ -227,29 +210,23 @@ where
     let mut f = start;
     let mut df = start;
 
-    for _ in 0..NEWTON_MAX_ITERS
-    {
+    for _ in 0..NEWTON_MAX_ITERS {
         (f, df) = f_and_df(z);
 
         // Terminate early if we are below min error threshold
-        if f.div(target).dist_sqr(T::one()) < NEWTON_MIN_ERR
-        {
+        if f.div(target).dist_sqr(T::one()) < NEWTON_MIN_ERR {
             return Ok((z, f, df));
         }
 
         z += (target - f) / df;
 
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return Err(NanEncountered);
         }
     }
-    if f.div(target).dist_sqr(T::one()) < NEWTON_MAX_ERR
-    {
+    if f.div(target).dist_sqr(T::one()) < NEWTON_MAX_ERR {
         Ok((z, f, df))
-    }
-    else
-    {
+    } else {
         Err(FailedToConverge((z, f, df)))
     }
 }

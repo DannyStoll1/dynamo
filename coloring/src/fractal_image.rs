@@ -52,17 +52,13 @@ where
         let res_y = u32::try_from(self.point_grid().res_y).unwrap_or(u32::MAX);
         let mut image = ImageBuffer::new(res_x, res_y);
 
-        for (x, y, pixel) in image.enumerate_pixels_mut()
-        {
+        for (x, y, pixel) in image.enumerate_pixels_mut() {
             let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map_rgb(iter_count);
         }
-        if let Err(e) = image.save(filename.clone())
-        {
+        if let Err(e) = image.save(filename.clone()) {
             println!("Error saving file: {e:?}");
-        }
-        else
-        {
+        } else {
             println!("Image saved to {filename}");
         }
     }
@@ -72,8 +68,7 @@ where
         let res_y = u32::try_from(self.point_grid().res_y).unwrap_or(u32::MAX);
         let mut image = ImageBuffer::new(res_x, res_y);
 
-        for (x, y, pixel) in image.enumerate_pixels_mut()
-        {
+        for (x, y, pixel) in image.enumerate_pixels_mut() {
             let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map_rgb(iter_count);
         }

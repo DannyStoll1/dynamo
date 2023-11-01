@@ -126,13 +126,11 @@ macro_rules! degree_impl_transcendental {
                 base_param: Self::Param,
             ) -> PointInfo<Self::Deriv>
             {
-                match state
-                {
+                match state {
                     EscapeResult::Bounded => PointInfo::Wandering,
                     EscapeResult::Periodic { info, .. } => PointInfo::Periodic(info),
                     EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-                    EscapeResult::Escaped { iters, final_value } =>
-                    {
+                    EscapeResult::Escaped { iters, final_value } => {
                         self.encode_escaping_point(iters, final_value, base_param)
                     }
                 }
@@ -146,14 +144,12 @@ macro_rules! degree_impl_transcendental {
             ) -> PointInfo<Self::Deriv>
             {
                 use dynamo_common::math_utils::slog;
-                if z.is_nan()
-                {
+                if z.is_nan() {
                     return PointInfo::Escaping {
                         potential: f64::from(iters) - 1.,
                     };
                 }
-                if z.is_infinite()
-                {
+                if z.is_infinite() {
                     return PointInfo::Escaping {
                         potential: f64::from(iters) + 1.,
                     };
@@ -205,8 +201,7 @@ macro_rules! ext_ray_impl_nonmonic_conj {
             let escape_radius_log2 = R.log2() * self.degree_real().abs();
 
             let deg_real = self.degree_real().abs();
-            if deg_real.is_nan() || self.degree() <= 1
-            {
+            if deg_real.is_nan() || self.degree() <= 1 {
                 return None;
             }
             let deg_log2 = deg_real.log2();
@@ -226,8 +221,7 @@ macro_rules! ext_ray_impl_nonmonic_conj {
             // Initialized to value after self.escaping_phase() iterations.
             let mut target_angle = self.angle_map_large_param(angle);
 
-            for k in 0..RAY_DEPTH
-            {
+            for k in 0..RAY_DEPTH {
                 // Relative log2-norms of targets
                 // jth target norm = escape_radius^deg^(-j/S)
                 // u_j = log2(escape_radius) * deg^(-j/S)
@@ -257,29 +251,25 @@ macro_rules! ext_ray_impl_nonmonic_conj {
                     let conj = a.powf(pow);
                     let conj_d = conj * da_dt / a * pow;
 
-                    for _i in 0..self.escaping_phase()
-                    {
+                    for _i in 0..self.escaping_phase() {
                         let (f, df_dz, df_dc) = self.gradient(z, c);
                         dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                         z = f;
                     }
 
-                    if num_iters > self.escaping_phase()
-                    {
+                    if num_iters > self.escaping_phase() {
                         // Conjugate to make f monic
                         z /= conj;
                         dz_dt = (dz_dt - z * conj_d) / conj;
                     }
 
-                    for _i in self.escaping_phase()..num_iters
-                    {
+                    for _i in self.escaping_phase()..num_iters {
                         let (f, df_dz, df_dc) = self.gradient(z, c);
                         dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                         z = f;
                     }
 
-                    if num_iters > self.escaping_phase()
-                    {
+                    if num_iters > self.escaping_phase() {
                         z *= conj;
                         dz_dt = dz_dt * conj + z * conj_d;
                     }
@@ -287,33 +277,26 @@ macro_rules! ext_ray_impl_nonmonic_conj {
                     (z, dz_dt)
                 };
 
-                for target in targets
-                {
-                    match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
-                    {
-                        Ok((sol, t_k, d_k)) =>
-                        {
+                for target in targets {
+                    match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
+                        Ok((sol, t_k, d_k)) => {
                             t_curr = sol;
 
-                            if t_curr.is_nan()
-                            {
+                            if t_curr.is_nan() {
                                 return Some(t_list);
                             }
 
                             t_list.push(t_curr);
 
                             dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
-                            if dist < pixel_width
-                            {
+                            if dist < pixel_width {
                                 return Some(t_list);
                             }
                         }
-                        Err(NanEncountered) =>
-                        {
+                        Err(NanEncountered) => {
                             return Some(t_list);
                         }
-                        _ =>
-                        {}
+                        _ => {}
                     }
                 }
                 target_angle *= deg;
@@ -345,8 +328,7 @@ macro_rules! ext_ray_impl_rk {
             let mut t_list = vec![t];
 
             let mut deriv_green = |t: Cplx| {
-                if t.is_nan()
-                {
+                if t.is_nan() {
                     panic!();
                 }
 
@@ -354,18 +336,14 @@ macro_rules! ext_ray_impl_rk {
                 let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
                 dz_dt += dz_dc * dc_dt;
 
-                for _ in 0..self.escaping_phase()
-                {
+                for _ in 0..self.escaping_phase() {
                     let (f, df_dz, df_dc) = self.gradient(z, c);
                     dz_dt = df_dz * dz_dt + df_dc * dc_dt;
                     z = f;
                 }
-                for iter in 0..self.max_iter()
-                {
-                    for _j in 0..self.escaping_period()
-                    {
-                        if z.norm_sqr() > escape_radius
-                        {
+                for iter in 0..self.max_iter() {
+                    for _j in 0..self.escaping_period() {
+                        if z.norm_sqr() > escape_radius {
                             let d_absz = z * dz_dt.conj();
                             let norm = d_absz.norm();
                             let direction = d_absz / norm;
@@ -381,19 +359,16 @@ macro_rules! ext_ray_impl_rk {
                 NAN
             };
 
-            for _k in 0..RAY_DEPTH * RAY_SHARPNESS
-            {
+            for _k in 0..RAY_DEPTH * RAY_SHARPNESS {
                 let dt = runge_kutta_step(&mut deriv_green, t, STEP_SIZE);
 
-                if dt.norm() < pixel_width
-                {
+                if dt.norm() < pixel_width {
                     return Some(t_list);
                 }
 
                 t -= dt;
 
-                if t.is_nan()
-                {
+                if t.is_nan() {
                     return Some(t_list);
                 }
 
@@ -422,8 +397,7 @@ macro_rules! ext_ray_impl_nonmonic {
             let escape_radius_log = R.ln() * self.degree_real().abs();
 
             let deg_real = self.degree_real().abs();
-            if deg_real.is_nan()
-            {
+            if deg_real.is_nan() {
                 return None;
             }
             // let pixel_width = self.point_grid().pixel_width() * 0.08;
@@ -441,16 +415,14 @@ macro_rules! ext_ray_impl_nonmonic {
 
             let factor = (-deg_real.log2() / Real::from(RAY_SHARPNESS)).exp2();
 
-            for k in 0..RAY_DEPTH
-            {
+            for k in 0..RAY_DEPTH {
                 let num_iters = k * self.escaping_period() + self.escaping_phase();
                 let fk_and_dfk = |t: Cplx| {
                     let (c, dc_dt) = self.param_map_d(t);
                     let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
                     dz_dt += dz_dc * dc_dt;
 
-                    for _i in 0..num_iters
-                    {
+                    for _i in 0..num_iters {
                         let (f, df_dz, df_dc) = self.gradient(z, c);
                         dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                         z = f;
@@ -465,13 +437,11 @@ macro_rules! ext_ray_impl_nonmonic {
                 let mut u = Cplx::new(escape_radius_log, 0.);
                 // let mut spiral = 0.0;
 
-                for _j in 0..RAY_SHARPNESS
-                {
+                for _j in 0..RAY_SHARPNESS {
                     let alpha = self.escape_coeff(self.param_map(t_curr)).arg();
 
                     u.im = target_angle_base;
-                    for _i in 0..k
-                    {
+                    for _i in 0..k {
                         u.im *= deg_real;
                         u.im += alpha;
                         u.im %= TAU;
@@ -480,18 +450,14 @@ macro_rules! ext_ray_impl_nonmonic {
                     u.re *= factor;
 
                     let target = u.exp();
-                    match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
-                    {
-                        Ok((sol, _t_k, _d_k)) =>
-                        {
-                            if _j == 0
-                            {
+                    match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
+                        Ok((sol, _t_k, _d_k)) => {
+                            if _j == 0 {
                                 // println!("{}", (sol / t_curr).arg());
                             }
                             t_curr = sol;
 
-                            if t_curr.is_nan()
-                            {
+                            if t_curr.is_nan() {
                                 return Some(t_list);
                             }
 
@@ -503,13 +469,11 @@ macro_rules! ext_ray_impl_nonmonic {
                             //     return Some(t_list);
                             // }
                         }
-                        Err(NanEncountered) =>
-                        {
+                        Err(NanEncountered) => {
                             // panic!("k = {k}, j = {}, t = {}", _j, t_curr);
                             return Some(t_list);
                         }
-                        _ =>
-                        {
+                        _ => {
                             // dbg!(_j, k, target, t_curr);
                         }
                     }

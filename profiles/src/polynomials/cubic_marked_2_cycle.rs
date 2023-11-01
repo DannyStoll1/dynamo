@@ -92,11 +92,9 @@ impl ParameterPlane for CubicMarked2Cycle
     #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(ONE, -c - 3., c).to_vec(),
-            2 =>
-            {
+            2 => {
                 let a0 = 3. + c * (3. + c);
                 let a1 = -c * (c + 2.);
                 let a2 = c * c - 2.;
@@ -104,8 +102,7 @@ impl ParameterPlane for CubicMarked2Cycle
                 let [r2, r3, r4, r5] = solve_quartic(a0, a1, a2, a3);
                 vec![ZERO, ONE, r2, r3, r4, r5]
             }
-            3 =>
-            {
+            3 => {
                 let coeffs = [
                     ONE,
                     horner!(c, 6., 9., 5., 1.),
@@ -153,10 +150,8 @@ impl HasDynamicalCovers for CubicMarked2Cycle
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let v = t * (t - 1.);
                     let u = (v + 1.) / v;
@@ -169,8 +164,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                     max_y: 2.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -184,10 +178,8 @@ impl HasDynamicalCovers for CubicMarked2Cycle
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| {
                     let v = t * (t - 1.);
                     let u = (v + 1.) / v;
@@ -200,8 +192,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                     max_y: 2.5,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| {
                     let l = t + 0.5;
                     let v = horner_monic!(l, OMEGA - 1., OMEGA + 1.);
@@ -217,8 +208,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                     max_y: 2.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -231,10 +221,8 @@ impl HasDynamicalCovers for CubicMarked2Cycle
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match (preperiod, period)
-        {
-            (1, 1) =>
-            {
+        match (preperiod, period) {
+            (1, 1) => {
                 param_map = |t| {
                     let (mut x, mut y) = weierstrass_p(MIS_1_1_G2, MIS_1_1_G3, t + 0.123, 0.01);
 
@@ -261,8 +249,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                     max_y: 2.5,
                 };
             }
-            (1, 2) =>
-            {
+            (1, 2) => {
                 param_map = |t| {
                     let l = t + 0.5;
                     let numer = horner_monic!(l, OMEGA + 1., 1. - 3. * OMEGA, -3., OMEGA);
@@ -276,8 +263,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                     max_y: 3.0,
                 };
             }
-            (_, _) =>
-            {
+            (_, _) => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }

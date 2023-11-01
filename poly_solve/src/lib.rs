@@ -115,8 +115,7 @@ mod tests
 
         let sols = solver.find_all_roots();
 
-        for sol in &sols
-        {
+        for sol in &sols {
             assert!(poly0.eval(*sol).norm_sqr() < 1e-14);
         }
     }

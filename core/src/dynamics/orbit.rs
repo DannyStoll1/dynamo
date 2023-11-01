@@ -1,6 +1,9 @@
 use dynamo_common::prelude::*;
 use num_traits::One;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone, Debug, Default)]
 pub enum EscapeResult<V, D>
 {
@@ -69,15 +72,13 @@ where
 
     fn enforce_stop_condition(&mut self)
     {
-        if self.iter > self.max_iter
-        {
+        if self.iter > self.max_iter {
             self.state = Some(EscapeResult::Bounded);
             return;
         }
 
         let r = self.z.norm_sqr();
-        if r > self.escape_radius || self.z.is_nan()
-        {
+        if r > self.escape_radius || self.z.is_nan() {
             self.state = Some(EscapeResult::Escaped {
                 // Subtract 1 to undo the offset from iteration start
                 iters: self.iter - 1,
@@ -97,27 +98,21 @@ where
 
     fn next(&mut self) -> Option<Self::Item>
     {
-        if self.iter == 0
-        {
+        if self.iter == 0 {
             self.iter = 1;
             self.enforce_stop_condition();
             return Some((self.z, self.state.clone()));
         }
 
-        if self.state.is_none()
-        {
+        if self.state.is_none() {
             self.apply_map();
             self.iter += 1;
             self.enforce_stop_condition();
             Some((self.z, self.state.clone()))
-        }
-        else if self.escape_radius.is_finite()
-        {
+        } else if self.escape_radius.is_finite() {
             self.escape_radius = Real::NAN;
             Some((self.z, self.state.clone()))
-        }
-        else
-        {
+        } else {
             None
         }
     }
@@ -234,22 +229,17 @@ where
     where
         B: Fn(V, P) -> Option<EscapeResult<V, D>>,
     {
-        if let Some(res) = self.early_bailout_result()
-        {
+        if let Some(res) = self.early_bailout_result() {
             return res;
         }
 
-        while self.state.is_none()
-        {
+        while self.state.is_none() {
             self.iter += 1;
-            if self.iter % 2 == 1
-            {
+            if self.iter % 2 == 1 {
                 self.apply_map_to_slow();
                 self.apply_map_and_update_multiplier();
                 self.enforce_stop_condition();
-            }
-            else
-            {
+            } else {
                 self.apply_map_and_update_multiplier();
                 self.check_periodicity();
             }
@@ -261,19 +251,16 @@ where
     #[inline]
     fn enforce_stop_condition(&mut self)
     {
-        if self.iter > self.max_iter
-        {
+        if self.iter > self.max_iter {
             self.state = Some(EscapeResult::Bounded);
             return;
         }
-        if self.iter < self.min_iter
-        {
+        if self.iter < self.min_iter {
             return;
         }
 
         let r = self.z_fast.norm_sqr();
-        if r > self.escape_radius || self.z_fast.is_nan()
-        {
+        if r > self.escape_radius || self.z_fast.is_nan() {
             self.state = Some(EscapeResult::Escaped {
                 iters: self.iter,
                 final_value: self.z_fast,
@@ -283,19 +270,16 @@ where
 
     fn check_periodicity(&mut self)
     {
-        if self.iter > self.max_iter
-        {
+        if self.iter > self.max_iter {
             self.state = Some(EscapeResult::Bounded);
             return;
         }
-        if self.iter < self.min_iter
-        {
+        if self.iter < self.min_iter {
             return;
         }
 
         let r = self.z_fast.norm_sqr();
-        if r > self.escape_radius || self.z_fast.is_nan()
-        {
+        if r > self.escape_radius || self.z_fast.is_nan() {
             self.state = Some(EscapeResult::Escaped {
                 iters: self.iter,
                 final_value: self.z_fast,
@@ -303,8 +287,7 @@ where
             return;
         }
         let error = self.z_fast.dist_sqr(self.z_slow);
-        if error < self.periodicity_tolerance
-        {
+        if error < self.periodicity_tolerance {
             if let Some((period, multiplier)) =
                 self.compute_period(self.periodicity_tolerance.powf(0.75), self.iter as usize)
             {
@@ -327,12 +310,10 @@ where
         let mut z = self.z_fast;
         let mut dz: D;
         let mut mult = D::one();
-        for i in 1..=patience
-        {
+        for i in 1..=patience {
             (z, dz) = self.get_map_value_and_derivative(z);
             mult *= dz;
-            if z.dist_sqr(self.z_fast) <= tolerance
-            {
+            if z.dist_sqr(self.z_fast) <= tolerance {
                 return Period::try_from(i).ok().map(|n| (n, mult));
             }
         }
@@ -352,30 +333,22 @@ where
 
     fn next(&mut self) -> Option<Self::Item>
     {
-        if self.state.is_none()
-        {
+        if self.state.is_none() {
             let retval = self.z_fast;
             self.iter += 1;
-            if self.iter % 2 == 1
-            {
+            if self.iter % 2 == 1 {
                 self.apply_map_to_slow();
                 self.apply_map_and_update_multiplier();
                 self.enforce_stop_condition();
-            }
-            else
-            {
+            } else {
                 self.apply_map_and_update_multiplier();
                 self.check_periodicity();
             }
             Some((retval, self.state.clone()))
-        }
-        else if self.escape_radius.is_finite()
-        {
+        } else if self.escape_radius.is_finite() {
             self.escape_radius = Real::NAN;
             Some((self.z_fast, self.state.clone()))
-        }
-        else
-        {
+        } else {
             None
         }
     }
@@ -602,8 +575,7 @@ where
             .map(|d| format!("Start: {d}\n"))
             .unwrap_or_default();
 
-        let result_summary = match &self.result
-        {
+        let result_summary = match &self.result {
             Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
             Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
             PeriodicKnownPotential(data) => data.to_string(),

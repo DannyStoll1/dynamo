@@ -17,14 +17,11 @@ impl Popup
 {
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        match self
-        {
-            Self::Edit(d) =>
-            {
+        match self {
+            Self::Edit(d) => {
                 d.show(ctx);
             }
-            Self::Load { dialog, .. } =>
-            {
+            Self::Load { dialog, .. } => {
                 dialog.show(ctx);
             }
         }
@@ -78,15 +75,12 @@ impl Popup
 
     pub fn pop_response(&mut self) -> Response
     {
-        match self
-        {
+        match self {
             Self::Load {
                 dialog,
                 edit_after: true,
-            } if dialog.selected() =>
-            {
-                if let Some(path) = dialog.path().map(|path| path.to_path_buf())
-                {
+            } if dialog.selected() => {
+                if let Some(path) = dialog.path().map(|path| path.to_path_buf()) {
                     *self = Self::edit(path);
                 }
                 Response::DoNothing
@@ -126,8 +120,7 @@ impl ErrorReport
 
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        if self.visible
-        {
+        if self.visible {
             egui::Window::new(self.title.clone())
                 .title_bar(false)
                 .collapsible(false)

@@ -125,8 +125,7 @@ impl<'a> Loader<'a>
             .status()
             .map_err(ScriptError::CargoCommandFailed)?;
 
-        if !status.success()
-        {
+        if !status.success() {
             return Err(ScriptError::CompilationFailed);
         }
 
@@ -213,12 +212,9 @@ impl<'a> Loader<'a>
     /// FIXME: Add a build script to clear old script libraries from `scripting/compiled` whenever `dynamo` is recompiled.
     pub unsafe fn run_lazy<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
-        if self.dest_lib_path().exists()
-        {
+        if self.dest_lib_path().exists() {
             println!("Library found, skipping compilation.");
-        }
-        else
-        {
+        } else {
             println!("Transpiling script...");
             self.transpile_toml()?;
 

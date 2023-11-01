@@ -101,8 +101,7 @@ impl ParameterPlane for Rulkov
     fn start_point(&self, _point: Cplx, param: Self::Param) -> Self::Var
     {
         let mut z = Point { x: 0.5, y: 1.5 };
-        for _ in 0..10000
-        {
+        for _ in 0..10000 {
             z = f(z, param);
         }
         z

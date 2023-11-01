@@ -1,4 +1,8 @@
 use dynamo_common::prelude::*;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use super::Pane;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -17,8 +21,7 @@ impl RepeatableTask
     }
     pub fn schedule_rerun(&mut self)
     {
-        if matches!(self, Self::DoNothing)
-        {
+        if matches!(self, Self::DoNothing) {
             *self = Self::Rerun;
         }
     }
@@ -34,6 +37,7 @@ impl RepeatableTask
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PaneTasks
 {
     pub compute: RepeatableTask,
@@ -84,5 +88,33 @@ pub enum RayState
 {
     #[default]
     Idle,
+    SelectOnce(RationalAngle),
     Following(RationalAngle),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum SelectOrFollow
+{
+    Select,
+    Follow,
+    #[default]
+    DoNothing,
+}
+impl SelectOrFollow
+{
+    pub fn run_on<P: Pane + ?Sized>(&self, pane: &mut P, angle: RationalAngle)
+    {
+        pane.marking_mut().toggle_ray(angle);
+        pane.schedule_redraw();
+        match self {
+            Self::Select => {
+                pane.select_ray_landing_point(angle);
+            }
+            Self::Follow => {
+                pane.follow_ray_landing_point(angle);
+            }
+            Self::DoNothing => {}
+        }
+    }
 }

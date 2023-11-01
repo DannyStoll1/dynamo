@@ -4,12 +4,9 @@ pub use num::{integer::gcd, Integer};
 #[must_use]
 pub const fn div_rem(a: Period, b: Period) -> Option<(Period, Period)>
 {
-    if b == 0
-    {
+    if b == 0 {
         None
-    }
-    else
-    {
+    } else {
         Some((a / b, a % b))
     }
 }
@@ -17,19 +14,13 @@ pub const fn div_rem(a: Period, b: Period) -> Option<(Period, Period)>
 pub fn divisors(n: Period) -> impl Iterator<Item = Period>
 {
     (1..).take_while(move |&x| x * x <= n).flat_map(move |x| {
-        if n % x == 0
-        {
-            if x * x == n
-            {
+        if n % x == 0 {
+            if x * x == n {
                 vec![x].into_iter()
-            }
-            else
-            {
+            } else {
                 vec![x, n / x].into_iter()
             }
-        }
-        else
-        {
+        } else {
             vec![].into_iter()
         }
     })
@@ -44,28 +35,23 @@ pub fn euler_totient(n: Period) -> Period
 #[must_use]
 pub const fn moebius(n: Period) -> SignedPeriod
 {
-    if n == 1
-    {
+    if n == 1 {
         return 1;
     }
     let mut result = 1;
     let mut n = n;
     let mut i = 2;
-    while i * i <= n
-    {
-        if n % i == 0
-        {
+    while i * i <= n {
+        if n % i == 0 {
             result = -result;
             n /= i;
-            if n % i == 0
-            {
+            if n % i == 0 {
                 return 0;
             }
         }
         i += 1;
     }
-    if n > 1
-    {
+    if n > 1 {
         result = -result;
     }
     result

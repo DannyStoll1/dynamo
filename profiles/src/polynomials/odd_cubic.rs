@@ -74,23 +74,19 @@ impl ParameterPlane for OddCubic
     #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let r1 = (3. * c + 1.5).sqrt();
                 vec![ZERO, r1, -r1]
             }
-            2 =>
-            {
+            2 => {
                 let r0 = (3. * c - 1.5).sqrt();
                 let disc = (c * c - 1.).sqrt();
                 let r2 = (1.5 * (c + disc)).sqrt();
                 let r4 = (1.5 * (c - disc)).sqrt();
                 vec![r0, -r0, r2, -r2, r4, -r4]
             }
-            3 =>
-            {
+            3 => {
                 let u = -(c + c);
                 let coeffs = [
                     horner_monic!(u, 1., 1.),
@@ -150,10 +146,8 @@ impl HasDynamicalCovers for OddCubic
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| (ONE_THIRD * t * t - 0.5, TWO_THIRDS * t);
                 bounds = Bounds {
                     min_x: -2.5,
@@ -162,8 +156,7 @@ impl HasDynamicalCovers for OddCubic
                     max_y: 2.5,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| (ONE_THIRD * t * t + 1., TWO_THIRDS * t);
                 bounds = Bounds {
                     min_x: -2.5,
@@ -172,8 +165,7 @@ impl HasDynamicalCovers for OddCubic
                     max_y: 2.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -187,10 +179,8 @@ impl HasDynamicalCovers for OddCubic
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| (ONE_THIRD * t * t - 0.5, TWO_THIRDS * t);
                 bounds = Bounds {
                     min_x: -2.5,
@@ -199,8 +189,7 @@ impl HasDynamicalCovers for OddCubic
                     max_y: 2.5,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| {
                     let t2 = t * t;
                     (0.75 * t2 + ONE_THIRD / t2, 1.5 * t - TWO_THIRDS / (t * t2))
@@ -212,8 +201,7 @@ impl HasDynamicalCovers for OddCubic
                     max_y: 1.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -226,10 +214,8 @@ impl HasDynamicalCovers for OddCubic
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match (preperiod, period)
-        {
-            (1, 1) =>
-            {
+        match (preperiod, period) {
+            (1, 1) => {
                 param_map = |t| {
                     let t2 = t * t;
                     (
@@ -244,8 +230,7 @@ impl HasDynamicalCovers for OddCubic
                     max_y: 2.5,
                 };
             }
-            (1, 2) =>
-            {
+            (1, 2) => {
                 param_map = |t| {
                     let g2 = ONE_NINTH.into();
                     let g3 = ZERO;
@@ -280,8 +265,7 @@ impl HasDynamicalCovers for OddCubic
                     max_y: 2.5,
                 };
             }
-            (_, _) =>
-            {
+            (_, _) => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }

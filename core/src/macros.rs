@@ -103,12 +103,9 @@ macro_rules! default_name {
         {
             let full_struct_name = type_name::<Self>();
             let parts: Vec<&str> = full_struct_name.split("::").collect();
-            if let Some(struct_name) = parts.last()
-            {
+            if let Some(struct_name) = parts.last() {
                 format!("{struct_name}")
-            }
-            else
-            {
+            } else {
                 "Unknown".to_owned()
             }
         }
@@ -155,8 +152,7 @@ macro_rules! basic_escape_encoding {
             _base_param: Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
-            if z.is_nan()
-            {
+            if z.is_nan() {
                 return PointInfo::Escaping {
                     potential: f64::from(iters) - 1.,
                 };
@@ -177,8 +173,7 @@ macro_rules! basic_escape_encoding {
             _base_param: Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
-            if z.is_nan()
-            {
+            if z.is_nan() {
                 return PointInfo::Escaping {
                     potential: f64::from(iters) - 1.,
                 };

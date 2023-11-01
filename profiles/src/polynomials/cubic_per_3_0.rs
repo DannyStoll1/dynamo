@@ -92,15 +92,12 @@ impl ParameterPlane for CubicPer3_0
     }
     fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let ainv = a.inv();
                 solve_cubic(ainv, -ainv, b * ainv).to_vec()
             }
-            2 =>
-            {
+            2 => {
                 let a2 = a.powi(2);
                 let coeffs = [
                     a + b + 1.,

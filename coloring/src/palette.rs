@@ -179,12 +179,9 @@ impl Palette
     pub fn with_contrast(mut self, contrast: f64, brightness: f64) -> Self
     {
         let mut amplitude = contrast / 2.0;
-        if amplitude > brightness
-        {
+        if amplitude > brightness {
             amplitude = brightness;
-        }
-        else if amplitude > 1. - brightness
-        {
+        } else if amplitude > 1. - brightness {
             amplitude = 1. - brightness;
         }
 
@@ -202,13 +199,10 @@ impl Palette
     #[must_use]
     pub fn map_rgb(&self, value: IterCount) -> Rgb<u8>
     {
-        if value <= 0.0
-        {
+        if value <= 0.0 {
             let (r, g, b, _) = self.in_color.to_tuple();
             Rgb([r, g, b])
-        }
-        else
-        {
+        } else {
             let potential = (value + 1.0 as IterCount).log2();
             let r = self.color_map_r.get_value_u8(potential);
             let g = self.color_map_g.get_value_u8(potential);

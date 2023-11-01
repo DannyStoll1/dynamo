@@ -118,10 +118,8 @@ impl ParameterPlane for QuadRatPer4
 
     fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let x0 = c - 1.;
                 let x1 = x0.inv();
                 let x2 = c.powi(2);
@@ -138,16 +136,14 @@ impl ParameterPlane for QuadRatPer4
                 let r2 = -x7 * OMEGA - x8 * OMEGA_BAR + ONE_THIRD;
                 vec![-x7 - x8 + ONE_THIRD, r1, r2]
             }
-            2 =>
-            {
+            2 => {
                 let c2 = c.powi(2);
                 let x0 = c2 * 3.;
                 let denom = 0.5 / (c - 1.);
                 let disc = (x0.powi(2) - c * (8. * c2 - 6. * c + 4.) + 1.).sqrt();
                 vec![denom * (x0 + disc - 1.), denom * (x0 - disc - 1.)]
             }
-            3 =>
-            {
+            3 => {
                 let c2 = c.powi(2);
                 let coeffs = [
                     c2 * c * horner!(c, 1., -7., 18., -20., 8.),
@@ -160,8 +156,7 @@ impl ParameterPlane for QuadRatPer4
                 ];
                 solve_polynomial(coeffs)
             }
-            4 =>
-            {
+            4 => {
                 let c2 = c.powi(2);
                 let c3 = c * c2;
                 let c4 = c2.powi(2);
@@ -219,10 +214,8 @@ impl HasDynamicalCovers for QuadRatPer4
         let grid: PointGrid;
         let bounds: Bounds;
 
-        match period
-        {
-            3 =>
-            {
+        match period {
+            3 => {
                 param_map = |c| {
                     // cbrt(12)
                     let alpha = Cplx::new(2.289_428_485_106_66, 0.);
@@ -251,8 +244,7 @@ impl HasDynamicalCovers for QuadRatPer4
                 };
                 grid = self.point_grid.clone().with_same_height(bounds);
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 grid = self.point_grid.clone();
             }

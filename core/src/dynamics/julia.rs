@@ -482,7 +482,8 @@ impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
         NoParam: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        self.parent.encode_escape_result(result, start, self.local_param)
+        self.parent
+            .encode_escape_result(result, start, self.local_param)
     }
 }
 
@@ -496,8 +497,7 @@ where
         let escape_radius_log2 = R.log2() * self.degree_real().abs();
 
         let deg_real = self.degree_real().abs();
-        if deg_real.is_nan() || self.degree() <= 1
-        {
+        if deg_real.is_nan() || self.degree() <= 1 {
             return None;
         }
 
@@ -520,8 +520,7 @@ where
         let factor = (-deg_real.log2() / Real::from(RAY_SHARPNESS)).exp2();
         let du = a.norm().log2() / Real::from(RAY_SHARPNESS);
 
-        for k in 0..RAY_DEPTH
-        {
+        for k in 0..RAY_DEPTH {
             let v = target_angle.to_circle();
             let mut u = escape_radius_log2;
 
@@ -547,8 +546,7 @@ where
                 let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
                 dz_dt += dz_dc * dc_dt;
 
-                for _i in 0..num_iters
-                {
+                for _i in 0..num_iters {
                     let (f, df_dz, df_dc) = self.gradient(z, c);
                     dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                     z = f;
@@ -557,34 +555,27 @@ where
                 (z.into(), dz_dt.into())
             };
 
-            for target in targets
-            {
-                match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
-                {
-                    Ok((sol, t_k, d_k)) =>
-                    {
+            for target in targets {
+                match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
+                    Ok((sol, t_k, d_k)) => {
                         // dbg!(target, sol);
                         t_curr = sol;
 
-                        if t_curr.is_nan()
-                        {
+                        if t_curr.is_nan() {
                             return Some(t_list);
                         }
 
                         t_list.push(t_curr);
 
                         dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
-                        if dist < pixel_width
-                        {
+                        if dist < pixel_width {
                             return Some(t_list);
                         }
                     }
-                    Err(NanEncountered) =>
-                    {
+                    Err(NanEncountered) => {
                         return Some(t_list);
                     }
-                    _ =>
-                    {}
+                    _ => {}
                 }
             }
             // target_angle *= deg;

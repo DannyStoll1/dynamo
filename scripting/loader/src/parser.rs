@@ -97,8 +97,7 @@ impl TryFrom<UnparsedUserInput> for ParsedUserInput
 
 fn json_to_string(value: &JsonValue) -> String
 {
-    match value
-    {
+    match value {
         JsonValue::String(s) => s.clone(),
         JsonValue::Number(n) => n.to_string(),
         JsonValue::Bool(b) => b.to_string(),
@@ -108,10 +107,8 @@ fn json_to_string(value: &JsonValue) -> String
 
 pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptError>
 {
-    match value
-    {
-        JsonValue::String(s) =>
-        {
+    match value {
+        JsonValue::String(s) => {
             lazy_static! {
                 static ref A_PLUS_BI: Regex =
                     Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*\+\s*(-?[0-9]+\.?[0-9]*)?i")
@@ -123,14 +120,12 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
 
             // Handle real numbers
-            if let Ok(real) = f64::from_str(s)
-            {
+            if let Ok(real) = f64::from_str(s) {
                 return Ok(Complex64::new(real, 0.0));
             }
 
             // Handle numbers expressed in the form "a+bi"
-            if let Some(caps) = A_PLUS_BI.captures(s)
-            {
+            if let Some(caps) = A_PLUS_BI.captures(s) {
                 let a = caps
                     .get(1)
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
@@ -141,8 +136,7 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
 
             // Handle numbers expressed in the form "a-bi"
-            if let Some(caps) = A_MINUS_BI.captures(s)
-            {
+            if let Some(caps) = A_MINUS_BI.captures(s) {
                 let a = caps
                     .get(1)
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
@@ -153,8 +147,7 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
 
             // Handle numbers expressed in the form "bi"
-            if let Some(caps) = BI.captures(s)
-            {
+            if let Some(caps) = BI.captures(s) {
                 let b = caps
                     .get(1)
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
@@ -162,8 +155,7 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
             Err(ScriptError::MalformedConst)
         }
-        JsonValue::Number(n) =>
-        {
+        JsonValue::Number(n) => {
             let real_part = n.as_f64().ok_or(ScriptError::MalformedConst)?;
             Ok(Complex64::new(real_part, 0.0))
         }

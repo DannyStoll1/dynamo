@@ -71,8 +71,7 @@ impl ParameterPlane for NewtonCubic
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(-ONE, c, ZERO).to_vec(),
             _ => vec![],
         }

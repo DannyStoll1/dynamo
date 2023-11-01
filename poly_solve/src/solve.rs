@@ -57,8 +57,7 @@ impl JenkinsTraubSolver
     fn increment_h_poly_no_shift(&mut self)
     {
         let mut c = -self.poly.eval(Self::ZERO) / self.h_poly.eval(Self::ZERO);
-        if c.is_nan()
-        {
+        if c.is_nan() {
             c = -self.poly.eval(Self::ERR.into()) / self.h_poly.eval(Self::ERR.into());
         }
         self.h_poly.mul_const_assign(c);
@@ -106,8 +105,7 @@ impl JenkinsTraubSolver
 
     fn stage_0(&mut self)
     {
-        for _ in 0..Self::M
-        {
+        for _ in 0..Self::M {
             self.increment_h_poly_no_shift();
         }
         self.h_init = Some(self.h_poly.clone());
@@ -121,25 +119,18 @@ impl JenkinsTraubSolver
         let mut t_next: Complex64;
         let mut was_close = false;
 
-        for _ in 0..Self::LIMIT_STAGE_1
-        {
+        for _ in 0..Self::LIMIT_STAGE_1 {
             self.increment_h_poly(s);
             t_next = self.current_estimate(s);
 
-            if (t_curr - t_next).norm_sqr() < 0.25 * t_curr.norm_sqr()
-            {
-                if was_close
-                {
+            if (t_curr - t_next).norm_sqr() < 0.25 * t_curr.norm_sqr() {
+                if was_close {
                     return Some(t_next);
                 }
                 was_close = true;
-            }
-            else if s.is_nan()
-            {
+            } else if s.is_nan() {
                 return None;
-            }
-            else
-            {
+            } else {
                 was_close = false;
             }
 
@@ -152,10 +143,8 @@ impl JenkinsTraubSolver
 
     fn loop_stage_1(&mut self) -> Complex64
     {
-        for _ in 0..Self::MAX_TRIES_STAGE_1
-        {
-            if let Some(res) = self.stage_1()
-            {
+        for _ in 0..Self::MAX_TRIES_STAGE_1 {
+            if let Some(res) = self.stage_1() {
                 return res;
             }
         }
@@ -165,24 +154,19 @@ impl JenkinsTraubSolver
 
     fn stage_2(&mut self, mut s: Complex64) -> Option<Complex64>
     {
-        for _ in 0..Self::LIMIT_STAGE_2
-        {
+        for _ in 0..Self::LIMIT_STAGE_2 {
             self.increment_h_poly(s);
             s = self.current_estimate(s);
 
             let norm = self.poly.eval(s).norm_sqr();
-            if norm < Self::ERR
-            {
+            if norm < Self::ERR {
                 return Some(s);
-            }
-            else if norm < self.best_norm
-            {
+            } else if norm < self.best_norm {
                 self.best_root = s;
                 self.best_norm = norm;
             }
 
-            if s.is_nan()
-            {
+            if s.is_nan() {
                 return None;
             }
         }
@@ -193,12 +177,10 @@ impl JenkinsTraubSolver
     {
         self.stage_0();
 
-        for _ in 0..Self::MAX_TRIES_STAGE_2
-        {
+        for _ in 0..Self::MAX_TRIES_STAGE_2 {
             let s = self.loop_stage_1();
 
-            if let Some(root) = self.stage_2(s)
-            {
+            if let Some(root) = self.stage_2(s) {
                 return root;
             }
             self.reset_h_poly();

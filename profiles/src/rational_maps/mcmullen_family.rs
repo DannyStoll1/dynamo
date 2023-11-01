@@ -87,10 +87,8 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
     #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let mut coeffs = vec![ZERO; (M + N + 1).try_into().unwrap_or(3)];
                 coeffs[usize::try_from(M + N).unwrap_or(2)] = c;
                 coeffs[usize::try_from(N + 1).unwrap_or(1)] = -c;

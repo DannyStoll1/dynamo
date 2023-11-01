@@ -70,10 +70,8 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         use dynamo_common::math_utils::binomial;
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let mut coeffs: Vec<Cplx> =
                     (0..=D).map(|x| c * Real::from(binomial(D, x))).collect();
                 coeffs[1] -= Self::D_FLOAT;
@@ -155,10 +153,8 @@ impl HasDynamicalCovers for Unicritical<3>
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 param_map = |t| (3. * (t + 1.) * t.powi(2), 3. * t * (3. * t + 2.));
                 bounds = Bounds {
                     min_x: -1.8,
@@ -167,8 +163,7 @@ impl HasDynamicalCovers for Unicritical<3>
                     max_y: 1.2,
                 };
             }
-            2 =>
-            {
+            2 => {
                 param_map = |t| (3. * (t - 2.) * t.powi(2), 3. * t * (3. * t - 4.));
                 bounds = Bounds {
                     min_x: -1.,
@@ -177,8 +172,7 @@ impl HasDynamicalCovers for Unicritical<3>
                     max_y: 1.,
                 };
             }
-            3 =>
-            {
+            3 => {
                 const DEN_0_0: Cplx = Cplx::new(15.019_639_247_721_374, 48.282_356_214_136_12);
                 const DEN_0_1: Cplx = Cplx::new(11.411_649_536_823_681, 8.425_252_873_580_56);
                 const DEN_1_0: Cplx = Cplx::new(14.056_957_561_484_392, 50.196_352_118_588_65);
@@ -235,8 +229,7 @@ impl HasDynamicalCovers for Unicritical<3>
                     max_y: 3.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
@@ -251,10 +244,8 @@ impl HasDynamicalCovers for Unicritical<3>
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
-        match period
-        {
-            2 =>
-            {
+        match period {
+            2 => {
                 param_map = |t| {
                     let t2 = t.powi(2);
                     let num0 = t - 0.5;
@@ -282,8 +273,7 @@ impl HasDynamicalCovers for Unicritical<3>
                     max_y: 4.5,
                 };
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }

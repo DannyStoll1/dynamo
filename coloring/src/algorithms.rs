@@ -40,12 +40,9 @@ impl IncoloringAlgorithm
     {
         let scaling_rate = mult_norm;
 
-        if scaling_rate > 1e-10
-        {
+        if scaling_rate > 1e-10 {
             -scaling_rate.log2() * fill_rate
-        }
-        else
-        {
+        } else {
             10.
         }
     }
@@ -55,29 +52,24 @@ impl IncoloringAlgorithm
     where
         D: Polar<Real>,
     {
-        match self
-        {
+        match self {
             Self::Solid => palette.in_color,
-            Self::Period =>
-            {
+            Self::Period => {
                 let hue_id = point_info.period as f32;
                 palette.period_coloring.map(hue_id, 0.75)
             }
-            Self::PeriodMultiplier =>
-            {
+            Self::PeriodMultiplier => {
                 let hue_id = point_info.period as f32;
                 let luminosity_modifier = point_info.multiplier.norm() as f32;
                 palette.period_coloring.map(hue_id, luminosity_modifier)
             }
-            Self::Preperiod =>
-            {
+            Self::Preperiod => {
                 let per = IterCount::from(point_info.period);
                 let val = IterCount::from(point_info.preperiod);
 
                 palette.map_color32(val * val / per)
             }
-            Self::PreperiodPeriod { fill_rate } =>
-            {
+            Self::PreperiodPeriod { fill_rate } => {
                 let per = IterCount::from(point_info.period);
                 let val = IterCount::from(point_info.preperiod);
 
@@ -86,16 +78,14 @@ impl IncoloringAlgorithm
             }
             Self::InternalPotential {
                 periodicity_tolerance,
-            } =>
-            {
+            } => {
                 let val = Self::relative_potential(point_info, *periodicity_tolerance);
                 palette.map_color32(val)
             }
             Self::PotentialAndPeriod {
                 periodicity_tolerance,
                 fill_rate,
-            } =>
-            {
+            } => {
                 let n = IterCount::from(point_info.period);
                 let k = IterCount::from(point_info.preperiod);
 
@@ -110,12 +100,9 @@ impl IncoloringAlgorithm
                 let val = k / n - potential;
                 let luma = val.powi(2) * n;
 
-                let coloring_rate = if mult_norm <= 1e-10 || (1. - mult_norm).abs() < 1e-5
-                {
+                let coloring_rate = if mult_norm <= 1e-10 || (1. - mult_norm).abs() < 1e-5 {
                     0.1
-                }
-                else
-                {
+                } else {
                     Self::multiplier_coloring_rate(mult_norm, *fill_rate)
                 };
 
@@ -137,22 +124,17 @@ impl IncoloringAlgorithm
     fn internal_potential(err: IterCount, tol: IterCount, mult_norm: IterCount) -> IterCount
     {
         // Superattracting case
-        let potential = if mult_norm <= 1e-10
-        {
+        let potential = if mult_norm <= 1e-10 {
             2. * (err.log(tol)).log2() as IterCount
         }
         // Parabolic case
-        else if (1. - mult_norm).abs() <= 1e-5
-        {
+        else if (1. - mult_norm).abs() <= 1e-5 {
             err / tol
-        }
-        else
-        {
+        } else {
             (err / tol).log(mult_norm) as IterCount
         };
 
-        if !potential.is_finite()
-        {
+        if !potential.is_finite() {
             return 0.2;
         }
         potential
@@ -181,25 +163,21 @@ impl IncoloringAlgorithm
     ) -> Color32
     {
         let rescaled_potential = info.potential.powi(2) / info.period as f64;
-        match self
-        {
+        match self {
             Self::Solid => palette.in_color,
             Self::Period => palette.period_coloring.map(info.period as f32, 0.75),
-            Self::PeriodMultiplier =>
-            {
+            Self::PeriodMultiplier => {
                 let hue_id = info.period as f32;
                 let luminosity_modifier = info.multiplier.norm() as f32;
                 palette.period_coloring.map(hue_id, luminosity_modifier)
             }
             Self::Preperiod => palette.map_color32(rescaled_potential.floor()),
-            Self::PreperiodPeriod { fill_rate } =>
-            {
+            Self::PreperiodPeriod { fill_rate } => {
                 let luma = (rescaled_potential * fill_rate).tanh() as f32;
                 palette.period_coloring.map(info.period as f32, luma)
             }
             Self::InternalPotential { .. } => palette.map_color32(rescaled_potential),
-            Self::PotentialAndPeriod { fill_rate, .. } =>
-            {
+            Self::PotentialAndPeriod { fill_rate, .. } => {
                 let n = IterCount::from(info.period);
 
                 let coloring_rate =

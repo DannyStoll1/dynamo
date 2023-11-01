@@ -69,16 +69,13 @@ impl ParameterPlane for QuadRatGeneral
 
     fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(-a, b, -ONE).to_vec(),
-            2 =>
-            {
+            2 => {
                 let denom = (b + 1.).inv();
                 solve_quadratic((a + b.powi(2)) * denom, (b - a) * denom).to_vec()
             }
-            3 =>
-            {
+            3 => {
                 let b2 = b.powi(2);
                 let b3 = b2 * b;
                 let b4 = b2.powi(2);
@@ -101,8 +98,7 @@ impl ParameterPlane for QuadRatGeneral
                 ];
                 solve_polynomial(coeffs)
             }
-            4 =>
-            {
+            4 => {
                 let b2 = b.powi(2);
                 let b3 = b * b2;
                 let b4 = b2.powi(2);

@@ -135,12 +135,10 @@ impl ParameterPlane for QuadRatPer5
 
     fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
+        match period {
             1 => solve_cubic(-b, -a, -ONE).to_vec(),
             2 => solve_quadratic(b, a - b).to_vec(),
-            3 =>
-            {
+            3 => {
                 let b2 = b.powi(2);
                 let b3 = b * b2;
                 let u = 3. * (b + 1.);
@@ -201,8 +199,7 @@ impl EscapeEncoding for QuadRatPer5
         CplxPair { a, b }: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 2.,
             };

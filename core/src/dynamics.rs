@@ -325,8 +325,7 @@ pub trait ParameterPlane: Sync + Send
         }: OrbitSchema,
     ) -> FindPointResult<Cplx>
     {
-        if n == 0
-        {
+        if n == 0 {
             return Err(FindPointError::PeriodIsZero);
         }
 
@@ -359,10 +358,8 @@ pub trait ParameterPlane: Sync + Send
             let mut term_count: usize = 0;
 
             // Preperiodic part
-            if k > 0
-            {
-                for _ in 0..k - 1
-                {
+            if k > 0 {
+                for _ in 0..k - 1 {
                     (z, df_dz, df_dc) = self.gradient(z, c);
                     dz_dt = dz_dt * df_dz + df_dc;
                 }
@@ -378,24 +375,19 @@ pub trait ParameterPlane: Sync + Send
 
             // Periodic part
 
-            for i in 1..n
-            {
+            for i in 1..n {
                 (w, df_dz, df_dc) = self.gradient(w, c);
                 dw_dt = dw_dt * df_dz + df_dc;
 
                 // Divide out lower order periods
                 let (q, r) = n.div_rem(&i);
-                if r == 0
-                {
+                if r == 0 {
                     let mu = moebius(q);
-                    if mu == 1
-                    {
+                    if mu == 1 {
                         values[term_count] = (w - z).into();
                         derivs[term_count] = (dw_dt - dz_dt).into();
                         term_count += 1;
-                    }
-                    else if mu == -1
-                    {
+                    } else if mu == -1 {
                         let dg = (dz_dt - dw_dt).into();
                         let val = (w - z).into().inv();
                         values[term_count] = val;
@@ -406,8 +398,7 @@ pub trait ParameterPlane: Sync + Send
             }
 
             // At this point we have done k+n-1 iterations
-            if k > 0
-            {
+            if k > 0 {
                 // f^(k+n-1)(z) and its derivative with respect to t
                 let zkn1 = w.into();
                 let zkn1_dt = dw_dt.into();
@@ -453,12 +444,9 @@ pub trait ParameterPlane: Sync + Send
             c,
             &orbit_params,
         );
-        if let Some((_, state)) = orbit.last()
-        {
+        if let Some((_, state)) = orbit.last() {
             state.unwrap_or_default()
-        }
-        else
-        {
+        } else {
             EscapeResult::Bounded
         }
     }
@@ -563,8 +551,7 @@ pub trait ParameterPlane: Sync + Send
     /// Default coloring algorithm to apply when loading the Julia set.
     fn default_coloring_child(&self) -> Coloring
     {
-        Coloring::default()
-            .with_interior_algorithm(self.internal_potential_coloring())
+        Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
     }
 
     /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
@@ -599,10 +586,8 @@ pub trait ParameterPlane: Sync + Send
     ) -> PointInfo<Self::Deriv>
     {
         let marked_points = self.get_marked_points(c);
-        for (zi, class_id) in &marked_points
-        {
-            if z.dist_sqr(*zi) < self.marked_point_tolerance()
-            {
+        for (zi, class_id) in &marked_points {
+            if z.dist_sqr(*zi) < self.marked_point_tolerance() {
                 return PointInfo::MarkedPoint {
                     data: info,
                     class_id: *class_id,
@@ -616,7 +601,7 @@ pub trait ParameterPlane: Sync + Send
     /// Define a custom fill rate for perperiod based coloring.
     fn preperiod_coloring(&self) -> IncoloringAlgorithm
     {
-        IncoloringAlgorithm::PreperiodPeriod { fill_rate: 0.02 } 
+        IncoloringAlgorithm::PreperiodPeriod { fill_rate: 0.02 }
     }
 
     /// Internal: Since the internal potential coloring algorithm depends on the periodicity
@@ -659,8 +644,7 @@ impl std::fmt::Display for PlaneType
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
-        match self
-        {
+        match self {
             Self::Parameter => write!(f, "parameter"),
             Self::Dynamical => write!(f, "dynamical"),
         }
@@ -751,8 +735,7 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
         let escape_radius_log = R.ln() * self.degree_real().abs();
 
         let deg_real = self.degree_real().abs();
-        if deg_real.is_nan()
-        {
+        if deg_real.is_nan() {
             return None;
         }
 
@@ -777,16 +760,15 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
         let a = self.escape_coeff(self.param_map(ONE));
         let target_shift = a.ln() / Real::from(RAY_SHARPNESS);
 
-        for k in 0..RAY_DEPTH
-        {            let num_iters = k * self.escaping_period() + self.escaping_phase();
+        for k in 0..RAY_DEPTH {
+            let num_iters = k * self.escaping_period() + self.escaping_phase();
 
             let fk_and_dfk = |t: Cplx| {
                 let (c, dc_dt) = self.param_map_d(t);
                 let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
                 dz_dt += dz_dc * dc_dt;
 
-                for _i in 0..num_iters
-                {
+                for _i in 0..num_iters {
                     let (f, df_dz, df_dc) = self.gradient(z, c);
                     dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                     z = f;
@@ -799,35 +781,28 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
             let mut v = Real::from(target_angle) * TAU;
             let mut t_curr = *t_list.last().unwrap_or(&base_point);
 
-            for _j in 0..RAY_SHARPNESS
-            {
+            for _j in 0..RAY_SHARPNESS {
                 let target = Cplx::new(u, v).exp();
-                match find_target_newton_err_d(fk_and_dfk, t_curr, target, error)
-                {
-                    Ok((sol, t_k, d_k)) =>
-                    {
+                match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
+                    Ok((sol, t_k, d_k)) => {
                         // dbg!(target, sol);
                         t_curr = sol;
 
-                        if t_curr.is_nan()
-                        {
+                        if t_curr.is_nan() {
                             return Some(t_list);
                         }
 
                         t_list.push(t_curr);
 
                         let dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
-                        if dist < pixel_width
-                        {
+                        if dist < pixel_width {
                             return Some(t_list);
                         }
                     }
-                    Err(NanEncountered) =>
-                    {
+                    Err(NanEncountered) => {
                         return Some(t_list);
                     }
-                    _ =>
-                    {}
+                    _ => {}
                 }
                 u *= factor;
                 u -= target_shift.re;
@@ -850,15 +825,13 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
         // Remove off the end if distance is increasing,
         // as the helper method may return erroneous values near the end.
         // We use l1 norms to preserve precision.
-        if let Some(mut t_list) = self.external_ray_helper(angle)
-        {
+        if let Some(mut t_list) = self.external_ray_helper(angle) {
             let t0 = t_list.last()?;
             let mut t1 = t_list.get(t_list.len() - 2)?;
             let mut t2 = t_list.get(t_list.len() - 3)?;
             let mut dist0 = (t0 - t1).l1_norm();
             let mut dist1 = (t1 - t2).l1_norm();
-            while dist0 > dist1
-            {
+            while dist0 > dist1 {
                 t_list.pop();
                 t1 = t_list.last()?;
                 t2 = t_list.get(t_list.len() - 2)?;
@@ -866,9 +839,7 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
                 dist1 = (t1 - t2).l1_norm();
             }
             Some(t_list)
-        }
-        else
-        {
+        } else {
             None
         }
     }
@@ -895,9 +866,7 @@ where
 
         let orbit = SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
         let result = orbit.last()?.1.unwrap_or_default();
-        let EscapeResult::Escaped { iters, final_value } = result
-        else
-        {
+        let EscapeResult::Escaped { iters, final_value } = result else {
             return None;
         };
 
@@ -913,8 +882,7 @@ where
             let mut df_dz: Self::Deriv;
             let mut df_dc: Self::Deriv;
 
-            for _ in 0..iters
-            {
+            for _ in 0..iters {
                 (z, df_dz, df_dc) = self.gradient(z, c);
                 dz_dt = dz_dt * df_dz + df_dc;
             }
@@ -952,16 +920,13 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
         c: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        match result
-        {
+        match result {
             EscapeResult::Bounded => PointInfo::Bounded,
-            EscapeResult::Periodic { info, final_value } =>
-            {
+            EscapeResult::Periodic { info, final_value } => {
                 self.identify_marked_points(final_value, c, info)
             }
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
-            EscapeResult::Escaped { iters, final_value } =>
-            {
+            EscapeResult::Escaped { iters, final_value } => {
                 self.encode_escaping_point(iters, final_value, c)
             }
         }
@@ -974,8 +939,7 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
         c: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: Real::from(iters) - 1.,
             };
@@ -1091,8 +1055,7 @@ where
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
     {
-        if self.point_grid().is_nan()
-        {
+        if self.point_grid().is_nan() {
             return;
         }
 

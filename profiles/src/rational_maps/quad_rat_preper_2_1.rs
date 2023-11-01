@@ -64,18 +64,14 @@ impl ParameterPlane for QuadRatPreper21
 
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
-        match period
-        {
-            1 =>
-            {
+        match period {
+            1 => {
                 let u = c / (c - 1.);
                 solve_quadratic(u, u + u).to_vec()
             }
             2 => solve_quadratic(c / (c + 1.), TWO).to_vec(),
-            3 =>
-            {
-                if c.norm_sqr() < 1e-20
-                {
+            3 => {
+                if c.norm_sqr() < 1e-20 {
                     return vec![];
                 }
 
@@ -91,10 +87,8 @@ impl ParameterPlane for QuadRatPreper21
                 ];
                 solve_polynomial(coeffs)
             }
-            4 =>
-            {
-                if c.norm_sqr() < 1e-20
-                {
+            4 => {
+                if c.norm_sqr() < 1e-20 {
                     return vec![];
                 }
 
@@ -151,8 +145,7 @@ impl EscapeEncoding for QuadRatPreper21
         base_param: Cplx,
     ) -> PointInfo<Self::Deriv>
     {
-        if z.is_nan()
-        {
+        if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 2.,
             };
@@ -175,10 +168,8 @@ impl HasDynamicalCovers for QuadRatPreper21
         let grid: PointGrid;
         let bounds: Bounds;
 
-        match period
-        {
-            3 =>
-            {
+        match period {
+            3 => {
                 param_map = |c| {
                     let u = c + 4.;
                     (0.25 * u.powi(2), 0.5 * u)
@@ -191,8 +182,7 @@ impl HasDynamicalCovers for QuadRatPreper21
                 };
                 grid = self.point_grid.clone().with_same_height(bounds);
             }
-            4 =>
-            {
+            4 => {
                 param_map = |c| {
                     let g2 = Cplx::new(-1. / 96., 0.);
                     let g3 = Cplx::new(-13. / 55296., 0.);
@@ -220,8 +210,7 @@ impl HasDynamicalCovers for QuadRatPreper21
                 };
                 grid = self.point_grid.clone().with_same_height(bounds);
             }
-            _ =>
-            {
+            _ => {
                 param_map = |t| (t, ONE);
                 grid = self.point_grid.clone();
             }
