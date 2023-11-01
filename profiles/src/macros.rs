@@ -122,6 +122,7 @@ macro_rules! degree_impl_transcendental {
             fn encode_escape_result(
                 &self,
                 state: EscapeResult<Self::Var, Self::Deriv>,
+                _start: Self::Var,
                 base_param: Self::Param,
             ) -> PointInfo<Self::Deriv>
             {
@@ -329,7 +330,6 @@ macro_rules! ext_ray_impl_nonmonic_conj {
     };
 }
 
-
 #[allow(unused_macros)]
 macro_rules! ext_ray_impl_rk {
     ($step: literal, $esc: expr) => {
@@ -375,7 +375,6 @@ macro_rules! ext_ray_impl_rk {
                         let (f, df_dz, df_dc) = self.gradient(z, c);
                         dz_dt = df_dz * dz_dt + df_dc * dc_dt;
                         z = f;
-
                     }
                 }
 
@@ -386,7 +385,8 @@ macro_rules! ext_ray_impl_rk {
             {
                 let dt = runge_kutta_step(&mut deriv_green, t, STEP_SIZE);
 
-                if dt.norm() < pixel_width {
+                if dt.norm() < pixel_width
+                {
                     return Some(t_list);
                 }
 
@@ -520,7 +520,6 @@ macro_rules! ext_ray_impl_nonmonic {
         }
     };
 }
-
 
 pub(crate) use {
     cplx_arr, degree_impl, degree_impl_transcendental, ext_ray_impl_nonmonic, ext_ray_impl_rk,

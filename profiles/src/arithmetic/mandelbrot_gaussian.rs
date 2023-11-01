@@ -1,17 +1,21 @@
 use crate::macros::*;
+use dynamo_common::cache::Cache;
 use dynamo_color::prelude::*;
 profile_imports!();
+
+type GInt = GaussianInteger;
 
 #[derive(Clone, Debug)]
 pub struct GaussianMandel<const A: i64, const B: i64>
 {
     point_grid: PointGrid,
     max_iter: Period,
+    cache: Cache<(GInt, GInt), EscapeResult<GInt, GInt>>,
 }
 
 impl<const A: i64, const B: i64> GaussianMandel<A, B>
 {
-    const MOD: GaussianInteger = GaussianInteger::new(A, B);
+    const MOD: GInt = GInt::new(A, B);
 }
 
 impl<const A: i64, const B: i64> Default for GaussianMandel<A, B>
@@ -23,6 +27,7 @@ impl<const A: i64, const B: i64> Default for GaussianMandel<A, B>
         Self {
             point_grid,
             max_iter: 1024,
+            cache: Cache::new(),
         }
     }
 }
@@ -30,9 +35,9 @@ impl<const A: i64, const B: i64> Default for GaussianMandel<A, B>
 impl<const A: i64, const B: i64> ParameterPlane for GaussianMandel<A, B>
 {
     basic_plane_impl!();
-    type Var = GaussianInteger;
-    type Param = GaussianInteger;
-    type Deriv = GaussianInteger;
+    type Var = GInt;
+    type Param = GInt;
+    type Deriv = GInt;
     type MetaParam = NoParam;
     type Child = JuliaSet<Self>;
 
@@ -44,6 +49,16 @@ impl<const A: i64, const B: i64> ParameterPlane for GaussianMandel<A, B>
     fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
     {
         self.default_bounds()
+    }
+
+    #[inline]
+    fn early_bailout(
+        &self,
+        start: Self::Var,
+        c: Self::Param,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        self.cache.get(&(start, c))
     }
 
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
@@ -103,10 +118,12 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
 {
     fn encode_escape_result(
         &self,
-        result: EscapeResult<GaussianInteger, GaussianInteger>,
-        c: GaussianInteger,
-    ) -> PointInfo<GaussianInteger>
+        result: EscapeResult<GInt, GInt>,
+        start: GInt,
+        c: GInt,
+    ) -> PointInfo<GInt>
     {
+        self.cache.insert((start, c), result.clone());
         match result
         {
             EscapeResult::Bounded => PointInfo::Bounded,
@@ -129,9 +146,9 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
     fn encode_escaping_point(
         &self,
         iters: Period,
-        z: GaussianInteger,
-        c: GaussianInteger,
-    ) -> PointInfo<GaussianInteger>
+        z: GInt,
+        c: GInt,
+    ) -> PointInfo<GInt>
     {
         if z.is_nan()
         {

@@ -478,10 +478,11 @@ impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
     fn encode_escape_result(
         &self,
         result: EscapeResult<Self::Var, Self::Deriv>,
+        start: Self::Var,
         NoParam: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        self.parent.encode_escape_result(result, self.local_param)
+        self.parent.encode_escape_result(result, start, self.local_param)
     }
 }
 

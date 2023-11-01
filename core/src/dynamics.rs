@@ -942,9 +942,13 @@ where
 pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
 {
     /// Map temporary `EscapeResult` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
+    ///
+    /// `start_point` is normally unused, but is available as an input in case
+    /// it is needed for a user-defined encoding, e.g. to cache escape results.
     fn encode_escape_result(
         &self,
         result: EscapeResult<Self::Var, Self::Deriv>,
+        _start_point: Self::Var,
         c: Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
@@ -1046,7 +1050,7 @@ where
         );
         let state = orbit.run_until_complete();
 
-        self.encode_escape_result(state, c)
+        self.encode_escape_result(state, start, c)
     }
 
     fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
@@ -1074,7 +1078,7 @@ where
                 z
             })
             .collect();
-        let result = self.encode_escape_result(final_state.unwrap_or_default(), param);
+        let result = self.encode_escape_result(final_state.unwrap_or_default(), start, param);
         OrbitAndInfo {
             orbit: trajectory,
             info: OrbitInfo {
@@ -1129,7 +1133,7 @@ where
 
                     orbit.reset(param, start);
                     let result = orbit.run_until_complete();
-                    *count = self.encode_escape_result(result, param);
+                    *count = self.encode_escape_result(result, start, param);
                 });
             });
     }

@@ -276,7 +276,7 @@ impl Describe for Bicomplex
     }
 }
 
-#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Add, Sub, AddAssign, SubAssign)]
+#[derive(Clone, Copy, Default, Debug, Hash, PartialEq, Eq, Add, Sub, AddAssign, SubAssign)]
 pub struct EisensteinInteger
 {
     pub a: i64,
@@ -410,11 +410,6 @@ impl From<Cplx> for EisensteinInteger
         let y = (z.im / OMEGA.im).floor();
         let x = y.mul_add(0.5, z.re).floor();
 
-        // Self {
-        //     a: x as i64,
-        //     b: y as i64,
-        // }
-
         // Nearest corner of the fundamental parallelogram
         let mut corner = x + OMEGA * y;
         let mut best_dist = (corner - z).norm_sqr();
@@ -515,10 +510,7 @@ impl crate::traits::Named for EisensteinInteger
     }
 }
 
-
-
-
-#[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Add, Sub, AddAssign, SubAssign)]
+#[derive(Clone, Copy, Default, Debug, Hash, PartialEq, Eq, Add, Sub, AddAssign, SubAssign)]
 pub struct GaussianInteger
 {
     pub a: i64,
@@ -586,10 +578,7 @@ impl std::ops::Div for GaussianInteger
     fn div(self, rhs: Self) -> Self::Output
     {
         use num_traits::Zero;
-        assert!(
-            !rhs.is_zero(),
-            "Attempt to divide Gaussian integer by zero"
-        );
+        assert!(!rhs.is_zero(), "Attempt to divide Gaussian integer by zero");
 
         let quot_approx = Cplx::from(self) / Cplx::from(rhs);
         quot_approx.into()

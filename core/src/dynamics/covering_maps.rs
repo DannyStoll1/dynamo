@@ -278,10 +278,12 @@ impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C>
     fn encode_escape_result(
         &self,
         state: EscapeResult<C::Var, C::Deriv>,
+        start: C::Var,
         base_param: C::Param,
     ) -> PointInfo<C::Deriv>
     {
-        self.base_curve.encode_escape_result(state, base_param)
+        self.base_curve
+            .encode_escape_result(state, start, base_param)
     }
 }
 

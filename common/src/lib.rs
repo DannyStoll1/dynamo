@@ -14,6 +14,48 @@ pub mod symbolic_dynamics;
 pub mod traits;
 pub mod types;
 
+pub mod cache
+{
+    use std::{
+        collections::HashMap,
+        sync::{Arc, Mutex},
+    };
+
+    #[derive(Clone, Debug)]
+    pub struct Cache<K, V>
+    where
+        K: std::hash::Hash + Eq + Clone,
+        V: Clone,
+    {
+        data: Arc<Mutex<HashMap<K, V>>>,
+    }
+
+    impl<K, V> Cache<K, V>
+    where
+        K: std::hash::Hash + Eq + Clone,
+        V: Clone,
+    {
+        pub fn new() -> Self
+        {
+            Self {
+                data: Arc::new(Mutex::new(HashMap::new())),
+            }
+        }
+
+        pub fn get(&self, key: &K) -> Option<V>
+        {
+            let lock = self.data.lock().unwrap();
+            lock.get(key).cloned()
+        }
+
+        pub fn insert(&self, key: K, value: V)
+        {
+            let mut lock = self.data.lock().unwrap();
+            lock.insert(key, value);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests
 {

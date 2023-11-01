@@ -1,17 +1,22 @@
 use crate::macros::*;
+use dynamo_common::cache::Cache;
 use dynamo_color::prelude::*;
 profile_imports!();
+
+type EInt = EisensteinInteger;
+
 
 #[derive(Clone, Debug)]
 pub struct EisensteinMandel<const A: i64, const B: i64>
 {
     point_grid: PointGrid,
     max_iter: Period,
+    cache: Cache<(EInt, EInt), EscapeResult<EInt, EInt>>,
 }
 
 impl<const A: i64, const B: i64> EisensteinMandel<A, B>
 {
-    const MOD: EisensteinInteger = EisensteinInteger::new(A, B);
+    const MOD: EInt = EInt::new(A, B);
 }
 
 impl<const A: i64, const B: i64> Default for EisensteinMandel<A, B>
@@ -23,6 +28,7 @@ impl<const A: i64, const B: i64> Default for EisensteinMandel<A, B>
         Self {
             point_grid,
             max_iter: 1024,
+            cache: Cache::new(),
         }
     }
 }
@@ -30,9 +36,9 @@ impl<const A: i64, const B: i64> Default for EisensteinMandel<A, B>
 impl<const A: i64, const B: i64> ParameterPlane for EisensteinMandel<A, B>
 {
     basic_plane_impl!();
-    type Var = EisensteinInteger;
-    type Param = EisensteinInteger;
-    type Deriv = EisensteinInteger;
+    type Var = EInt;
+    type Param = EInt;
+    type Deriv = EInt;
     type MetaParam = NoParam;
     type Child = JuliaSet<Self>;
 
@@ -46,14 +52,24 @@ impl<const A: i64, const B: i64> ParameterPlane for EisensteinMandel<A, B>
         self.default_bounds()
     }
 
+    #[inline]
+    fn early_bailout(
+        &self,
+        start: Self::Var,
+        c: Self::Param,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        self.cache.get(&(start, c))
+    }
+
     fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        (z * z + c) % Self::MOD
+        (z * z * z + c) % Self::MOD
     }
 
     fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
     {
-        ((z * z + c) % Self::MOD, (2 * z) % Self::MOD)
+        ((z * z * z + c) % Self::MOD, (3 * z * z) % Self::MOD)
     }
 
     fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
@@ -69,7 +85,8 @@ impl<const A: i64, const B: i64> ParameterPlane for EisensteinMandel<A, B>
     fn default_coloring(&self) -> Coloring
     {
         let mut coloring = Coloring::default();
-        coloring.get_period_coloring_mut().num_colors = Self::MOD.norm() as f32;
+        // coloring.get_period_coloring_mut().num_colors = Self::MOD.norm() as f32;
+        coloring.get_period_coloring_mut().num_colors = 19.;
         coloring.with_interior_algorithm(IncoloringAlgorithm::Period)
     }
 
@@ -101,12 +118,9 @@ impl<const A: i64, const B: i64> InfinityFirstReturnMap for EisensteinMandel<A, 
 
 impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
 {
-    fn encode_escape_result(
-        &self,
-        result: EscapeResult<EisensteinInteger, EisensteinInteger>,
-        c: EisensteinInteger,
-    ) -> PointInfo<EisensteinInteger>
+    fn encode_escape_result(&self, result: EscapeResult<EInt, EInt>, start: EInt, c: EInt) -> PointInfo<EInt>
     {
+        self.cache.insert((start, c), result.clone());
         match result
         {
             EscapeResult::Bounded => PointInfo::Bounded,
@@ -126,12 +140,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         }
     }
 
-    fn encode_escaping_point(
-        &self,
-        iters: Period,
-        z: EisensteinInteger,
-        c: EisensteinInteger,
-    ) -> PointInfo<EisensteinInteger>
+    fn encode_escaping_point(&self, iters: Period, z: EInt, c: EInt) -> PointInfo<EInt>
     {
         if z.is_nan()
         {

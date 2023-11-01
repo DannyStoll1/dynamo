@@ -663,7 +663,6 @@ impl FractalTab
             });
             fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam);
             fractal_menu_button!(self, ui, "Rulkov Map", Rulkov);
-            fractal_menu_button!(self, ui, "Eisenstein Int Mandel", EisensteinMandel<17, 0>);
         });
     }
 
@@ -677,6 +676,7 @@ impl FractalTab
                 fractal_menu_button!(self, ui, "Mod 11", GaussianMandel<11, 0>);
                 fractal_menu_button!(self, ui, "Mod 19", GaussianMandel<19, 0>);
                 fractal_menu_button!(self, ui, "Mod 109", GaussianMandel<109, 0>);
+                fractal_menu_button!(self, ui, "Mod 311", GaussianMandel<311, 0>);
             });
             ui.menu_button("Eisenstein Int Mandel", |ui| {
                 fractal_menu_button!(self, ui, "Mod 2+ω", EisensteinMandel<2, 1>);
@@ -685,6 +685,7 @@ impl FractalTab
                 fractal_menu_button!(self, ui, "Mod 11", EisensteinMandel<11, 0>);
                 fractal_menu_button!(self, ui, "Mod 17", EisensteinMandel<17, 0>);
                 fractal_menu_button!(self, ui, "Mod 107", EisensteinMandel<107, 0>);
+                fractal_menu_button!(self, ui, "Mod 311", EisensteinMandel<311, 0>);
             });
         });
     }
