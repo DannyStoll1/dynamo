@@ -1,0 +1,3 @@
+# Ignore compiled libraries, but preserve this directory
+*
+!.gitignore

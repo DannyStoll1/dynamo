@@ -1,0 +1,13 @@
+[package]
+name = "transpiled-scripts"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["dylib"]
+
+[dependencies]
+dynamo_gui = { version = "*", path = "../../gui" }
+dynamo_core = { version = "*", path = "../../core" }
+dynamo_common = { version = "*", path = "../../common" }
+

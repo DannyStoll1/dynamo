@@ -4,7 +4,7 @@
 **/Cargo.lock
 target
 release-archives
-scripting/output/src/generated/*.rs
+crates/scripting/output/src/generated/*.rs
 
 # Deployment files
 prepare-release.sh
@@ -26,7 +26,7 @@ bacon.toml
 notes
 
 # Experiments
-profiles/src/rational_maps/quad_rat_per_4_1_experiments.rs
+crates/profiles/**/*_experiments.rs
 
 # Backups
 **/*.bak

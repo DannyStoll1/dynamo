@@ -1,0 +1,31 @@
+[package]
+name = "dynamo_app"
+version = "0.6.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+egui = "0.23.0"
+egui_dock = "0.8.1"
+egui_extras = "0.23.0"
+egui_file = {version = "0.11", optional = true}
+dynamo_common = {version = "*", path = "../common"}
+dynamo_core = {version = "*", path = "../core"}
+dynamo_profiles = {version = "*", path = "../profiles"}
+dynamo_gui = {version = "*", path = "../gui"}
+script_loader = {version = "*", path = "../scripting/loader", optional = true}
+seq-macro = "0.3.5"
+eframe = "0.23.0"
+lazy_static = {version = "1.4.0", optional = true}
+toml = {version = "0.8.2", optional = true}
+
+[features]
+serde = ["dynamo_gui/serde"]
+scripting = [
+    "dep:script_loader",
+    "dynamo_gui/scripting",
+    "dep:egui_file",
+    "dep:lazy_static",
+    "dep:toml",
+]

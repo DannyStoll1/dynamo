@@ -2,17 +2,17 @@
 resolver = "2"
 
 members = [
-    "app",
-    "bin",
-    "common",
-    "coloring",
-    "core",
-    "gui",
-    "wasm",
-    "profiles",
-    "poly_solve",
-    "scripting/loader",
-    "scripting/output",
+    "crates/app",
+    "crates/bin",
+    "crates/common",
+    "crates/coloring",
+    "crates/core",
+    "crates/gui",
+    "crates/wasm",
+    "crates/profiles",
+    "crates/poly_solve",
+    "crates/scripting/loader",
+    "crates/scripting/output",
 ]
 
 
