@@ -14,11 +14,10 @@ use thread_local::ThreadLocal;
 pub mod covering_maps;
 pub mod julia;
 pub mod newton;
-pub mod orbit;
 
 use crate::error::{FindPointError, FindPointResult};
+use crate::orbit::{EscapeResult, OrbitParams, self};
 use julia::JuliaSet;
-use orbit::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -150,6 +149,26 @@ pub trait DynamicalFamily: Sync + Send
     fn escape_radius(&self) -> Real
     {
         1e12
+    }
+
+    #[inline]
+    fn stop_condition(&self, z: Self::Var, _c: Self::Param, iter: Period) -> Option<EscapeResult<Self::Var, Self::Deriv>> {
+
+        if iter < self.min_iter() {
+            return None
+        }
+        if iter > self.max_iter() {
+            return Some(EscapeResult::Bounded)
+        }
+
+        let r = z.norm_sqr();
+        if r > self.escape_radius() || z.is_nan() {
+            return Some(EscapeResult::Escaped {
+                iters: iter,
+                final_value: z,
+            })
+        }
+        None
     }
 
     /// Lower bound on distance-squared between fast and slow orbits. If the fast and slow
@@ -378,9 +397,10 @@ pub trait DynamicalFamily: Sync + Send
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
-        let orbit = CycleDetectedOrbitFloyd::new(
+        let orbit = orbit::floyd::CycleDetected::new(
             |z, c| self.map(z, c),
             |z, c| self.map_and_multiplier(z, c),
+            |z, c, i| self.stop_condition(z, c, i),
             |z, c| self.early_bailout(z, c),
             start,
             c,
@@ -398,7 +418,7 @@ pub trait DynamicalFamily: Sync + Send
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         Box::new(
-            SimpleOrbit::new(
+            orbit::simple::SimpleOrbit::new(
                 |z, c| self.map(z, c),
                 start,
                 param,
@@ -413,7 +433,7 @@ pub trait DynamicalFamily: Sync + Send
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
-        let orbit = SimpleOrbit::new(
+        let orbit = orbit::simple::SimpleOrbit::new(
             |z, c| self.map(z, c),
             start,
             param,
@@ -868,7 +888,7 @@ where
         let escape_radius = 30.;
         let theta0 = 0.02;
 
-        let orbit = SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
+        let orbit = orbit::SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
         let result = orbit.last()?.1.unwrap_or_default();
         let EscapeResult::Escaped { iters, final_value } = result else {
             return None;
@@ -971,23 +991,23 @@ pub trait Computable: DynamicalFamily
 
     fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>;
 
-    fn get_orbit_info(&self, point: Cplx) -> OrbitInfo<Self::Param, Self::Var, Self::Deriv>
+    fn get_orbit_info(&self, point: Cplx) -> orbit::Info<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         let result = self.run_and_encode_point(start, param);
-        OrbitInfo {
+        orbit::Info {
             param,
             start,
             result,
         }
     }
 
-    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>;
+    fn get_orbit_and_info(&self, point: Cplx) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>;
 
-    fn orbit_summary_conf(&self) -> OrbitSummaryConf
+    fn orbit_summary_conf(&self) -> orbit::OrbitSummaryConf
     {
-        OrbitSummaryConf {
+        orbit::OrbitSummaryConf {
             show_parameter: true,
             show_selection: true,
             show_start_point: !self.plane_type().is_dynamical(),
@@ -1008,9 +1028,10 @@ where
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
-        let mut orbit = CycleDetectedOrbitFloyd::new(
+        let mut orbit = orbit::CycleDetected::new(
             |z, c| self.map(z, c),
             |z, c| self.map_and_multiplier(z, c),
+            |z, c, i| self.stop_condition(z, c, i),
             |z, c| self.early_bailout(z, c),
             start,
             c,
@@ -1021,7 +1042,7 @@ where
         self.encode_escape_result(state, start, c)
     }
 
-    fn get_orbit_and_info(&self, point: Cplx) -> OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
+    fn get_orbit_and_info(&self, point: Cplx) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
@@ -1031,9 +1052,10 @@ where
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
-        let orbit = CycleDetectedOrbitFloyd::new(
+        let orbit = orbit::CycleDetected::new(
             |c, z| self.map(c, z),
             |c, z| self.map_and_multiplier(c, z),
+            |z, c, i| self.stop_condition(z, c, i),
             |c, z| self.early_bailout(c, z),
             start,
             param,
@@ -1047,9 +1069,9 @@ where
             })
             .collect();
         let result = self.encode_escape_result(final_state.unwrap_or_default(), start, param);
-        OrbitAndInfo {
+        orbit::OrbitAndInfo {
             orbit: trajectory,
-            info: OrbitInfo {
+            info: orbit::Info {
                 param,
                 start,
                 result,
@@ -1087,9 +1109,10 @@ where
                     let start = self.start_point(point, param);
                     let mut orbit = orbits
                         .get_or(|| {
-                            RefCell::new(CycleDetectedOrbitFloyd::new(
+                            RefCell::new(orbit::CycleDetected::new(
                                 |c, z| self.map(c, z),
                                 |c, z| self.map_and_multiplier(c, z),
+                                |z, c, i| self.stop_condition(z, c, i),
                                 |c, z| self.early_bailout(c, z),
                                 start,
                                 param,

@@ -1,6 +1,6 @@
-use super::DynamicalFamily;
-use super::{orbit::EscapeResult, MarkedPoints};
+use super::{DynamicalFamily, MarkedPoints};
 use crate::macros::basic_plane_impl;
+use crate::orbit::EscapeResult;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::math_utils::newton::find_target_newton_err_d;
@@ -104,7 +104,8 @@ where
     }
 
     #[inline]
-    fn escape_radius(&self) -> Real {
+    fn escape_radius(&self) -> Real
+    {
         self.parent.escape_radius()
     }
 

@@ -1,5 +1,5 @@
 use super::julia::JuliaSet;
-use super::orbit::EscapeResult;
+use crate::orbit::EscapeResult;
 use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, MarkedPoints, DynamicalFamily};
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::prelude::*;

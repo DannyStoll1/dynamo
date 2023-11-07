@@ -248,7 +248,7 @@ where
     pub image_frame: ImageFrame,
     tasks: PaneTasks,
     selection: Cplx,
-    orbit_info: Option<OrbitInfo<P::Param, P::Var, P::Deriv>>,
+    orbit_info: Option<orbit::Info<P::Param, P::Var, P::Deriv>>,
     pub marking: Marking,
     pub zoom_factor: Real,
     pub ray_state: RayState,
@@ -329,17 +329,17 @@ where
     }
 
     #[inline]
-    const fn get_orbit_info(&self) -> &Option<OrbitInfo<P::Param, P::Var, P::Deriv>>
+    const fn get_orbit_info(&self) -> &Option<orbit::Info<P::Param, P::Var, P::Deriv>>
     {
         &self.orbit_info
     }
     #[inline]
-    fn get_orbit_info_mut(&mut self) -> &mut Option<OrbitInfo<P::Param, P::Var, P::Deriv>>
+    fn get_orbit_info_mut(&mut self) -> &mut Option<orbit::Info<P::Param, P::Var, P::Deriv>>
     {
         &mut self.orbit_info
     }
     #[inline]
-    fn set_orbit_info(&mut self, info: OrbitInfo<P::Param, P::Var, P::Deriv>)
+    fn set_orbit_info(&mut self, info: orbit::Info<P::Param, P::Var, P::Deriv>)
     {
         self.orbit_info = Some(info);
     }
@@ -657,7 +657,7 @@ where
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
     {
-        let OrbitAndInfo { orbit, info } = self.plane.get_orbit_and_info(pointer_value);
+        let orbit::OrbitAndInfo { orbit, info } = self.plane.get_orbit_and_info(pointer_value);
         let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
         self.mark_orbit(orbit_pts, Color32::GREEN);
         self.set_orbit_info(info);
