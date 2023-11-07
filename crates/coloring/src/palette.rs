@@ -86,6 +86,30 @@ impl Default for Sinusoid
     }
 }
 
+mod colors
+{
+    use egui::Color32;
+    pub(super) const fn white() -> Color32
+    {
+        Color32::WHITE
+    }
+
+    pub(super) const fn black() -> Color32
+    {
+        Color32::BLACK
+    }
+
+    pub(super) const fn gray() -> Color32
+    {
+        Color32::GRAY
+    }
+
+    pub(super) const fn brown() -> Color32
+    {
+        Color32::BROWN
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Palette
@@ -93,9 +117,14 @@ pub struct Palette
     pub color_map_r: Sinusoid,
     pub color_map_g: Sinusoid,
     pub color_map_b: Sinusoid,
+    #[serde(default = "DiscretePalette::default")]
     pub period_coloring: DiscretePalette,
+    #[serde(default = "colors::black")]
     pub in_color: Color32,
+    #[serde(default = "colors::brown")]
     pub wandering_color: Color32,
+    #[serde(default = "colors::gray")]
+    pub unknown_color: Color32,
 }
 
 impl Palette
@@ -110,6 +139,7 @@ impl Palette
             period_coloring: DiscretePalette::standard(),
             in_color: Color32::BLACK,
             wandering_color: Color32::BROWN,
+            unknown_color: Color32::GRAY,
         }
     }
 
@@ -124,6 +154,7 @@ impl Palette
             period_coloring: DiscretePalette::standard(),
             in_color: Color32::BLACK,
             wandering_color: Color32::BROWN,
+            unknown_color: Color32::GRAY,
         }
     }
 
@@ -143,6 +174,7 @@ impl Palette
             period_coloring: DiscretePalette::standard(),
             in_color: Color32::WHITE,
             wandering_color: Color32::BROWN,
+            unknown_color: Color32::GRAY,
         }
     }
 

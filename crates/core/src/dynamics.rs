@@ -16,7 +16,7 @@ pub mod julia;
 pub mod newton;
 
 use crate::error::{FindPointError, FindPointResult};
-use crate::orbit::{self, EscapeResult, OrbitParams};
+use crate::orbit::{self, EscapeResult};
 use julia::JuliaSet;
 
 #[cfg(feature = "serde")]
@@ -152,10 +152,25 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     #[inline]
+    fn extra_stop_condition(&self, z: Self::Var, _c: Self::Param, iter: Period) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        let r = z.norm_sqr();
+        if r > self.escape_radius() || z.is_nan() {
+            Some(EscapeResult::Escaped {
+                iters: iter,
+                final_value: z,
+            })
+        }
+        else {
+            None
+        }
+    }
+
+    #[inline]
     fn stop_condition(
         &self,
         z: Self::Var,
-        _c: Self::Param,
+        c: Self::Param,
         iter: Period,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
@@ -163,17 +178,10 @@ pub trait DynamicalFamily: Sync + Send
             return None;
         }
         if iter > self.max_iter() {
-            return Some(EscapeResult::Bounded);
+            return Some(EscapeResult::Bounded(z));
         }
 
-        let r = z.norm_sqr();
-        if r > self.escape_radius() || z.is_nan() {
-            return Some(EscapeResult::Escaped {
-                iters: iter,
-                final_value: z,
-            });
-        }
-        None
+        self.extra_stop_condition(z, c, iter)
     }
 
     /// Lower bound on distance-squared between fast and slow orbits. If the fast and slow
@@ -401,7 +409,7 @@ pub trait DynamicalFamily: Sync + Send
         if let Some((_, state)) = orbit.last() {
             state.unwrap_or_default()
         } else {
-            EscapeResult::Bounded
+            EscapeResult::Unknown
         }
     }
 
@@ -410,7 +418,7 @@ pub trait DynamicalFamily: Sync + Send
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         Box::new(
-            orbit::simple::SimpleOrbit::new(
+            orbit::simple::Simple::new(
                 |z, c| self.map(z, c),
                 start,
                 param,
@@ -425,7 +433,7 @@ pub trait DynamicalFamily: Sync + Send
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
-        let orbit = orbit::simple::SimpleOrbit::new(
+        let orbit = orbit::simple::Simple::new(
             |z, c| self.map(z, c),
             start,
             param,
@@ -880,7 +888,7 @@ where
         let escape_radius = 30.;
         let theta0 = 0.02;
 
-        let orbit = orbit::SimpleOrbit::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
+        let orbit = orbit::Simple::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
         let result = orbit.last()?.1.unwrap_or_default();
         let EscapeResult::Escaped { iters, final_value } = result else {
             return None;
@@ -937,14 +945,15 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
     ) -> PointInfo<Self::Deriv>
     {
         match result {
-            EscapeResult::Bounded => PointInfo::Bounded,
-            EscapeResult::Periodic { info, final_value } => {
-                self.identify_marked_points(final_value, c, info)
-            }
-            EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
             EscapeResult::Escaped { iters, final_value } => {
                 self.encode_escaping_point(iters, final_value, c)
             }
+            EscapeResult::Periodic { info, final_value } => {
+                self.identify_marked_points(final_value, c, info)
+            }
+            EscapeResult::Bounded(_) => PointInfo::Bounded,
+            EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
+            EscapeResult::Unknown => PointInfo::Unknown,
         }
     }
 

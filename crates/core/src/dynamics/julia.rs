@@ -116,6 +116,17 @@ where
     }
 
     #[inline]
+    fn extra_stop_condition(
+        &self,
+        z: Self::Var,
+        _: NoParam,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        self.parent.extra_stop_condition(z, self.local_param, iter)
+    }
+
+    #[inline]
     fn param_map(&self, _z: Cplx) -> Self::Param
     {
         NoParam

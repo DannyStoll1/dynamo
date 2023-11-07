@@ -35,6 +35,7 @@ pub mod cache
         K: std::hash::Hash + Eq + Clone,
         V: Clone,
     {
+        #[must_use]
         pub fn new() -> Self
         {
             Self {
@@ -44,14 +45,33 @@ pub mod cache
 
         pub fn get(&self, key: &K) -> Option<V>
         {
-            let lock = self.data.lock().unwrap();
-            lock.get(key).cloned()
+            match self.data.lock() {
+                Ok(lock) => lock.get(key).cloned(),
+                Err(poisoned) => poisoned.into_inner().get(key).cloned(),
+            }
         }
 
         pub fn insert(&self, key: K, value: V)
         {
-            let mut lock = self.data.lock().unwrap();
-            lock.insert(key, value);
+            match self.data.lock() {
+                Ok(mut lock) => {
+                    lock.insert(key, value);
+                }
+                Err(poisoned) => {
+                    poisoned.into_inner().insert(key, value);
+                }
+            }
+        }
+    }
+
+    impl<K, V> Default for Cache<K, V>
+    where
+        K: std::hash::Hash + Eq + Clone,
+        V: Clone,
+    {
+        fn default() -> Self
+        {
+            Self::new()
         }
     }
 }

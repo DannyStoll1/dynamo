@@ -1,4 +1,4 @@
-use super::{EscapeResult, OrbitParams};
+use super::EscapeResult;
 use crate::prelude::DynamicalFamily;
 use dynamo_common::prelude::*;
 use num_traits::One;

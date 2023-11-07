@@ -6,12 +6,13 @@ pub mod floyd;
 pub mod simple;
 
 pub use floyd::CycleDetected;
-pub use simple::SimpleOrbit;
+pub use simple::Simple;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EscapeResult<V, D>
 {
     Escaped
@@ -25,14 +26,9 @@ pub enum EscapeResult<V, D>
         final_value: V,
     },
     KnownPotential(PointInfoKnownPotential<D>),
+    Bounded(V),
     #[default]
-    Bounded,
-}
-
-pub struct OrbitParams
-{
-    pub periodicity_tolerance: Real,
-    pub escape_radius: Real,
+    Unknown,
 }
 
 #[derive(Clone, Debug)]
@@ -114,6 +110,7 @@ where
             PeriodicKnownPotential(data) => data.to_string(),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
+            Unknown => "Unknown result, likely due to insufficient floting-point precision".to_owned(),
         };
         format!(
             "{start_desc}\

@@ -429,32 +429,32 @@ where
                 pane_id,
                 select_landing_point,
             } => {
-                let prompt = format!(concat!(
+                let prompt = concat!(
                     "Input an angle to draw a ray\n",
                     "Example formats: <15/56>, <110>, <p011>, <001p010>",
-                ),);
+                );
                 TextDialogBuilder::new(input_type)
                     .title("External ray angle input")
                     .prompt(prompt)
                     .pane_toggles("Draw on", pane_id)
                     .add_toggle_with_default(
                         ToggleKey::SelectPoint,
-                        "Select landing point",
+                        "Select landing point".to_owned(),
                         select_landing_point,
                     )
-                    .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point")
+                    .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point".to_owned())
                     .build()
             }
             ActiveRays { pane_id } => {
-                let prompt = format!(concat!(
+                let prompt = concat!(
                     "Input the period to draw all active rays.\n",
                     "Format: <period> or <preperiod, period>"
-                ),);
+                );
                 TextDialogBuilder::new(input_type)
                     .title("Draw active rays")
                     .prompt(prompt)
                     .pane_toggles("Draw on", pane_id)
-                    .add_toggle(ToggleKey::PrefixAngles, "Include rays of shorter preperiod")
+                    .add_toggle(ToggleKey::PrefixAngles, "Include rays of shorter preperiod".to_owned())
                     .build()
             }
             FindPeriodic { pane_id } => {
@@ -881,12 +881,6 @@ where
                     self.prompt_text(input_type);
                 }
             }
-            Action::DrawActiveRays => {
-                if let Some(pane_id) = self.active_pane {
-                    let input_type = TextInputType::ActiveRays { pane_id };
-                    self.prompt_text(input_type);
-                }
-            }
             Action::DrawEquipotential => {
                 self.get_active_pane_mut().map(Pane::draw_equipotential);
             }
@@ -954,15 +948,15 @@ where
             }
             Action::SetColoringInternalPotential => {
                 self.get_active_pane_mut()
-                    .map(|p| p.select_preperiod_smooth_coloring());
+                    .map(Pane::select_preperiod_smooth_coloring);
             }
             Action::SetColoringPreperiodPeriod => {
                 self.get_active_pane_mut()
-                    .map(|p| p.select_preperiod_coloring());
+                    .map(Pane::select_preperiod_coloring);
             }
             Action::SetColoringPotentialPeriod => {
                 self.get_active_pane_mut()
-                    .map(|p| p.select_preperiod_period_smooth_coloring());
+                    .map(Pane::select_preperiod_period_smooth_coloring);
             }
             Action::ScalePalettePeriod(factor) => {
                 self.get_active_pane_mut().map(|p| p.scale_palette(*factor));

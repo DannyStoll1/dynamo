@@ -46,17 +46,17 @@ impl ToggleMap
     {
         Self(Vec::new())
     }
+    #[must_use]
     pub fn get(&self, key: ToggleKey) -> bool
     {
         self.0
             .iter()
             .find(|x| x.key == key)
-            .map(|x| x.enabled)
-            .unwrap_or(false)
+            .is_some_and(|x| x.enabled)
     }
     pub fn push(&mut self, toggle: Toggle)
     {
-        self.0.push(toggle)
+        self.0.push(toggle);
     }
     pub fn iter(&self) -> std::slice::Iter<'_, Toggle>
     {
@@ -224,12 +224,12 @@ impl TextDialogBuilder
     }
 
     #[must_use]
-    pub fn add_toggle(mut self, key: ToggleKey, name: impl ToString) -> Self
+    pub fn add_toggle(mut self, key: ToggleKey, name: String) -> Self
     {
         self.toggles.push(Toggle {
             key,
             enabled: false,
-            text: name.to_string(),
+            text: name,
             conditional: false,
         });
         self
@@ -239,12 +239,12 @@ impl TextDialogBuilder
     /// Currently can only point to the last toggle.
     /// Will not be greyed out if there are no previous toggles.
     #[must_use]
-    pub fn add_cond_toggle(mut self, key: ToggleKey, name: impl ToString) -> Self
+    pub fn add_cond_toggle(mut self, key: ToggleKey, name: String) -> Self
     {
         self.toggles.push(Toggle {
             key,
             enabled: false,
-            text: name.to_string(),
+            text: name,
             conditional: true,
         });
         self
@@ -254,14 +254,14 @@ impl TextDialogBuilder
     pub fn add_toggle_with_default(
         mut self,
         key: ToggleKey,
-        name: impl ToString,
+        name: String,
         default_state: bool,
     ) -> Self
     {
         self.toggles.push(Toggle {
             key,
             enabled: default_state,
-            text: name.to_string(),
+            text: name,
             conditional: false,
         });
         self
@@ -272,12 +272,12 @@ impl TextDialogBuilder
     {
         self.add_toggle_with_default(
             ToggleKey::DoParent,
-            format!("{} parent", text_prefix),
+            format!("{text_prefix} parent"),
             matches!(pane_id, PaneID::Parent),
         )
         .add_toggle_with_default(
             ToggleKey::DoChild,
-            format!("{} child", text_prefix),
+            format!("{text_prefix} child"),
             matches!(pane_id, PaneID::Child),
         )
     }

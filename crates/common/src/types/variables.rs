@@ -648,7 +648,7 @@ impl From<GaussianInteger> for Cplx
 {
     fn from(eis: GaussianInteger) -> Self
     {
-        Cplx::new(eis.a as Real, eis.b as Real)
+        Self::new(eis.a as Real, eis.b as Real)
     }
 }
 

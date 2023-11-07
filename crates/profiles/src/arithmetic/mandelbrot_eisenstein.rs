@@ -128,7 +128,6 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
     {
         self.cache.insert((start, c), result.clone());
         match result {
-            EscapeResult::Bounded => PointInfo::Bounded,
             EscapeResult::Periodic {
                 mut info,
                 final_value,
@@ -137,9 +136,11 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
                 self.identify_marked_points(final_value, c, info)
             }
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
+            EscapeResult::Bounded(_) => PointInfo::Bounded,
             EscapeResult::Escaped { iters, final_value } => {
                 self.encode_escaping_point(iters, final_value, c)
             }
+            EscapeResult::Unknown => PointInfo::Unknown,
         }
     }
 

@@ -24,6 +24,7 @@ pub enum PointInfo<D>
         class_id: PointClassId,
         num_point_classes: usize,
     },
+    Unknown,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

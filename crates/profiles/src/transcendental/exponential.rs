@@ -45,8 +45,26 @@ impl DynamicalFamily for Exponential
         (u, u)
     }
 
-    fn escape_radius(&self) -> Real {
-        5e4
+    #[inline]
+    fn extra_stop_condition(
+        &self,
+        z: Self::Var,
+        _c: Self::Param,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        if z.re > 250. {
+            Some(EscapeResult::Escaped {
+                iters: iter,
+                final_value: z,
+            })
+        } else if z.re < -50. {
+            None
+        } else if z.im.abs() > 1e15 {
+            Some(EscapeResult::Unknown)
+        } else {
+            None
+        }
     }
 
     #[inline]
@@ -298,7 +316,7 @@ impl MarkedPoints for Cosine
         let mut pts = Vec::with_capacity((n_max - n_min) as usize);
 
         for n in n_min..n_max {
-            pts.push((n as Real * PI).into())
+            pts.push((n as Real * PI).into());
         }
         pts
     }
@@ -318,7 +336,7 @@ impl MarkedPoints for CosineAdd
         let mut pts = Vec::with_capacity((n_max - n_min) as usize);
 
         for n in n_min..n_max {
-            pts.push((n as Real * PI).into())
+            pts.push((n as Real * PI).into());
         }
         pts
     }
@@ -338,7 +356,7 @@ impl MarkedPoints for SineWander
         let mut pts = Vec::with_capacity((n_max - n_min + 1) as usize);
 
         for n in n_min..=n_max {
-            pts.push((n as Real * TAU + PI).into())
+            pts.push((n as Real).mul_add(TAU, PI).into());
         }
         pts
     }

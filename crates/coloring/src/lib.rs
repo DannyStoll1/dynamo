@@ -48,6 +48,7 @@ impl Coloring
             }
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
+            Unknown => self.palette.unknown_color,
             MarkedPoint {
                 class_id,
                 num_point_classes,

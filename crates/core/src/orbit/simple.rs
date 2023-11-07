@@ -1,8 +1,8 @@
-use super::{EscapeResult, OrbitParams};
+use super::EscapeResult;
 use dynamo_common::prelude::*;
 use num_traits::One;
 
-pub struct SimpleOrbit<V, P, F>
+pub struct Simple<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
@@ -17,7 +17,7 @@ where
     pub state: Option<EscapeResult<V, V>>,
 }
 
-impl<V, P, F> SimpleOrbit<V, P, F>
+impl<V, P, F> Simple<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,
@@ -45,7 +45,7 @@ where
     fn enforce_stop_condition(&mut self)
     {
         if self.iter > self.max_iter {
-            self.state = Some(EscapeResult::Bounded);
+            self.state = Some(EscapeResult::Bounded(self.z));
             return;
         }
 
@@ -60,7 +60,7 @@ where
     }
 }
 
-impl<V, P, F> Iterator for SimpleOrbit<V, P, F>
+impl<V, P, F> Iterator for Simple<V, P, F>
 where
     F: Fn(V, P) -> V,
     P: Copy,

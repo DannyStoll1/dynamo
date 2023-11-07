@@ -570,7 +570,7 @@ where
             RayState::Following(angle) => {
                 self.select_ray_landing_point_now(angle);
             }
-            _ => {}
+            RayState::Idle => {}
         }
     }
 

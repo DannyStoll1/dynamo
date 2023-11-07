@@ -144,7 +144,7 @@ fn exp(b: &mut Bencher)
         for _ in 0..10_000 {
             let u = Cplx::new(r, r.ln()).exp();
             black_box(u);
-            r = r + TAU % 1.0;
+            r += TAU % 1.0;
         }
     });
 }
@@ -158,7 +158,7 @@ fn exp2(b: &mut Bencher)
         for _ in 0..10_000 {
             let u = Cplx::new(r, r.log2()).exp2();
             black_box(u);
-            r = r + TAU % 1.0;
+            r += TAU % 1.0;
         }
     });
 }
@@ -172,7 +172,7 @@ fn norm(b: &mut Bencher)
         for _ in 0..10_000 {
             let u = Cplx::new(r, 1.3).norm();
             black_box(u);
-            r = r + TAU % 1.0;
+            r += TAU % 1.0;
         }
     });
 }
@@ -186,7 +186,7 @@ fn norm_sqr(b: &mut Bencher)
         for _ in 0..10_000 {
             let u = Cplx::new(r, 1.3).norm_sqr();
             black_box(u);
-            r = r + TAU % 1.0;
+            r += TAU % 1.0;
         }
     });
 }

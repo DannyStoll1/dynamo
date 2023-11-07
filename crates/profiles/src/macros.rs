@@ -127,12 +127,19 @@ macro_rules! degree_impl_transcendental {
             ) -> PointInfo<Self::Deriv>
             {
                 match state {
-                    EscapeResult::Bounded => PointInfo::Wandering,
                     EscapeResult::Periodic { info, .. } => PointInfo::Periodic(info),
                     EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
                     EscapeResult::Escaped { iters, final_value } => {
                         self.encode_escaping_point(iters, final_value, base_param)
                     }
+                    EscapeResult::Bounded(final_value) => {
+                        if final_value.norm_sqr() > 1e5 {
+                            PointInfo::Wandering
+                        } else {
+                            PointInfo::Bounded
+                        }
+                    }
+                    EscapeResult::Unknown => PointInfo::Unknown,
                 }
             }
 

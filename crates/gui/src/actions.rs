@@ -30,7 +30,6 @@ pub enum Action
     {
         select_landing_point: bool,
     },
-    DrawActiveRays,
     DrawRaysOfPeriod,
     DrawEquipotential,
     ClearRays,
@@ -106,12 +105,7 @@ impl Action
                     "Draw/hide an external ray on active image.".to_owned()
                 }
             }
-            Self::DrawActiveRays => {
-                "Draw all rays of a given period and at most a given preperiod.".to_owned()
-            }
-            Self::DrawRaysOfPeriod => {
-                "Draw all rays of a given period and a given preperiod.".to_owned()
-            }
+            Self::DrawRaysOfPeriod => "Draw all rays of a given period and preperiod.".to_owned(),
             Self::DrawEquipotential => "Draw equipotential through selection.".to_owned(),
             Self::ClearRays => "Clear all external rays on active image.".to_owned(),
             Self::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
@@ -232,7 +226,6 @@ impl Action
                     "Draw Ray...".to_owned()
                 }
             }
-            Self::DrawActiveRays => "Active Rays".to_owned(),
             Self::DrawRaysOfPeriod => "Rays of Period".to_owned(),
             Self::DrawEquipotential => "Equipotential".to_owned(),
             Self::ClearRays => "Clear Rays".to_owned(),
