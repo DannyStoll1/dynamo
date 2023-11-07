@@ -1,12 +1,12 @@
+use crate::dynamics::DynamicalFamily;
 use dynamo_common::prelude::*;
 use num_traits::One;
-use crate::dynamics::DynamicalFamily;
 
-pub mod simple;
 pub mod floyd;
+pub mod simple;
 
-pub use simple::SimpleOrbit;
 pub use floyd::CycleDetected;
+pub use simple::SimpleOrbit;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

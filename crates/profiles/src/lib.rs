@@ -87,21 +87,8 @@ mod tests
         let param = Cplx::new(0.3, 0.1);
         let start = Cplx::from(0.0);
 
-        let orbit_params = OrbitParams {
-            max_iter: 256,
-            min_iter: 1,
-            periodicity_tolerance: 1e-12,
-            escape_radius: 1e6,
-        };
-
         let mut orbit = orbit::CycleDetected::new(
-            |z, c| plane.map(z, c),
-            |z, c| plane.map_and_multiplier(z, c),
-            |z, c, i| plane.stop_condition(z, c, i),
-            |z, c| plane.early_bailout(z, c),
-            start,
-            param,
-            &orbit_params,
+            &plane, start, param
         );
 
         let result = orbit.run_until_complete();

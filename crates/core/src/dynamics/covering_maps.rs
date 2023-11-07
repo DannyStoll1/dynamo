@@ -1,6 +1,6 @@
 use super::julia::JuliaSet;
+use super::{DynamicalFamily, EscapeEncoding, ExternalRays, InfinityFirstReturnMap, MarkedPoints};
 use crate::orbit::EscapeResult;
-use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, MarkedPoints, DynamicalFamily};
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;

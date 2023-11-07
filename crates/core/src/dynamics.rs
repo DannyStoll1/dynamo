@@ -16,7 +16,7 @@ pub mod julia;
 pub mod newton;
 
 use crate::error::{FindPointError, FindPointResult};
-use crate::orbit::{EscapeResult, OrbitParams, self};
+use crate::orbit::{self, EscapeResult, OrbitParams};
 use julia::JuliaSet;
 
 #[cfg(feature = "serde")]
@@ -152,13 +152,18 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     #[inline]
-    fn stop_condition(&self, z: Self::Var, _c: Self::Param, iter: Period) -> Option<EscapeResult<Self::Var, Self::Deriv>> {
-
+    fn stop_condition(
+        &self,
+        z: Self::Var,
+        _c: Self::Param,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
         if iter < self.min_iter() {
-            return None
+            return None;
         }
         if iter > self.max_iter() {
-            return Some(EscapeResult::Bounded)
+            return Some(EscapeResult::Bounded);
         }
 
         let r = z.norm_sqr();
@@ -166,7 +171,7 @@ pub trait DynamicalFamily: Sync + Send
             return Some(EscapeResult::Escaped {
                 iters: iter,
                 final_value: z,
-            })
+            });
         }
         None
     }
@@ -273,7 +278,6 @@ pub trait DynamicalFamily: Sync + Send
         self.set_param(param);
         self
     }
-
 
     /// Try to find a (pre)periodic point near a given base point
     #[allow(clippy::suspicious_operation_groupings)]
@@ -390,20 +394,10 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeResult<Self::Var, Self::Deriv>
+    where
+        Self: Clone,
     {
-        let orbit_params = OrbitParams {
-            periodicity_tolerance: self.periodicity_tolerance(),
-            escape_radius: self.escape_radius(),
-        };
-        let orbit = orbit::floyd::CycleDetected::new(
-            |z, c| self.map(z, c),
-            |z, c| self.map_and_multiplier(z, c),
-            |z, c, i| self.stop_condition(z, c, i),
-            |z, c| self.early_bailout(z, c),
-            start,
-            c,
-            &orbit_params,
-        );
+        let orbit = orbit::CycleDetected::new(self, start, c);
         if let Some((_, state)) = orbit.last() {
             state.unwrap_or_default()
         } else {
@@ -567,7 +561,7 @@ impl std::fmt::Display for PlaneType
     }
 }
 
-pub trait MarkedPoints : DynamicalFamily
+pub trait MarkedPoints: DynamicalFamily
 {
     /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
     #[inline]
@@ -1001,7 +995,10 @@ pub trait Computable: DynamicalFamily
         }
     }
 
-    fn get_orbit_and_info(&self, point: Cplx) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>;
+    fn get_orbit_and_info(
+        &self,
+        point: Cplx,
+    ) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>;
 
     fn orbit_summary_conf(&self) -> orbit::OrbitSummaryConf
     {
@@ -1020,41 +1017,20 @@ where
 {
     fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
-        let orbit_params = OrbitParams {
-            periodicity_tolerance: self.periodicity_tolerance(),
-            escape_radius: self.escape_radius(),
-        };
-        let mut orbit = orbit::CycleDetected::new(
-            |z, c| self.map(z, c),
-            |z, c| self.map_and_multiplier(z, c),
-            |z, c, i| self.stop_condition(z, c, i),
-            |z, c| self.early_bailout(z, c),
-            start,
-            c,
-            &orbit_params,
-        );
+        let mut orbit = orbit::CycleDetected::new(self, start, c);
         let state = orbit.run_until_complete();
 
         self.encode_escape_result(state, start, c)
     }
 
-    fn get_orbit_and_info(&self, point: Cplx) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
+    fn get_orbit_and_info(
+        &self,
+        point: Cplx,
+    ) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
         let start = self.start_point(point, param);
-        let orbit_params = OrbitParams {
-            periodicity_tolerance: self.periodicity_tolerance(),
-            escape_radius: self.escape_radius(),
-        };
-        let orbit = orbit::CycleDetected::new(
-            |c, z| self.map(c, z),
-            |c, z| self.map_and_multiplier(c, z),
-            |z, c, i| self.stop_condition(z, c, i),
-            |c, z| self.early_bailout(c, z),
-            start,
-            param,
-            &orbit_params,
-        );
+        let orbit = orbit::CycleDetected::new(self, start, param);
         let mut final_state = None;
         let trajectory: Vec<Self::Var> = orbit
             .map(|(z, s)| {
@@ -1089,28 +1065,13 @@ where
             .enumerate()
             .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
-                let orbit_params = OrbitParams {
-                    periodicity_tolerance: self.periodicity_tolerance(),
-                    escape_radius: self.escape_radius(),
-                };
-
                 chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
                     let y = chunk_idx * chunk_size + local_y;
                     let point = self.point_grid().map_pixel(x, y);
                     let param = self.param_map(point);
                     let start = self.start_point(point, param);
                     let mut orbit = orbits
-                        .get_or(|| {
-                            RefCell::new(orbit::CycleDetected::new(
-                                |c, z| self.map(c, z),
-                                |c, z| self.map_and_multiplier(c, z),
-                                |z, c, i| self.stop_condition(z, c, i),
-                                |c, z| self.early_bailout(c, z),
-                                start,
-                                param,
-                                &orbit_params,
-                            ))
-                        })
+                        .get_or(|| RefCell::new(orbit::CycleDetected::new(self, start, param)))
                         .borrow_mut();
 
                     orbit.reset(param, start);
@@ -1121,5 +1082,11 @@ where
     }
 }
 
-pub trait Displayable: DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints {}
-impl<P> Displayable for P where P: DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints {}
+pub trait Displayable:
+    DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints
+{
+}
+impl<P> Displayable for P where
+    P: DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints
+{
+}
