@@ -94,7 +94,7 @@ mod tests
             escape_radius: 1e6,
         };
 
-        let mut orbit = CycleDetectedOrbitFloyd::new(
+        let mut orbit = orbit::CycleDetected::new(
             |z, c| plane.map(z, c),
             |z, c| plane.map_and_multiplier(z, c),
             |z, c, i| plane.stop_condition(z, c, i),

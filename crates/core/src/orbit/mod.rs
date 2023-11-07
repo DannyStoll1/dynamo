@@ -31,8 +31,6 @@ pub enum EscapeResult<V, D>
 
 pub struct OrbitParams
 {
-    pub max_iter: Period,
-    pub min_iter: Period,
     pub periodicity_tolerance: Real,
     pub escape_radius: Real,
 }

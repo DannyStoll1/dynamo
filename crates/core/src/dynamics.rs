@@ -392,8 +392,6 @@ pub trait DynamicalFamily: Sync + Send
     fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeResult<Self::Var, Self::Deriv>
     {
         let orbit_params = OrbitParams {
-            max_iter: self.max_iter(),
-            min_iter: self.min_iter(),
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
@@ -1023,8 +1021,6 @@ where
     fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
         let orbit_params = OrbitParams {
-            max_iter: self.max_iter(),
-            min_iter: self.min_iter(),
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
@@ -1047,8 +1043,6 @@ where
         let param = self.param_map(point);
         let start = self.start_point(point, param);
         let orbit_params = OrbitParams {
-            max_iter: self.max_iter(),
-            min_iter: self.min_iter(),
             periodicity_tolerance: self.periodicity_tolerance(),
             escape_radius: self.escape_radius(),
         };
@@ -1096,8 +1090,6 @@ where
             .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
                 let orbit_params = OrbitParams {
-                    max_iter: self.max_iter(),
-                    min_iter: self.min_iter(),
                     periodicity_tolerance: self.periodicity_tolerance(),
                     escape_radius: self.escape_radius(),
                 };

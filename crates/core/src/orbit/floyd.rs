@@ -16,7 +16,6 @@ where
     early_bailout: B,
     stop_condition: S,
     param: P,
-    min_iter: Period,
     periodicity_tolerance: Real,
     escape_radius: Real,
     pub z_slow: V,
@@ -56,7 +55,6 @@ where
             multiplier: D::one(),
             iter: 0,
             state: None,
-            min_iter: orbit_params.min_iter,
             periodicity_tolerance: orbit_params.periodicity_tolerance,
             escape_radius: orbit_params.escape_radius,
         }
