@@ -1,5 +1,5 @@
-use super::orbit::EscapeResult;
-use super::ParameterPlane;
+use super::DynamicalFamily;
+use super::{orbit::EscapeResult, MarkedPoints};
 use crate::macros::basic_plane_impl;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
@@ -13,7 +13,7 @@ use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, PlaneType};
 #[derive(Clone)]
 pub struct JuliaSet<T>
 where
-    T: ParameterPlane,
+    T: DynamicalFamily,
 {
     pub point_grid: PointGrid,
     pub max_iter: Period,
@@ -26,7 +26,7 @@ where
 
 impl<T> JuliaSet<T>
 where
-    T: ParameterPlane,
+    T: DynamicalFamily,
 {
     #[must_use]
     pub fn new(parent: T, parent_selection: Cplx, max_iter: Period) -> Self
@@ -63,7 +63,7 @@ where
 
 impl<T> From<T> for JuliaSet<T>
 where
-    T: ParameterPlane,
+    T: DynamicalFamily,
 {
     fn from(parent: T) -> Self
     {
@@ -73,9 +73,9 @@ where
     }
 }
 
-impl<T> ParameterPlane for JuliaSet<T>
+impl<T> DynamicalFamily for JuliaSet<T>
 where
-    T: ParameterPlane,
+    T: DynamicalFamily,
 {
     type Var = T::Var;
     type Param = NoParam;
@@ -101,6 +101,11 @@ where
     {
         let (f, df_dz) = self.map_and_multiplier(z, NoParam);
         (f, df_dz, Self::Deriv::zero())
+    }
+
+    #[inline]
+    fn escape_radius(&self) -> Real {
+        self.parent.escape_radius()
     }
 
     #[inline]
@@ -201,36 +206,6 @@ where
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         self.point_grid.bounds.clone()
-    }
-
-    #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
-    {
-        self.parent.critical_points_child(self.local_param)
-    }
-
-    #[inline]
-    fn critical_points(&self) -> Vec<Self::Var>
-    {
-        self.parent.critical_points_child(self.local_param)
-    }
-
-    #[inline]
-    fn cycles_child(&self, _param: Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        self.parent.cycles_child(self.local_param, period)
-    }
-
-    #[inline]
-    fn cycles(&self, period: Period) -> Vec<Self::Var>
-    {
-        self.parent.cycles_child(self.local_param, period)
-    }
-
-    #[inline]
-    fn precycles(&self, orbit_schema: OrbitSchema) -> Vec<Self::Var>
-    {
-        self.parent.precycles_child(self.local_param, orbit_schema)
     }
 
     #[inline]
@@ -437,9 +412,44 @@ where
     // }
 }
 
+impl<P> MarkedPoints for JuliaSet<P>
+where
+    P: DynamicalFamily + MarkedPoints,
+{
+    #[inline]
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
+        self.parent.critical_points_child(self.local_param)
+    }
+
+    #[inline]
+    fn critical_points(&self) -> Vec<Self::Var>
+    {
+        self.parent.critical_points_child(self.local_param)
+    }
+
+    #[inline]
+    fn cycles_child(&self, _param: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        self.parent.cycles_child(self.local_param, period)
+    }
+
+    #[inline]
+    fn cycles(&self, period: Period) -> Vec<Self::Var>
+    {
+        self.parent.cycles_child(self.local_param, period)
+    }
+
+    #[inline]
+    fn precycles(&self, orbit_schema: OrbitSchema) -> Vec<Self::Var>
+    {
+        self.parent.precycles_child(self.local_param, orbit_schema)
+    }
+}
+
 impl<P> InfinityFirstReturnMap for JuliaSet<P>
 where
-    P: ParameterPlane + InfinityFirstReturnMap,
+    P: DynamicalFamily + InfinityFirstReturnMap,
 {
     #[inline]
     fn degree_real(&self) -> f64

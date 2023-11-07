@@ -24,7 +24,7 @@ impl Default for OddCubic
 }
 
 #[allow(clippy::suspicious_operation_groupings)]
-impl ParameterPlane for OddCubic
+impl DynamicalFamily for OddCubic
 {
     parameter_plane_impl!();
     default_name!();
@@ -64,6 +64,15 @@ impl ParameterPlane for OddCubic
         (u * (z2 / 3. - c), 2. * (z2 - c), -u)
     }
 
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+}
+
+impl MarkedPoints for OddCubic
+{
     #[inline]
     fn critical_points_child(&self, param: Cplx) -> ComplexVec
     {
@@ -115,12 +124,6 @@ impl ParameterPlane for OddCubic
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
-    {
-        Bounds::centered_square(2.2)
     }
 }
 

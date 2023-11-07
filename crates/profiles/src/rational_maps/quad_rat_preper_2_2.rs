@@ -24,7 +24,7 @@ impl Default for QuadRatPreper22
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPreper22
+impl DynamicalFamily for QuadRatPreper22
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -64,7 +64,10 @@ impl ParameterPlane for QuadRatPreper22
     {
         1. + (b + 1.).sqrt() * (b + a + 2.).re.signum()
     }
+}
 
+impl MarkedPoints for QuadRatPreper22
+{
     fn critical_points_child(&self, CplxPair { a: _, b }: Self::Param) -> Vec<Self::Var>
     {
         let disc = (b + 1.).sqrt();

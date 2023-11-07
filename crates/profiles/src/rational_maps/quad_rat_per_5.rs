@@ -64,7 +64,7 @@ impl Default for QuadRatPer5
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPer5
+impl DynamicalFamily for QuadRatPer5
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -128,11 +128,19 @@ impl ParameterPlane for QuadRatPer5
         1e24
     }
 
-    fn critical_points_child(&self, param: Self::Param) -> Vec<Self::Var>
+    fn default_julia_bounds(&self, _point: Cplx, param: Self::Param) -> Bounds
     {
-        vec![self.start_point(ONE, param)]
+        Bounds::square(20., self.start_point(ONE, param))
     }
 
+    fn default_selection(&self) -> Cplx
+    {
+        ONE
+    }
+}
+
+impl MarkedPoints for QuadRatPer5
+{
     fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
@@ -158,14 +166,10 @@ impl ParameterPlane for QuadRatPer5
         }
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, param: Self::Param) -> Bounds
+    #[inline]
+    fn critical_points_child(&self, param: Self::Param) -> Vec<Self::Var>
     {
-        Bounds::square(20., self.start_point(ONE, param))
-    }
-
-    fn default_selection(&self) -> Cplx
-    {
-        ONE
+        vec![self.start_point(ONE, param)]
     }
 }
 

@@ -32,7 +32,7 @@ impl<const A: i64, const B: i64> Default for EisensteinMandel<A, B>
     }
 }
 
-impl<const A: i64, const B: i64> ParameterPlane for EisensteinMandel<A, B>
+impl<const A: i64, const B: i64> DynamicalFamily for EisensteinMandel<A, B>
 {
     basic_plane_impl!();
     type Var = EInt;
@@ -114,6 +114,8 @@ impl<const A: i64, const B: i64> InfinityFirstReturnMap for EisensteinMandel<A, 
 {
     degree_impl!(2);
 }
+
+impl<const A: i64, const B: i64> MarkedPoints for EisensteinMandel<A, B> {}
 
 impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
 {

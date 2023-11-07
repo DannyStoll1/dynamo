@@ -25,7 +25,7 @@ impl Default for CubicMarked2Cycle
     fractal_impl!();
 }
 
-impl ParameterPlane for CubicMarked2Cycle
+impl DynamicalFamily for CubicMarked2Cycle
 {
     parameter_plane_impl!();
     default_name!();
@@ -76,6 +76,15 @@ impl ParameterPlane for CubicMarked2Cycle
     }
 
     #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
+    {
+        Bounds::square(2.2, -param / 3.)
+    }
+}
+
+impl MarkedPoints for CubicMarked2Cycle
+{
+    #[inline]
     fn critical_points_child(&self, c: Cplx) -> ComplexVec
     {
         let x0 = c * ONE_THIRD;
@@ -83,13 +92,6 @@ impl ParameterPlane for CubicMarked2Cycle
         vec![(disc - x0), (-disc - x0)]
     }
 
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
-    {
-        Bounds::square(2.2, -param / 3.)
-    }
-
-    #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {

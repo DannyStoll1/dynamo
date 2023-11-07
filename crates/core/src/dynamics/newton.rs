@@ -1,7 +1,7 @@
-use super::ParameterPlane;
+use super::DynamicalFamily;
 use dynamo_common::types::Cplx;
 
-trait NewtonPlane: ParameterPlane<Var = Cplx, Deriv = Cplx>
+trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
 {
     fn second_dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
 

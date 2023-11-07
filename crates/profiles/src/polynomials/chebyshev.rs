@@ -124,7 +124,7 @@ const CHEBYSHEV_5_CRIT: [Real; 9] = [
     1.902_113_032_590_31,
 ];
 
-impl<const D: Period> ParameterPlane for Chebyshev<D>
+impl<const D: Period> DynamicalFamily for Chebyshev<D>
 {
     parameter_plane_impl!();
     default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
@@ -194,6 +194,19 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
         (c * zval, c * dval * w, zval)
     }
 
+    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    {
+        ZERO
+    }
+
+    fn name(&self) -> String
+    {
+        format!("Chebyshev degree {}", 2 * D)
+    }
+}
+
+impl<const D: Period> MarkedPoints for Chebyshev<D>
+{
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         match D {
@@ -209,16 +222,6 @@ impl<const D: Period> ParameterPlane for Chebyshev<D>
             5 => CHEBYSHEV_5_CRIT.map(std::convert::Into::into).to_vec(),
             _ => vec![ZERO],
         }
-    }
-
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
-    {
-        ZERO
-    }
-
-    fn name(&self) -> String
-    {
-        format!("Chebyshev degree {}", 2 * D)
     }
 }
 

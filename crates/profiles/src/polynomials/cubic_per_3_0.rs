@@ -25,7 +25,7 @@ impl Default for CubicPer3_0
     fractal_impl!();
 }
 
-impl ParameterPlane for CubicPer3_0
+impl DynamicalFamily for CubicPer3_0
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -81,6 +81,25 @@ impl ParameterPlane for CubicPer3_0
             / horner_monic!(t, 1., 4., 6., 6., 5., 2.);
         (-TWO_THIRDS * b / a, dz_dt, ZERO)
     }
+    fn default_selection(&self) -> Cplx
+    {
+        // ComplexNum::new(-3.34447065821736, 0.) // center of a capture component; c1 -2> c0=0 -2> 1 -> a+b+1 -> 0
+        Cplx::new(-0.521_257_806_222_939, 0.) // center of a period 1 component; c1 -2> c1
+    }
+    fn default_julia_bounds(&self, point: Cplx, c: Self::Param) -> Bounds
+    {
+        let crit = self.start_point(point, c);
+        // let center = (crit + 2. + c.a + c.b) * ONE_THIRD;
+        // Centroid of free critical point and marked critical orbit
+        let center = (crit + 2. + c.a + c.b) * 0.25;
+        let radius = crit.norm() + (c.a + c.b + 1.).norm() + 0.5;
+        Bounds::square(radius, center)
+    }
+}
+
+impl MarkedPoints for CubicPer3_0
+{
+    #[inline]
     fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, -TWO_THIRDS * b / a]
@@ -112,20 +131,6 @@ impl ParameterPlane for CubicPer3_0
             }
             _ => vec![],
         }
-    }
-    fn default_selection(&self) -> Cplx
-    {
-        // ComplexNum::new(-3.34447065821736, 0.) // center of a capture component; c1 -2> c0=0 -2> 1 -> a+b+1 -> 0
-        Cplx::new(-0.521_257_806_222_939, 0.) // center of a period 1 component; c1 -2> c1
-    }
-    fn default_julia_bounds(&self, point: Cplx, c: Self::Param) -> Bounds
-    {
-        let crit = self.start_point(point, c);
-        // let center = (crit + 2. + c.a + c.b) * ONE_THIRD;
-        // Centroid of free critical point and marked critical orbit
-        let center = (crit + 2. + c.a + c.b) * 0.25;
-        let radius = crit.norm() + (c.a + c.b + 1.).norm() + 0.5;
-        Bounds::square(radius, center)
     }
 }
 

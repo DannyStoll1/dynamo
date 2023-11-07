@@ -22,7 +22,7 @@ impl Default for QuadRatPer2Lambda
     }
 }
 
-impl ParameterPlane for QuadRatPer2Lambda
+impl DynamicalFamily for QuadRatPer2Lambda
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -101,18 +101,6 @@ impl ParameterPlane for QuadRatPer2Lambda
     }
 
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
-    {
-        self.general_plane.critical_points_child(c)
-    }
-
-    #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        self.general_plane.cycles_child(c, period)
-    }
-    #[inline]
-
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.multiplier
@@ -128,6 +116,21 @@ impl ParameterPlane for QuadRatPer2Lambda
     {
         "QuadRat Per(2, λ)".to_owned()
         // format!("QuadRat Per(2, λ); λ={:.4}", self.multiplier)
+    }
+}
+
+impl MarkedPoints for QuadRatPer2Lambda
+{
+    #[inline]
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        self.general_plane.critical_points_child(c)
+    }
+
+    #[inline]
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        self.general_plane.cycles_child(c, period)
     }
 }
 
@@ -160,7 +163,7 @@ impl Default for QuadRatPer2LambdaParam
     }
 }
 
-impl ParameterPlane for QuadRatPer2LambdaParam
+impl DynamicalFamily for QuadRatPer2LambdaParam
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -211,11 +214,7 @@ impl ParameterPlane for QuadRatPer2LambdaParam
         (point, ONE)
     }
 
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
-    {
-        vec![ZERO, ONE]
-    }
-
+    #[inline]
     fn name(&self) -> String
     {
         "QuadRat Per(2, λ) λ-plane".to_owned()
@@ -230,6 +229,14 @@ impl ParameterPlane for QuadRatPer2LambdaParam
     {
         let r = 4. / (point.norm() + 0.01);
         Bounds::centered_square(r)
+    }
+}
+
+impl MarkedPoints for QuadRatPer2LambdaParam
+{
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO, ONE]
     }
 }
 

@@ -32,7 +32,7 @@ impl<const A: i64, const B: i64> Default for GaussianMandel<A, B>
     }
 }
 
-impl<const A: i64, const B: i64> ParameterPlane for GaussianMandel<A, B>
+impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
 {
     basic_plane_impl!();
     type Var = GInt;
@@ -113,6 +113,8 @@ impl<const A: i64, const B: i64> InfinityFirstReturnMap for GaussianMandel<A, B>
 {
     degree_impl!(2);
 }
+
+impl<const A: i64, const B: i64> MarkedPoints for GaussianMandel<A, B> {}
 
 impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
 {

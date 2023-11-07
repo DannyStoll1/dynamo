@@ -59,7 +59,7 @@ impl Default for Rulkov
     fractal_impl!();
 }
 
-impl ParameterPlane for Rulkov
+impl DynamicalFamily for Rulkov
 {
     type Var = Point;
     type Param = Point;
@@ -108,4 +108,5 @@ impl ParameterPlane for Rulkov
     }
 }
 
+impl MarkedPoints for Rulkov {}
 degree_impl!(Rulkov, 2);

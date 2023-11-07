@@ -31,7 +31,7 @@ impl Default for CubicPer2Lambda
     }
 }
 
-impl ParameterPlane for CubicPer2Lambda
+impl DynamicalFamily for CubicPer2Lambda
 {
     parameter_plane_impl!(Cplx, CplxPair, Cplx, Cplx);
     default_bounds!();
@@ -61,36 +61,6 @@ impl ParameterPlane for CubicPer2Lambda
         match self.starting_crit {
             PlaneID::ZPlane => (b + disc) / (3. * a),
             PlaneID::WPlane => (b - disc) / (3. * a),
-        }
-    }
-
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
-    {
-        let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
-        let denom = 3. * c.a;
-        vec![(c.b + disc) / denom, (c.b - disc) / denom]
-    }
-
-    fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        match period {
-            1 => {
-                let u = b / a;
-                solve_cubic(u, 2. / a - 1., -u).to_vec()
-            }
-            2 => {
-                let b2 = b * b;
-                let u = 2. * b * a * a;
-                let coeffs = [
-                    b2 * (1. - a) + a,
-                    u,
-                    -a * horner_monic!(a, -b2, 1.),
-                    -u,
-                    a * a * a,
-                ];
-                solve_polynomial(coeffs)
-            }
-            _ => vec![],
         }
     }
 
@@ -133,6 +103,39 @@ impl ParameterPlane for CubicPer2Lambda
     fn name(&self) -> String
     {
         format!("Cubic Per(2, {})", self.multiplier)
+    }
+}
+
+impl MarkedPoints for CubicPer2Lambda
+{
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
+        let denom = 3. * c.a;
+        vec![(c.b + disc) / denom, (c.b - disc) / denom]
+    }
+
+    fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period {
+            1 => {
+                let u = b / a;
+                solve_cubic(u, 2. / a - 1., -u).to_vec()
+            }
+            2 => {
+                let b2 = b * b;
+                let u = 2. * b * a * a;
+                let coeffs = [
+                    b2 * (1. - a) + a,
+                    u,
+                    -a * horner_monic!(a, -b2, 1.),
+                    -u,
+                    a * a * a,
+                ];
+                solve_polynomial(coeffs)
+            }
+            _ => vec![],
+        }
     }
 }
 
@@ -194,7 +197,7 @@ impl Default for CubicPer2LambdaParam
     }
 }
 
-impl ParameterPlane for CubicPer2LambdaParam
+impl DynamicalFamily for CubicPer2LambdaParam
 {
     type Param = Cplx;
     type MetaParam = NoParam;
@@ -259,11 +262,6 @@ impl ParameterPlane for CubicPer2LambdaParam
         self.starting_crit = self.starting_crit.swap();
     }
 
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
-    {
-        vec![ZERO, ONE]
-    }
-
     fn name(&self) -> String
     {
         "Cubic Per(2, lambda) lambda-plane".to_owned()
@@ -278,6 +276,14 @@ impl ParameterPlane for CubicPer2LambdaParam
     {
         let r = 3.5 / (point.norm() + 0.01);
         Bounds::centered_square(r)
+    }
+}
+
+impl MarkedPoints for CubicPer2LambdaParam
+{
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO, ONE]
     }
 }
 
@@ -321,7 +327,7 @@ impl Default for CubicPer2CritMarked
     fractal_impl!();
 }
 
-impl ParameterPlane for CubicPer2CritMarked
+impl DynamicalFamily for CubicPer2CritMarked
 {
     parameter_plane_impl!();
     default_name!();
@@ -355,6 +361,15 @@ impl ParameterPlane for CubicPer2CritMarked
         (c + z2 * u, z2 + 2. * z * u, z2 * (c.powi(-2) - 1.) + 1.)
     }
 
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
+    {
+        Bounds::square(2.2, param / 2.)
+    }
+}
+
+impl MarkedPoints for CubicPer2CritMarked
+{
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
@@ -410,12 +425,6 @@ impl ParameterPlane for CubicPer2CritMarked
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
-    {
-        Bounds::square(2.2, param / 2.)
     }
 }
 

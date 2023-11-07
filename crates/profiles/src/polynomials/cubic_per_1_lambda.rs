@@ -42,7 +42,7 @@ impl Default for CubicPer1Lambda
     }
 }
 
-impl ParameterPlane for CubicPer1Lambda
+impl DynamicalFamily for CubicPer1Lambda
 {
     parameter_plane_impl!(Cplx, Cplx, Cplx, Cplx);
 
@@ -86,6 +86,50 @@ impl ParameterPlane for CubicPer1Lambda
         }
     }
 
+    fn get_meta_params(&self) -> Self::Param
+    {
+        self.multiplier
+    }
+
+    fn get_param(&self) -> Self::Param
+    {
+        self.multiplier
+    }
+
+    fn set_meta_param(&mut self, value: Self::Param)
+    {
+        self.multiplier = value;
+    }
+
+    fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
+    {
+        self.multiplier = value;
+    }
+
+    fn param_map(&self, t: Cplx) -> Self::Param
+    {
+        -t.inv() - 0.75 * self.multiplier * t
+    }
+
+    fn name(&self) -> String
+    {
+        format!("Cubic Per(1, {}) {}", self.multiplier, self.starting_crit)
+    }
+
+    fn default_bounds(&self) -> Bounds
+    {
+        let r = 4. / (self.multiplier.norm() + 0.01);
+        Bounds::centered_square(r)
+    }
+
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_crit = self.starting_crit.swap();
+    }
+}
+
+impl MarkedPoints for CubicPer1Lambda
+{
     fn critical_points(&self) -> Vec<Self::Var>
     {
         let l = self.multiplier;
@@ -253,47 +297,6 @@ impl ParameterPlane for CubicPer1Lambda
             _ => vec![],
         }
     }
-
-    fn get_meta_params(&self) -> Self::Param
-    {
-        self.multiplier
-    }
-
-    fn get_param(&self) -> Self::Param
-    {
-        self.multiplier
-    }
-
-    fn set_meta_param(&mut self, value: Self::Param)
-    {
-        self.multiplier = value;
-    }
-
-    fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
-    {
-        self.multiplier = value;
-    }
-
-    fn param_map(&self, t: Cplx) -> Self::Param
-    {
-        -t.inv() - 0.75 * self.multiplier * t
-    }
-
-    fn name(&self) -> String
-    {
-        format!("Cubic Per(1, {}) {}", self.multiplier, self.starting_crit)
-    }
-
-    fn default_bounds(&self) -> Bounds
-    {
-        let r = 4. / (self.multiplier.norm() + 0.01);
-        Bounds::centered_square(r)
-    }
-
-    fn cycle_active_plane(&mut self)
-    {
-        self.starting_crit = self.starting_crit.swap();
-    }
 }
 
 impl EscapeEncoding for CubicPer1Lambda
@@ -347,7 +350,7 @@ impl Default for CubicPer1LambdaParam
     }
 }
 
-impl ParameterPlane for CubicPer1LambdaParam
+impl DynamicalFamily for CubicPer1LambdaParam
 {
     parameter_plane_impl!(CubicPer1Lambda);
     default_bounds!();
@@ -400,11 +403,6 @@ impl ParameterPlane for CubicPer1LambdaParam
         point
     }
 
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
-    {
-        vec![ZERO, ONE]
-    }
-
     fn name(&self) -> String
     {
         "Cubic Per(1, lambda) lambda-plane".to_owned()
@@ -424,6 +422,15 @@ impl ParameterPlane for CubicPer1LambdaParam
     fn cycle_active_plane(&mut self)
     {
         self.starting_crit = self.starting_crit.swap();
+    }
+}
+
+impl MarkedPoints for CubicPer1LambdaParam
+{
+    #[inline]
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO, ONE]
     }
 }
 
@@ -481,7 +488,7 @@ impl Default for CubicPer1_1
     fractal_impl!();
 }
 
-impl ParameterPlane for CubicPer1_1
+impl DynamicalFamily for CubicPer1_1
 {
     parameter_plane_impl!();
     default_name!();
@@ -534,6 +541,15 @@ impl ParameterPlane for CubicPer1_1
     }
 
     #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+}
+
+impl MarkedPoints for CubicPer1_1
+{
+    #[inline]
     fn critical_points_child(&self, param: Cplx) -> ComplexVec
     {
         let u = (param * param - 3.).sqrt();
@@ -584,12 +600,6 @@ impl ParameterPlane for CubicPer1_1
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
-    {
-        Bounds::centered_square(2.2)
     }
 }
 
@@ -652,7 +662,7 @@ impl Default for CubicPer1_0
     fractal_impl!();
 }
 
-impl ParameterPlane for CubicPer1_0
+impl DynamicalFamily for CubicPer1_0
 {
     parameter_plane_impl!();
     default_name!();
@@ -687,6 +697,17 @@ impl ParameterPlane for CubicPer1_0
         (z2 * (z + c), z * (2. * c + 3. * z), z2)
     }
 
+    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
+    {
+        if c.is_nan() {
+            Bounds::centered_square(2.5)
+        } else {
+            Bounds::square(2.5, -ONE_THIRD * c)
+        }
+    }
+}
+
+impl MarkedPoints for CubicPer1_0 {
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, -TWO_THIRDS * c]
@@ -999,15 +1020,6 @@ impl ParameterPlane for CubicPer1_0
             _ => vec![],
         }
     }
-
-    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
-    {
-        if c.is_nan() {
-            Bounds::centered_square(2.5)
-        } else {
-            Bounds::square(2.5, -ONE_THIRD * c)
-        }
-    }
 }
 
 impl InfinityFirstReturnMap for CubicPer1_0
@@ -1264,7 +1276,7 @@ impl Default for CubicPer1LambdaModuli
     }
 }
 
-impl ParameterPlane for CubicPer1LambdaModuli
+impl DynamicalFamily for CubicPer1LambdaModuli
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -1328,33 +1340,6 @@ impl ParameterPlane for CubicPer1LambdaModuli
         }
     }
 
-    fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
-    {
-        let disc = (-b / (3. * a)).sqrt();
-        vec![disc, -disc]
-    }
-
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        match period {
-            1 => solve_cubic(a.inv(), (b - 1.) / a, ZERO).to_vec(),
-            2 => {
-                let a2 = a.powi(2);
-                let coeffs = [
-                    a + b + 1.,
-                    a * (2. * b + 1.),
-                    a * horner_monic!(b, 1., 1.),
-                    2. * a2,
-                    a2 * (2. * b + 1.),
-                    ZERO,
-                    a2 * a,
-                ];
-                solve_polynomial(coeffs)
-            }
-            _ => vec![],
-        }
-    }
-
     fn cycle_active_plane(&mut self)
     {
         self.starting_crit = self.starting_crit.swap();
@@ -1384,6 +1369,35 @@ impl ParameterPlane for CubicPer1LambdaModuli
     {
         let radius = (2. * (b / a).sqrt().norm()).max(6.0);
         Bounds::centered_square(radius)
+    }
+}
+
+impl MarkedPoints for CubicPer1LambdaModuli {
+    fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
+    {
+        let disc = (-b / (3. * a)).sqrt();
+        vec![disc, -disc]
+    }
+
+    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        match period {
+            1 => solve_cubic(a.inv(), (b - 1.) / a, ZERO).to_vec(),
+            2 => {
+                let a2 = a.powi(2);
+                let coeffs = [
+                    a + b + 1.,
+                    a * (2. * b + 1.),
+                    a * horner_monic!(b, 1., 1.),
+                    2. * a2,
+                    a2 * (2. * b + 1.),
+                    ZERO,
+                    a2 * a,
+                ];
+                solve_polynomial(coeffs)
+            }
+            _ => vec![],
+        }
     }
 }
 

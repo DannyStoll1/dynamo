@@ -23,7 +23,7 @@ impl Default for QuadRatSymmetryLocus
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatSymmetryLocus
+impl DynamicalFamily for QuadRatSymmetryLocus
 {
     parameter_plane_impl!();
     default_name!();
@@ -55,6 +55,15 @@ impl ParameterPlane for QuadRatSymmetryLocus
         (1.).into()
     }
 
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    {
+        Bounds::centered_square(4.)
+    }
+}
+
+impl MarkedPoints for QuadRatSymmetryLocus
+{
     #[inline]
     fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
@@ -113,12 +122,6 @@ impl ParameterPlane for QuadRatSymmetryLocus
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
-    {
-        Bounds::centered_square(4.)
     }
 }
 

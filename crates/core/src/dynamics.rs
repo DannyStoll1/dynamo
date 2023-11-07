@@ -23,13 +23,13 @@ use orbit::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-pub trait ParameterPlane: Sync + Send
+pub trait DynamicalFamily: Sync + Send
 {
     type Var: Variable;
     type Param: Parameter;
     type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
     type Deriv: Derivative;
-    type Child: ParameterPlane;
+    type Child: DynamicalFamily;
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
@@ -255,64 +255,6 @@ pub trait ParameterPlane: Sync + Send
         self
     }
 
-    /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
-    #[inline]
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
-    {
-        vec![]
-    }
-
-    /// Critical points of the map, if the plane is dynamical.
-    #[inline]
-    fn critical_points(&self) -> Vec<Self::Var>
-    {
-        vec![]
-    }
-
-    /// Implementation of `cycles` for Julia sets spawned from this parameter plane.
-    /// Used to mark selected periodic points on the dynamical plane.
-    #[inline]
-    fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
-    {
-        vec![]
-    }
-
-    /// Implementation of `precycles` for Julia sets spawned from this parameter plane.
-    /// Used to mark selected preperiodic points on the dynamical plane.
-    #[inline]
-    fn precycles_child(&self, _c: Self::Param, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
-    {
-        vec![]
-    }
-
-    /// Parameter values known to yield periodic cycles of a given period.
-    /// These are drawn on the parameter plane despite having type `Self::Var`, since `Self::Param`
-    /// doesn't always implement `Into<Cplx>`. This only produces the correct result if `param_map`
-    /// is the identity.
-    /// FIXME: enforce types correctly here. This involves inverting the `param_map` to convert a
-    /// parameter back to a complex number.
-    ///
-    /// Generally used to mark post-critically finite parameters or centers of hyperbolic
-    /// components, or in Julia sets to mark periodic points.
-    #[inline]
-    fn cycles(&self, _period: Period) -> Vec<Self::Var>
-    {
-        vec![]
-    }
-
-    /// Parameter values known to yield preperiodic orbits of a given preperiod and period.
-    /// These are drawn on the parameter plane despite having type `Self::Var`, since `Self::Param`
-    /// doesn't always implement `Into<Cplx>`. This only produces the correct result if `param_map`
-    /// is the identity.
-    /// FIXME: enforce types correctly here. This involves inverting the `param_map` to convert a
-    /// parameter back to a complex number.
-    ///
-    /// Generally used to mark Misiurewicz points, or in Julia sets to mark preperiodic points.
-    #[inline]
-    fn precycles(&self, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
-    {
-        vec![]
-    }
 
     /// Try to find a (pre)periodic point near a given base point
     #[allow(clippy::suspicious_operation_groupings)]
@@ -554,50 +496,6 @@ pub trait ParameterPlane: Sync + Send
         Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
     }
 
-    /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
-    /// color Newton parameter planes according to which root the critical orbit converges to.
-    #[inline]
-    fn get_marked_points(&self, _c: Self::Param) -> Vec<(Self::Var, PointClassId)>
-    {
-        vec![]
-    }
-
-    /// Number of marked point classes.
-    #[inline]
-    fn num_marked_point_classes(&self) -> usize
-    {
-        0
-    }
-
-    /// Lower bound on norm-squared, below which an orbit is considered to have reached a marked
-    /// point.
-    #[inline]
-    fn marked_point_tolerance(&self) -> Real
-    {
-        self.periodicity_tolerance()
-    }
-
-    /// Internal: Detect if a periodic orbit has landed near a marked point.
-    fn identify_marked_points(
-        &self,
-        z: Self::Var,
-        c: Self::Param,
-        info: PointInfoPeriodic<Self::Deriv>,
-    ) -> PointInfo<Self::Deriv>
-    {
-        let marked_points = self.get_marked_points(c);
-        for (zi, class_id) in &marked_points {
-            if z.dist_sqr(*zi) < self.marked_point_tolerance() {
-                return PointInfo::MarkedPoint {
-                    data: info,
-                    class_id: *class_id,
-                    num_point_classes: marked_points.len(),
-                };
-            }
-        }
-        PointInfo::Periodic(info)
-    }
-
     /// Define a custom fill rate for perperiod based coloring.
     fn preperiod_coloring(&self) -> IncoloringAlgorithm
     {
@@ -651,7 +549,113 @@ impl std::fmt::Display for PlaneType
     }
 }
 
-pub trait InfinityFirstReturnMap: ParameterPlane
+pub trait MarkedPoints : DynamicalFamily
+{
+    /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
+    #[inline]
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        vec![self.start_point(ZERO, c)]
+    }
+
+    /// Critical points of the map, if the plane is dynamical.
+    #[inline]
+    fn critical_points(&self) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    /// Implementation of `cycles` for Julia sets spawned from this parameter plane.
+    /// Used to mark selected periodic points on the dynamical plane.
+    #[inline]
+    fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    /// Implementation of `precycles` for Julia sets spawned from this parameter plane.
+    /// Used to mark selected preperiodic points on the dynamical plane.
+    #[inline]
+    fn precycles_child(&self, _c: Self::Param, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    /// Parameter values known to yield periodic cycles of a given period.
+    /// These are drawn on the parameter plane despite having type `Self::Var`, since `Self::Param`
+    /// doesn't always implement `Into<Cplx>`. This only produces the correct result if `param_map`
+    /// is the identity.
+    /// FIXME: enforce types correctly here. This involves inverting the `param_map` to convert a
+    /// parameter back to a complex number.
+    ///
+    /// Generally used to mark post-critically finite parameters or centers of hyperbolic
+    /// components, or in Julia sets to mark periodic points.
+    #[inline]
+    fn cycles(&self, _period: Period) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    /// Parameter values known to yield preperiodic orbits of a given preperiod and period.
+    /// These are drawn on the parameter plane despite having type `Self::Var`, since `Self::Param`
+    /// doesn't always implement `Into<Cplx>`. This only produces the correct result if `param_map`
+    /// is the identity.
+    /// FIXME: enforce types correctly here. This involves inverting the `param_map` to convert a
+    /// parameter back to a complex number.
+    ///
+    /// Generally used to mark Misiurewicz points, or in Julia sets to mark preperiodic points.
+    #[inline]
+    fn precycles(&self, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
+    {
+        vec![]
+    }
+
+    /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
+    /// color Newton parameter planes according to which root the critical orbit converges to.
+    #[inline]
+    fn get_marked_points(&self, _c: Self::Param) -> Vec<(Self::Var, PointClassId)>
+    {
+        vec![]
+    }
+
+    /// Number of marked point classes.
+    #[inline]
+    fn num_marked_point_classes(&self) -> usize
+    {
+        0
+    }
+
+    /// Lower bound on norm-squared, below which an orbit is considered to have reached a marked
+    /// point.
+    #[inline]
+    fn marked_point_tolerance(&self) -> Real
+    {
+        self.periodicity_tolerance()
+    }
+
+    /// Internal: Detect if a periodic orbit has landed near a marked point.
+    fn identify_marked_points(
+        &self,
+        z: Self::Var,
+        c: Self::Param,
+        info: PointInfoPeriodic<Self::Deriv>,
+    ) -> PointInfo<Self::Deriv>
+    {
+        let marked_points = self.get_marked_points(c);
+        for (zi, class_id) in &marked_points {
+            if z.dist_sqr(*zi) < self.marked_point_tolerance() {
+                return PointInfo::MarkedPoint {
+                    data: info,
+                    class_id: *class_id,
+                    num_point_classes: marked_points.len(),
+                };
+            }
+        }
+        PointInfo::Periodic(info)
+    }
+}
+
+pub trait InfinityFirstReturnMap: DynamicalFamily
 {
     /// Order of vanishing of the first return map of $1/f(1/z)$ at $z=0$.
     ///
@@ -725,7 +729,7 @@ pub trait InfinityFirstReturnMap: ParameterPlane
     }
 }
 
-pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
+pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
 {
     /// Default implementation of external rays. Only valid if the self-return map at infinity is
     /// monic.
@@ -845,14 +849,14 @@ pub trait ExternalRays: ParameterPlane + InfinityFirstReturnMap
     }
 }
 
-pub trait Equipotential: ParameterPlane
+pub trait Equipotential: DynamicalFamily
 {
     /// Compute an equipotential curve through a given point.
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>;
 }
 impl<P> Equipotential for P
 where
-    P: ParameterPlane + InfinityFirstReturnMap,
+    P: DynamicalFamily + InfinityFirstReturnMap,
 {
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
     {
@@ -907,7 +911,7 @@ where
     }
 }
 
-pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
+pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoints
 {
     /// Map temporary `EscapeResult` (used in orbit computation) to `PointInfo`, encoding the result of the computation.
     ///
@@ -954,7 +958,7 @@ pub trait EscapeEncoding: ParameterPlane + InfinityFirstReturnMap
     }
 }
 
-pub trait Computable: ParameterPlane
+pub trait Computable: DynamicalFamily
 {
     fn compute(&self) -> IterPlane<Self::Deriv>
     {
@@ -994,7 +998,7 @@ pub trait Computable: ParameterPlane
 
 impl<P> Computable for P
 where
-    P: ParameterPlane + EscapeEncoding,
+    P: DynamicalFamily + EscapeEncoding,
 {
     fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
@@ -1102,5 +1106,5 @@ where
     }
 }
 
-pub trait Displayable: ParameterPlane + ExternalRays + Equipotential + Computable {}
-impl<P> Displayable for P where P: ParameterPlane + ExternalRays + Equipotential + Computable {}
+pub trait Displayable: DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints {}
+impl<P> Displayable for P where P: DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints {}

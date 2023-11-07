@@ -25,7 +25,7 @@ impl Default for Mandelbrot
     fractal_impl!();
 }
 
-impl ParameterPlane for Mandelbrot
+impl DynamicalFamily for Mandelbrot
 {
     parameter_plane_impl!();
     default_name!();
@@ -98,12 +98,6 @@ impl ParameterPlane for Mandelbrot
     }
 
     #[inline]
-    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
-    {
-        vec![Cplx::new(0., 0.)]
-    }
-
-    #[inline]
     fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
@@ -118,6 +112,220 @@ impl ParameterPlane for Mandelbrot
             colored according to the activity of the free critical point \
             under forward iteration of $f_c$."
             .to_owned()
+    }
+}
+
+impl HasDynamicalCovers for Mandelbrot
+{
+    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
+        let bounds: Bounds;
+
+        match period {
+            1 => {
+                param_map = |c| (0.25 - c * c, -2. * c);
+                bounds = Bounds {
+                    min_x: -1.8,
+                    max_x: 1.8,
+                    min_y: -1.0,
+                    max_y: 1.0,
+                };
+                // param_map = |l| {
+                //     // let coeffs = [
+                //     //     horner!(l, 16., -3., 0.1875, -0.00390625),
+                //     //     ZERO,
+                //     //     horner!(l, 32., -1., -0.0625),
+                //     //     l + 48.,
+                //     //     l + 48.,
+                //     //     Cplx::from(48.),
+                //     //     Cplx::from(16.),
+                //     // ];
+                //     // dbg!(l, &coeffs);
+                //     let a0 = horner!(l, 1., -0.25, 1. / 64.);
+                //     let a1 = 1. - 0.125 * l;
+                //     let a2 = TWO;
+                //     let cs = solve_cubic(a0, a1, a2);
+                //     cs[0]
+                // };
+                // bounds = Bounds::square(16., 8.0.into());
+            }
+            3 => {
+                param_map = |t| (-1.75 * (1. + 7. * t * t), -24.5 * t);
+                bounds = Bounds {
+                    min_x: -0.3,
+                    max_x: 0.3,
+                    min_y: -0.5,
+                    max_y: 0.5,
+                };
+                // param_map = |l| {
+                //     let a0 = horner!(l, 1., -0.25, 1. / 64.);
+                //     let a1 = 1. - 0.125 * l;
+                //     let a2 = TWO;
+                //     let cs = solve_cubic(a0, a1, a2);
+                //     cs[1]
+                // };
+                // bounds = Bounds::square(16., 8.0.into());
+            }
+            // 4 => {
+            //     param_map = |l| {
+            //         let u = 256.*l + 12288.;
+            //         let coeffs = [
+            //             -horner_monic!(l, -4096., 768., -48.),
+            //             ZERO,
+            //             horner!(l, 8192., -256., 48., -16.),
+            //             u,
+            //             u,
+            //             Cplx::new(12288., 0.),
+            //             Cplx::new(4096., 0.),
+            //         ];
+            //         let cs = solve_polynomial(coeffs);
+            //         cs[0]
+            //     };
+            //     bounds = Bounds::centered_square(4.);
+            // }
+            4 => {
+                param_map = |t| {
+                    let t2 = t * t;
+                    (-0.25 * t2 - 0.75 - t.inv(), 0.5 * t - t2.inv())
+                };
+                bounds = Bounds {
+                    min_x: -2.9,
+                    max_x: 2.1,
+                    min_y: -3.1,
+                    max_y: 3.1,
+                };
+            }
+            _ => {
+                param_map = |t| (t, ONE);
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+
+    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
+        let bounds: Bounds;
+
+        match period {
+            1 => {
+                param_map = |c| (0.25 - c * c, -2. * c);
+                bounds = Bounds {
+                    min_x: -1.8,
+                    max_x: 1.8,
+                    min_y: -1.0,
+                    max_y: 1.0,
+                };
+            }
+            2 => {
+                param_map = |t| {
+                    let u = 9. / (t * t);
+                    ((t - 1.) * u - 3., (t - 2.) * u / t)
+                };
+                bounds = Bounds {
+                    min_x: 0.5,
+                    max_x: 8.3,
+                    min_y: -2.7,
+                    max_y: 2.7,
+                };
+            }
+            3 => {
+                param_map = |t| {
+                    let t2 = t * t;
+
+                    let v = t2 * (t2 - 3. * t + 6.) - t - t + 2.;
+                    let dv_dt = horner!(t, -2., 12., -9., 4.);
+
+                    let w = (t2 - t).inv();
+                    let dw_dt = (1. - 2. * t) * w * w;
+
+                    let u = v + w;
+                    let du_dt = dv_dt + dw_dt;
+                    (-0.25 * u * w, -0.25 * (du_dt * w + u * dw_dt))
+                };
+                bounds = Bounds {
+                    min_x: -2.5,
+                    max_x: 3.5,
+                    min_y: -3.,
+                    max_y: 3.,
+                };
+            }
+            _ => {
+                param_map = |t| (t, ONE);
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
+    {
+        let param_map: fn(Cplx) -> (Cplx, Cplx);
+        let bounds: Bounds;
+
+        match (preperiod, period) {
+            (2, 1) => {
+                param_map = |t| {
+                    let t2 = t * t;
+                    let u = (t2 - 1.).inv();
+                    let u2 = u * u;
+                    (-2. * (t2 + 1.) * u2, 4. * t * (t2 + 3.) * u2 * u)
+                };
+                bounds = Bounds {
+                    min_x: -3.5,
+                    max_x: 3.5,
+                    min_y: -3.0,
+                    max_y: 3.0,
+                };
+            }
+            (2, 2) => {
+                param_map = |c| {
+                    let c2 = c * c;
+                    (
+                        -(c2 * (c2 + c + c + 2.) - c - c + 1.) / (4. * c2),
+                        -0.5 * (c2 + c - 1.) * (c2 + 1.) / (c2 * c),
+                    )
+                };
+                bounds = Bounds {
+                    min_x: -4.,
+                    max_x: 2.4,
+                    min_y: -2.5,
+                    max_y: 2.5,
+                };
+            }
+            // (3, 1) =>
+            // {
+            //     param_map = |t| {
+            //         let numer = horner_monic!(t, 301., 42., 252., 112., 21., 0.);
+            //         let denom = -36. * (t + 2.) * (t + 2.) * (t - 1.) * (t - 1.);
+            //         numer / denom
+            //     };
+            //     bounds = Bounds {
+            //         min_x: -4.,
+            //         max_x: 2.4,
+            //         min_y: -2.5,
+            //         max_y: 2.5,
+            //     };
+            // }
+            (_, _) => {
+                param_map = |c| (c, ONE);
+                bounds = self.point_grid.bounds.clone();
+            }
+        };
+        let grid = self.point_grid.new_with_same_height(bounds);
+        CoveringMap::new(self, param_map, grid)
+    }
+}
+
+impl MarkedPoints for Mandelbrot
+{
+    #[inline]
+    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
+    {
+        vec![Cplx::new(0., 0.)]
     }
 
     fn cycles(&self, period: Period) -> Vec<Self::Var>
@@ -1057,211 +1265,6 @@ impl ParameterPlane for Mandelbrot
             }
             _ => vec![],
         }
-    }
-}
-
-impl HasDynamicalCovers for Mandelbrot
-{
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
-    {
-        let param_map: fn(Cplx) -> (Cplx, Cplx);
-        let bounds: Bounds;
-
-        match period {
-            1 => {
-                param_map = |c| (0.25 - c * c, -2. * c);
-                bounds = Bounds {
-                    min_x: -1.8,
-                    max_x: 1.8,
-                    min_y: -1.0,
-                    max_y: 1.0,
-                };
-                // param_map = |l| {
-                //     // let coeffs = [
-                //     //     horner!(l, 16., -3., 0.1875, -0.00390625),
-                //     //     ZERO,
-                //     //     horner!(l, 32., -1., -0.0625),
-                //     //     l + 48.,
-                //     //     l + 48.,
-                //     //     Cplx::from(48.),
-                //     //     Cplx::from(16.),
-                //     // ];
-                //     // dbg!(l, &coeffs);
-                //     let a0 = horner!(l, 1., -0.25, 1. / 64.);
-                //     let a1 = 1. - 0.125 * l;
-                //     let a2 = TWO;
-                //     let cs = solve_cubic(a0, a1, a2);
-                //     cs[0]
-                // };
-                // bounds = Bounds::square(16., 8.0.into());
-            }
-            3 => {
-                param_map = |t| (-1.75 * (1. + 7. * t * t), -24.5 * t);
-                bounds = Bounds {
-                    min_x: -0.3,
-                    max_x: 0.3,
-                    min_y: -0.5,
-                    max_y: 0.5,
-                };
-                // param_map = |l| {
-                //     let a0 = horner!(l, 1., -0.25, 1. / 64.);
-                //     let a1 = 1. - 0.125 * l;
-                //     let a2 = TWO;
-                //     let cs = solve_cubic(a0, a1, a2);
-                //     cs[1]
-                // };
-                // bounds = Bounds::square(16., 8.0.into());
-            }
-            // 4 => {
-            //     param_map = |l| {
-            //         let u = 256.*l + 12288.;
-            //         let coeffs = [
-            //             -horner_monic!(l, -4096., 768., -48.),
-            //             ZERO,
-            //             horner!(l, 8192., -256., 48., -16.),
-            //             u,
-            //             u,
-            //             Cplx::new(12288., 0.),
-            //             Cplx::new(4096., 0.),
-            //         ];
-            //         let cs = solve_polynomial(coeffs);
-            //         cs[0]
-            //     };
-            //     bounds = Bounds::centered_square(4.);
-            // }
-            4 => {
-                param_map = |t| {
-                    let t2 = t * t;
-                    (-0.25 * t2 - 0.75 - t.inv(), 0.5 * t - t2.inv())
-                };
-                bounds = Bounds {
-                    min_x: -2.9,
-                    max_x: 2.1,
-                    min_y: -3.1,
-                    max_y: 3.1,
-                };
-            }
-            _ => {
-                param_map = |t| (t, ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
-        };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
-    }
-
-    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
-    {
-        let param_map: fn(Cplx) -> (Cplx, Cplx);
-        let bounds: Bounds;
-
-        match period {
-            1 => {
-                param_map = |c| (0.25 - c * c, -2. * c);
-                bounds = Bounds {
-                    min_x: -1.8,
-                    max_x: 1.8,
-                    min_y: -1.0,
-                    max_y: 1.0,
-                };
-            }
-            2 => {
-                param_map = |t| {
-                    let u = 9. / (t * t);
-                    ((t - 1.) * u - 3., (t - 2.) * u / t)
-                };
-                bounds = Bounds {
-                    min_x: 0.5,
-                    max_x: 8.3,
-                    min_y: -2.7,
-                    max_y: 2.7,
-                };
-            }
-            3 => {
-                param_map = |t| {
-                    let t2 = t * t;
-
-                    let v = t2 * (t2 - 3. * t + 6.) - t - t + 2.;
-                    let dv_dt = horner!(t, -2., 12., -9., 4.);
-
-                    let w = (t2 - t).inv();
-                    let dw_dt = (1. - 2. * t) * w * w;
-
-                    let u = v + w;
-                    let du_dt = dv_dt + dw_dt;
-                    (-0.25 * u * w, -0.25 * (du_dt * w + u * dw_dt))
-                };
-                bounds = Bounds {
-                    min_x: -2.5,
-                    max_x: 3.5,
-                    min_y: -3.,
-                    max_y: 3.,
-                };
-            }
-            _ => {
-                param_map = |t| (t, ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
-        };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
-    }
-    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
-    {
-        let param_map: fn(Cplx) -> (Cplx, Cplx);
-        let bounds: Bounds;
-
-        match (preperiod, period) {
-            (2, 1) => {
-                param_map = |t| {
-                    let t2 = t * t;
-                    let u = (t2 - 1.).inv();
-                    let u2 = u * u;
-                    (-2. * (t2 + 1.) * u2, 4. * t * (t2 + 3.) * u2 * u)
-                };
-                bounds = Bounds {
-                    min_x: -3.5,
-                    max_x: 3.5,
-                    min_y: -3.0,
-                    max_y: 3.0,
-                };
-            }
-            (2, 2) => {
-                param_map = |c| {
-                    let c2 = c * c;
-                    (
-                        -(c2 * (c2 + c + c + 2.) - c - c + 1.) / (4. * c2),
-                        -0.5 * (c2 + c - 1.) * (c2 + 1.) / (c2 * c),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -4.,
-                    max_x: 2.4,
-                    min_y: -2.5,
-                    max_y: 2.5,
-                };
-            }
-            // (3, 1) =>
-            // {
-            //     param_map = |t| {
-            //         let numer = horner_monic!(t, 301., 42., 252., 112., 21., 0.);
-            //         let denom = -36. * (t + 2.) * (t + 2.) * (t - 1.) * (t - 1.);
-            //         numer / denom
-            //     };
-            //     bounds = Bounds {
-            //         min_x: -4.,
-            //         max_x: 2.4,
-            //         min_y: -2.5,
-            //         max_y: 2.5,
-            //     };
-            // }
-            (_, _) => {
-                param_map = |c| (c, ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
-        };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
     }
 }
 

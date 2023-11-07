@@ -121,8 +121,16 @@ impl<'a> Loader<'a>
             .args(["fmt", "-p", "transpiled-scripts"])
             .current_dir(&self.output_path);
 
+        #[cfg(debug_assertions)]
         let status = Command::new("cargo")
             .args(["build", "-p", "transpiled-scripts"])
+            .current_dir(&self.output_path)
+            .status()
+            .map_err(ScriptError::CargoCommandFailed)?;
+
+        #[cfg(not(debug_assertions))]
+        let status = Command::new("cargo")
+            .args(["build", "-rp", "transpiled-scripts"])
             .current_dir(&self.output_path)
             .status()
             .map_err(ScriptError::CargoCommandFailed)?;

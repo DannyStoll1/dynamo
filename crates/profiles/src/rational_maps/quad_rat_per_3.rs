@@ -26,7 +26,7 @@ impl Default for QuadRatPer3
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPer3
+impl DynamicalFamily for QuadRatPer3
 {
     parameter_plane_impl!();
     default_name!();
@@ -88,6 +88,15 @@ impl ParameterPlane for QuadRatPer3
     }
 
     #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    {
+        Bounds::centered_square(4.)
+    }
+}
+
+impl MarkedPoints for QuadRatPer3
+{
+    #[inline]
     fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
         vec![(0.).into()]
@@ -142,12 +151,6 @@ impl ParameterPlane for QuadRatPer3
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
-    {
-        Bounds::centered_square(4.)
     }
 }
 impl HasDynamicalCovers for QuadRatPer3

@@ -677,7 +677,7 @@ impl FractalTab
     fn change_fractal<P, J, C, M, T>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
     where
         P: Displayable + Clone + 'static,
-        J: Displayable + ParameterPlane<MetaParam = M, Child = C> + Clone + 'static,
+        J: Displayable + DynamicalFamily<MetaParam = M, Child = C> + Clone + 'static,
         C: Displayable + From<J>,
         M: ParamList<Param = T>,
         T: From<P::Param> + std::fmt::Display,
@@ -752,7 +752,7 @@ impl Default for FractalTab
         let height = IMAGE_HEIGHT;
 
         let parent_plane = Profile::default().with_res_y(height).with_max_iter(1024);
-        let child_plane = <Profile as ParameterPlane>::Child::from(parent_plane.clone());
+        let child_plane = <Profile as DynamicalFamily>::Child::from(parent_plane.clone());
 
         let interface = Box::new(MainInterface::new(parent_plane, child_plane, height));
 

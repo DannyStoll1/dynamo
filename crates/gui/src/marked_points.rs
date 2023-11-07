@@ -17,7 +17,7 @@ use dynamo_core::dynamics::Displayable;
 use crate::image_frame::ImageFrame;
 
 const POINT_RADIUS: f32 = 3.5;
-const CURVE_THICKNESS: f32 = 0.8;
+const CURVE_THICKNESS: f32 = 1.4;
 
 type Curve = Vec<Cplx>;
 

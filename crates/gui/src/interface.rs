@@ -117,7 +117,6 @@ where
             active_pane: Some(PaneID::Parent),
             live_mode: false,
             dialog: None,
-            // save_task: SaveTask::Idle,
             click_used: false,
             message: UiMessage::default(),
         }

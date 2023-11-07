@@ -6,6 +6,8 @@ use egui::Color32;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+const PERIOD_LUMA_MODIFIER: f32 = 1.0;
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum IncoloringAlgorithm
@@ -56,7 +58,7 @@ impl IncoloringAlgorithm
             Self::Solid => palette.in_color,
             Self::Period => {
                 let hue_id = point_info.period as f32;
-                palette.period_coloring.map(hue_id, 0.75)
+                palette.period_coloring.map(hue_id, PERIOD_LUMA_MODIFIER)
             }
             Self::PeriodMultiplier => {
                 let hue_id = point_info.period as f32;
@@ -124,6 +126,9 @@ impl IncoloringAlgorithm
     fn internal_potential(err: IterCount, tol: IterCount, mult_norm: IterCount) -> IterCount
     {
         // Superattracting case
+        // Assumes the first return map has local degree 2.
+        // This could be improved to handle higher order critical points,
+        // but we would need access to more information to estimate the order
         let potential = if mult_norm <= 1e-10 {
             2. * (err.log(tol)).log2() as IterCount
         }
@@ -165,7 +170,9 @@ impl IncoloringAlgorithm
         let rescaled_potential = info.potential.powi(2) / info.period as f64;
         match self {
             Self::Solid => palette.in_color,
-            Self::Period => palette.period_coloring.map(info.period as f32, 0.75),
+            Self::Period => palette
+                .period_coloring
+                .map(info.period as f32, PERIOD_LUMA_MODIFIER),
             Self::PeriodMultiplier => {
                 let hue_id = info.period as f32;
                 let luminosity_modifier = info.multiplier.norm() as f32;

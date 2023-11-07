@@ -13,7 +13,7 @@ def oxidize_expr(expr):
         elif expo.is_Float:
             return f"({oxidize_expr(base)}).powf({expo})"
         else:
-            return f"Cplx::from({oxidize_expr(base)})).powc(({oxidize_expr(expo)}).into())"
+            return f"Cplx::from({oxidize_expr(base)}).powc(Cplx::from({oxidize_expr(expo)}))"
     elif expr.is_Function:
         return f"({oxidize_expr(expr.args[0])}).{expr.func}()"
         # Add more functions as needed

@@ -132,7 +132,7 @@ impl eframe::App for FractalApp
 #[cfg(test)]
 mod tests
 {
-    use dynamo_core::dynamics::ParameterPlane;
+    use dynamo_core::dynamics::DynamicalFamily;
 
     #[test]
     fn gui_speedtest()

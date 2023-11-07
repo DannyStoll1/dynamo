@@ -24,7 +24,7 @@ impl Default for QuadRatGeneral
     }
 }
 
-impl ParameterPlane for QuadRatGeneral
+impl DynamicalFamily for QuadRatGeneral
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -61,7 +61,10 @@ impl ParameterPlane for QuadRatGeneral
     {
         ZERO
     }
+}
 
+impl MarkedPoints for QuadRatGeneral
+{
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]

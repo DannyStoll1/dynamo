@@ -24,7 +24,7 @@ impl<const D: i32> Default for Unicritical<D>
 }
 
 #[allow(clippy::suspicious_operation_groupings)]
-impl<const D: i32> ParameterPlane for Unicritical<D>
+impl<const D: i32> DynamicalFamily for Unicritical<D>
 {
     parameter_plane_impl!();
     default_bounds!();
@@ -61,12 +61,31 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
         1e-18
     }
 
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
+    }
+
+    fn default_selection(&self) -> Cplx
+    {
+        let zeta = (TAUI / Self::D_FLOAT).exp();
+        (zeta - 1.) * Self::D_FLOAT
+    }
+
+    fn name(&self) -> String
+    {
+        format!("Unicritical({D})")
+    }
+}
+
+impl<const D: i32> MarkedPoints for Unicritical<D>
+{
+    #[inline]
     fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
     {
         vec![Self::CRIT]
     }
 
-    #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         use dynamo_common::math_utils::binomial;
@@ -82,22 +101,6 @@ impl<const D: i32> ParameterPlane for Unicritical<D>
             }
             _ => vec![],
         }
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
-    {
-        Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
-    }
-
-    fn default_selection(&self) -> Cplx
-    {
-        let zeta = (TAUI / Self::D_FLOAT).exp();
-        (zeta - 1.) * Self::D_FLOAT
-    }
-
-    fn name(&self) -> String
-    {
-        format!("Unicritical({D})")
     }
 }
 

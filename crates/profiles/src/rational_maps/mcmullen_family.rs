@@ -23,7 +23,7 @@ impl<const M: i32, const N: i32> Default for McMullenFamily<M, N>
     fractal_impl!();
 }
 
-impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
+impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
 {
     parameter_plane_impl!();
     default_bounds!();
@@ -60,15 +60,6 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         )
     }
 
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
-    {
-        let w0 = Self::N_FLOAT / (c * Self::M_FLOAT);
-        let z0 = w0.powf(Self::M_PLUS_N_INV);
-        (0..(M + N))
-            .map(|k| (TAUI * f64::from(k) * Self::M_PLUS_N_INV).exp() * z0)
-            .collect()
-    }
-
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds {
@@ -84,7 +75,14 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         ONE
     }
 
-    #[inline]
+    fn name(&self) -> String
+    {
+        format!("McMullen Family ({M}, {N})")
+    }
+}
+
+impl<const M: i32, const N: i32> MarkedPoints for McMullenFamily<M, N>
+{
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
@@ -99,9 +97,13 @@ impl<const M: i32, const N: i32> ParameterPlane for McMullenFamily<M, N>
         }
     }
 
-    fn name(&self) -> String
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
-        format!("McMullen Family ({M}, {N})")
+        let w0 = Self::N_FLOAT / (c * Self::M_FLOAT);
+        let z0 = w0.powf(Self::M_PLUS_N_INV);
+        (0..(M + N))
+            .map(|k| (TAUI * f64::from(k) * Self::M_PLUS_N_INV).exp() * z0)
+            .collect()
     }
 }
 

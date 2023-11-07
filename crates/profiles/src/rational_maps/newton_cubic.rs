@@ -23,7 +23,7 @@ impl Default for NewtonCubic
     fractal_impl!();
 }
 
-impl ParameterPlane for NewtonCubic
+impl DynamicalFamily for NewtonCubic
 {
     parameter_plane_impl!();
     default_name!();
@@ -62,7 +62,10 @@ impl ParameterPlane for NewtonCubic
     {
         ZERO
     }
+}
 
+impl MarkedPoints for NewtonCubic
+{
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
         let [r0, r1, r2] = solve_cubic(-ONE, c, ZERO);

@@ -23,7 +23,7 @@ impl Default for RiemannXi
 {
     fractal_impl!();
 }
-impl ParameterPlane for RiemannXi
+impl DynamicalFamily for RiemannXi
 {
     type Param = Cplx;
     type Var = Cplx;
@@ -113,7 +113,7 @@ impl From<RiemannXi> for RiemannXiNewton
     }
 }
 
-impl ParameterPlane for RiemannXiNewton
+impl DynamicalFamily for RiemannXiNewton
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -176,6 +176,9 @@ impl ParameterPlane for RiemannXiNewton
         "Riemann Xi Newton".to_owned()
     }
 }
+
+impl MarkedPoints for RiemannXi {}
+impl MarkedPoints for RiemannXiNewton {}
 
 degree_impl_transcendental!(RiemannXi);
 degree_impl_transcendental!(RiemannXiNewton);

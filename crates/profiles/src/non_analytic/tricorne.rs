@@ -29,7 +29,7 @@ impl<const N: Period> Default for Tricorne<N>
     fractal_impl!();
 }
 
-impl<const N: Period> ParameterPlane for Tricorne<N>
+impl<const N: Period> DynamicalFamily for Tricorne<N>
 {
     parameter_plane_impl!();
     default_name!();
@@ -56,7 +56,10 @@ impl<const N: Period> ParameterPlane for Tricorne<N>
     {
         ZERO
     }
+}
 
+impl<const N: Period> MarkedPoints for Tricorne<N>
+{
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]

@@ -26,7 +26,7 @@ impl Default for Exponential
     fractal_impl!();
 }
 
-impl ParameterPlane for Exponential
+impl DynamicalFamily for Exponential
 {
     parameter_plane_impl!();
     default_name!();
@@ -43,6 +43,10 @@ impl ParameterPlane for Exponential
     {
         let u = z.exp() * lambda;
         (u, u)
+    }
+
+    fn escape_radius(&self) -> Real {
+        5e4
     }
 
     #[inline]
@@ -65,15 +69,18 @@ impl ParameterPlane for Exponential
         ZERO
     }
 
+    fn default_julia_bounds(&self, _point: Cplx, lambda: Self::Param) -> Bounds
+    {
+        Bounds::square(5., lambda)
+    }
+}
+
+impl MarkedPoints for Exponential
+{
     #[inline]
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, lambda: Self::Param) -> Bounds
-    {
-        Bounds::square(5., lambda)
     }
 }
 
@@ -100,7 +107,7 @@ impl Default for CosineAdd
     fractal_impl!();
 }
 
-impl ParameterPlane for CosineAdd
+impl DynamicalFamily for CosineAdd
 {
     parameter_plane_impl!();
     default_name!();
@@ -170,7 +177,7 @@ impl Default for Cosine
     fractal_impl!();
 }
 
-impl ParameterPlane for Cosine
+impl DynamicalFamily for Cosine
 {
     parameter_plane_impl!();
     default_name!();
@@ -236,7 +243,7 @@ impl Default for SineWander
     fractal_impl!();
 }
 
-impl ParameterPlane for SineWander
+impl DynamicalFamily for SineWander
 {
     parameter_plane_impl!();
     default_name!();
@@ -274,6 +281,66 @@ impl ParameterPlane for SineWander
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)
+    }
+}
+
+impl MarkedPoints for Cosine
+{
+    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    {
+        if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
+            return vec![];
+        }
+
+        let n_min = (self.point_grid().min_x / PI).ceil() as i32;
+        let n_max = (self.point_grid().max_x / PI).ceil() as i32;
+
+        let mut pts = Vec::with_capacity((n_max - n_min) as usize);
+
+        for n in n_min..n_max {
+            pts.push((n as Real * PI).into())
+        }
+        pts
+    }
+}
+
+impl MarkedPoints for CosineAdd
+{
+    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    {
+        if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
+            return vec![];
+        }
+
+        let n_min = (self.point_grid().min_x / PI).ceil() as i32;
+        let n_max = (self.point_grid().max_x / PI).ceil() as i32;
+
+        let mut pts = Vec::with_capacity((n_max - n_min) as usize);
+
+        for n in n_min..n_max {
+            pts.push((n as Real * PI).into())
+        }
+        pts
+    }
+}
+
+impl MarkedPoints for SineWander
+{
+    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    {
+        if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
+            return vec![];
+        }
+
+        let n_min = (self.point_grid().min_x / TAU).ceil() as i32;
+        let n_max = (self.point_grid().max_x / TAU).ceil() as i32;
+
+        let mut pts = Vec::with_capacity((n_max - n_min + 1) as usize);
+
+        for n in n_min..=n_max {
+            pts.push((n as Real * TAU + PI).into())
+        }
+        pts
     }
 }
 

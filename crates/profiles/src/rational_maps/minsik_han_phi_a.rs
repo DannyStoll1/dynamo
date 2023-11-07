@@ -34,7 +34,7 @@ impl<const D: i32> Default for MinsikHanPhi<D>
     fractal_impl!();
 }
 
-impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
+impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
 {
     parameter_plane_impl!();
     default_bounds!();
@@ -70,6 +70,20 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
         ONE
     }
 
+    fn default_selection(&self) -> Cplx
+    {
+        Cplx::new(Self::D_FLOAT, 0.0)
+        // ComplexNum::new(8.03871259641341, 4.08815358590093)
+    }
+
+    fn name(&self) -> String
+    {
+        format!("Minsik Han Family, degree {D}")
+    }
+}
+
+impl<const D: i32> MarkedPoints for MinsikHanPhi<D>
+{
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         (0..D)
@@ -77,7 +91,6 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
             .collect()
     }
 
-    #[inline]
     fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
@@ -115,17 +128,6 @@ impl<const D: i32> ParameterPlane for MinsikHanPhi<D>
             }
             _ => vec![],
         }
-    }
-
-    fn default_selection(&self) -> Cplx
-    {
-        Cplx::new(Self::D_FLOAT, 0.0)
-        // ComplexNum::new(8.03871259641341, 4.08815358590093)
-    }
-
-    fn name(&self) -> String
-    {
-        format!("Minsik Han Family, degree {D}")
     }
 }
 

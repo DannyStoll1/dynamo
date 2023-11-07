@@ -295,7 +295,12 @@ where
 
         let degree = plane.degree_real().try_round().unwrap_or(2);
         let mut marking = Marking::default().with_degree(degree);
-        marking.enable_selection();
+
+        if plane.plane_type().is_dynamical() {
+            marking.toggle_critical();
+        } else {
+            marking.enable_selection();
+        }
 
         Self {
             plane,

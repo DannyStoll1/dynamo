@@ -1,6 +1,6 @@
 use super::julia::JuliaSet;
 use super::orbit::EscapeResult;
-use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, ParameterPlane};
+use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, MarkedPoints, DynamicalFamily};
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
@@ -9,7 +9,7 @@ use num_traits::One;
 #[derive(Clone)]
 pub struct CoveringMap<C>
 where
-    C: ParameterPlane + Clone,
+    C: DynamicalFamily,
 {
     base_curve: C,
     covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
@@ -19,7 +19,7 @@ where
 
 impl<C> CoveringMap<C>
 where
-    C: ParameterPlane + Clone,
+    C: DynamicalFamily + Clone,
 {
     #[must_use]
     pub fn new(
@@ -38,9 +38,9 @@ where
     }
 }
 
-impl<C> ParameterPlane for CoveringMap<C>
+impl<C> DynamicalFamily for CoveringMap<C>
 where
-    C: ParameterPlane + Clone,
+    C: DynamicalFamily,
 {
     type Var = C::Var;
     type Param = C::Param;
@@ -189,24 +189,6 @@ where
     }
 
     #[inline]
-    fn critical_points_child(&self, param: C::Param) -> Vec<Self::Var>
-    {
-        self.base_curve.critical_points_child(param)
-    }
-
-    #[inline]
-    fn cycles_child(&self, param: C::Param, period: Period) -> Vec<Self::Var>
-    {
-        self.base_curve.cycles_child(param, period)
-    }
-
-    #[inline]
-    fn precycles_child(&self, c: Self::Param, orbit_schema: OrbitSchema) -> Vec<Self::Var>
-    {
-        self.base_curve.precycles_child(c, orbit_schema)
-    }
-
-    #[inline]
     fn default_julia_bounds(&self, point: Cplx, param: C::Param) -> Bounds
     {
         self.base_curve.default_julia_bounds(point, param)
@@ -237,9 +219,32 @@ where
     }
 }
 
+impl<C> MarkedPoints for CoveringMap<C>
+where
+    C: MarkedPoints,
+{
+    #[inline]
+    fn critical_points_child(&self, param: C::Param) -> Vec<Self::Var>
+    {
+        self.base_curve.critical_points_child(param)
+    }
+
+    #[inline]
+    fn cycles_child(&self, param: C::Param, period: Period) -> Vec<Self::Var>
+    {
+        self.base_curve.cycles_child(param, period)
+    }
+
+    #[inline]
+    fn precycles_child(&self, c: Self::Param, orbit_schema: OrbitSchema) -> Vec<Self::Var>
+    {
+        self.base_curve.precycles_child(c, orbit_schema)
+    }
+}
+
 impl<C> InfinityFirstReturnMap for CoveringMap<C>
 where
-    C: ParameterPlane + InfinityFirstReturnMap + Clone,
+    C: DynamicalFamily + InfinityFirstReturnMap,
 {
     #[inline]
     fn degree_real(&self) -> f64
@@ -272,7 +277,7 @@ where
     }
 }
 
-impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C>
+impl<C: EscapeEncoding> EscapeEncoding for CoveringMap<C>
 {
     #[inline]
     fn encode_escape_result(
@@ -287,7 +292,7 @@ impl<C: EscapeEncoding + Clone> EscapeEncoding for CoveringMap<C>
     }
 }
 
-pub trait HasDynamicalCovers: super::ParameterPlane + Clone
+pub trait HasDynamicalCovers: super::DynamicalFamily + Clone
 {
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
     {
@@ -315,4 +320,4 @@ pub trait HasDynamicalCovers: super::ParameterPlane + Clone
     }
 }
 
-impl<C: ExternalRays + Clone> ExternalRays for CoveringMap<C> {}
+impl<C: ExternalRays> ExternalRays for CoveringMap<C> {}

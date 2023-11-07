@@ -24,7 +24,7 @@ impl Default for QuadRatPer4
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPer4
+impl DynamicalFamily for QuadRatPer4
 {
     parameter_plane_impl!();
     default_name!();
@@ -109,6 +109,15 @@ impl ParameterPlane for QuadRatPer4
         )
     }
 
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    {
+        Bounds::square(4., (2.).into())
+    }
+}
+
+impl MarkedPoints for QuadRatPer4
+{
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
@@ -197,12 +206,6 @@ impl ParameterPlane for QuadRatPer4
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
-    {
-        Bounds::square(4., (2.).into())
     }
 }
 

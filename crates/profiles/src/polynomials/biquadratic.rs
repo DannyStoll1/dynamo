@@ -26,7 +26,7 @@ impl Default for Biquadratic
     fractal_impl!(multiplier, ZERO);
 }
 
-impl ParameterPlane for Biquadratic
+impl DynamicalFamily for Biquadratic
 {
     type Var = Bicomplex;
     type Param = Cplx;
@@ -142,7 +142,7 @@ impl Default for BiquadraticMult
     }
 }
 
-impl ParameterPlane for BiquadraticMult
+impl DynamicalFamily for BiquadraticMult
 {
     type Var = Bicomplex;
     type Param = param::OuterParam;
@@ -209,6 +209,58 @@ impl ParameterPlane for BiquadraticMult
         }
     }
 
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_plane = self.starting_plane.swap();
+    }
+
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        match self.starting_plane {
+            PlaneID::ZPlane => Bicomplex::PlaneA(point),
+            PlaneID::WPlane => Bicomplex::PlaneB(point),
+        }
+    }
+
+    fn periodicity_tolerance(&self) -> Real
+    {
+        1e-14
+    }
+
+    fn default_selection(&self) -> Cplx
+    {
+        8. - 4. * self.multiplier
+        // Cplx::new(1.062_658_8, 0.)
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
+    {
+        Bounds::square(2.5, -0.5 * c.a)
+    }
+
+    fn set_meta_param(&mut self, meta_param: Self::MetaParam)
+    {
+        self.multiplier = meta_param;
+    }
+
+    fn set_param(&mut self, multiplier: Cplx)
+    {
+        self.multiplier = multiplier;
+    }
+
+    fn get_meta_params(&self) -> Self::MetaParam
+    {
+        self.multiplier
+    }
+
+    fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
+    {
+        self.multiplier
+    }
+}
+
+impl MarkedPoints for BiquadraticMult
+{
     fn critical_points(&self) -> Vec<Self::Var>
     {
         let l = self.multiplier;
@@ -305,55 +357,6 @@ impl ParameterPlane for BiquadraticMult
             _ => vec![],
         }
     }
-
-    fn cycle_active_plane(&mut self)
-    {
-        self.starting_plane = self.starting_plane.swap();
-    }
-
-    fn dynam_map(&self, point: Cplx) -> Self::Var
-    {
-        match self.starting_plane {
-            PlaneID::ZPlane => Bicomplex::PlaneA(point),
-            PlaneID::WPlane => Bicomplex::PlaneB(point),
-        }
-    }
-
-    fn periodicity_tolerance(&self) -> Real
-    {
-        1e-14
-    }
-
-    fn default_selection(&self) -> Cplx
-    {
-        8. - 4. * self.multiplier
-        // Cplx::new(1.062_658_8, 0.)
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
-    {
-        Bounds::square(2.5, -0.5 * c.a)
-    }
-
-    fn set_meta_param(&mut self, meta_param: Self::MetaParam)
-    {
-        self.multiplier = meta_param;
-    }
-
-    fn set_param(&mut self, multiplier: Cplx)
-    {
-        self.multiplier = multiplier;
-    }
-
-    fn get_meta_params(&self) -> Self::MetaParam
-    {
-        self.multiplier
-    }
-
-    fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
-    {
-        self.multiplier
-    }
 }
 
 impl EscapeEncoding for BiquadraticMult
@@ -411,7 +414,7 @@ impl Default for BiquadraticMultParam
     }
 }
 
-impl ParameterPlane for BiquadraticMultParam
+impl DynamicalFamily for BiquadraticMultParam
 {
     type Param = param::OuterParam;
     type Var = Bicomplex;
@@ -541,7 +544,7 @@ impl Default for BiquadraticMultSecondIterate
     fractal_impl!(multiplier, ZERO);
 }
 
-impl ParameterPlane for BiquadraticMultSecondIterate
+impl DynamicalFamily for BiquadraticMultSecondIterate
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -672,7 +675,7 @@ impl Default for BiquadraticMultSection
     }
 }
 
-impl ParameterPlane for BiquadraticMultSection
+impl DynamicalFamily for BiquadraticMultSection
 {
     type Var = Bicomplex;
     type Param = Cplx;
@@ -730,6 +733,37 @@ impl ParameterPlane for BiquadraticMultSection
         }
     }
 
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_plane = self.starting_plane.swap();
+    }
+
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        match self.starting_plane {
+            PlaneID::ZPlane => Bicomplex::PlaneA(point),
+            PlaneID::WPlane => Bicomplex::PlaneB(point),
+        }
+    }
+
+    fn periodicity_tolerance(&self) -> Real
+    {
+        1e-14
+    }
+
+    fn default_selection(&self) -> Cplx
+    {
+        Cplx::new(1.062_658_8, 0.)
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, a: Self::Param) -> Bounds
+    {
+        Bounds::square(2.5, -0.5 * a)
+    }
+}
+
+impl MarkedPoints for BiquadraticMultSection
+{
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {
@@ -779,34 +813,6 @@ impl ParameterPlane for BiquadraticMultSection
             _ => vec![],
         }
     }
-
-    fn cycle_active_plane(&mut self)
-    {
-        self.starting_plane = self.starting_plane.swap();
-    }
-
-    fn dynam_map(&self, point: Cplx) -> Self::Var
-    {
-        match self.starting_plane {
-            PlaneID::ZPlane => Bicomplex::PlaneA(point),
-            PlaneID::WPlane => Bicomplex::PlaneB(point),
-        }
-    }
-
-    fn periodicity_tolerance(&self) -> Real
-    {
-        1e-14
-    }
-
-    fn default_selection(&self) -> Cplx
-    {
-        Cplx::new(1.062_658_8, 0.)
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, a: Self::Param) -> Bounds
-    {
-        Bounds::square(2.5, -0.5 * a)
-    }
 }
 
 impl EscapeEncoding for BiquadraticMultSection
@@ -853,6 +859,10 @@ impl ExternalRays for Biquadratic {}
 impl ExternalRays for BiquadraticMult {}
 impl ExternalRays for BiquadraticMultParam {}
 impl ExternalRays for BiquadraticMultSection {}
+
+impl MarkedPoints for Biquadratic {}
+impl MarkedPoints for BiquadraticMultParam {}
+impl MarkedPoints for BiquadraticMultSecondIterate {}
 
 pub mod param
 {

@@ -40,7 +40,7 @@ impl QuadRatPer1Lambda
     }
 }
 
-impl ParameterPlane for QuadRatPer1Lambda
+impl DynamicalFamily for QuadRatPer1Lambda
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -127,18 +127,6 @@ impl ParameterPlane for QuadRatPer1Lambda
     }
 
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
-    {
-        self.general_plane.critical_points_child(c)
-    }
-
-    #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        self.general_plane.cycles_child(c, period)
-    }
-
-    #[inline]
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.multiplier
@@ -155,6 +143,21 @@ impl ParameterPlane for QuadRatPer1Lambda
     {
         self.multiplier = lambda;
         self.tolerance = Self::compute_tolerance(lambda);
+    }
+}
+
+impl MarkedPoints for QuadRatPer1Lambda
+{
+    #[inline]
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        self.general_plane.critical_points_child(c)
+    }
+
+    #[inline]
+    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        self.general_plane.cycles_child(c, period)
     }
 }
 
@@ -274,7 +277,7 @@ impl Default for QuadRatPer1LambdaParam
     }
 }
 
-impl ParameterPlane for QuadRatPer1LambdaParam
+impl DynamicalFamily for QuadRatPer1LambdaParam
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -320,17 +323,6 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     {
         (ONE, ZERO, ZERO)
     }
-
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
-    {
-        vec![ZERO, ONE]
-    }
-
-    fn name(&self) -> String
-    {
-        "QuadRat Per(1, λ) λ-plane".to_owned()
-    }
-
     fn default_selection(&self) -> Cplx
     {
         ONE
@@ -340,6 +332,19 @@ impl ParameterPlane for QuadRatPer1LambdaParam
     {
         let r = 4.;
         Bounds::centered_square(r)
+    }
+
+    fn name(&self) -> String
+    {
+        "QuadRat Per(1, λ) λ-plane".to_owned()
+    }
+}
+
+impl MarkedPoints for QuadRatPer1LambdaParam
+{
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO, ONE]
     }
 }
 
@@ -383,7 +388,7 @@ impl Default for QuadRatPer1_1
     }
 }
 
-impl ParameterPlane for QuadRatPer1_1
+impl DynamicalFamily for QuadRatPer1_1
 {
     type Var = Cplx;
     type Param = CplxPair;
@@ -470,7 +475,10 @@ impl ParameterPlane for QuadRatPer1_1
     {
         self.general_plane.start_point(t, c)
     }
+}
 
+impl MarkedPoints for QuadRatPer1_1
+{
     #[inline]
     fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
     {

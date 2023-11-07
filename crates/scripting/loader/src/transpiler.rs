@@ -133,7 +133,7 @@ impl Transpiler
     fn parameter_plane_impl(&self) -> String
     {
         format!(
-            "impl ParameterPlane for UserPlane {{
+            "impl DynamicalFamily for UserPlane {{
     type Param = Parameters;
     type Var = Cplx;
     type MetaParam = NoParam;
@@ -142,7 +142,7 @@ impl Transpiler
     basic_plane_impl!();
 
     fn param_map(&self, {t}: Cplx) -> Self::Param {{
-        {param_map}.into()
+        {param_map}
     }}
 
     fn escape_radius(&self) -> Real
@@ -152,7 +152,7 @@ impl Transpiler
 
     fn start_point(&self, {t}: Cplx, {c}: Self::Param) -> Self::Var
     {{
-        {start}.into()
+        Self::Var::from({start})
     }}
 
     fn start_point_d(&self, {t}: Cplx, {c}: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
@@ -219,6 +219,7 @@ impl Transpiler
     }}
 }}
 
+impl MarkedPoints for UserPlane {{}}
 impl EscapeEncoding for UserPlane {{}}
 impl ExternalRays for UserPlane {{}}
 ",
@@ -241,7 +242,7 @@ impl ExternalRays for UserPlane {{}}
         "#[no_mangle]\n\
         pub unsafe fn create_interface() -> *mut dyn Interface {\n\
             let parent = UserPlane::default();\n\
-            let child = <UserPlane as ParameterPlane>::Child::from(parent.clone());\n\
+            let child = <UserPlane as DynamicalFamily>::Child::from(parent.clone());\n\
 \
             let int = MainInterface::new(parent, child, 768);\n\
             Box::into_raw(Box::new(int))

@@ -29,7 +29,7 @@ impl<const N: Period> Default for BurningShip<N>
     fractal_impl!();
 }
 
-impl<const N: Period> ParameterPlane for BurningShip<N>
+impl<const N: Period> DynamicalFamily for BurningShip<N>
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -69,6 +69,20 @@ impl<const N: Period> ParameterPlane for BurningShip<N>
     }
 
     #[inline]
+    fn param_map(&self, c: Cplx) -> Cplx
+    {
+        c
+    }
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    {
+        Bounds::centered_square(4.)
+    }
+}
+
+impl<const N: Period> MarkedPoints for BurningShip<N>
+{
+    #[inline]
     fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
@@ -84,17 +98,6 @@ impl<const N: Period> ParameterPlane for BurningShip<N>
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn param_map(&self, c: Cplx) -> Cplx
-    {
-        c
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
-    {
-        Bounds::centered_square(4.)
     }
 }
 
@@ -121,7 +124,7 @@ impl Default for Sailboat
     fractal_impl!(shift, ZERO);
 }
 
-impl ParameterPlane for Sailboat
+impl DynamicalFamily for Sailboat
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -203,7 +206,7 @@ impl Default for SailboatParam
     fractal_impl!();
 }
 
-impl ParameterPlane for SailboatParam
+impl DynamicalFamily for SailboatParam
 {
     type Param = Cplx;
     type MetaParam = NoParam;
@@ -240,11 +243,7 @@ impl ParameterPlane for SailboatParam
         (-TWO_THIRDS * c, ZERO, Cplx::new(-TWO_THIRDS, 0.))
     }
 
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
-    {
-        vec![ZERO, ONE]
-    }
-
+    #[inline]
     fn name(&self) -> String
     {
         "Sailboat Param".to_owned()
@@ -258,6 +257,14 @@ impl ParameterPlane for SailboatParam
     fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
     {
         Bounds::centered_square(3.5)
+    }
+}
+
+impl MarkedPoints for SailboatParam
+{
+    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO, ONE]
     }
 }
 
@@ -285,6 +292,15 @@ impl<const N: Period> InfinityFirstReturnMap for BurningShip<N>
 
 impl<const N: Period> EscapeEncoding for BurningShip<N> {}
 impl<const N: Period> ExternalRays for BurningShip<N> {}
+
+impl MarkedPoints for Sailboat
+{
+    #[inline]
+    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    {
+        vec![ZERO]
+    }
+}
 
 degree_impl!(Sailboat, 2);
 degree_impl!(SailboatParam, 2);

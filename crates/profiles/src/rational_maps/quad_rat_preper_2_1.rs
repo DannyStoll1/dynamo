@@ -24,7 +24,7 @@ impl Default for QuadRatPreper21
     fractal_impl!();
 }
 
-impl ParameterPlane for QuadRatPreper21
+impl DynamicalFamily for QuadRatPreper21
 {
     parameter_plane_impl!();
     default_name!();
@@ -56,6 +56,15 @@ impl ParameterPlane for QuadRatPreper21
         (1.).into()
     }
 
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    {
+        Bounds::centered_square(4.)
+    }
+}
+
+impl MarkedPoints for QuadRatPreper21
+{
     #[inline]
     fn critical_points_child(&self, _param: Cplx) -> ComplexVec
     {
@@ -122,12 +131,6 @@ impl ParameterPlane for QuadRatPreper21
             }
             _ => vec![],
         }
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
-    {
-        Bounds::centered_square(4.)
     }
 }
 

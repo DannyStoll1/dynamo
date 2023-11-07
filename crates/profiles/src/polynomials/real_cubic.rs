@@ -24,7 +24,7 @@ impl Default for RealCubicRealCrit
 }
 
 #[allow(clippy::suboptimal_flops)]
-impl ParameterPlane for RealCubicRealCrit
+impl DynamicalFamily for RealCubicRealCrit
 {
     type Param = RealPair;
     type Var = Cplx;
@@ -53,11 +53,6 @@ impl ParameterPlane for RealCubicRealCrit
         (b + z * (z2 - 3. * a2), 3. * (z2 - a2))
     }
 
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
-    {
-        vec![c.a.into(), (-c.a).into()]
-    }
-
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         c.a.into()
@@ -69,6 +64,14 @@ impl ParameterPlane for RealCubicRealCrit
             a: point.re,
             b: point.im,
         }
+    }
+}
+
+impl MarkedPoints for RealCubicRealCrit
+{
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        vec![c.a.into(), (-c.a).into()]
     }
 }
 
@@ -98,7 +101,7 @@ impl Default for RealCubicImagCrit
 }
 
 #[allow(clippy::suboptimal_flops)]
-impl ParameterPlane for RealCubicImagCrit
+impl DynamicalFamily for RealCubicImagCrit
 {
     type Param = RealPair;
     type Var = Cplx;
@@ -127,12 +130,6 @@ impl ParameterPlane for RealCubicImagCrit
         (b + z * (z2 + 3. * a2), 3. * (z2 + a2))
     }
 
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
-    {
-        let crit = Cplx::new(0., c.a);
-        vec![crit, -crit]
-    }
-
     fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
     {
         Cplx::new(0., c.a)
@@ -144,5 +141,14 @@ impl ParameterPlane for RealCubicImagCrit
             a: point.re,
             b: point.im,
         }
+    }
+}
+
+impl MarkedPoints for RealCubicImagCrit
+{
+    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    {
+        let crit = Cplx::new(0., c.a);
+        vec![crit, -crit]
     }
 }
