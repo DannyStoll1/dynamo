@@ -21,6 +21,7 @@ palettes
 # Config
 bacon.toml
 .cargo
+.*
 
 # Notes
 notes

@@ -26,6 +26,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+/// Represents different types of messages that can be sent within the UI.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum UiMessage
 {
@@ -37,12 +38,14 @@ pub enum UiMessage
 }
 impl UiMessage
 {
+    /// Takes the current value out of the `UiMessage`, leaving `DoNothing` in its place.
     fn pop(&mut self) -> Self
     {
         std::mem::take(self)
     }
 }
 
+/// A trait defining the relationship between a parent and child pane.
 pub trait PanePair
 {
     fn parent(&self) -> &dyn Pane;
@@ -64,13 +67,16 @@ pub trait PanePair
     fn prompt_load_palette(&mut self, panes: PaneSelection);
     fn prompt_text(&mut self, input_type: TextInputType);
 
+    /// Updates the state of both the parent and child panes.
     fn update_panes(&mut self);
 
     // fn descend(self) -> Box<dyn PanePair>;
 }
 
+/// A trait for interactive elements within the UI that can handle input and display dialogs.
 pub trait Interactive
 {
+    /// Displays a dialog to the user, if any is active.
     fn show_dialog(&mut self, ctx: &Context);
     fn consume_click(&mut self);
     fn reset_click(&mut self);
@@ -84,6 +90,7 @@ pub trait Interactive
     fn process_action(&mut self, action: &Action);
 }
 
+/// The main interface structure that holds the parent and child panes along with UI state.
 pub struct MainInterface<P, J>
 where
     P: Displayable + Clone + 'static,
@@ -108,6 +115,7 @@ where
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
+    /// Constructs a new `MainInterface` with the given parent and child panes and image height.
     pub fn new(parent: P, child: J, image_height: usize) -> Self
     {
         Self {
@@ -122,6 +130,7 @@ where
         }
     }
 
+    /// Sets a new parameter for the child pane based on the parent pane's parameter.
     fn set_child_param(&mut self, new_param: P::Param)
     {
         let old_center = self.child.grid().center();
@@ -148,6 +157,7 @@ where
         }
     }
 
+    /// Closes the currently active dialog, if any.
     #[inline]
     fn close_dialog(&mut self)
     {
@@ -316,6 +326,7 @@ where
         }
     }
 
+    /// Handles mouse input, updating the state of the panes accordingly.
     fn handle_mouse(&mut self, ctx: &Context)
     {
         let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;
@@ -358,21 +369,25 @@ where
         }
     }
 
+    /// Schedules a message to close the current window.
     fn schedule_close(&mut self)
     {
         self.message = UiMessage::CloseWindow;
     }
 
+    /// Schedules a message to quit the application.
     fn schedule_quit(&mut self)
     {
         self.message = UiMessage::Quit;
     }
 
+    /// Schedules a message to open a new tab.
     fn schedule_new_tab(&mut self)
     {
         self.message = UiMessage::NewTab;
     }
 
+    /// Toggles the live mode state of the interface.
     fn toggle_live_mode(&mut self)
     {
         self.live_mode ^= true;
@@ -384,12 +399,14 @@ where
         }
     }
 
+    /// Checks if there is a visible dialog currently active.
     fn has_visible_dialog(&self) -> bool
     {
         self.dialog.as_ref().is_some_and(Dialog::visible)
     }
 }
 
+/// Implementation of `PanePair` for `MainInterface`, providing access to parent and child panes.
 impl<P, J, C, M, T> PanePair for MainInterface<P, J>
 where
     P: Displayable + Clone,
@@ -398,22 +415,27 @@ where
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
+    /// Returns a reference to the parent pane.
     fn parent(&self) -> &dyn Pane
     {
         &self.parent
     }
+    /// Returns a mutable reference to the parent pane.
     fn parent_mut(&mut self) -> &mut dyn Pane
     {
         &mut self.parent
     }
+    /// Returns a reference to the child pane.
     fn child(&self) -> &dyn Pane
     {
         &self.child
     }
+    /// Returns a mutable reference to the child pane.
     fn child_mut(&mut self) -> &mut dyn Pane
     {
         &mut self.child
     }
+    /// Randomizes the color palette for both the parent and child panes.
     fn randomize_palette(&mut self)
     {
         let palette = Palette::new_random(0.45, 0.38);
@@ -421,6 +443,7 @@ where
         self.child.change_palette(palette);
     }
 
+    /// Prompt for text input for a specified purpose.
     fn prompt_text(&mut self, input_type: TextInputType)
     {
         use TextInputType::*;
@@ -487,6 +510,7 @@ where
         self.dialog = Some(dialog);
     }
 
+    /// Open a dialog prompt to save an image.
     fn prompt_save_image(&mut self, pane_selection: PaneSelection)
     {
         let path = PathBuf::from("images");
@@ -594,12 +618,14 @@ where
         }
     }
 
+    /// Sets a new color palette for both the parent and child panes.
     fn set_palette(&mut self, palette: Palette)
     {
         self.parent.change_palette(palette);
         self.child.change_palette(palette);
     }
 
+    /// Sets a new incoloring algorithm for both the parent and child panes.
     fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm)
     {
         match coloring_algorithm {
@@ -634,6 +660,7 @@ where
     // }
 }
 
+/// Implementation of `Interactive` for `MainInterface`, handling input and dialogs.
 impl<P, J, C, M, T> Interactive for MainInterface<P, J>
 where
     P: Displayable + Clone,
@@ -642,6 +669,7 @@ where
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
+    /// Handles user input and updates the state of the interface accordingly.
     fn handle_input(&mut self, ctx: &Context)
     {
         // Don't process input if the user is in a dialog
@@ -761,6 +789,8 @@ where
         self.child.change_height(new_height);
     }
 
+    /// Renders the UI elements of the main interface, which consists of the parent plane, child
+    /// plane, plane names, and orbit descriptions. The menu is handled by the parent struct `app::FracalTab`.
     fn show(&mut self, ui: &mut Ui)
     {
         TableBuilder::new(ui)
@@ -807,6 +837,7 @@ where
     }
 
     #[allow(clippy::option_map_unit_fn)]
+    /// Processes an action and updates the state of the interface accordingly.
     fn process_action(&mut self, action: &Action)
     {
         match action {
@@ -968,8 +999,10 @@ where
     }
 }
 
+/// A trait that extends `Interactive` with an update method for the UI.
 pub trait Interface: Interactive
 {
+    /// Updates the state of the interface, handling input and rendering dialogs.
     fn update(&mut self, ui: &Context);
 }
 
