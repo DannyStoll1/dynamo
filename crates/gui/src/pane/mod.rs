@@ -238,6 +238,13 @@ pub trait Pane
     fn pop_child_task(&mut self) -> ChildTask;
 }
 
+/// `WindowPane` is a struct that represents a window pane in the GUI.
+/// It holds the plane being displayed, the coloring information, the image frame,
+/// tasks for computation and drawing, and other state related to the dynamical system.
+///
+/// # Type Parameters
+///
+/// * `P`: The type of the plane being displayed, which must implement the `dynamo_core::dynamics::Displayable` trait.
 pub(super) struct WindowPane<P>
 where
     P: Displayable,
@@ -260,6 +267,17 @@ where
 {
     /// Change the meta-parameter for the plane. Returns true if the new value is distinct from the
     /// old one.
+    /// Sets a new parameter for the plane and updates the state accordingly.
+    /// Clears marked orbits and equipotentials if the ray state is idle.
+    /// Returns true if the new parameter is different from the current one.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_param`: The new parameter to set for the plane.
+    ///
+    /// # Returns
+    ///
+    /// `bool`: Indicates whether the parameter was updated (true) or not (false).
     pub fn set_param(&mut self, new_param: <P::MetaParam as ParamList>::Param) -> bool
     {
         let old_param = self.plane.get_param();
@@ -287,6 +305,17 @@ where
     }
 
     #[must_use]
+    /// Creates a new `WindowPane` with the given plane and coloring.
+    /// Initializes the image frame, tasks, selection, and marking based on the plane type.
+    ///
+    /// # Arguments
+    ///
+    /// * `plane`: The plane to be displayed in the window pane.
+    /// * `coloring`: The coloring information for rendering the plane.
+    ///
+    /// # Returns
+    ///
+    /// `WindowPane<P>`: A new instance of `WindowPane` with the specified plane and coloring.
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
         let iter_plane = IterPlane::create(plane.point_grid().clone());
@@ -380,6 +409,9 @@ where
     }
 }
 
+/// Implementation of the `Pane` trait for `WindowPane`.
+/// Provides methods for interacting with the pane, such as computing and drawing the fractal,
+/// handling tasks, zooming, panning, and managing selections and markings.
 impl<P> Pane for WindowPane<P>
 where
     P: Displayable + 'static,
