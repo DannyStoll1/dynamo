@@ -7,20 +7,20 @@ description = "A tool for studying discrete time dynamical systems - Utilities a
 license = "GPL-3.0-or-later"
 
 [build-dependencies]
-bindgen = {version = "0.66", optional = true}
+bindgen = {version = "0.69", optional = true}
 
 [dependencies]
-num = ">=0.4"
-num-complex = ">=0.4.3"
-rayon = ">=1.7.0"
-ndarray = ">=0.15.6"
+num = "0.4"
+num-complex = "0.4.4"
+rayon = "1.8.0"
+ndarray = "0.15.6"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
-libc = {version = "0.2.147", optional = true}
-serde = { version = "1.0.166", features = ["derive"], optional = true }
+libc = {version = "0.2.150", optional = true}
+serde = { version = "1.0.192", features = ["derive"], optional = true }
 num-rational = "0.4.1"
-num-traits = "0.2.16"
+num-traits = "0.2.17"
 lazy_static = "1.4.0"
-regex = "1.9.6"
+regex = "1.10.2"
 poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"
 

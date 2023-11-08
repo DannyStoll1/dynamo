@@ -12,5 +12,5 @@ license = "GPL-3.0-or-later"
 derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
 itertools = "0.11.0"
 num-complex = "0.4.4"
-num-traits = "0.2.16"
+num-traits = "0.2.17"
 rand = "0.8.5"

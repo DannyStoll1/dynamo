@@ -11,13 +11,13 @@ description = "A tool for studying discrete time dynamical systems - Web UI"
 
 [dependencies]
 dynamo_app = { path = "../app"}
-web-sys = ">=0.3.63"
+web-sys = "0.3.65"
 eframe = "0.23.0"
 console_error_panic_hook = "0.1.7"
-log = "0.4.18"
-wasm-bindgen = ">=0.2.86"
-wasm-bindgen-futures = ">=0.4.36"
-getrandom = { version = "0.2.10", features = ["js"] }
+log = "0.4.20"
+wasm-bindgen = "0.2.88"
+wasm-bindgen-futures = "0.4.38"
+getrandom = { version = "0.2.11", features = ["js"] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
