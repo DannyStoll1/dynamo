@@ -354,9 +354,6 @@ where
                 self.child_mut().mark_orbit_and_info(start.into());
                 self.parent_mut().marking_mut().enable_selection();
             }
-            else {
-                self.child_mut().marking_mut().disable_selection();
-            }
         } else if self.child().frame_contains_pixel(pointer_pos) {
             ctx.set_cursor_icon(CursorIcon::Crosshair);
             self.set_active_pane(Some(PaneID::Child));
@@ -829,16 +826,10 @@ where
                 });
                 body.row(80., |mut row| {
                     row.col(|ui| {
-                        let selection_desc = self.parent.describe_selection();
-                        let orbit_desc = self.parent.describe_orbit_info();
-                        ui.label(selection_desc);
-                        ui.label(orbit_desc);
+                        ui.label(self.parent.state_info());
                     });
                     row.col(|ui| {
-                        let selection_desc = self.child.describe_selection();
-                        let orbit_desc = self.child.describe_orbit_info();
-                        ui.label(selection_desc);
-                        ui.label(orbit_desc);
+                        ui.label(self.child.state_info());
                     });
                 });
             });

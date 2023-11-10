@@ -50,7 +50,7 @@ impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
         let u = z.powi(D) + Self::D_MINUS_1;
         (
             a * z / u,
-            -a * (Self::D_MINUS_1) * (u - Self::D_FLOAT) / (u * u),
+            -a * (Self::D_MINUS_1) * (u - Self::D_FLOAT) / u.powi(2),
         )
     }
 

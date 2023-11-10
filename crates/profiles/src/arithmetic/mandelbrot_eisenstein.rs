@@ -63,12 +63,12 @@ impl<const A: i64, const B: i64> DynamicalFamily for EisensteinMandel<A, B>
 
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
-        (z * z * z + *c) % Self::MOD
+        (z * z + *c) % Self::MOD
     }
 
     fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
-        ((z * z * z + *c) % Self::MOD, (3 * z * z) % Self::MOD)
+        ((z * z + *c) % Self::MOD, (2 * z) % Self::MOD)
     }
 
     fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var

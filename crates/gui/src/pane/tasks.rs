@@ -90,6 +90,7 @@ pub enum RayState
     Idle,
     SelectOnce(RationalAngle),
     Following(RationalAngle),
+    FollowingPeriodic(OrbitSchema),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]

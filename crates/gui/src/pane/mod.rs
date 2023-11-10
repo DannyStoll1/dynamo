@@ -233,8 +233,7 @@ pub trait Pane
     fn change_height(&mut self, new_height: usize);
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx);
-    fn describe_selection(&self) -> String;
-    fn describe_orbit_info(&self) -> String;
+    fn state_info(&self) -> String;
     fn pop_child_task(&mut self) -> ChildTask;
 }
 
@@ -393,6 +392,29 @@ where
         if let Some(approx_landing_point) = self.marking().ray_landing_point(angle) {
             self.select_point_keep_following(approx_landing_point);
         }
+    }
+
+    fn describe_max_iter(&self) -> String
+    {
+        format!("Max iterations: {n}", n = self.plane.max_iter())
+    }
+
+    fn describe_selection(&self) -> String
+    {
+        let conf = self.plane.orbit_summary_conf();
+        self.selection
+            .describe(&conf.selection_conf())
+            .map_or_else(String::new, |description| {
+                format!("Selection: {description}")
+            })
+    }
+
+    fn describe_orbit_info(&self) -> String
+    {
+        let conf = self.plane.orbit_summary_conf();
+        self.get_orbit_info()
+            .as_ref()
+            .map_or_else(String::new, |info| info.summary(&conf))
     }
 }
 
@@ -601,6 +623,9 @@ where
             RayState::Following(angle) => {
                 self.select_ray_landing_point_now(angle);
             }
+            RayState::FollowingPeriodic(orbit_schema) => {
+                let _ = self.select_nearby_point(orbit_schema);
+            }
             RayState::Idle => {}
         }
     }
@@ -742,22 +767,14 @@ where
         self.marking.draw_points(&painter, grid, frame);
     }
 
-    fn describe_selection(&self) -> String
+    fn state_info(&self) -> String
     {
-        let conf = self.plane.orbit_summary_conf();
-        self.selection
-            .describe(&conf.selection_conf())
-            .map_or_else(String::new, |description| {
-                format!("Selection: {description}")
-            })
-    }
-
-    fn describe_orbit_info(&self) -> String
-    {
-        let conf = self.plane.orbit_summary_conf();
-        self.get_orbit_info()
-            .as_ref()
-            .map_or_else(String::new, |info| info.summary(&conf))
+        format!(
+            "{iters_info}\n{selection_info}\n{orbit_info}",
+            iters_info = self.describe_max_iter(),
+            selection_info = self.describe_selection(),
+            orbit_info = self.describe_orbit_info(),
+        )
     }
 
     fn pop_child_task(&mut self) -> ChildTask

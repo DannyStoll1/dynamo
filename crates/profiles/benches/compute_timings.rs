@@ -1,6 +1,7 @@
 #![feature(test)]
 
 extern crate test;
+use test::black_box;
 use test::Bencher;
 
 use dynamo_common::prelude::*;
@@ -136,9 +137,20 @@ fn cubic_per3(b: &mut Bencher)
 }
 
 #[bench]
+fn minsik_han(b: &mut Bencher)
+{
+    b.iter(|| {
+        let mut plane = JuliaSet::from(MinsikHanPhi::<2>::default())
+            .with_res_y(768)
+            .with_max_iter(128);
+        plane.set_param(Cplx::new(0.0, 3.0));
+        plane.compute();
+    });
+}
+
+#[bench]
 fn exp(b: &mut Bencher)
 {
-    use test::black_box;
     b.iter(|| {
         let mut r = 0.42_f64;
         for _ in 0..10_000 {

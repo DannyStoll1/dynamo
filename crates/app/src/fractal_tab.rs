@@ -648,7 +648,7 @@ impl FractalTab
                 fractal_menu_button!(self, ui, "Mod 7", GaussianMandel<7, 0>);
                 fractal_menu_button!(self, ui, "Mod 11", GaussianMandel<11, 0>);
                 fractal_menu_button!(self, ui, "Mod 19", GaussianMandel<19, 0>);
-                fractal_menu_button!(self, ui, "Mod 109", GaussianMandel<109, 0>);
+                fractal_menu_button!(self, ui, "Mod 107", GaussianMandel<107, 0>);
                 fractal_menu_button!(self, ui, "Mod 311", GaussianMandel<311, 0>);
             });
             ui.menu_button("Eisenstein Int Mandel", |ui| {
