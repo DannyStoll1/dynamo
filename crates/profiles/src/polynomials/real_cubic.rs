@@ -36,7 +36,7 @@ impl DynamicalFamily for RealCubicRealCrit
     default_bounds!();
 
     // Critical point = a
-    fn map(&self, z: Self::Var, RealPair { a, b }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, RealPair { a, b }: &Self::Param) -> Self::Var
     {
         b + z * (z.powi(2) - 3. * a.powi(2))
     }
@@ -45,7 +45,7 @@ impl DynamicalFamily for RealCubicRealCrit
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        RealPair { a, b }: Self::Param,
+        RealPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -53,7 +53,7 @@ impl DynamicalFamily for RealCubicRealCrit
         (b + z * (z2 - 3. * a2), 3. * (z2 - a2))
     }
 
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         c.a.into()
     }
@@ -69,7 +69,7 @@ impl DynamicalFamily for RealCubicRealCrit
 
 impl MarkedPoints for RealCubicRealCrit
 {
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         vec![c.a.into(), (-c.a).into()]
     }
@@ -113,7 +113,7 @@ impl DynamicalFamily for RealCubicImagCrit
     default_bounds!();
 
     // Critical point = ai
-    fn map(&self, z: Self::Var, RealPair { a, b }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, RealPair { a, b }: &Self::Param) -> Self::Var
     {
         b + z * (z.powi(2) + 3. * a.powi(2))
     }
@@ -122,7 +122,7 @@ impl DynamicalFamily for RealCubicImagCrit
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        RealPair { a, b }: Self::Param,
+        RealPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -130,7 +130,7 @@ impl DynamicalFamily for RealCubicImagCrit
         (b + z * (z2 + 3. * a2), 3. * (z2 + a2))
     }
 
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         Cplx::new(0., c.a)
     }
@@ -146,7 +146,7 @@ impl DynamicalFamily for RealCubicImagCrit
 
 impl MarkedPoints for RealCubicImagCrit
 {
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         let crit = Cplx::new(0., c.a);
         vec![crit, -crit]

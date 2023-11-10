@@ -39,13 +39,13 @@ impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
     parameter_plane_impl!();
     default_bounds!();
 
-    fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
     {
         let u = z.powi(D) + Self::D_MINUS_1;
         a * z / u
     }
 
-    fn map_and_multiplier(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, a: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let u = z.powi(D) + Self::D_MINUS_1;
         (
@@ -54,7 +54,7 @@ impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
         )
     }
 
-    fn gradient(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, a: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let u = z.powi(D) + Self::D_MINUS_1;
         let v = z / u;
@@ -65,7 +65,7 @@ impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
         )
     }
 
-    fn start_point(&self, _point: Cplx, _a: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _a: &Self::Param) -> Self::Var
     {
         ONE
     }
@@ -84,14 +84,14 @@ impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
 
 impl<const D: i32> MarkedPoints for MinsikHanPhi<D>
 {
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         (0..D)
             .map(|k| (TAUI * f64::from(k) / Self::D_FLOAT).exp())
             .collect()
     }
 
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {

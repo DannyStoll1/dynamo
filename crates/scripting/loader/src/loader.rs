@@ -70,36 +70,30 @@ impl<'a> Loader<'a>
         transpiler.write(&rust_path)
     }
 
+    fn base_dir(&self) -> PathBuf
+    {
+        self.output_path.join("..").join("..").join("..")
+    }
+
     // TODO: make paths more robust
     #[cfg(debug_assertions)]
     fn orig_lib_path(&self) -> PathBuf
     {
-        self.output_path
-            .join("..")
-            .join("..")
-            .join("..")
-            .join("target")
-            .join("debug")
-            .join(format!(
-                "{}transpiled_scripts{}",
-                config::LIB_PRE,
-                config::LIB_EXT
-            ))
+        self.base_dir().join("target").join("debug").join(format!(
+            "{}transpiled_scripts{}",
+            config::LIB_PRE,
+            config::LIB_EXT
+        ))
     }
 
     #[cfg(not(debug_assertions))]
     fn orig_lib_path(&self) -> PathBuf
     {
-        self.output_path
-            .join("..")
-            .join("..")
-            .join("target")
-            .join("release")
-            .join(format!(
-                "{}transpiled_scripts{}",
-                config::LIB_PRE,
-                config::LIB_EXT
-            ))
+        self.base_dir().join("target").join("release").join(format!(
+            "{}transpiled_scripts{}",
+            config::LIB_PRE,
+            config::LIB_EXT
+        ))
     }
 
     fn dest_lib_path(&mut self) -> &PathBuf
@@ -124,14 +118,14 @@ impl<'a> Loader<'a>
         #[cfg(debug_assertions)]
         let status = Command::new("cargo")
             .args(["build", "-p", "transpiled-scripts"])
-            .current_dir(&self.output_path)
+            .current_dir(&self.base_dir())
             .status()
             .map_err(ScriptError::CargoCommandFailed)?;
 
         #[cfg(not(debug_assertions))]
         let status = Command::new("cargo")
             .args(["build", "-rp", "transpiled-scripts"])
-            .current_dir(&self.output_path)
+            .current_dir(&self.base_dir())
             .status()
             .map_err(ScriptError::CargoCommandFailed)?;
 

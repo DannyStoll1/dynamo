@@ -27,20 +27,20 @@ impl Summarize for NoParam {}
 
 pub trait ParamList: Clone
 {
-    type Param: Default + Clone + Copy + PartialEq + Summarize;
-    fn local_param(&self) -> Self::Param;
+    type Param: Default + Clone + PartialEq + Summarize;
+    fn local_param(&self) -> &Self::Param;
     fn into_local_param(self) -> Self::Param;
 }
 
 impl<M, P> ParamList for (M, P)
 where
     M: Clone + Default + Summarize,
-    P: Clone + Copy + Default + PartialEq + Summarize,
+    P: Clone + Default + PartialEq + Summarize,
 {
     type Param = P;
-    fn local_param(&self) -> Self::Param
+    fn local_param(&self) -> &Self::Param
     {
-        self.1
+        &self.1
     }
     fn into_local_param(self) -> Self::Param
     {
@@ -51,9 +51,9 @@ where
 impl ParamList for Cplx
 {
     type Param = Self;
-    fn local_param(&self) -> Self::Param
+    fn local_param(&self) -> &Self::Param
     {
-        *self
+        self
     }
     fn into_local_param(self) -> Self::Param
     {
@@ -64,9 +64,9 @@ impl ParamList for Cplx
 impl ParamList for i32
 {
     type Param = Self;
-    fn local_param(&self) -> Self::Param
+    fn local_param(&self) -> &Self::Param
     {
-        *self
+        self
     }
     fn into_local_param(self) -> Self::Param
     {
@@ -77,9 +77,9 @@ impl ParamList for i32
 impl ParamList for NoParam
 {
     type Param = Self;
-    fn local_param(&self) -> Self::Param
+    fn local_param(&self) -> &Self::Param
     {
-        Self {}
+        &Self {}
     }
     fn into_local_param(self) -> Self::Param
     {
@@ -87,7 +87,7 @@ impl ParamList for NoParam
     }
 }
 
-#[derive(Clone, Copy, Display, Default)]
+#[derive(Clone, Display, Default)]
 #[display(fmt = "[{meta_params}, {local_param}]")]
 pub struct ParamStack<T, H>
 where
@@ -156,13 +156,13 @@ where
 impl<T, H> ParamList for ParamStack<T, H>
 where
     T: Clone + Default + Summarize,
-    H: Clone + Copy + Default + PartialEq + Summarize,
+    H: Clone + Default + PartialEq + Summarize,
 {
     type Param = H;
 
-    fn local_param(&self) -> Self::Param
+    fn local_param(&self) -> &Self::Param
     {
-        self.local_param
+        &self.local_param
     }
     fn into_local_param(self) -> Self::Param
     {

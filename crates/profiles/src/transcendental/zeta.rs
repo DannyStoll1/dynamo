@@ -34,18 +34,18 @@ impl DynamicalFamily for RiemannXi
     default_bounds!();
 
     #[inline]
-    fn map(&self, s: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, s: Self::Var, c: &Self::Param) -> Self::Var
     {
         riemann_xi(s) + c
     }
     #[inline]
-    fn map_and_multiplier(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, s: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let [u, du] = riemann_xi_d(s);
         (u + c, du)
     }
     #[inline]
-    fn gradient(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, s: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (f, df) = self.map_and_multiplier(s, c);
         (f, df, ONE)
@@ -61,21 +61,21 @@ impl DynamicalFamily for RiemannXi
         (t, ONE)
     }
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
-        c
+        *c
     }
     #[inline]
-    fn start_point_d(&self, _t: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _t: Cplx, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        (c, ZERO, ONE)
+        (*c, ZERO, ONE)
     }
     #[inline]
     fn default_selection(&self) -> Cplx
     {
         ZERO
     }
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::square(30., Cplx::new(0.5, 0.))
     }
@@ -128,24 +128,24 @@ impl DynamicalFamily for RiemannXiNewton
         PlaneType::Dynamical
     }
 
-    fn start_point(&self, s: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, s: Cplx, _c: &Self::Param) -> Self::Var
     {
         s
     }
 
-    fn map(&self, s: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, s: Self::Var, c: &Self::Param) -> Self::Var
     {
         let [z, dz] = riemann_xi_d(s);
         s - (z + c) / dz
     }
-    fn map_and_multiplier(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, s: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let [z, dz, d2z] = riemann_xi_d2(s);
         let z = z + c;
         (s - z / dz, z / d2z)
     }
     #[inline]
-    fn gradient(&self, s: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, s: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let [z, dz, d2z] = riemann_xi_d2(s);
         let z = z + c;
@@ -159,7 +159,7 @@ impl DynamicalFamily for RiemannXiNewton
     {
         ZERO
     }
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(30.)
     }

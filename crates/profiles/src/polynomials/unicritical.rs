@@ -30,20 +30,20 @@ impl<const D: i32> DynamicalFamily for Unicritical<D>
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         c * (1. + z / Self::D_FLOAT).powi(D)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let u = 1. + z / Self::D_FLOAT;
         let df = c * u.powi(D - 1);
         (u * df, df)
     }
 
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let u = 1. + z / Self::D_FLOAT;
         let v = u.powi(D - 1);
@@ -51,7 +51,7 @@ impl<const D: i32> DynamicalFamily for Unicritical<D>
         (u * df, df, u * v)
     }
 
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -61,7 +61,7 @@ impl<const D: i32> DynamicalFamily for Unicritical<D>
         1e-18
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
     }
@@ -81,12 +81,12 @@ impl<const D: i32> DynamicalFamily for Unicritical<D>
 impl<const D: i32> MarkedPoints for Unicritical<D>
 {
     #[inline]
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         vec![Self::CRIT]
     }
 
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         use dynamo_common::math_utils::binomial;
         match period {
@@ -119,13 +119,13 @@ impl<const D: i32> InfinityFirstReturnMap for Unicritical<D>
     }
 
     #[inline]
-    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    fn escape_coeff(&self, c: &Self::Param) -> Cplx
     {
         c * Self::D_FLOAT.powi(-D)
     }
 
     #[inline]
-    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, c: &Self::Param) -> (Cplx, Cplx)
     {
         let a = Self::D_FLOAT.powi(-D);
         (c * a, a.into())

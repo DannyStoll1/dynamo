@@ -31,33 +31,33 @@ impl DynamicalFamily for QuadRatPreper21
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         c * (z + 2. + z.inv())
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
+    fn map_and_multiplier(&self, z: Cplx, c: &Cplx) -> (Cplx, Cplx)
     {
         let u = z.inv();
         (c * (z + 2. + u), c * (1. - u.powi(2)))
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let u = z.inv();
         let v = z + 2. + u;
         (c * v, c * (1. - u.powi(2)), v)
     }
 
-    fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, _c: &Cplx) -> Cplx
     {
         (1.).into()
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -66,12 +66,12 @@ impl DynamicalFamily for QuadRatPreper21
 impl MarkedPoints for QuadRatPreper21
 {
     #[inline]
-    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
+    fn critical_points_child(&self, _param: &Cplx) -> ComplexVec
     {
         vec![(-1.).into(), (1.).into()]
     }
 
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {
@@ -145,7 +145,7 @@ impl EscapeEncoding for QuadRatPreper21
         &self,
         iters: Period,
         z: Cplx,
-        base_param: Cplx,
+        base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {

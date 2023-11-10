@@ -41,24 +41,24 @@ impl DynamicalFamily for Mandelbrot
         1e26
     }
 
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         z.powi(2) + c
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         (z.powi(2) + c, 2. * z)
     }
 
-    fn early_bailout(&self, _start: Cplx, c: Self::Param) -> Option<EscapeResult<Cplx, Cplx>>
+    fn early_bailout(&self, _start: Cplx, c: &Self::Param) -> Option<EscapeResult<Cplx, Cplx>>
     {
         // Main cardioid
         let four_c = 4. * c;
@@ -98,7 +98,7 @@ impl DynamicalFamily for Mandelbrot
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -323,7 +323,7 @@ impl HasDynamicalCovers for Mandelbrot
 impl MarkedPoints for Mandelbrot
 {
     #[inline]
-    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
+    fn critical_points_child(&self, _param: &Cplx) -> ComplexVec
     {
         vec![Cplx::new(0., 0.)]
     }
@@ -347,7 +347,7 @@ impl MarkedPoints for Mandelbrot
         }
     }
 
-    fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: &Cplx, period: Period) -> ComplexVec
     {
         use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
         match period {
@@ -1058,7 +1058,7 @@ impl MarkedPoints for Mandelbrot
         }
     }
 
-    fn precycles_child(&self, c: Cplx, orbit_schema: OrbitSchema) -> ComplexVec
+    fn precycles_child(&self, c: &Cplx, orbit_schema: OrbitSchema) -> ComplexVec
     {
         use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
         match (orbit_schema.preperiod, orbit_schema.period) {

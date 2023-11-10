@@ -56,14 +56,14 @@ impl DynamicalFamily for QuadRatPer4
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, c: &Cplx) -> Cplx
     {
         let c2 = c.powi(2);
         2. * (2. * c2 - c) / (c2 + c - 1.)
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, c: Cplx) -> (Cplx, Cplx, Cplx)
+    fn start_point_d(&self, _point: Cplx, c: &Cplx) -> (Cplx, Cplx, Cplx)
     {
         let c2 = c.powi(2);
         let denom = (c2 + c - 1.).inv();
@@ -75,13 +75,13 @@ impl DynamicalFamily for QuadRatPer4
     }
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         (c * (z - 2.) - z + 1.) * (z - c) / (z.powi(2) * (c - 1.))
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
+    fn map_and_multiplier(&self, z: Cplx, c: &Cplx) -> (Cplx, Cplx)
     {
         let c2 = c.powi(2);
         let c_minus_1 = c - 1.;
@@ -95,7 +95,7 @@ impl DynamicalFamily for QuadRatPer4
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let v = c - 1.;
         let c2 = c.powi(2);
@@ -110,7 +110,7 @@ impl DynamicalFamily for QuadRatPer4
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::square(4., (2.).into())
     }
@@ -119,13 +119,13 @@ impl DynamicalFamily for QuadRatPer4
 impl MarkedPoints for QuadRatPer4
 {
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         let c2 = c.powi(2);
         vec![ZERO, 2. * (2. * c2 - c) / (c2 + c - 1.)]
     }
 
-    fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
+    fn cycles_child(&self, c: &Cplx, period: Period) -> ComplexVec
     {
         match period {
             1 => {
@@ -201,7 +201,7 @@ impl MarkedPoints for QuadRatPer4
                     c2 * c3 * horner_monic!(c, -1., 7., -21., 35., -35., 21., -7.),
                 ];
                 let mut rs = solve_polynomial(coeffs);
-                rs.extend([ONE, c, ZERO]);
+                rs.extend([ONE, *c, ZERO]);
                 rs
             }
             _ => vec![],
@@ -261,7 +261,7 @@ impl InfinityFirstReturnMap for QuadRatPer4
     degree_impl!(2, 4);
 
     #[inline]
-    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    fn escape_coeff(&self, c: &Self::Param) -> Cplx
     {
         let c2 = c.powi(2);
         let c12 = c2 - 2. * c + 1.; // (c-1)^2

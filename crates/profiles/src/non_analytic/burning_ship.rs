@@ -42,28 +42,28 @@ impl<const N: Period> DynamicalFamily for BurningShip<N>
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         let z = Cplx::new(z.re.abs(), z.im.abs());
         z.powf(Self::N_FLOAT) + c
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let znm1 = z.powf(Self::N_MINUS_1);
         (znm1 * z + c, Self::N_FLOAT * znm1)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (f, df) = self.map_and_multiplier(z, c);
         (f, df, ONE)
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -74,7 +74,7 @@ impl<const N: Period> DynamicalFamily for BurningShip<N>
         c
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -83,13 +83,13 @@ impl<const N: Period> DynamicalFamily for BurningShip<N>
 impl<const N: Period> MarkedPoints for BurningShip<N>
 {
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {
@@ -135,20 +135,20 @@ impl DynamicalFamily for Sailboat
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         let z = Cplx::new(z.re.abs(), z.im.abs()) + self.shift;
         z.powi(2) + c
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         (z.powi(2) + c, 2. * z)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (f, df) = self.map_and_multiplier(z, c);
         (f, df, ONE)
@@ -161,7 +161,7 @@ impl DynamicalFamily for Sailboat
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -178,7 +178,7 @@ impl DynamicalFamily for Sailboat
         format!("Sailboat({shift})")
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(2.5 + self.shift.norm())
     }
@@ -218,27 +218,28 @@ impl DynamicalFamily for SailboatParam
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, a: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
     {
         let z = Cplx::new(z.re.abs(), z.im.abs()) + a;
         z.powi(2)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, a: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, a: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z = Cplx::new(z.re.abs(), z.im.abs());
         (z.powi(2) + a, 2. * z)
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         -TWO_THIRDS * c
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _point: Cplx, c: &Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (-TWO_THIRDS * c, ZERO, Cplx::new(-TWO_THIRDS, 0.))
     }
@@ -254,7 +255,7 @@ impl DynamicalFamily for SailboatParam
         ZERO
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(3.5)
     }
@@ -262,7 +263,7 @@ impl DynamicalFamily for SailboatParam
 
 impl MarkedPoints for SailboatParam
 {
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, ONE]
     }
@@ -276,7 +277,7 @@ impl From<SailboatParam> for Sailboat
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, &param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),
@@ -296,7 +297,7 @@ impl<const N: Period> ExternalRays for BurningShip<N> {}
 impl MarkedPoints for Sailboat
 {
     #[inline]
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
     }

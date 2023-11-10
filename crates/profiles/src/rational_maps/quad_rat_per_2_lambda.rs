@@ -73,7 +73,7 @@ impl DynamicalFamily for QuadRatPer2Lambda
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         self.general_plane.map(z, c)
     }
@@ -89,13 +89,13 @@ impl DynamicalFamily for QuadRatPer2Lambda
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.general_plane.map_and_multiplier(z, c)
     }
 
     #[inline]
-    fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, t: Cplx, c: &Self::Param) -> Self::Var
     {
         self.general_plane.start_point(t, c)
     }
@@ -122,13 +122,13 @@ impl DynamicalFamily for QuadRatPer2Lambda
 impl MarkedPoints for QuadRatPer2Lambda
 {
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         self.general_plane.critical_points_child(c)
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         self.general_plane.cycles_child(c, period)
     }
@@ -174,7 +174,7 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
     {
         let a = 4. / l;
         1. + a / z.powi(2)
@@ -182,14 +182,14 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
 
     #[allow(clippy::suspicious_operation_groupings)]
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let a = 4. / l;
         let u = a * z.powi(-2);
         (1. + u, -2. * u / z)
     }
 
-    fn gradient(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = 4. / l;
         let u = a * z.powi(-2);
@@ -197,7 +197,7 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ONE
     }
@@ -225,7 +225,7 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
         ONE
     }
 
-    fn default_julia_bounds(&self, point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 4. / (point.norm() + 0.01);
         Bounds::centered_square(r)
@@ -234,7 +234,7 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
 
 impl MarkedPoints for QuadRatPer2LambdaParam
 {
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, ONE]
     }
@@ -248,7 +248,7 @@ impl From<QuadRatPer2LambdaParam> for QuadRatPer2Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, &param));
         let general_plane = QuadRatGeneral {
             point_grid,
             max_iter: parent.max_iter(),

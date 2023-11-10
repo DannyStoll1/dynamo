@@ -4,8 +4,7 @@ use num_traits::One;
 
 pub struct Simple<V, P, F>
 where
-    F: Fn(V, P) -> V,
-    P: Copy,
+    F: Fn(V, &P) -> V,
     V: Norm<Real>,
 {
     f: F,
@@ -19,8 +18,7 @@ where
 
 impl<V, P, F> Simple<V, P, F>
 where
-    F: Fn(V, P) -> V,
-    P: Copy,
+    F: Fn(V, &P) -> V,
     V: Norm<Real> + MaybeNan,
 {
     pub const fn new(f: F, z: V, param: P, max_iter: Period, escape_radius: Real) -> Self
@@ -39,7 +37,7 @@ where
     #[inline]
     fn apply_map(&mut self)
     {
-        self.z = (self.f)(self.z, self.param);
+        self.z = (self.f)(self.z, &self.param);
     }
 
     fn enforce_stop_condition(&mut self)
@@ -62,8 +60,7 @@ where
 
 impl<V, P, F> Iterator for Simple<V, P, F>
 where
-    F: Fn(V, P) -> V,
-    P: Copy,
+    F: Fn(V, &P) -> V,
     V: Norm<Real> + MaybeNan,
 {
     type Item = (V, Option<EscapeResult<V, V>>);

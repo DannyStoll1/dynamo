@@ -59,7 +59,7 @@ mod tests
         let chebyshev: Chebyshev<3> = Default::default();
         let c = Cplx::new(1.0, 0.0);
         let z = Cplx::new(10.0, 0.0);
-        let (val, mul) = chebyshev.map_and_multiplier(z, c);
+        let (val, mul) = chebyshev.map_and_multiplier(z, &c);
         dbg!(val, mul);
         assert!((val + 470_449.).norm() < 1e-2);
         assert!((mul + 288_090.).norm() < 1e-2);
@@ -87,9 +87,7 @@ mod tests
         let param = Cplx::new(0.3, 0.1);
         let start = Cplx::from(0.0);
 
-        let mut orbit = orbit::CycleDetected::new(
-            &plane, start, param
-        );
+        let mut orbit = orbit::CycleDetected::new(&plane, start, param);
 
         let result = orbit.run_until_complete();
         dbg!(&result);
@@ -202,7 +200,7 @@ mod tests
     {
         let plane = QuadRatPer4::default();
         let c = Cplx::new(4.2, 0.0);
-        let q = plane.escape_coeff(c);
+        let q = plane.escape_coeff(&c);
         assert!((q - 0.119_960_462_401_084).norm_sqr() < 1e-12);
     }
 }

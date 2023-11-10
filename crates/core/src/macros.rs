@@ -149,7 +149,7 @@ macro_rules! basic_escape_encoding {
             &self,
             iters: Period,
             z: Self::Var,
-            _base_param: Self::Param,
+            _base_param: &Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
             if z.is_nan() {
@@ -170,7 +170,7 @@ macro_rules! basic_escape_encoding {
             &self,
             iters: Period,
             z: Self::Var,
-            _base_param: Self::Param,
+            _base_param: &Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
             if z.is_nan() {

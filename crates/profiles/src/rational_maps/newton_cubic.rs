@@ -32,14 +32,14 @@ impl DynamicalFamily for NewtonCubic
     // f(z) = z^3 + cz - 1
     // f'(z) = 3z^2 + c
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         let z2 = z * z;
         (2. * z * z2 + 1.) / (3. * z2 + c)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z2 = z * z;
         let f = z * (z2 + c) - 1.;
@@ -48,7 +48,7 @@ impl DynamicalFamily for NewtonCubic
         (z - u, 6. * z * u / df)
     }
 
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
         let u = 2. * z2 * z + 1.;
@@ -58,7 +58,7 @@ impl DynamicalFamily for NewtonCubic
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -66,23 +66,23 @@ impl DynamicalFamily for NewtonCubic
 
 impl MarkedPoints for NewtonCubic
 {
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
-        let [r0, r1, r2] = solve_cubic(-ONE, c, ZERO);
+        let [r0, r1, r2] = solve_cubic(-ONE, *c, ZERO);
         vec![r0, r1, r2, ZERO]
     }
 
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
-            1 => solve_cubic(-ONE, c, ZERO).to_vec(),
+            1 => solve_cubic(-ONE, *c, ZERO).to_vec(),
             _ => vec![],
         }
     }
 
-    fn get_marked_points(&self, c: Self::Param) -> Vec<(Cplx, PointClassId)>
+    fn get_marked_points(&self, c: &Self::Param) -> Vec<(Cplx, PointClassId)>
     {
-        solve_cubic(-ONE, c, ZERO)
+        solve_cubic(-ONE, *c, ZERO)
             .into_iter()
             .enumerate()
             .map(|(i, z)| (z, PointClassId::from(i)))

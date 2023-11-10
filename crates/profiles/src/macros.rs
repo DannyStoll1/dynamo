@@ -96,14 +96,14 @@ macro_rules! degree_impl {
 
         #[allow(unused_variables)]
         #[inline]
-        fn escape_coeff(&self, c: Self::Param) -> Cplx
+        fn escape_coeff(&self, c: &Self::Param) -> Cplx
         {
             Cplx::from($coeff)
         }
 
         #[allow(unused_variables)]
         #[inline]
-        fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+        fn escape_coeff_d(&self, c: &Self::Param) -> (Cplx, Cplx)
         {
             (Cplx::from($coeff), ZERO)
         }
@@ -123,7 +123,7 @@ macro_rules! degree_impl_transcendental {
                 &self,
                 state: EscapeResult<Self::Var, Self::Deriv>,
                 _start: Self::Var,
-                base_param: Self::Param,
+                base_param: &Self::Param,
             ) -> PointInfo<Self::Deriv>
             {
                 match state {
@@ -147,7 +147,7 @@ macro_rules! degree_impl_transcendental {
                 &self,
                 iters: Period,
                 z: Cplx,
-                _base_param: Cplx,
+                _base_param: &Cplx,
             ) -> PointInfo<Self::Deriv>
             {
                 use dynamo_common::math_utils::slog;
@@ -340,11 +340,11 @@ macro_rules! ext_ray_impl_rk {
                 }
 
                 let (c, dc_dt) = self.param_map_d(t);
-                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
                 dz_dt += dz_dc * dc_dt;
 
                 for _ in 0..self.escaping_phase() {
-                    let (f, df_dz, df_dc) = self.gradient(z, c);
+                    let (f, df_dz, df_dc) = self.gradient(z, &c);
                     dz_dt = df_dz * dz_dt + df_dc * dc_dt;
                     z = f;
                 }
@@ -357,7 +357,7 @@ macro_rules! ext_ray_impl_rk {
                             let log_potential = norm.log2() / self.degree_real().powi(iter as i32);
                             return direction * log_potential;
                         }
-                        let (f, df_dz, df_dc) = self.gradient(z, c);
+                        let (f, df_dz, df_dc) = self.gradient(z, &c);
                         dz_dt = df_dz * dz_dt + df_dc * dc_dt;
                         z = f;
                     }
@@ -426,11 +426,11 @@ macro_rules! ext_ray_impl_nonmonic {
                 let num_iters = k * self.escaping_period() + self.escaping_phase();
                 let fk_and_dfk = |t: Cplx| {
                     let (c, dc_dt) = self.param_map_d(t);
-                    let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+                    let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
                     dz_dt += dz_dc * dc_dt;
 
                     for _i in 0..num_iters {
-                        let (f, df_dz, df_dc) = self.gradient(z, c);
+                        let (f, df_dz, df_dc) = self.gradient(z, &c);
                         dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                         z = f;
                     }
@@ -445,7 +445,7 @@ macro_rules! ext_ray_impl_nonmonic {
                 // let mut spiral = 0.0;
 
                 for _j in 0..RAY_SHARPNESS {
-                    let alpha = self.escape_coeff(self.param_map(t_curr)).arg();
+                    let alpha = self.escape_coeff(&self.param_map(t_curr)).arg();
 
                     u.im = target_angle_base;
                     for _i in 0..k {

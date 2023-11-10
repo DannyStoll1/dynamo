@@ -28,18 +28,18 @@ impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
     parameter_plane_impl!();
     default_bounds!();
 
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         let z0 = Self::N_FLOAT / (c * Self::M_FLOAT);
         z0.powf(Self::M_PLUS_N_INV)
     }
 
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         z.powi(M) + (c * z.powi(N)).inv()
     }
 
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let zm1 = z.powi(Self::M_MINUS_1);
         let czn_inv = (c * z.powi(N)).inv();
@@ -49,7 +49,7 @@ impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
         )
     }
 
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let zm1 = z.powi(Self::M_MINUS_1);
         let czn_inv = (c * z.powi(N)).inv();
@@ -60,7 +60,7 @@ impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
         )
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds {
             min_x: -1.15,
@@ -83,12 +83,12 @@ impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
 
 impl<const M: i32, const N: i32> MarkedPoints for McMullenFamily<M, N>
 {
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {
                 let mut coeffs = vec![ZERO; (M + N + 1).try_into().unwrap_or(3)];
-                coeffs[usize::try_from(M + N).unwrap_or(2)] = c;
+                coeffs[usize::try_from(M + N).unwrap_or(2)] = *c;
                 coeffs[usize::try_from(N + 1).unwrap_or(1)] = -c;
                 coeffs[0] = ONE;
                 solve_polynomial(coeffs)
@@ -97,7 +97,7 @@ impl<const M: i32, const N: i32> MarkedPoints for McMullenFamily<M, N>
         }
     }
 
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         let w0 = Self::N_FLOAT / (c * Self::M_FLOAT);
         let z0 = w0.powf(Self::M_PLUS_N_INV);

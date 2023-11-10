@@ -103,25 +103,25 @@ impl DynamicalFamily for QuadRatPer1Lambda
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         self.general_plane.map(z, c)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.general_plane.map_and_multiplier(z, c)
     }
 
     #[inline]
-    fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, t: Cplx, c: &Self::Param) -> Self::Var
     {
         self.general_plane.start_point(t, c)
     }
 
     #[inline]
-    fn start_point_d(&self, point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, point: Cplx, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         self.general_plane.start_point_d(point, c)
     }
@@ -149,13 +149,13 @@ impl DynamicalFamily for QuadRatPer1Lambda
 impl MarkedPoints for QuadRatPer1Lambda
 {
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         self.general_plane.critical_points_child(c)
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         self.general_plane.cycles_child(c, period)
     }
@@ -288,14 +288,14 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
     {
         let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         1. + a / (z * z)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         let z2 = z * z;
@@ -303,7 +303,7 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = -4. * l / horner_monic!(l, 8., 12., 6.);
         let u = (l + 2.).powi(-4);
@@ -312,13 +312,13 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ONE
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ONE, ZERO, ZERO)
@@ -328,7 +328,7 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
         ONE
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 4.;
         Bounds::centered_square(r)
@@ -342,7 +342,7 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
 
 impl MarkedPoints for QuadRatPer1LambdaParam
 {
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, ONE]
     }
@@ -356,7 +356,7 @@ impl From<QuadRatPer1LambdaParam> for QuadRatPer1Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, &param));
         let general_plane = QuadRatGeneral {
             point_grid,
             max_iter: parent.max_iter(),
@@ -443,7 +443,7 @@ impl DynamicalFamily for QuadRatPer1_1
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         self.general_plane.map(z, c)
     }
@@ -465,13 +465,13 @@ impl DynamicalFamily for QuadRatPer1_1
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.general_plane.map_and_multiplier(z, c)
     }
 
     #[inline]
-    fn start_point(&self, t: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, t: Cplx, c: &Self::Param) -> Self::Var
     {
         self.general_plane.start_point(t, c)
     }
@@ -480,13 +480,13 @@ impl DynamicalFamily for QuadRatPer1_1
 impl MarkedPoints for QuadRatPer1_1
 {
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         self.general_plane.critical_points_child(c)
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         self.general_plane.cycles_child(c, period)
     }

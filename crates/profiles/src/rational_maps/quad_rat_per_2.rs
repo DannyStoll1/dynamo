@@ -47,7 +47,7 @@ impl DynamicalFamily for QuadRatPer2
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, Prm { a: _, c }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, Prm { a: _, c }: &Self::Param) -> Self::Var
     {
         let z2 = z.powi(2);
         (z2 + c) / (z2 - 1.)
@@ -57,7 +57,7 @@ impl DynamicalFamily for QuadRatPer2
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        Prm { a, c }: Self::Param,
+        Prm { a, c }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -69,7 +69,7 @@ impl DynamicalFamily for QuadRatPer2
     fn gradient(
         &self,
         z: Self::Var,
-        Prm { a, c }: Self::Param,
+        Prm { a, c }: &Self::Param,
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -78,13 +78,13 @@ impl DynamicalFamily for QuadRatPer2
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
@@ -97,7 +97,7 @@ impl DynamicalFamily for QuadRatPer2
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -647,7 +647,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
 impl MarkedPoints for QuadRatPer2
 {
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> ComplexVec
+    fn critical_points_child(&self, _param: &Self::Param) -> ComplexVec
     {
         vec![(0.).into()]
     }
@@ -679,9 +679,9 @@ impl MarkedPoints for QuadRatPer2
     }
 
     #[inline]
-    fn cycles_child(&self, Prm { a: _, c }: Self::Param, period: Period) -> ComplexVec
+    fn cycles_child(&self, Prm { a: _, c }: &Self::Param, period: Period) -> ComplexVec
     {
-        cycles(c, period)
+        cycles(*c, period)
     }
 }
 
@@ -989,14 +989,14 @@ impl DynamicalFamily for QuadRatPer2Cover
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         let z2 = z.powi(2);
         (c * z2 + 1.) / (z2 - c.powi(2))
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
         let c2 = c.powi(2);
@@ -1007,7 +1007,7 @@ impl DynamicalFamily for QuadRatPer2Cover
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
         let u = (c.powi(2) - z2).inv();
@@ -1017,13 +1017,13 @@ impl DynamicalFamily for QuadRatPer2Cover
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
@@ -1061,9 +1061,9 @@ impl InfinityFirstReturnMap for QuadRatPer2Cover
 impl MarkedPoints for QuadRatPer2Cover
 {
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
-        cycles(c, period)
+        cycles(*c, period)
     }
 }
 

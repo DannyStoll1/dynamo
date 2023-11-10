@@ -37,7 +37,7 @@ impl DynamicalFamily for CubicPer2Lambda
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         horner!(z, c.b, -(1. + c.a), -c.b, c.a)
     }
@@ -46,7 +46,7 @@ impl DynamicalFamily for CubicPer2Lambda
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        CplxPair { a, b }: Self::Param,
+        CplxPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let x1 = -a - 1.;
@@ -54,7 +54,7 @@ impl DynamicalFamily for CubicPer2Lambda
     }
 
     #[inline]
-    fn start_point(&self, _m: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _m: Cplx, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         let disc = (3. * a * (a + 1.) + b * b).sqrt();
 
@@ -95,7 +95,7 @@ impl DynamicalFamily for CubicPer2Lambda
         self.starting_crit = self.starting_crit.swap();
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -108,14 +108,14 @@ impl DynamicalFamily for CubicPer2Lambda
 
 impl MarkedPoints for CubicPer2Lambda
 {
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         let disc = (3. * c.a * (c.a + 1.) + c.b * c.b).sqrt();
         let denom = 3. * c.a;
         vec![(c.b + disc) / denom, (c.b - disc) / denom]
     }
 
-    fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, Self::Param { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {
@@ -209,14 +209,14 @@ impl DynamicalFamily for CubicPer2LambdaParam
     default_bounds!(Bounds::centered_square(2.5));
 
     #[inline]
-    fn map(&self, z: Self::Var, l: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
     {
         let a = 0.25 * (1.0 - l);
         horner!(z, a, -(a + 1.), -a, a)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let a = 0.25 * (1.0 - l);
         let f = horner!(z, a, -(a + 1.), -a, a);
@@ -225,7 +225,7 @@ impl DynamicalFamily for CubicPer2LambdaParam
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = 0.25 * (1.0 - l);
         let z2 = z.powi(2);
@@ -236,7 +236,7 @@ impl DynamicalFamily for CubicPer2LambdaParam
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, l: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, l: &Self::Param) -> Self::Var
     {
         let a = (1.0 - l) * 0.25;
         let disc = (a * (4. - l)).sqrt();
@@ -247,7 +247,8 @@ impl DynamicalFamily for CubicPer2LambdaParam
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, l: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _point: Cplx, l: &Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = (1.0 - l) * 0.25;
         let disc = (a * (4. - l)).sqrt();
@@ -272,7 +273,7 @@ impl DynamicalFamily for CubicPer2LambdaParam
         ZERO
     }
 
-    fn default_julia_bounds(&self, point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 3.5 / (point.norm() + 0.01);
         Bounds::centered_square(r)
@@ -281,7 +282,7 @@ impl DynamicalFamily for CubicPer2LambdaParam
 
 impl MarkedPoints for CubicPer2LambdaParam
 {
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, ONE]
     }
@@ -295,7 +296,7 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, param));
+            .new_with_same_height(parent.default_julia_bounds(point, &param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),
@@ -334,19 +335,19 @@ impl DynamicalFamily for CubicPer2CritMarked
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         z.powi(2) * (z - c - c.inv()) + c
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, param: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, param: &Cplx) -> Cplx
     {
         2. / 3. * (param + 1. / param)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
         let u = z - c - c.inv();
@@ -354,7 +355,7 @@ impl DynamicalFamily for CubicPer2CritMarked
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
         let u = z - c - c.inv();
@@ -362,7 +363,7 @@ impl DynamicalFamily for CubicPer2CritMarked
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, param: &Cplx) -> Bounds
     {
         Bounds::square(2.2, param / 2.)
     }
@@ -371,21 +372,21 @@ impl DynamicalFamily for CubicPer2CritMarked
 impl MarkedPoints for CubicPer2CritMarked
 {
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         let u = c + c.inv();
         vec![(0.).into(), TWO_THIRDS * u]
     }
 
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
-            1 => solve_cubic(c, -ONE, -c - c.inv()).to_vec(),
+            1 => solve_cubic(*c, -ONE, -c - c.inv()).to_vec(),
             2 => {
                 let cinv = c.inv();
                 let cinv2 = cinv * cinv;
                 let [r2, r3, r4, r5] = solve_quartic(cinv2, c - cinv, cinv2 + 1., -c - cinv - cinv);
-                vec![ZERO, c, r2, r3, r4, r5]
+                vec![ZERO, *c, r2, r3, r4, r5]
             }
             3 => {
                 let c2 = c * c;

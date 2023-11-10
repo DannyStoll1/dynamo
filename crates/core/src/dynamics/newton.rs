@@ -9,7 +9,7 @@ trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
     fn map_dmap_d2map(&self, z: Self::Var, c: Self::Param)
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let (f, df) = self.map_and_multiplier(z, c);
+        let (f, df) = self.map_and_multiplier(z, &c);
         let d2f = self.second_dynamical_derivative(z, c);
         (f, df, d2f)
     }
@@ -17,7 +17,7 @@ trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
     #[inline]
     fn newton_map(&self, z: Self::Var, c: Self::Param) -> Self::Var
     {
-        let (f, df) = self.map_and_multiplier(z, c);
+        let (f, df) = self.map_and_multiplier(z, &c);
         z - f / df
     }
 

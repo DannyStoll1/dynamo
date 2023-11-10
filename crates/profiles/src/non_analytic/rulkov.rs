@@ -6,7 +6,7 @@ use dynamo_common::types::{
 
 profile_imports!();
 
-fn df_dz(z: Point, c: Point) -> Matrix2x2
+fn df_dz(z: Point, c: &Point) -> Matrix2x2
 {
     let v = z.x.mul_add(z.x, 1.);
     let df_dx = Point {
@@ -26,12 +26,12 @@ fn df_dz(z: Point, c: Point) -> Matrix2x2
     // }
 }
 
-fn df_dc(z: Point, _c: Point) -> Matrix2x2
+fn df_dc(z: Point, _c: &Point) -> Matrix2x2
 {
     Matrix2x2::diag(1. / z.x.mul_add(z.x, 1.), -z.x - 1.)
 }
 
-fn f(z: Point, c: Point) -> Point
+fn f(z: Point, c: &Point) -> Point
 {
     Point {
         x: c.x / z.x.mul_add(z.x, 1.) + z.y,
@@ -80,25 +80,25 @@ impl DynamicalFamily for Rulkov
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         f(z, c)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         (f(z, c), df_dz(z, c))
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (f(z, c), df_dz(z, c), df_dc(z, c))
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, param: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, param: &Self::Param) -> Self::Var
     {
         let mut z = Point { x: 0.5, y: 1.5 };
         for _ in 0..10000 {

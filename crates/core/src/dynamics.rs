@@ -26,7 +26,7 @@ pub trait DynamicalFamily: Sync + Send
 {
     type Var: Variable;
     type Param: Parameter;
-    type MetaParam: ParamList + Clone + Copy + Send + Sync + Default + Summarize;
+    type MetaParam: ParamList + Clone + Send + Sync + Default + Summarize;
     type Deriv: Derivative;
     type Child: DynamicalFamily;
 
@@ -96,15 +96,15 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     /// The map defining the dynamical system.
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var;
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var;
 
     /// The dynamical map, together with its derivative. This is the primary computational
     /// bottleneck, and should usually be implemented manually for optimization purposes.
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv);
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv);
 
     /// The dynamical map, together with its derivative and parameter derivative. Used to compute
     /// external rays in parameter planes.
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (fz, df_dz) = self.map_and_multiplier(z, c);
         (fz, df_dz, Self::Deriv::one())
@@ -121,7 +121,7 @@ pub trait DynamicalFamily: Sync + Send
     fn early_bailout(
         &self,
         _start: Self::Var,
-        _c: Self::Param,
+        _c: &Self::Param,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         None
@@ -152,7 +152,7 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     #[inline]
-    fn extra_stop_condition(&self, z: Self::Var, _c: Self::Param, iter: Period) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    fn extra_stop_condition(&self, z: Self::Var, _c: &Self::Param, iter: Period) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         let r = z.norm_sqr();
         if r > self.escape_radius() || z.is_nan() {
@@ -170,7 +170,7 @@ pub trait DynamicalFamily: Sync + Send
     fn stop_condition(
         &self,
         z: Self::Var,
-        c: Self::Param,
+        c: &Self::Param,
         iter: Period,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
@@ -181,7 +181,7 @@ pub trait DynamicalFamily: Sync + Send
             return Some(EscapeResult::Bounded(z));
         }
 
-        self.extra_stop_condition(z, c, iter)
+        self.extra_stop_condition(z, &c, iter)
     }
 
     /// Lower bound on distance-squared between fast and slow orbits. If the fast and slow
@@ -214,11 +214,11 @@ pub trait DynamicalFamily: Sync + Send
     ///
     /// For Julia sets, `start_point` is computed by applying `self.dynam_map` to the raw point.
     /// For parameter planes, `start_point` needs to be implemented manually.
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var;
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var;
 
     /// Start point, its partial derivative with respect to the point,
     /// and its partial derivative with respect to the parameter
-    fn start_point_d(&self, point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, point: Cplx, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (
             self.start_point(point, c),
@@ -312,7 +312,7 @@ pub trait DynamicalFamily: Sync + Send
         let diff = |t| {
             // Initial coordinates
             let (c, dc_dt) = self.param_map_d(t);
-            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
 
             // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
             dz_dt += dc_dt * dz_dc;
@@ -333,13 +333,13 @@ pub trait DynamicalFamily: Sync + Send
             // Preperiodic part
             if k > 0 {
                 for _ in 0..k - 1 {
-                    (z, df_dz, df_dc) = self.gradient(z, c);
+                    (z, df_dz, df_dc) = self.gradient(z, &c);
                     dz_dt = dz_dt * df_dz + df_dc;
                 }
 
                 zk1 = z.into();
                 zk1_dt = dz_dt.into();
-                (z, df_dz, df_dc) = self.gradient(z, c);
+                (z, df_dz, df_dc) = self.gradient(z, &c);
                 dz_dt = dz_dt * df_dz + df_dc;
             }
 
@@ -349,7 +349,7 @@ pub trait DynamicalFamily: Sync + Send
             // Periodic part
 
             for i in 1..n {
-                (w, df_dz, df_dc) = self.gradient(w, c);
+                (w, df_dz, df_dc) = self.gradient(w, &c);
                 dw_dt = dw_dt * df_dz + df_dc;
 
                 // Divide out lower order periods
@@ -382,7 +382,7 @@ pub trait DynamicalFamily: Sync + Send
             }
 
             // Perform final iteration manually
-            (w, df_dz, df_dc) = self.gradient(w, c);
+            (w, df_dz, df_dc) = self.gradient(w, &c);
             dw_dt = dw_dt * df_dz + df_dc;
 
             values[term_count] = (w - z).into();
@@ -416,10 +416,10 @@ pub trait DynamicalFamily: Sync + Send
     fn iter_orbit(&self, point: Cplx) -> Box<dyn Iterator<Item = Self::Var> + '_>
     {
         let param = self.param_map(point);
-        let start = self.start_point(point, param);
+        let start = self.start_point(point, &param);
         Box::new(
             orbit::simple::Simple::new(
-                |z, c| self.map(z, c),
+                |z, c| self.map(z, &c),
                 start,
                 param,
                 self.max_iter(),
@@ -432,9 +432,9 @@ pub trait DynamicalFamily: Sync + Send
     fn get_orbit_vec(&self, point: Cplx) -> Vec<Self::Var>
     {
         let param = self.param_map(point);
-        let start = self.start_point(point, param);
+        let start = self.start_point(point, &param);
         let orbit = orbit::simple::Simple::new(
-            |z, c| self.map(z, c),
+            |z, c| self.map(z, &c),
             start,
             param,
             self.max_iter(),
@@ -450,7 +450,7 @@ pub trait DynamicalFamily: Sync + Send
     /// who reference the parent's `default_julia_bounds` in their `default_bounds`
     /// implementations.
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -485,7 +485,7 @@ pub trait DynamicalFamily: Sync + Send
         PlaneType::Parameter
     }
 
-    // fn escape_coeff_d(&self, t: Cplx, c: Self::Param) -> (Cplx, Self::Deriv, Self::Deriv) {
+    // fn escape_coeff_d(&self, t: Cplx, c: &Self::Param) -> (Cplx, Self::Deriv, Self::Deriv) {
     //     (ONE, ZERO, ZERO)
     // }
     // //
@@ -493,7 +493,7 @@ pub trait DynamicalFamily: Sync + Send
     // /// monic.
     // ///
     // /// Used for computing external rays.
-    // fn monic_conj_d(&self, t: Cplx, c: Self::Param) -> (Cplx, Cplx, Cplx) {
+    // fn monic_conj_d(&self, t: Cplx, c: &Self::Param) -> (Cplx, Cplx, Cplx) {
     //     if self.degree() == 1 || self.escape_coeff(c) == ONE {
     //         (ONE, ZERO, ZERO)
     //     } else {
@@ -573,7 +573,7 @@ pub trait MarkedPoints: DynamicalFamily
 {
     /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         vec![self.start_point(ZERO, c)]
     }
@@ -588,7 +588,7 @@ pub trait MarkedPoints: DynamicalFamily
     /// Implementation of `cycles` for Julia sets spawned from this parameter plane.
     /// Used to mark selected periodic points on the dynamical plane.
     #[inline]
-    fn cycles_child(&self, _c: Self::Param, _period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, _c: &Self::Param, _period: Period) -> Vec<Self::Var>
     {
         vec![]
     }
@@ -596,7 +596,7 @@ pub trait MarkedPoints: DynamicalFamily
     /// Implementation of `precycles` for Julia sets spawned from this parameter plane.
     /// Used to mark selected preperiodic points on the dynamical plane.
     #[inline]
-    fn precycles_child(&self, _c: Self::Param, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
+    fn precycles_child(&self, _c: &Self::Param, _orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         vec![]
     }
@@ -633,7 +633,7 @@ pub trait MarkedPoints: DynamicalFamily
     /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
     /// color Newton parameter planes according to which root the critical orbit converges to.
     #[inline]
-    fn get_marked_points(&self, _c: Self::Param) -> Vec<(Self::Var, PointClassId)>
+    fn get_marked_points(&self, _c: &Self::Param) -> Vec<(Self::Var, PointClassId)>
     {
         vec![]
     }
@@ -657,7 +657,7 @@ pub trait MarkedPoints: DynamicalFamily
     fn identify_marked_points(
         &self,
         z: Self::Var,
-        c: Self::Param,
+        c: &Self::Param,
         info: PointInfoPeriodic<Self::Deriv>,
     ) -> PointInfo<Self::Deriv>
     {
@@ -735,7 +735,7 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
     /// Leading coefficient of the self-return map at infinity.
     /// Used for computing external rays.
     #[inline]
-    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    fn escape_coeff(&self, c: &Self::Param) -> Cplx
     {
         self.escape_coeff_d(c).0
     }
@@ -743,7 +743,7 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
     /// Leading coefficient of the self-return map at infinity,
     /// together with its derivative.
     /// Used for computing external rays.
-    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, _c: &Self::Param) -> (Cplx, Cplx)
     {
         (ONE, ZERO)
     }
@@ -781,7 +781,7 @@ pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
         let factor = (-deg_real.log2() / Real::from(RAY_SHARPNESS)).exp2();
 
         // Assumes escape_coeff is constant
-        let a = self.escape_coeff(self.param_map(ONE));
+        let a = self.escape_coeff(&self.param_map(ONE));
         let target_shift = a.ln() / Real::from(RAY_SHARPNESS);
 
         for k in 0..RAY_DEPTH {
@@ -789,11 +789,11 @@ pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
 
             let fk_and_dfk = |t: Cplx| {
                 let (c, dc_dt) = self.param_map_d(t);
-                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
                 dz_dt += dz_dc * dc_dt;
 
                 for _i in 0..num_iters {
-                    let (f, df_dz, df_dc) = self.gradient(z, c);
+                    let (f, df_dz, df_dc) = self.gradient(z, &c);
                     dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                     z = f;
                 }
@@ -881,14 +881,14 @@ where
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
     {
         let c0 = self.param_map(t0);
-        let z0 = self.start_point(t0, c0);
+        let z0 = self.start_point(t0, &c0);
 
         // Computation time is exponential in iteration count, so we limit ourselves to 13.
         let max_iter = 13;
         let escape_radius = 30.;
         let theta0 = 0.02;
 
-        let orbit = orbit::Simple::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
+        let orbit = orbit::Simple::new(|z, c| self.map(z, &c), z0, c0, max_iter, escape_radius);
         let result = orbit.last()?.1.unwrap_or_default();
         let EscapeResult::Escaped { iters, final_value } = result else {
             return None;
@@ -898,7 +898,7 @@ where
 
         let compute = |t| {
             let (c, dc_dt) = self.param_map_d(t);
-            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
 
             // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
             dz_dt += dc_dt * dz_dc;
@@ -907,7 +907,7 @@ where
             let mut df_dc: Self::Deriv;
 
             for _ in 0..iters {
-                (z, df_dz, df_dc) = self.gradient(z, c);
+                (z, df_dz, df_dc) = self.gradient(z, &c);
                 dz_dt = dz_dt * df_dz + df_dc;
             }
             (z.into(), dz_dt.into())
@@ -941,7 +941,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         &self,
         result: EscapeResult<Self::Var, Self::Deriv>,
         _start_point: Self::Var,
-        c: Self::Param,
+        c: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         match result {
@@ -949,7 +949,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
                 self.encode_escaping_point(iters, final_value, c)
             }
             EscapeResult::Periodic { info, final_value } => {
-                self.identify_marked_points(final_value, c, info)
+                self.identify_marked_points(final_value, &c, info)
             }
             EscapeResult::Bounded(_) => PointInfo::Bounded,
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
@@ -961,7 +961,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         &self,
         iters: Period,
         z: Self::Var,
-        c: Self::Param,
+        c: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
@@ -972,7 +972,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let q = self.escape_coeff(c).norm().log2();
+        let q = self.escape_coeff(&c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
         PointInfo::Escaping { potential }
@@ -995,8 +995,8 @@ pub trait Computable: DynamicalFamily
     fn get_orbit_info(&self, point: Cplx) -> orbit::Info<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
-        let start = self.start_point(point, param);
-        let result = self.run_and_encode_point(start, param);
+        let start = self.start_point(point, &param);
+        let result = self.run_and_encode_point(start, param.clone());
         orbit::Info {
             param,
             start,
@@ -1026,10 +1026,10 @@ where
 {
     fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
     {
-        let mut orbit = orbit::CycleDetected::new(self, start, c);
+        let mut orbit = orbit::CycleDetected::new(self, start, c.clone());
         let state = orbit.run_until_complete();
 
-        self.encode_escape_result(state, start, c)
+        self.encode_escape_result(state, start, &c)
     }
 
     fn get_orbit_and_info(
@@ -1038,8 +1038,8 @@ where
     ) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
     {
         let param = self.param_map(point);
-        let start = self.start_point(point, param);
-        let orbit = orbit::CycleDetected::new(self, start, param);
+        let start = self.start_point(point, &param);
+        let orbit = orbit::CycleDetected::new(self, start, param.clone());
         let mut final_state = None;
         let trajectory: Vec<Self::Var> = orbit
             .map(|(z, s)| {
@@ -1047,7 +1047,7 @@ where
                 z
             })
             .collect();
-        let result = self.encode_escape_result(final_state.unwrap_or_default(), start, param);
+        let result = self.encode_escape_result(final_state.unwrap_or_default(), start, &param);
         orbit::OrbitAndInfo {
             orbit: trajectory,
             info: orbit::Info {
@@ -1078,14 +1078,14 @@ where
                     let y = chunk_idx * chunk_size + local_y;
                     let point = self.point_grid().map_pixel(x, y);
                     let param = self.param_map(point);
-                    let start = self.start_point(point, param);
+                    let start = self.start_point(point, &param);
                     let mut orbit = orbits
-                        .get_or(|| RefCell::new(orbit::CycleDetected::new(self, start, param)))
+                        .get_or(|| RefCell::new(orbit::CycleDetected::new(self, start, param.clone())))
                         .borrow_mut();
 
-                    orbit.reset(param, start);
+                    orbit.reset(param.clone(), start);
                     let result = orbit.run_until_complete();
-                    *count = self.encode_escape_result(result, start, param);
+                    *count = self.encode_escape_result(result, start, &param);
                 });
             });
     }

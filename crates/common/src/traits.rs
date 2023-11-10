@@ -240,7 +240,7 @@ pub trait Variable:
 {
 }
 pub trait Parameter:
-    From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Describe + Summarize
+    From<Cplx> + Clone + Send + Sync + Default + PartialEq + Describe + Summarize
 {
 }
 pub trait Derivative:
@@ -272,7 +272,7 @@ impl<V> Variable for V where
 {
 }
 impl<P> Parameter for P where
-    P: From<Cplx> + Clone + Copy + Send + Sync + Default + PartialEq + Describe + Summarize
+    P: From<Cplx> + Clone + Send + Sync + Default + PartialEq + Describe + Summarize
 {
 }
 impl<D> Derivative for D where

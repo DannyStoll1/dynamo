@@ -539,8 +539,8 @@ where
     {
         if self.plane_type().is_dynamical() {
             let c = self.plane.param_map(self.selection);
-            let mut z = self.plane.start_point(self.selection, c);
-            z = self.plane.map(z, c);
+            let mut z = self.plane.start_point(self.selection, &c);
+            z = self.plane.map(z, &c);
             self.select_point(z.into());
         }
     }

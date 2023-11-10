@@ -77,13 +77,13 @@ impl DynamicalFamily for QuadRatPer5
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         let z2 = z.powi(2);
         1. + (c.a * z + c.b) / z2
     }
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
         let az = c.a * z;
@@ -91,7 +91,7 @@ impl DynamicalFamily for QuadRatPer5
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         -2. * b / a
     }
@@ -128,7 +128,7 @@ impl DynamicalFamily for QuadRatPer5
         1e24
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, param: &Self::Param) -> Bounds
     {
         Bounds::square(20., self.start_point(ONE, param))
     }
@@ -141,11 +141,11 @@ impl DynamicalFamily for QuadRatPer5
 
 impl MarkedPoints for QuadRatPer5
 {
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, CplxPair { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => solve_cubic(-b, -a, -ONE).to_vec(),
-            2 => solve_quadratic(b, a - b).to_vec(),
+            2 => solve_quadratic(*b, a - b).to_vec(),
             3 => {
                 let b2 = b.powi(2);
                 let b3 = b * b2;
@@ -167,7 +167,7 @@ impl MarkedPoints for QuadRatPer5
     }
 
     #[inline]
-    fn critical_points_child(&self, param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, param: &Self::Param) -> Vec<Self::Var>
     {
         vec![self.start_point(ONE, param)]
     }
@@ -200,7 +200,7 @@ impl EscapeEncoding for QuadRatPer5
         &self,
         iters: Period,
         z: Cplx,
-        CplxPair { a, b }: Self::Param,
+        CplxPair { a, b }: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
@@ -211,7 +211,7 @@ impl EscapeEncoding for QuadRatPer5
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let delta = top_coeff(a, b).norm_sqr().log2();
+        let delta = top_coeff(*a, *b).norm_sqr().log2();
         let residual = ((u + delta) / (v + delta)).log2();
         let potential = (residual as IterCount).mul_add(5., f64::from(iters));
         PointInfo::Escaping { potential }

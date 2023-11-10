@@ -67,7 +67,7 @@ where
     fn early_bailout(
         &self,
         start: Self::Var,
-        param: Self::Param,
+        param: &Self::Param,
     ) -> Option<EscapeResult<C::Var, C::Deriv>>
     {
         self.base_curve.early_bailout(start, param)
@@ -114,31 +114,31 @@ where
     }
 
     #[inline]
-    fn start_point(&self, t: Cplx, c: C::Param) -> C::Var
+    fn start_point(&self, t: Cplx, c: &C::Param) -> C::Var
     {
         self.base_curve.start_point(t, c)
     }
 
     #[inline]
-    fn start_point_d(&self, t: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, t: Cplx, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         self.base_curve.start_point_d(t, c)
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         self.base_curve.map(z, c)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         self.base_curve.map_and_multiplier(z, c)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         self.base_curve.gradient(z, c)
     }
@@ -189,7 +189,7 @@ where
     }
 
     #[inline]
-    fn default_julia_bounds(&self, point: Cplx, param: C::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, param: &C::Param) -> Bounds
     {
         self.base_curve.default_julia_bounds(point, param)
     }
@@ -224,19 +224,19 @@ where
     C: MarkedPoints,
 {
     #[inline]
-    fn critical_points_child(&self, param: C::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, param: &C::Param) -> Vec<Self::Var>
     {
         self.base_curve.critical_points_child(param)
     }
 
     #[inline]
-    fn cycles_child(&self, param: C::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, param: &C::Param, period: Period) -> Vec<Self::Var>
     {
         self.base_curve.cycles_child(param, period)
     }
 
     #[inline]
-    fn precycles_child(&self, c: Self::Param, orbit_schema: OrbitSchema) -> Vec<Self::Var>
+    fn precycles_child(&self, c: &C::Param, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         self.base_curve.precycles_child(c, orbit_schema)
     }
@@ -271,7 +271,7 @@ where
     }
 
     #[inline]
-    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, c: &Self::Param) -> (Cplx, Cplx)
     {
         self.base_curve.escape_coeff_d(c)
     }
@@ -284,7 +284,7 @@ impl<C: EscapeEncoding> EscapeEncoding for CoveringMap<C>
         &self,
         state: EscapeResult<C::Var, C::Deriv>,
         start: C::Var,
-        base_param: C::Param,
+        base_param: &C::Param,
     ) -> PointInfo<C::Deriv>
     {
         self.base_curve

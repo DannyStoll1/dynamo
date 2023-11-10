@@ -44,19 +44,19 @@ impl DynamicalFamily for Biquadratic
     }
 
     #[inline]
-    fn param_map(&self, c: Cplx) -> Cplx
+    fn param_map(&self, t: Cplx) -> Cplx
     {
-        c
+        t
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Cplx) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Cplx) -> Self::Var
     {
         Self::Var::default()
     }
 
     #[inline]
-    fn map(&self, zw: Self::Var, c: Cplx) -> Self::Var
+    fn map(&self, zw: Self::Var, c: &Cplx) -> Self::Var
     {
         match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z.powi(2) + c),
@@ -65,7 +65,7 @@ impl DynamicalFamily for Biquadratic
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: Cplx) -> (Self::Var, Cplx)
+    fn map_and_multiplier(&self, zw: Self::Var, c: &Cplx) -> (Self::Var, Cplx)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z),
@@ -73,7 +73,7 @@ impl DynamicalFamily for Biquadratic
         }
     }
 
-    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, zw: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z.powi(2) + c), 2. * z, ONE),
@@ -88,7 +88,7 @@ impl EscapeEncoding for Biquadratic
         &self,
         iters: Period,
         z: Self::Var,
-        _base_param: Cplx,
+        _base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
@@ -171,7 +171,7 @@ impl DynamicalFamily for BiquadraticMult
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         match self.starting_plane {
             PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c.a),
@@ -180,7 +180,7 @@ impl DynamicalFamily for BiquadraticMult
     }
 
     #[inline]
-    fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, zw: Self::Var, c: &Self::Param) -> Self::Var
     {
         match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c.a)),
@@ -189,7 +189,7 @@ impl DynamicalFamily for BiquadraticMult
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
+    fn map_and_multiplier(&self, zw: Self::Var, c: &Self::Param) -> (Self::Var, Cplx)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
@@ -197,7 +197,7 @@ impl DynamicalFamily for BiquadraticMult
         }
     }
 
-    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, zw: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a, ONE),
@@ -233,7 +233,7 @@ impl DynamicalFamily for BiquadraticMult
         // Cplx::new(1.062_658_8, 0.)
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, c: &Self::Param) -> Bounds
     {
         Bounds::square(2.5, -0.5 * c.a)
     }
@@ -282,7 +282,7 @@ impl MarkedPoints for BiquadraticMult
     }
 
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         match self.starting_plane {
             PlaneID::ZPlane => {
@@ -306,7 +306,7 @@ impl MarkedPoints for BiquadraticMult
 
     fn cycles_child(
         &self,
-        param::OuterParam(CplxPair { a, b }): Self::Param,
+        param::OuterParam(CplxPair { a, b }): &Self::Param,
         period: Period,
     ) -> Vec<Self::Var>
     {
@@ -365,7 +365,7 @@ impl EscapeEncoding for BiquadraticMult
         &self,
         iters: Period,
         z: Self::Var,
-        _base_param: Self::Param,
+        _base_param: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
@@ -431,7 +431,7 @@ impl DynamicalFamily for BiquadraticMultParam
     }
 
     #[inline]
-    fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, zw: Self::Var, c: &Self::Param) -> Self::Var
     {
         match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c.a)),
@@ -440,7 +440,7 @@ impl DynamicalFamily for BiquadraticMultParam
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
+    fn map_and_multiplier(&self, zw: Self::Var, c: &Self::Param) -> (Self::Var, Cplx)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c.a)), 2. * z + c.a),
@@ -449,7 +449,7 @@ impl DynamicalFamily for BiquadraticMultParam
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         Bicomplex::PlaneA(-0.5 * c.a)
     }
@@ -459,7 +459,7 @@ impl DynamicalFamily for BiquadraticMultParam
         self.starting_plane = self.starting_plane.swap();
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(3.5)
     }
@@ -487,7 +487,7 @@ impl EscapeEncoding for BiquadraticMultParam
         &self,
         iters: Period,
         z: Self::Var,
-        _base_param: Self::Param,
+        _base_param: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
@@ -562,26 +562,26 @@ impl DynamicalFamily for BiquadraticMultSecondIterate
     }
 
     #[inline]
-    fn param_map(&self, c: Cplx) -> Cplx
+    fn param_map(&self, t: Cplx) -> Cplx
     {
-        c
+        t
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, c: &Cplx) -> Cplx
     {
         -0.5 * c
     }
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         let w = z * (z + c);
         w * (w + self.multiplier / c)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
+    fn map_and_multiplier(&self, z: Cplx, c: &Cplx) -> (Cplx, Cplx)
     {
         let a = self.multiplier / c;
         let w = z * (z + c);
@@ -589,7 +589,7 @@ impl DynamicalFamily for BiquadraticMultSecondIterate
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = self.multiplier / c;
         let x0 = c + z;
@@ -613,7 +613,7 @@ impl DynamicalFamily for BiquadraticMultSecondIterate
         self.multiplier
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(2.5)
     }
@@ -625,7 +625,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         &self,
         iters: Period,
         z: Cplx,
-        _base_param: Cplx,
+        _base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
@@ -698,7 +698,7 @@ impl DynamicalFamily for BiquadraticMultSection
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
         match self.starting_plane {
             PlaneID::ZPlane => Bicomplex::PlaneA(-0.5 * c),
@@ -707,7 +707,7 @@ impl DynamicalFamily for BiquadraticMultSection
     }
 
     #[inline]
-    fn map(&self, zw: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, zw: Self::Var, c: &Self::Param) -> Self::Var
     {
         match zw {
             Bicomplex::PlaneA(z) => Bicomplex::PlaneB(z * (z + c)),
@@ -716,7 +716,7 @@ impl DynamicalFamily for BiquadraticMultSection
     }
 
     #[inline]
-    fn map_and_multiplier(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Cplx)
+    fn map_and_multiplier(&self, zw: Self::Var, c: &Self::Param) -> (Self::Var, Cplx)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c),
@@ -725,7 +725,7 @@ impl DynamicalFamily for BiquadraticMultSection
     }
 
     #[inline]
-    fn gradient(&self, zw: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, zw: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match zw {
             Bicomplex::PlaneA(z) => (Bicomplex::PlaneB(z * (z + c)), 2. * z + c, z),
@@ -756,7 +756,7 @@ impl DynamicalFamily for BiquadraticMultSection
         Cplx::new(1.062_658_8, 0.)
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, a: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, a: &Self::Param) -> Bounds
     {
         Bounds::square(2.5, -0.5 * a)
     }
@@ -765,7 +765,7 @@ impl DynamicalFamily for BiquadraticMultSection
 impl MarkedPoints for BiquadraticMultSection
 {
     #[inline]
-    fn critical_points_child(&self, c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
         match self.starting_plane {
             PlaneID::ZPlane => {
@@ -787,7 +787,7 @@ impl MarkedPoints for BiquadraticMultSection
         }
     }
 
-    fn cycles_child(&self, a: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, a: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             2 => match self.starting_plane {
@@ -821,7 +821,7 @@ impl EscapeEncoding for BiquadraticMultSection
         &self,
         iters: Period,
         z: Self::Var,
-        _base_param: Self::Param,
+        _base_param: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {

@@ -34,7 +34,7 @@ where
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(parent_selection, local_param));
+            .new_with_same_height(parent.default_julia_bounds(parent_selection, &local_param));
         let min_iter = parent.min_iter();
         let meta_params = parent.get_meta_params();
         Self {
@@ -57,7 +57,7 @@ where
 
     pub fn map_and_multiplier_lazy(&self, z: T::Var) -> (T::Var, T::Deriv)
     {
-        self.parent.map_and_multiplier(z, self.local_param)
+        self.parent.map_and_multiplier(z, &self.local_param)
     }
 }
 
@@ -85,21 +85,21 @@ where
     basic_plane_impl!();
 
     #[inline]
-    fn map(&self, z: Self::Var, _c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, _c: &Self::Param) -> Self::Var
     {
-        self.parent.map(z, self.local_param)
+        self.parent.map(z, &self.local_param)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, _c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
-        self.parent.map_and_multiplier(z, self.local_param)
+        self.parent.map_and_multiplier(z, &self.local_param)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, _c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, _c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let (f, df_dz) = self.map_and_multiplier(z, NoParam);
+        let (f, df_dz) = self.map_and_multiplier(z, &NoParam);
         (f, df_dz, Self::Deriv::zero())
     }
 
@@ -119,11 +119,11 @@ where
     fn extra_stop_condition(
         &self,
         z: Self::Var,
-        _: NoParam,
+        _: &NoParam,
         iter: Period,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
-        self.parent.extra_stop_condition(z, self.local_param, iter)
+        self.parent.extra_stop_condition(z, &self.local_param, iter)
     }
 
     #[inline]
@@ -139,7 +139,7 @@ where
     }
 
     #[inline]
-    fn start_point(&self, point: Cplx, _param: Self::Param) -> Self::Var
+    fn start_point(&self, point: Cplx, _param: &Self::Param) -> Self::Var
     {
         self.parent.dynam_map(point)
     }
@@ -147,14 +147,14 @@ where
     #[inline]
     fn default_selection(&self) -> Cplx
     {
-        self.parent.start_point(ZERO, self.local_param).into()
+        self.parent.start_point(ZERO, &self.local_param).into()
     }
 
     #[inline]
     fn start_point_d(
         &self,
         point: Cplx,
-        _param: Self::Param,
+        _param: &Self::Param,
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (z, dz_dt) = self.parent.dynam_map_d(point);
@@ -190,15 +190,15 @@ where
     fn get_meta_params(&self) -> Self::MetaParam
     {
         ParamStack {
-            local_param: self.local_param,
-            meta_params: self.meta_params,
+            local_param: self.local_param.clone(),
+            meta_params: self.meta_params.clone(),
         }
     }
 
     #[inline]
     fn get_param(&self) -> T::Param
     {
-        self.local_param
+        self.local_param.clone()
     }
 
     // #[inline]
@@ -211,11 +211,11 @@ where
     fn default_bounds(&self) -> Bounds
     {
         self.parent
-            .default_julia_bounds(self.parent_selection, self.local_param)
+            .default_julia_bounds(self.parent_selection, &self.local_param)
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         self.point_grid.bounds.clone()
     }
@@ -429,33 +429,33 @@ where
     P: DynamicalFamily + MarkedPoints,
 {
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
-        self.parent.critical_points_child(self.local_param)
+        self.parent.critical_points_child(&self.local_param)
     }
 
     #[inline]
     fn critical_points(&self) -> Vec<Self::Var>
     {
-        self.parent.critical_points_child(self.local_param)
+        self.parent.critical_points_child(&self.local_param)
     }
 
     #[inline]
-    fn cycles_child(&self, _param: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, _param: &Self::Param, period: Period) -> Vec<Self::Var>
     {
-        self.parent.cycles_child(self.local_param, period)
+        self.parent.cycles_child(&self.local_param, period)
     }
 
     #[inline]
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
-        self.parent.cycles_child(self.local_param, period)
+        self.parent.cycles_child(&self.local_param, period)
     }
 
     #[inline]
     fn precycles(&self, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
-        self.parent.precycles_child(self.local_param, orbit_schema)
+        self.parent.precycles_child(&self.local_param, orbit_schema)
     }
 }
 
@@ -489,9 +489,9 @@ where
     }
 
     #[inline]
-    fn escape_coeff_d(&self, _c: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, _c: &Self::Param) -> (Cplx, Cplx)
     {
-        (self.parent.escape_coeff_d(self.local_param).0, ZERO)
+        (self.parent.escape_coeff_d(&self.local_param).0, ZERO)
     }
 }
 
@@ -501,11 +501,11 @@ impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
         &self,
         result: EscapeResult<Self::Var, Self::Deriv>,
         start: Self::Var,
-        NoParam: Self::Param,
+        NoParam: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         self.parent
-            .encode_escape_result(result, start, self.local_param)
+            .encode_escape_result(result, start, &self.local_param)
     }
 }
 
@@ -532,7 +532,7 @@ where
         let mut t_list = vec![];
 
         let deg_real = self.degree_real();
-        let a = self.escape_coeff(NoParam);
+        let a = self.escape_coeff(&NoParam);
         let angle_boost = a.arg() / TAU;
 
         // Target angle for the composite map at each step.
@@ -565,11 +565,11 @@ where
 
             let fk_and_dfk = |t: Cplx| {
                 let (c, dc_dt) = self.param_map_d(t);
-                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
+                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
                 dz_dt += dz_dc * dc_dt;
 
                 for _i in 0..num_iters {
-                    let (f, df_dz, df_dc) = self.gradient(z, c);
+                    let (f, df_dz, df_dc) = self.gradient(z, &c);
                     dz_dt = dz_dt * df_dz + df_dc * dc_dt;
                     z = f;
                 }

@@ -36,13 +36,13 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
     #[inline]
     fn apply_map_to_slow(&mut self)
     {
-        self.z_slow = self.family.map(self.z_slow, self.param);
+        self.z_slow = self.family.map(self.z_slow, &self.param);
     }
 
     #[inline]
     fn apply_map_and_update_multiplier(&mut self)
     {
-        let (z_new, deriv) = self.family.map_and_multiplier(self.z_fast, self.param);
+        let (z_new, deriv) = self.family.map_and_multiplier(self.z_fast, &self.param);
         self.multiplier *= deriv;
         self.z_fast = z_new;
     }
@@ -59,7 +59,7 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
 
     pub fn run_until_complete(&mut self) -> EscapeResult<P::Var, P::Deriv>
     {
-        if let Some(res) = self.family.early_bailout(self.z_fast, self.param) {
+        if let Some(res) = self.family.early_bailout(self.z_fast, &self.param) {
             return res;
         }
 
@@ -83,7 +83,7 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
     {
         if let Some(state) = self
             .family
-            .stop_condition(self.z_fast, self.param, self.iter)
+            .stop_condition(self.z_fast, &self.param, self.iter)
         {
             self.state = Some(state);
             true
@@ -123,7 +123,7 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
         let mut dz: P::Deriv;
         let mut mult = P::Deriv::one();
         for i in 1..=patience {
-            (z, dz) = self.family.map_and_multiplier(z, self.param);
+            (z, dz) = self.family.map_and_multiplier(z, &self.param);
             mult *= dz;
             if z.dist_sqr(self.z_fast) <= tolerance {
                 return Period::try_from(i).ok().map(|n| (n, mult));

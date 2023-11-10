@@ -150,12 +150,12 @@ impl Transpiler
         1e26
     }}
 
-    fn start_point(&self, {t}: Cplx, {c}: Self::Param) -> Self::Var
+    fn start_point(&self, {t}: Cplx, &{c}: &Self::Param) -> Self::Var
     {{
         Self::Var::from({start})
     }}
 
-    fn start_point_d(&self, {t}: Cplx, {c}: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, {t}: Cplx, &{c}: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {{
         let (z0, dz0_dt) = {{
             {start_d}
@@ -163,12 +163,12 @@ impl Transpiler
         (z0.into(), dz0_dt.into(), ZERO)
     }}
 
-    fn map(&self, {z}: Self::Var, {c}: Self::Param) -> Self::Var
+    fn map(&self, {z}: Self::Var, &{c}: &Self::Param) -> Self::Var
     {{
         {map}
     }}
 
-    fn map_and_multiplier(&self, {z}: Self::Var, {c}: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, {z}: Self::Var, &{c}: &Self::Param) -> (Self::Var, Self::Deriv)
     {{
         {map_d}
     }}

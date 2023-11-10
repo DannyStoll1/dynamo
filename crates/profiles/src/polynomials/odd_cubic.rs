@@ -31,33 +31,34 @@ impl DynamicalFamily for OddCubic
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         2. * z * (z.powi(2) / 3. - c)
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, c: &Cplx) -> Cplx
     {
         c.powf(0.5)
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _point: Cplx, c: &Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z0 = c.powf(0.5);
         (z0, ZERO, 0.5 / z0)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
         (2. * z * (z2 / 3. - c), 2. * (z2 - c))
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
         let u = 2. * z;
@@ -65,7 +66,7 @@ impl DynamicalFamily for OddCubic
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -74,14 +75,14 @@ impl DynamicalFamily for OddCubic
 impl MarkedPoints for OddCubic
 {
     #[inline]
-    fn critical_points_child(&self, param: Cplx) -> ComplexVec
+    fn critical_points_child(&self, param: &Cplx) -> ComplexVec
     {
         let sqrt_c = param.sqrt();
         vec![-sqrt_c, sqrt_c]
     }
 
     #[inline]
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {

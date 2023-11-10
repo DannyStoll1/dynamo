@@ -32,13 +32,13 @@ impl DynamicalFamily for CubicMarked2Cycle
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         let z2 = z.powi(2);
         (z + c) * z2 - (2. + c) * z + 1.
     }
 
-    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
+    fn map_and_multiplier(&self, z: Cplx, c: &Cplx) -> (Cplx, Cplx)
     {
         let x0 = c + 2.;
         let z2 = z.powi(2);
@@ -46,7 +46,7 @@ impl DynamicalFamily for CubicMarked2Cycle
         (-x0 * z + x1 * z2 + 1., z2 - x0 + 2. * x1 * z)
     }
 
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let x0 = c + 2.;
         let x1 = z + c;
@@ -55,7 +55,7 @@ impl DynamicalFamily for CubicMarked2Cycle
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, c: &Cplx) -> Cplx
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
@@ -63,7 +63,8 @@ impl DynamicalFamily for CubicMarked2Cycle
     }
 
     #[inline]
-    fn start_point_d(&self, _point: Cplx, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn start_point_d(&self, _point: Cplx, c: &Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
@@ -76,7 +77,7 @@ impl DynamicalFamily for CubicMarked2Cycle
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, param: &Cplx) -> Bounds
     {
         Bounds::square(2.2, -param / 3.)
     }
@@ -85,17 +86,17 @@ impl DynamicalFamily for CubicMarked2Cycle
 impl MarkedPoints for CubicMarked2Cycle
 {
     #[inline]
-    fn critical_points_child(&self, c: Cplx) -> ComplexVec
+    fn critical_points_child(&self, c: &Cplx) -> ComplexVec
     {
         let x0 = c * ONE_THIRD;
         let disc = (c * (c + 3.) + 6.).sqrt() * ONE_THIRD;
         vec![(disc - x0), (-disc - x0)]
     }
 
-    fn cycles_child(&self, c: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
-            1 => solve_cubic(ONE, -c - 3., c).to_vec(),
+            1 => solve_cubic(ONE, -c - 3., *c).to_vec(),
             2 => {
                 let a0 = 3. + c * (3. + c);
                 let a1 = -c * (c + 2.);

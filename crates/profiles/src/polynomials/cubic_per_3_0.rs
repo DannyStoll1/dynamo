@@ -40,7 +40,7 @@ impl DynamicalFamily for CubicPer3_0
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        CplxPair { a, b }: Self::Param,
+        CplxPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -49,7 +49,7 @@ impl DynamicalFamily for CubicPer3_0
     }
 
     #[inline]
-    fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         horner!(z, 1., 0., b, a)
     }
@@ -67,14 +67,14 @@ impl DynamicalFamily for CubicPer3_0
     {
         (self.param_map(point), ZERO)
     }
-    fn start_point(&self, _point: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         -TWO_THIRDS * b / a
     }
     fn start_point_d(
         &self,
         t: Cplx,
-        CplxPair { a, b }: Self::Param,
+        CplxPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let dz_dt = -TWO_THIRDS * horner!(t, 1., 4., 6., 8., 7., 2.)
@@ -86,7 +86,7 @@ impl DynamicalFamily for CubicPer3_0
         // ComplexNum::new(-3.34447065821736, 0.) // center of a capture component; c1 -2> c0=0 -2> 1 -> a+b+1 -> 0
         Cplx::new(-0.521_257_806_222_939, 0.) // center of a period 1 component; c1 -2> c1
     }
-    fn default_julia_bounds(&self, point: Cplx, c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, point: Cplx, c: &Self::Param) -> Bounds
     {
         let crit = self.start_point(point, c);
         // let center = (crit + 2. + c.a + c.b) * ONE_THIRD;
@@ -100,7 +100,7 @@ impl DynamicalFamily for CubicPer3_0
 impl MarkedPoints for CubicPer3_0
 {
     #[inline]
-    fn critical_points_child(&self, CplxPair { a, b }: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, CplxPair { a, b }: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO, -TWO_THIRDS * b / a]
     }
@@ -109,7 +109,7 @@ impl MarkedPoints for CubicPer3_0
         let [r0, r1, r2] = solve_cubic(ONE, 2.0.into(), ONE);
         vec![ZERO, (-1.).into(), r0, r1, r2]
     }
-    fn cycles_child(&self, Self::Param { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, Self::Param { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
             1 => {

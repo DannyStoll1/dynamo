@@ -35,7 +35,7 @@ impl DynamicalFamily for QuadRatGeneral
     default_name!();
     default_bounds!(Bounds::centered_square(3.));
 
-    fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         let z2 = z.powi(2);
         (z2 + a) / (z2 + b)
@@ -49,7 +49,7 @@ impl DynamicalFamily for QuadRatGeneral
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        CplxPair { a, b }: Self::Param,
+        CplxPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -57,7 +57,7 @@ impl DynamicalFamily for QuadRatGeneral
         ((z2 + a) * denom, 2. * z * (b - a) * denom.powi(2))
     }
 
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -65,15 +65,15 @@ impl DynamicalFamily for QuadRatGeneral
 
 impl MarkedPoints for QuadRatGeneral
 {
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
     }
 
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, CplxPair { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
-            1 => solve_cubic(-a, b, -ONE).to_vec(),
+            1 => solve_cubic(-a, *b, -ONE).to_vec(),
             2 => {
                 let denom = (b + 1.).inv();
                 solve_quadratic((a + b.powi(2)) * denom, (b - a) * denom).to_vec()

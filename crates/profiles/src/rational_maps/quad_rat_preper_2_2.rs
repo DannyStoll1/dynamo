@@ -35,7 +35,7 @@ impl DynamicalFamily for QuadRatPreper22
     default_name!();
     default_bounds!();
 
-    fn map(&self, z: Self::Var, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         a / z * (1. - z) / (b + z)
     }
@@ -43,7 +43,7 @@ impl DynamicalFamily for QuadRatPreper22
     fn map_and_multiplier(
         &self,
         z: Self::Var,
-        CplxPair { a, b }: Self::Param,
+        CplxPair { a, b }: &Self::Param,
     ) -> (Self::Var, Self::Deriv)
     {
         let u = z * (b + z);
@@ -60,7 +60,7 @@ impl DynamicalFamily for QuadRatPreper22
         }
     }
 
-    fn start_point(&self, _t: Cplx, CplxPair { a, b }: Self::Param) -> Self::Var
+    fn start_point(&self, _t: Cplx, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
         1. + (b + 1.).sqrt() * (b + a + 2.).re.signum()
     }
@@ -68,17 +68,17 @@ impl DynamicalFamily for QuadRatPreper22
 
 impl MarkedPoints for QuadRatPreper22
 {
-    fn critical_points_child(&self, CplxPair { a: _, b }: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, CplxPair { a: _, b }: &Self::Param) -> Vec<Self::Var>
     {
         let disc = (b + 1.).sqrt();
         vec![1. + disc, 1. - disc]
     }
 
     #[inline]
-    fn cycles_child(&self, CplxPair { a, b }: Self::Param, period: Period) -> Vec<Self::Var>
+    fn cycles_child(&self, CplxPair { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
-            1 => solve_cubic(-a, a, b).to_vec(),
+            1 => solve_cubic(-a, *a, *b).to_vec(),
             2 => vec![ZERO],
             3 => {
                 let a2 = a * a;
@@ -113,7 +113,7 @@ impl EscapeEncoding for QuadRatPreper22
         &self,
         iters: Period,
         z: Cplx,
-        CplxPair { a: _, b }: Self::Param,
+        CplxPair { a: _, b }: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {

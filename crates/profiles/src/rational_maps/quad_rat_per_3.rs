@@ -49,19 +49,19 @@ impl DynamicalFamily for QuadRatPer3
             .to_owned()
     }
 
-    fn start_point(&self, _point: Cplx, _c: Prm) -> Cplx
+    fn start_point(&self, _point: Cplx, _c: &Prm) -> Cplx
     {
         0.0.into()
     }
 
-    fn start_point_d(&self, _point: Cplx, _c: Self::Param)
+    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Cplx, Prm { a, b, c: _ }: Self::Param) -> (Cplx, Cplx)
+    fn map_and_multiplier(&self, z: Cplx, Prm { a, b, c: _ }: &Self::Param) -> (Cplx, Cplx)
     {
         let z2 = z.powi(2);
         let v = z2 + b;
@@ -69,7 +69,7 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     #[inline]
-    fn map(&self, z: Cplx, Prm { a, b, c: _ }: Self::Param) -> Cplx
+    fn map(&self, z: Cplx, Prm { a, b, c: _ }: &Self::Param) -> Cplx
     {
         let z2 = z.powi(2);
         (z2 + a) / (z2 + b)
@@ -79,7 +79,7 @@ impl DynamicalFamily for QuadRatPer3
     fn gradient(
         &self,
         z: Self::Var,
-        Prm { a: _, b: _, c }: Self::Param,
+        Prm { a: _, b: _, c }: &Self::Param,
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
@@ -96,7 +96,7 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Prm) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Prm) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -105,12 +105,12 @@ impl DynamicalFamily for QuadRatPer3
 impl MarkedPoints for QuadRatPer3
 {
     #[inline]
-    fn critical_points_child(&self, _param: Prm) -> ComplexVec
+    fn critical_points_child(&self, _param: &Prm) -> ComplexVec
     {
         vec![(0.).into()]
     }
 
-    fn cycles_child(&self, Prm { a: _, b, c }: Prm, period: Period) -> ComplexVec
+    fn cycles_child(&self, Prm { a: _, b, c }: &Prm, period: Period) -> ComplexVec
     {
         match period {
             1 => {
@@ -244,12 +244,12 @@ impl InfinityFirstReturnMap for QuadRatPer3
         2
     }
 
-    fn escape_coeff(&self, prm: Self::Param) -> Cplx
+    fn escape_coeff(&self, prm: &Self::Param) -> Cplx
     {
         0.25 * (1. - prm.c.inv())
     }
 
-    fn escape_coeff_d(&self, prm: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, prm: &Self::Param) -> (Cplx, Cplx)
     {
         let u = prm.c.inv();
         (0.25 * (1. - u), 0.25 * u.powi(2))

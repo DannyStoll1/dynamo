@@ -36,13 +36,13 @@ impl<const N: Period> DynamicalFamily for Tricorne<N>
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         z.powf(Self::N_FLOAT).conj() + c
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let z_n_minus_1 = z.powf(Self::N_MINUS_1);
         (
@@ -52,7 +52,7 @@ impl<const N: Period> DynamicalFamily for Tricorne<N>
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -60,7 +60,7 @@ impl<const N: Period> DynamicalFamily for Tricorne<N>
 
 impl<const N: Period> MarkedPoints for Tricorne<N>
 {
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
     }

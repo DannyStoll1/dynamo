@@ -33,13 +33,13 @@ impl DynamicalFamily for Exponential
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, lambda: Cplx) -> Cplx
+    fn map(&self, z: Cplx, lambda: &Cplx) -> Cplx
     {
         z.exp() * lambda
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, lambda: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, lambda: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let u = z.exp() * lambda;
         (u, u)
@@ -49,7 +49,7 @@ impl DynamicalFamily for Exponential
     fn extra_stop_condition(
         &self,
         z: Self::Var,
-        _c: Self::Param,
+        _c: &Self::Param,
         iter: Period,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
@@ -68,7 +68,7 @@ impl DynamicalFamily for Exponential
     }
 
     #[inline]
-    fn gradient(&self, z: Cplx, lambda: Cplx) -> (Cplx, Cplx, Cplx)
+    fn gradient(&self, z: Cplx, lambda: &Cplx) -> (Cplx, Cplx, Cplx)
     {
         let u = z.exp();
         let v = lambda * u;
@@ -82,21 +82,21 @@ impl DynamicalFamily for Exponential
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, lambda: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, lambda: &Self::Param) -> Bounds
     {
-        Bounds::square(5., lambda)
+        Bounds::square(5., *lambda)
     }
 }
 
 impl MarkedPoints for Exponential
 {
     #[inline]
-    fn critical_points_child(&self, _param: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
         vec![ZERO]
     }
@@ -132,19 +132,19 @@ impl DynamicalFamily for CosineAdd
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         z.cos() + c
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         (z.cos() + c, -z.sin())
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (z.cos() + c, -z.sin(), ONE)
     }
@@ -162,12 +162,12 @@ impl DynamicalFamily for CosineAdd
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)
     }
@@ -202,19 +202,20 @@ impl DynamicalFamily for Cosine
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, lambda: Cplx) -> Cplx
+    fn map(&self, z: Cplx, lambda: &Cplx) -> Cplx
     {
         z.cos() * lambda
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, lambda: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, lambda: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         (z.cos() * lambda, -z.sin() * lambda)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, lambda: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, lambda: &Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let cos = z.cos();
         (cos * lambda, -z.sin() * lambda, cos)
@@ -227,12 +228,12 @@ impl DynamicalFamily for Cosine
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)
     }
@@ -268,25 +269,25 @@ impl DynamicalFamily for SineWander
     default_bounds!();
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, c: &Cplx) -> Cplx
     {
         z.sin() + z + TAU * c
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         (z.sin() + z + TAU * c, z.cos() + 1.)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (z.sin() + z + TAU * c, z.cos() + 1., TAU.into())
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         PI.into()
     }
@@ -296,7 +297,7 @@ impl DynamicalFamily for SineWander
         ONE
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)
     }
@@ -304,7 +305,7 @@ impl DynamicalFamily for SineWander
 
 impl MarkedPoints for Cosine
 {
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
             return vec![];
@@ -324,7 +325,7 @@ impl MarkedPoints for Cosine
 
 impl MarkedPoints for CosineAdd
 {
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
             return vec![];
@@ -344,7 +345,7 @@ impl MarkedPoints for CosineAdd
 
 impl MarkedPoints for SineWander
 {
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
             return vec![];

@@ -46,7 +46,7 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
         Bounds::square(Self::MOD.norm() / 2.0, Cplx::from(Self::MOD) / 2.0)
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: Self::Param) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         self.default_bounds()
     }
@@ -55,23 +55,23 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
     fn early_bailout(
         &self,
         start: Self::Var,
-        c: Self::Param,
+        c: &Self::Param,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
-        self.cache.get(&(start, c))
+        self.cache.get(&(start, *c))
     }
 
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
-        (z * z + c) % Self::MOD
+        (z * z + *c) % Self::MOD
     }
 
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
-        ((z * z + c) % Self::MOD, (2 * z) % Self::MOD)
+        ((z * z + *c) % Self::MOD, (2 * z) % Self::MOD)
     }
 
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         Self::Var::default()
     }
@@ -122,10 +122,10 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
         &self,
         result: EscapeResult<GInt, GInt>,
         start: GInt,
-        c: GInt,
+        c: &GInt,
     ) -> PointInfo<GInt>
     {
-        self.cache.insert((start, c), result.clone());
+        self.cache.insert((start, *c), result.clone());
         match result {
             EscapeResult::Periodic {
                 mut info,
@@ -143,7 +143,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
         }
     }
 
-    fn encode_escaping_point(&self, iters: Period, z: GInt, c: GInt) -> PointInfo<GInt>
+    fn encode_escaping_point(&self, iters: Period, z: GInt, c: &GInt) -> PointInfo<GInt>
     {
         if z.is_nan() {
             return PointInfo::Escaping {

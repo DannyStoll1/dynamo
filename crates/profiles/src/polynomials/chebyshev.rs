@@ -129,7 +129,7 @@ impl<const D: Period> DynamicalFamily for Chebyshev<D>
     parameter_plane_impl!();
     default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
 
-    fn map(&self, z: Self::Var, c: Self::Param) -> Self::Var
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         let w = z * z * 0.25;
 
@@ -146,7 +146,7 @@ impl<const D: Period> DynamicalFamily for Chebyshev<D>
         c * zval
     }
 
-    fn map_and_multiplier(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv)
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
         let w = z * 0.5;
         let w2 = w * w;
@@ -170,7 +170,7 @@ impl<const D: Period> DynamicalFamily for Chebyshev<D>
         (c * zval, c * dval * w)
     }
 
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let w = z * 0.5;
         let w2 = w * w;
@@ -194,7 +194,7 @@ impl<const D: Period> DynamicalFamily for Chebyshev<D>
         (c * zval, c * dval * w, zval)
     }
 
-    fn start_point(&self, _point: Cplx, _c: Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
     }
@@ -207,7 +207,7 @@ impl<const D: Period> DynamicalFamily for Chebyshev<D>
 
 impl<const D: Period> MarkedPoints for Chebyshev<D>
 {
-    fn critical_points_child(&self, _c: Self::Param) -> Vec<Self::Var>
+    fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         match D {
             2 => {
@@ -239,7 +239,7 @@ impl<const D: Period> InfinityFirstReturnMap for Chebyshev<D>
         (2 * D) as Real
     }
 
-    fn escape_coeff_d(&self, param: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, param: &Self::Param) -> (Cplx, Cplx)
     {
         if D % 2 == 0 {
             (0.5 * param, Cplx::new(0.5, 0.))
