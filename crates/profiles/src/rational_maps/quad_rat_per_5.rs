@@ -70,11 +70,9 @@ impl DynamicalFamily for QuadRatPer5
     type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
 
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
@@ -127,15 +125,25 @@ impl DynamicalFamily for QuadRatPer5
     {
         1e24
     }
+}
 
-    fn default_julia_bounds(&self, _point: Cplx, param: &Self::Param) -> Bounds
-    {
-        Bounds::square(20., self.start_point(ONE, param))
-    }
+impl FamilyDefaults for QuadRatPer5
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         ONE
+    }
+}
+
+impl HasChild for QuadRatPer5
+{
+    type Child = JuliaSet<Self>;
+
+    fn default_julia_bounds(&self, _point: Cplx, param: &Self::Param) -> Bounds
+    {
+        Bounds::square(20., self.start_point(ONE, param))
     }
 }
 

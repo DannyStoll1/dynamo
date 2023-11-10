@@ -21,16 +21,6 @@ macro_rules! parameter_plane_impl {
         type Param = Cplx;
         type MetaParam = NoParam;
         type Deriv = Cplx;
-        type Child = JuliaSet<Self>;
-
-        dynamo_core::macros::basic_plane_impl!();
-    };
-    ($child: ty) => {
-        type Var = Cplx;
-        type Param = Cplx;
-        type MetaParam = NoParam;
-        type Deriv = Cplx;
-        type Child = $child;
 
         dynamo_core::macros::basic_plane_impl!();
     };
@@ -39,18 +29,27 @@ macro_rules! parameter_plane_impl {
         type Param = $param;
         type MetaParam = $meta_param;
         type Deriv = $deriv;
-        type Child = JuliaSet<Self>;
 
         dynamo_core::macros::basic_plane_impl!();
     };
-    ($var: ty, $param: ty, $deriv: ty, $meta_param: ty, $child: ty) => {
-        type Var = $var;
-        type Param = $param;
-        type MetaParam = $meta_param;
-        type Deriv = $deriv;
-        type Child = $child;
+}
 
-        dynamo_core::macros::basic_plane_impl!();
+macro_rules! has_child_impl {
+    ($struct: ty) => {
+        impl HasChild for $struct
+        {
+            type Child = JuliaSet<Self>;
+        }
+    };
+    ($struct: ty, $radius: literal) => {
+        impl HasChild for $struct
+        {
+            type Child = JuliaSet<Self>;
+            fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+            {
+                Bounds::centered_square(4.)
+            }
+        }
     };
 }
 
@@ -494,5 +493,5 @@ macro_rules! ext_ray_impl_nonmonic {
 
 pub(crate) use {
     cplx_arr, degree_impl, degree_impl_transcendental, ext_ray_impl_nonmonic, ext_ray_impl_rk,
-    parameter_plane_impl, profile_imports,
+    has_child_impl, parameter_plane_impl, profile_imports,
 };

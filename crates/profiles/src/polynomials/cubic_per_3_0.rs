@@ -31,10 +31,8 @@ impl DynamicalFamily for CubicPer3_0
     type Param = CplxPair;
     type MetaParam = NoParam;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map_and_multiplier(
@@ -81,11 +79,23 @@ impl DynamicalFamily for CubicPer3_0
             / horner_monic!(t, 1., 4., 6., 6., 5., 2.);
         (-TWO_THIRDS * b / a, dz_dt, ZERO)
     }
+}
+
+impl FamilyDefaults for CubicPer3_0
+{
+    default_bounds!();
+
     fn default_selection(&self) -> Cplx
     {
         // ComplexNum::new(-3.34447065821736, 0.) // center of a capture component; c1 -2> c0=0 -2> 1 -> a+b+1 -> 0
         Cplx::new(-0.521_257_806_222_939, 0.) // center of a period 1 component; c1 -2> c1
     }
+}
+
+impl HasChild for CubicPer3_0
+{
+    type Child = JuliaSet<Self>;
+
     fn default_julia_bounds(&self, point: Cplx, c: &Self::Param) -> Bounds
     {
         let crit = self.start_point(point, c);

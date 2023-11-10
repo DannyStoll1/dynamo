@@ -1,5 +1,6 @@
 use crate::macros::{
-    degree_impl, ext_ray_impl_nonmonic, ext_ray_impl_rk, horner, horner_monic, profile_imports,
+    degree_impl, ext_ray_impl_nonmonic, ext_ray_impl_rk, has_child_impl, horner, horner_monic,
+    profile_imports,
 };
 use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
@@ -33,11 +34,9 @@ impl DynamicalFamily for QuadRatPer3
     type Var = Cplx;
     type Param = Prm;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
     type MetaParam = NoParam;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn description(&self) -> String
     {
@@ -94,13 +93,10 @@ impl DynamicalFamily for QuadRatPer3
         let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z2)));
         (f, df_dz, df_dc)
     }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Prm) -> Bounds
-    {
-        Bounds::centered_square(4.)
-    }
 }
+
+has_child_impl!(QuadRatPer3, 4.0);
+default_bounds_impl!(QuadRatPer3);
 
 impl MarkedPoints for QuadRatPer3
 {

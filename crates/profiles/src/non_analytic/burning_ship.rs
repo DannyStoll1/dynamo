@@ -36,10 +36,8 @@ impl<const N: Period> DynamicalFamily for BurningShip<N>
     type MetaParam = NoParam;
     // type Deriv = Matrix2x2;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -73,6 +71,16 @@ impl<const N: Period> DynamicalFamily for BurningShip<N>
     {
         c
     }
+}
+
+impl<const D: Period> FamilyDefaults for BurningShip<D>
+{
+    default_bounds!();
+}
+
+impl<const D: Period> HasChild for BurningShip<D>
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
@@ -112,12 +120,7 @@ pub struct Sailboat
 
 impl Sailboat
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -6.,
-        max_x: 6.,
-        min_y: -6.,
-        max_y: 6.,
-    };
+    const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(3.5);
 }
 impl Default for Sailboat
 {
@@ -130,9 +133,7 @@ impl DynamicalFamily for Sailboat
     type Param = Cplx;
     type MetaParam = Cplx;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -177,6 +178,16 @@ impl DynamicalFamily for Sailboat
         let shift = self.shift;
         format!("Sailboat({shift})")
     }
+}
+
+impl FamilyDefaults for Sailboat
+{
+    default_bounds!();
+}
+
+impl HasChild for Sailboat
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
@@ -212,10 +223,8 @@ impl DynamicalFamily for SailboatParam
     type MetaParam = NoParam;
     type Var = Cplx;
     type Deriv = Cplx;
-    type Child = Sailboat;
 
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
@@ -249,16 +258,21 @@ impl DynamicalFamily for SailboatParam
     {
         "Sailboat Param".to_owned()
     }
+}
+
+impl FamilyDefaults for SailboatParam
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         ZERO
     }
+}
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(3.5)
-    }
+impl HasChild for SailboatParam
+{
+    type Child = Sailboat;
 }
 
 impl MarkedPoints for SailboatParam

@@ -22,22 +22,7 @@ macro_rules! fractal_impl {
                 $param_name: $param_value,
             }
         }
-    }; // ($min_x: expr, $max_x: expr, $min_y: expr, $max_y: expr) => {
-       //     fn default() -> Self
-       //     {
-       //         let bounds = Bounds {
-       //             min_x: $min_x,
-       //             max_x: $max_x,
-       //             min_y: $min_y,
-       //             max_y: $max_y,
-       //         };
-       //         let point_grid = PointGrid::new_by_res_y(1024, bounds);
-       //         Self {
-       //             point_grid,
-       //             max_iter: 1024,
-       //         }
-       //     }
-       // };
+    };
 }
 
 #[macro_export]
@@ -143,6 +128,22 @@ macro_rules! default_bounds {
 }
 
 #[macro_export]
+macro_rules! default_bounds_impl {
+    ($struct: ty) => {
+        impl FamilyDefaults for $struct
+        {
+            default_bounds!();
+        }
+    };
+    ($struct: ty $(,$args:expr)*) => {
+        impl FamilyDefaults for $struct
+        {
+            default_bounds!($($args),*);
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! basic_escape_encoding {
     ($degree: expr) => {
         fn encode_escaping_point(
@@ -190,6 +191,6 @@ macro_rules! basic_escape_encoding {
 }
 
 pub use {
-    basic_escape_encoding, basic_plane_impl, default_bounds, default_name, fractal_impl,
-    point_grid_getters,
+    basic_escape_encoding, basic_plane_impl, default_bounds, default_bounds_impl, default_name,
+    fractal_impl, point_grid_getters,
 };

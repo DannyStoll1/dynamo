@@ -26,7 +26,6 @@ impl<const M: i32, const N: i32> Default for McMullenFamily<M, N>
 impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
 {
     parameter_plane_impl!();
-    default_bounds!();
 
     fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
@@ -60,6 +59,26 @@ impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
         )
     }
 
+    fn name(&self) -> String
+    {
+        format!("McMullen Family ({M}, {N})")
+    }
+}
+
+impl<const M: i32, const N: i32> FamilyDefaults for McMullenFamily<M, N>
+{
+    default_bounds!();
+
+    fn default_selection(&self) -> Cplx
+    {
+        ONE
+    }
+}
+
+impl<const M: i32, const N: i32> HasChild for McMullenFamily<M, N>
+{
+    type Child = JuliaSet<Self>;
+
     fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds {
@@ -68,16 +87,6 @@ impl<const M: i32, const N: i32> DynamicalFamily for McMullenFamily<M, N>
             min_y: -1.15,
             max_y: 1.15,
         }
-    }
-
-    fn default_selection(&self) -> Cplx
-    {
-        ONE
-    }
-
-    fn name(&self) -> String
-    {
-        format!("McMullen Family ({M}, {N})")
     }
 }
 

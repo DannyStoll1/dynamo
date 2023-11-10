@@ -30,10 +30,8 @@ impl DynamicalFamily for RealCubicRealCrit
     type Var = Cplx;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     // Critical point = a
     fn map(&self, z: Self::Var, RealPair { a, b }: &Self::Param) -> Self::Var
@@ -65,6 +63,16 @@ impl DynamicalFamily for RealCubicRealCrit
             b: point.im,
         }
     }
+}
+
+impl FamilyDefaults for RealCubicRealCrit
+{
+    default_bounds!();
+}
+
+impl HasChild for RealCubicRealCrit
+{
+    type Child = JuliaSet<Self>;
 }
 
 impl MarkedPoints for RealCubicRealCrit
@@ -107,10 +115,8 @@ impl DynamicalFamily for RealCubicImagCrit
     type Var = Cplx;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     // Critical point = ai
     fn map(&self, z: Self::Var, RealPair { a, b }: &Self::Param) -> Self::Var
@@ -142,6 +148,16 @@ impl DynamicalFamily for RealCubicImagCrit
             b: point.im,
         }
     }
+}
+
+impl FamilyDefaults for RealCubicImagCrit
+{
+    default_bounds!();
+}
+
+impl HasChild for RealCubicImagCrit
+{
+    type Child = JuliaSet<Self>;
 }
 
 impl MarkedPoints for RealCubicImagCrit

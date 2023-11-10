@@ -107,11 +107,10 @@ where
     pub message: UiMessage,
 }
 
-impl<P, J, C, M, T> MainInterface<P, J>
+impl<P, J, M, T> MainInterface<P, J>
 where
     P: Displayable + Clone,
-    J: Displayable<MetaParam = M, Child = C> + Clone,
-    C: Displayable + From<J>,
+    J: Displayable<MetaParam = M> + Clone,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
@@ -409,11 +408,10 @@ where
 }
 
 /// Implementation of `PanePair` for `MainInterface`, providing access to parent and child panes.
-impl<P, J, C, M, T> PanePair for MainInterface<P, J>
+impl<P, J, M, T> PanePair for MainInterface<P, J>
 where
     P: Displayable + Clone,
-    J: Displayable<MetaParam = M, Child = C> + Clone,
-    C: Displayable + From<J>,
+    J: Displayable<MetaParam = M> + Clone,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {
@@ -666,11 +664,10 @@ where
 }
 
 /// Implementation of `Interactive` for `MainInterface`, handling input and dialogs.
-impl<P, J, C, M, T> Interactive for MainInterface<P, J>
+impl<P, J, M, T> Interactive for MainInterface<P, J>
 where
     P: Displayable + Clone,
-    J: Displayable<MetaParam = M, Child = C> + Clone,
-    C: Displayable + From<J>,
+    J: Displayable<MetaParam = M> + Clone,
     M: ParamList<Param = T>,
     T: From<P::Param> + std::fmt::Display,
 {

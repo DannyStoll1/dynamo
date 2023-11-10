@@ -27,7 +27,6 @@ impl DynamicalFamily for NewtonCubic
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     // f(z) = z^3 + cz - 1
     // f'(z) = 3z^2 + c
@@ -63,6 +62,9 @@ impl DynamicalFamily for NewtonCubic
         ZERO
     }
 }
+
+default_bounds_impl!(NewtonCubic);
+has_child_impl!(NewtonCubic);
 
 impl MarkedPoints for NewtonCubic
 {

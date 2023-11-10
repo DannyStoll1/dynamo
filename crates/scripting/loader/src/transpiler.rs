@@ -116,6 +116,7 @@ impl Transpiler
             impl Default for UserPlane {{\n\
                 fractal_impl!();\n\
             }}\n\
+            default_bounds_impl!(UserPlane);\n\
             const i: Cplx = Cplx::new(0., 1.);\n\
             {}",
             const_decls.join("\n")
@@ -138,7 +139,6 @@ impl Transpiler
     type Var = Cplx;
     type MetaParam = NoParam;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
 
     fn param_map(&self, {t}: Cplx) -> Self::Param {{
@@ -177,11 +177,6 @@ impl Transpiler
     {{
         \"{name}\".to_owned()
     }}
-
-    fn default_bounds(&self) -> Bounds
-    {{
-         Bounds::centered_square(2.5)
-    }}
 }}",
             t = self.parsed_input.names.selection,
             z = self.parsed_input.names.variable,
@@ -219,6 +214,9 @@ impl Transpiler
     }}
 }}
 
+impl HasChild for UserPlane {{
+    type Child = JuliaSet<Self>;
+}}
 impl MarkedPoints for UserPlane {{}}
 impl EscapeEncoding for UserPlane {{}}
 impl ExternalRays for UserPlane {{}}
@@ -242,7 +240,7 @@ impl ExternalRays for UserPlane {{}}
         "#[no_mangle]\n\
         pub unsafe fn create_interface() -> *mut dyn Interface {\n\
             let parent = UserPlane::default();\n\
-            let child = <UserPlane as DynamicalFamily>::Child::from(parent.clone());\n\
+            let child = <UserPlane as HasChild>::Child::from(parent.clone());\n\
 \
             let int = MainInterface::new(parent, child, 768);\n\
             Box::into_raw(Box::new(int))

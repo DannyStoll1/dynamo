@@ -1,4 +1,4 @@
-use super::{DynamicalFamily, MarkedPoints};
+use super::{DynamicalFamily, FamilyDefaults, HasChild, MarkedPoints};
 use crate::macros::basic_plane_impl;
 use crate::orbit::EscapeResult;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
@@ -26,7 +26,7 @@ where
 
 impl<T> JuliaSet<T>
 where
-    T: DynamicalFamily,
+    T: DynamicalFamily + HasChild,
 {
     #[must_use]
     pub fn new(parent: T, parent_selection: Cplx, max_iter: Period) -> Self
@@ -63,7 +63,7 @@ where
 
 impl<T> From<T> for JuliaSet<T>
 where
-    T: DynamicalFamily,
+    T: FamilyDefaults + HasChild,
 {
     fn from(parent: T) -> Self
     {
@@ -81,7 +81,6 @@ where
     type Param = NoParam;
     type MetaParam = ParamStack<T::MetaParam, T::Param>;
     type Deriv = T::Deriv;
-    type Child = Self;
     basic_plane_impl!();
 
     #[inline]
@@ -145,12 +144,6 @@ where
     }
 
     #[inline]
-    fn default_selection(&self) -> Cplx
-    {
-        self.parent.start_point(ZERO, &self.local_param).into()
-    }
-
-    #[inline]
     fn start_point_d(
         &self,
         point: Cplx,
@@ -208,19 +201,6 @@ where
     // }
 
     #[inline]
-    fn default_bounds(&self) -> Bounds
-    {
-        self.parent
-            .default_julia_bounds(self.parent_selection, &self.local_param)
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        self.point_grid.bounds.clone()
-    }
-
-    #[inline]
     fn name(&self) -> String
     {
         let parent_name = self.parent.name();
@@ -237,11 +217,6 @@ where
     fn periodicity_tolerance(&self) -> Real
     {
         self.parent.periodicity_tolerance()
-    }
-
-    fn default_coloring(&self) -> Coloring
-    {
-        self.parent.default_coloring_child()
     }
 
     fn internal_potential_coloring(&self) -> IncoloringAlgorithm
@@ -422,6 +397,42 @@ where
     //
     //     find_root_newton(diff, start_point)
     // }
+}
+
+impl<T> FamilyDefaults for JuliaSet<T>
+where
+    T: HasChild,
+{
+    #[inline]
+    fn default_selection(&self) -> Cplx
+    {
+        self.parent.start_point(ZERO, &self.local_param).into()
+    }
+
+    fn default_coloring(&self) -> Coloring
+    {
+        self.parent.default_coloring_child()
+    }
+
+    #[inline]
+    fn default_bounds(&self) -> Bounds
+    {
+        self.parent
+            .default_julia_bounds(self.parent_selection, &self.local_param)
+    }
+}
+
+impl<T> HasChild for JuliaSet<T>
+where
+    T: DynamicalFamily,
+{
+    type Child = Self;
+
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+    {
+        self.point_grid.bounds.clone()
+    }
 }
 
 impl<P> MarkedPoints for JuliaSet<P>

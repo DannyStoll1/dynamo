@@ -33,7 +33,6 @@ impl<const N: Period> DynamicalFamily for Tricorne<N>
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
@@ -56,6 +55,16 @@ impl<const N: Period> DynamicalFamily for Tricorne<N>
     {
         ZERO
     }
+}
+
+impl<const N: Period> FamilyDefaults for Tricorne<N>
+{
+    default_bounds!();
+}
+
+impl<const N: Period> HasChild for Tricorne<N>
+{
+    type Child = JuliaSet<Self>;
 }
 
 impl<const N: Period> MarkedPoints for Tricorne<N>

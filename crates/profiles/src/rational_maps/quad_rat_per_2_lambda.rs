@@ -1,5 +1,5 @@
 use super::quad_rat_general::QuadRatGeneral;
-use crate::macros::{degree_impl, horner_monic, profile_imports};
+use crate::macros::{degree_impl, has_child_impl, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -28,8 +28,6 @@ impl DynamicalFamily for QuadRatPer2Lambda
     type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = Cplx;
-    type Child = JuliaSet<Self>;
-    default_bounds!(Bounds::centered_square(3.));
 
     fn max_iter(&self) -> Period
     {
@@ -119,6 +117,9 @@ impl DynamicalFamily for QuadRatPer2Lambda
     }
 }
 
+default_bounds_impl!(QuadRatPer2Lambda, Bounds::centered_square(3.));
+has_child_impl!(QuadRatPer2Lambda);
+
 impl MarkedPoints for QuadRatPer2Lambda
 {
     #[inline]
@@ -169,9 +170,7 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
     type Param = Cplx;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = QuadRatPer2Lambda;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
@@ -219,11 +218,21 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
     {
         "QuadRat Per(2, λ) λ-plane".to_owned()
     }
+}
+
+impl FamilyDefaults for QuadRatPer2LambdaParam
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         ONE
     }
+}
+
+impl HasChild for QuadRatPer2LambdaParam
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {

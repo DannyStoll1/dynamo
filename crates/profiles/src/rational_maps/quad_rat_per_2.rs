@@ -1,4 +1,4 @@
-use crate::macros::{cplx_arr, degree_impl, horner, horner_monic, profile_imports};
+use crate::macros::{cplx_arr, degree_impl, has_child_impl, horner, horner_monic, profile_imports};
 use seq_macro::seq;
 profile_imports!();
 
@@ -31,11 +31,9 @@ impl DynamicalFamily for QuadRatPer2
     type Var = Cplx;
     type Param = Prm;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
     type MetaParam = NoParam;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn description(&self) -> String
     {
@@ -95,13 +93,10 @@ impl DynamicalFamily for QuadRatPer2
     {
         (point, ONE)
     }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(4.)
-    }
 }
+
+default_bounds_impl!(QuadRatPer2);
+has_child_impl!(QuadRatPer2, 4.0);
 
 fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
 {
@@ -977,7 +972,6 @@ impl DynamicalFamily for QuadRatPer2Cover
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn description(&self) -> String
     {
@@ -1035,6 +1029,13 @@ impl DynamicalFamily for QuadRatPer2Cover
         (point, ONE)
     }
 }
+
+impl FamilyDefaults for QuadRatPer2Cover
+{
+    default_bounds!();
+}
+
+has_child_impl!(QuadRatPer2Cover, 4.);
 
 impl InfinityFirstReturnMap for QuadRatPer2
 {

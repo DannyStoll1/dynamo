@@ -39,17 +39,6 @@ impl<const A: i64, const B: i64> DynamicalFamily for EisensteinMandel<A, B>
     type Param = EInt;
     type Deriv = EInt;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
-
-    fn default_bounds(&self) -> Bounds
-    {
-        Bounds::centered_square(Self::MOD.norm())
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
-    {
-        self.default_bounds()
-    }
 
     #[inline]
     fn early_bailout(
@@ -81,19 +70,6 @@ impl<const A: i64, const B: i64> DynamicalFamily for EisensteinMandel<A, B>
         format!("Eisenstein Integer Mandelbrot mod {}", Self::MOD)
     }
 
-    fn default_coloring(&self) -> Coloring
-    {
-        let mut coloring = Coloring::default();
-        // coloring.get_period_coloring_mut().num_colors = Self::MOD.norm() as f32;
-        coloring.get_period_coloring_mut().num_colors = 19.;
-        coloring.with_interior_algorithm(IncoloringAlgorithm::Period)
-    }
-
-    fn default_coloring_child(&self) -> Coloring
-    {
-        self.default_coloring()
-    }
-
     fn preperiod_coloring(&self) -> IncoloringAlgorithm
     {
         IncoloringAlgorithm::PreperiodPeriod {
@@ -107,6 +83,37 @@ impl<const A: i64, const B: i64> DynamicalFamily for EisensteinMandel<A, B>
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 8.0 / Self::MOD.norm(),
         }
+    }
+}
+
+impl<const A: i64, const B: i64> FamilyDefaults for EisensteinMandel<A, B>
+{
+    fn default_bounds(&self) -> Bounds
+    {
+        Bounds::centered_square(Self::MOD.norm())
+    }
+
+    fn default_coloring(&self) -> Coloring
+    {
+        let mut coloring = Coloring::default();
+        // coloring.get_period_coloring_mut().num_colors = Self::MOD.norm() as f32;
+        coloring.get_period_coloring_mut().num_colors = 19.;
+        coloring.with_interior_algorithm(IncoloringAlgorithm::Period)
+    }
+}
+
+impl<const A: i64, const B: i64> HasChild for EisensteinMandel<A, B>
+{
+    type Child = JuliaSet<Self>;
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    {
+        self.default_bounds()
+    }
+
+    fn default_coloring_child(&self) -> Coloring
+    {
+        self.default_coloring()
     }
 }
 

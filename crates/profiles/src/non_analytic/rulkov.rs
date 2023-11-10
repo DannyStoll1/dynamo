@@ -65,11 +65,9 @@ impl DynamicalFamily for Rulkov
     type Param = Point;
     type Deriv = Matrix2x2;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
 
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn param_map(&self, point: Cplx) -> Self::Param
     {
@@ -106,6 +104,16 @@ impl DynamicalFamily for Rulkov
         }
         z
     }
+}
+
+impl FamilyDefaults for Rulkov
+{
+    default_bounds!();
+}
+
+impl HasChild for Rulkov
+{
+    type Child = JuliaSet<Self>;
 }
 
 impl MarkedPoints for Rulkov {}

@@ -32,9 +32,7 @@ impl DynamicalFamily for Biquadratic
     type Param = Cplx;
     type Deriv = Cplx;
     type MetaParam = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn name(&self) -> String
@@ -81,6 +79,7 @@ impl DynamicalFamily for Biquadratic
         }
     }
 }
+default_bounds_impl!(Biquadratic);
 
 impl EscapeEncoding for Biquadratic
 {
@@ -148,13 +147,7 @@ impl DynamicalFamily for BiquadraticMult
     type Param = param::OuterParam;
     type Deriv = Cplx;
     type MetaParam = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
-
-    fn default_bounds(&self) -> Bounds
-    {
-        Bounds::square(14., self.default_selection())
-    }
 
     #[inline]
     fn name(&self) -> String
@@ -227,17 +220,6 @@ impl DynamicalFamily for BiquadraticMult
         1e-14
     }
 
-    fn default_selection(&self) -> Cplx
-    {
-        8. - 4. * self.multiplier
-        // Cplx::new(1.062_658_8, 0.)
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, c: &Self::Param) -> Bounds
-    {
-        Bounds::square(2.5, -0.5 * c.a)
-    }
-
     fn set_meta_param(&mut self, meta_param: Self::MetaParam)
     {
         self.multiplier = meta_param;
@@ -256,6 +238,30 @@ impl DynamicalFamily for BiquadraticMult
     fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
     {
         self.multiplier
+    }
+}
+
+impl FamilyDefaults for BiquadraticMult
+{
+    fn default_bounds(&self) -> Bounds
+    {
+        Bounds::square(14., self.default_selection())
+    }
+
+    fn default_selection(&self) -> Cplx
+    {
+        8. - 4. * self.multiplier
+        // Cplx::new(1.062_658_8, 0.)
+    }
+}
+
+impl HasChild for BiquadraticMult
+{
+    type Child = JuliaSet<Self>;
+
+    fn default_julia_bounds(&self, _point: Cplx, c: &Self::Param) -> Bounds
+    {
+        Bounds::square(2.5, -0.5 * c.a)
     }
 }
 
@@ -420,9 +426,7 @@ impl DynamicalFamily for BiquadraticMultParam
     type Var = Bicomplex;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = BiquadraticMult;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn param_map(&self, t: Cplx) -> Self::Param
@@ -459,20 +463,30 @@ impl DynamicalFamily for BiquadraticMultParam
         self.starting_plane = self.starting_plane.swap();
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+    fn name(&self) -> String
     {
-        Bounds::centered_square(3.5)
+        "Biquadratic Param".to_owned()
     }
+}
+
+impl FamilyDefaults for BiquadraticMultParam
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         // (1.0 - 5.0_f64.sqrt()).into()
         Cplx::new(0., 0.99)
     }
+}
 
-    fn name(&self) -> String
+impl HasChild for BiquadraticMultParam
+{
+    type Child = BiquadraticMult;
+
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
-        "Biquadratic Param".to_owned()
+        Bounds::centered_square(3.5)
     }
 }
 
@@ -550,9 +564,7 @@ impl DynamicalFamily for BiquadraticMultSecondIterate
     type Param = Cplx;
     type Deriv = Cplx;
     type MetaParam = Cplx;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn name(&self) -> String
@@ -612,6 +624,16 @@ impl DynamicalFamily for BiquadraticMultSecondIterate
     {
         self.multiplier
     }
+}
+
+impl FamilyDefaults for BiquadraticMultSecondIterate
+{
+    default_bounds!();
+}
+
+impl HasChild for BiquadraticMultSecondIterate
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
@@ -681,9 +703,7 @@ impl DynamicalFamily for BiquadraticMultSection
     type Param = Cplx;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn name(&self) -> String
@@ -750,11 +770,21 @@ impl DynamicalFamily for BiquadraticMultSection
     {
         1e-14
     }
+}
+
+impl FamilyDefaults for BiquadraticMultSection
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         Cplx::new(1.062_658_8, 0.)
     }
+}
+
+impl HasChild for BiquadraticMultSection
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, a: &Self::Param) -> Bounds
     {

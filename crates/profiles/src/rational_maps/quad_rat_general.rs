@@ -30,10 +30,8 @@ impl DynamicalFamily for QuadRatGeneral
     type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
-    default_bounds!(Bounds::centered_square(3.));
 
     fn map(&self, z: Self::Var, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
@@ -63,6 +61,8 @@ impl DynamicalFamily for QuadRatGeneral
     }
 }
 
+// default_bounds_impl!(QuadRatGeneral, Bounds::centered_square(3.));
+
 impl MarkedPoints for QuadRatGeneral
 {
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
@@ -83,7 +83,7 @@ impl MarkedPoints for QuadRatGeneral
                 let b3 = b2 * b;
                 let b4 = b2.powi(2);
                 let b5 = b3 * b2;
-                let u = (b + 1.) * (b + 1.);
+                let u = (b + 1.).powi(2);
                 let coeffs = [
                     horner_monic!(a, b3.powi(2), b4, 2. * (b2 + b3), 1.),
                     -horner_monic!(a, -b5, b4 - 2. * b3, 2. * b2 - b),

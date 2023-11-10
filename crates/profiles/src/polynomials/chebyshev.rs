@@ -127,7 +127,6 @@ const CHEBYSHEV_5_CRIT: [Real; 9] = [
 impl<const D: Period> DynamicalFamily for Chebyshev<D>
 {
     parameter_plane_impl!();
-    default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
 
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
@@ -203,6 +202,16 @@ impl<const D: Period> DynamicalFamily for Chebyshev<D>
     {
         format!("Chebyshev degree {}", 2 * D)
     }
+}
+
+impl<const D: Period> FamilyDefaults for Chebyshev<D>
+{
+    default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
+}
+
+impl<const D: Period> HasChild for Chebyshev<D>
+{
+    type Child = JuliaSet<Self>;
 }
 
 impl<const D: Period> MarkedPoints for Chebyshev<D>

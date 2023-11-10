@@ -29,7 +29,6 @@ impl DynamicalFamily for CubicMarked2Cycle
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -75,6 +74,16 @@ impl DynamicalFamily for CubicMarked2Cycle
             (2. * c + 3.) * s / (18. * disc) - ONE_THIRD,
         )
     }
+}
+
+impl FamilyDefaults for CubicMarked2Cycle
+{
+    default_bounds!();
+}
+
+impl HasChild for CubicMarked2Cycle
+{
+    type Child = JuliaSet<Self>;
 
     #[inline]
     fn default_julia_bounds(&self, _point: Cplx, param: &Cplx) -> Bounds

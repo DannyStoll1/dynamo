@@ -28,7 +28,6 @@ impl DynamicalFamily for QuadRatPreper21
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -55,8 +54,17 @@ impl DynamicalFamily for QuadRatPreper21
     {
         (1.).into()
     }
+}
 
-    #[inline]
+impl FamilyDefaults for QuadRatPreper21
+{
+    default_bounds!();
+}
+
+impl HasChild for QuadRatPreper21
+{
+    type Child = JuliaSet<Self>;
+
     fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(4.)

@@ -29,9 +29,7 @@ impl DynamicalFamily for RiemannXi
     type Var = Cplx;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = RiemannXiNewton;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, s: Self::Var, c: &Self::Param) -> Self::Var
@@ -70,18 +68,30 @@ impl DynamicalFamily for RiemannXi
     {
         (*c, ZERO, ONE)
     }
+    fn name(&self) -> String
+    {
+        "Riemann Xi".to_owned()
+    }
+}
+
+impl FamilyDefaults for RiemannXi
+{
+    default_bounds!();
+
     #[inline]
     fn default_selection(&self) -> Cplx
     {
         ZERO
     }
+}
+
+impl HasChild for RiemannXi
+{
+    type Child = RiemannXiNewton;
+
     fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::square(30., Cplx::new(0.5, 0.))
-    }
-    fn name(&self) -> String
-    {
-        "Riemann Xi".to_owned()
     }
 }
 
@@ -119,9 +129,7 @@ impl DynamicalFamily for RiemannXiNewton
     type Param = Cplx;
     type Deriv = Cplx;
     type MetaParam = ParamStack<NoParam, Cplx>;
-    type Child = Self;
     basic_plane_impl!();
-    default_bounds!();
 
     fn plane_type(&self) -> PlaneType
     {
@@ -155,14 +163,6 @@ impl DynamicalFamily for RiemannXiNewton
     {
         self.param
     }
-    fn default_selection(&self) -> Cplx
-    {
-        ZERO
-    }
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(30.)
-    }
     fn set_param(&mut self, value: <Self::MetaParam as ParamList>::Param)
     {
         self.param = value;
@@ -174,6 +174,27 @@ impl DynamicalFamily for RiemannXiNewton
     fn name(&self) -> String
     {
         "Riemann Xi Newton".to_owned()
+    }
+}
+
+impl FamilyDefaults for RiemannXiNewton
+{
+    default_bounds!();
+
+    #[inline]
+    fn default_selection(&self) -> Cplx
+    {
+        ZERO
+    }
+}
+
+impl HasChild for RiemannXiNewton
+{
+    type Child = Self;
+
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+    {
+        self.default_bounds()
     }
 }
 

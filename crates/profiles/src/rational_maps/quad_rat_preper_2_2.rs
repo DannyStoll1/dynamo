@@ -1,4 +1,4 @@
-use crate::macros::{degree_impl, profile_imports};
+use crate::macros::{degree_impl, profile_imports, has_child_impl};
 use crate::macros::{horner, horner_monic};
 profile_imports!();
 
@@ -30,10 +30,8 @@ impl DynamicalFamily for QuadRatPreper22
     type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn map(&self, z: Self::Var, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
@@ -65,6 +63,9 @@ impl DynamicalFamily for QuadRatPreper22
         1. + (b + 1.).sqrt() * (b + a + 2.).re.signum()
     }
 }
+
+default_bounds_impl!(QuadRatPreper22);
+has_child_impl!(QuadRatPreper22);
 
 impl MarkedPoints for QuadRatPreper22
 {

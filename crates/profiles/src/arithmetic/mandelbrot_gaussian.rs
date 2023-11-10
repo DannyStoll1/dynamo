@@ -39,17 +39,6 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
     type Param = GInt;
     type Deriv = GInt;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
-
-    fn default_bounds(&self) -> Bounds
-    {
-        Bounds::square(Self::MOD.norm() / 2.0, Cplx::from(Self::MOD) / 2.0)
-    }
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
-    {
-        self.default_bounds()
-    }
 
     #[inline]
     fn early_bailout(
@@ -81,18 +70,6 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
         format!("Gaussian Integer Mandelbrot mod {}", Self::MOD)
     }
 
-    fn default_coloring(&self) -> Coloring
-    {
-        let mut coloring = Coloring::default();
-        coloring.get_period_coloring_mut().num_colors = Self::MOD.norm() as f32;
-        coloring.with_interior_algorithm(IncoloringAlgorithm::Period)
-    }
-
-    fn default_coloring_child(&self) -> Coloring
-    {
-        self.default_coloring()
-    }
-
     fn preperiod_coloring(&self) -> IncoloringAlgorithm
     {
         IncoloringAlgorithm::PreperiodPeriod {
@@ -106,6 +83,36 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
             periodicity_tolerance: self.periodicity_tolerance(),
             fill_rate: 8.0 / Self::MOD.norm(),
         }
+    }
+}
+
+impl<const A: i64, const B: i64> FamilyDefaults for GaussianMandel<A, B>
+{
+    fn default_bounds(&self) -> Bounds
+    {
+        Bounds::square(Self::MOD.norm() / 2.0, Cplx::from(Self::MOD) / 2.0)
+    }
+
+    fn default_coloring(&self) -> Coloring
+    {
+        let mut coloring = Coloring::default();
+        coloring.get_period_coloring_mut().num_colors = Self::MOD.norm() as f32;
+        coloring.with_interior_algorithm(IncoloringAlgorithm::Period)
+    }
+}
+
+impl<const A: i64, const B: i64> HasChild for GaussianMandel<A, B>
+{
+    type Child = JuliaSet<Self>;
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    {
+        self.default_bounds()
+    }
+
+    fn default_coloring_child(&self) -> Coloring
+    {
+        self.default_coloring()
     }
 }
 

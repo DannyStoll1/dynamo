@@ -1,5 +1,8 @@
 use super::julia::JuliaSet;
-use super::{DynamicalFamily, EscapeEncoding, ExternalRays, InfinityFirstReturnMap, MarkedPoints};
+use super::{
+    DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasChild,
+    InfinityFirstReturnMap, MarkedPoints,
+};
 use crate::orbit::EscapeResult;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::prelude::*;
@@ -46,7 +49,6 @@ where
     type Param = C::Param;
     type MetaParam = C::MetaParam;
     type Deriv = C::Deriv;
-    type Child = JuliaSet<Self>;
 
     fn point_grid(&self) -> &PointGrid
     {
@@ -162,12 +164,6 @@ where
     }
 
     #[inline]
-    fn default_bounds(&self) -> Bounds
-    {
-        self.orig_bounds.clone()
-    }
-
-    #[inline]
     fn plane_type(&self) -> super::PlaneType
     {
         self.base_curve.plane_type()
@@ -180,18 +176,6 @@ where
             self.base_curve.name(),
             self.base_curve.description()
         )
-    }
-
-    #[inline]
-    fn default_coloring(&self) -> Coloring
-    {
-        self.base_curve.default_coloring()
-    }
-
-    #[inline]
-    fn default_julia_bounds(&self, point: Cplx, param: &C::Param) -> Bounds
-    {
-        self.base_curve.default_julia_bounds(point, param)
     }
 
     #[inline]
@@ -216,6 +200,36 @@ where
     fn cycle_active_plane(&mut self)
     {
         self.base_curve.cycle_active_plane();
+    }
+}
+
+impl<C> FamilyDefaults for CoveringMap<C>
+where
+    C: FamilyDefaults,
+{
+    #[inline]
+    fn default_bounds(&self) -> Bounds
+    {
+        self.orig_bounds.clone()
+    }
+
+    #[inline]
+    fn default_coloring(&self) -> Coloring
+    {
+        self.base_curve.default_coloring()
+    }
+}
+
+impl<C> HasChild for CoveringMap<C>
+where
+    C: HasChild,
+{
+    type Child = C::Child;
+
+    #[inline]
+    fn default_julia_bounds(&self, point: Cplx, param: &C::Param) -> Bounds
+    {
+        self.base_curve.default_julia_bounds(point, param)
     }
 }
 

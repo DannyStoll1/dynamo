@@ -34,7 +34,6 @@ impl Default for CubicPer2Lambda
 impl DynamicalFamily for CubicPer2Lambda
 {
     parameter_plane_impl!(Cplx, CplxPair, Cplx, Cplx);
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
@@ -95,14 +94,24 @@ impl DynamicalFamily for CubicPer2Lambda
         self.starting_crit = self.starting_crit.swap();
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(4.)
-    }
-
     fn name(&self) -> String
     {
         format!("Cubic Per(2, {})", self.multiplier)
+    }
+}
+
+impl FamilyDefaults for CubicPer2Lambda
+{
+    default_bounds!();
+}
+
+impl HasChild for CubicPer2Lambda
+{
+    type Child = JuliaSet<Self>;
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    {
+        Bounds::centered_square(4.)
     }
 }
 
@@ -203,10 +212,8 @@ impl DynamicalFamily for CubicPer2LambdaParam
     type MetaParam = NoParam;
     type Var = Cplx;
     type Deriv = Cplx;
-    type Child = CubicPer2Lambda;
 
     basic_plane_impl!();
-    default_bounds!(Bounds::centered_square(2.5));
 
     #[inline]
     fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
@@ -267,11 +274,21 @@ impl DynamicalFamily for CubicPer2LambdaParam
     {
         "Cubic Per(2, lambda) lambda-plane".to_owned()
     }
+}
+
+impl FamilyDefaults for CubicPer2LambdaParam
+{
+    default_bounds!(Bounds::centered_square(2.5));
 
     fn default_selection(&self) -> Cplx
     {
         ZERO
     }
+}
+
+impl HasChild for CubicPer2LambdaParam
+{
+    type Child = CubicPer2Lambda;
 
     fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {
@@ -332,7 +349,6 @@ impl DynamicalFamily for CubicPer2CritMarked
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -361,6 +377,16 @@ impl DynamicalFamily for CubicPer2CritMarked
         let u = z - c - c.inv();
         (c + z2 * u, z2 + 2. * z * u, z2 * (c.powi(-2) - 1.) + 1.)
     }
+}
+
+impl FamilyDefaults for CubicPer2CritMarked
+{
+    default_bounds!();
+}
+
+impl HasChild for CubicPer2CritMarked
+{
+    type Child = JuliaSet<Self>;
 
     #[inline]
     fn default_julia_bounds(&self, _point: Cplx, param: &Cplx) -> Bounds

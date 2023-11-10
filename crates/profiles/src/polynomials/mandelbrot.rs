@@ -29,7 +29,6 @@ impl DynamicalFamily for Mandelbrot
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn param_map(&self, point: Cplx) -> Self::Param
     {
@@ -97,12 +96,6 @@ impl DynamicalFamily for Mandelbrot
         None
     }
 
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
-    {
-        Bounds::centered_square(2.2)
-    }
-
     fn description(&self) -> String
     {
         "The moduli space of quadratic polynomials, \
@@ -112,6 +105,22 @@ impl DynamicalFamily for Mandelbrot
             colored according to the activity of the free critical point \
             under forward iteration of $f_c$."
             .to_owned()
+    }
+}
+
+impl FamilyDefaults for Mandelbrot
+{
+    default_bounds!();
+}
+
+impl HasChild for Mandelbrot
+{
+    type Child = JuliaSet<Self>;
+
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
+    {
+        Bounds::centered_square(2.2)
     }
 }
 

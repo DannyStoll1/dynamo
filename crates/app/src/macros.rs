@@ -4,7 +4,7 @@ macro_rules! fractal_menu_button {
         {
             $self.change_fractal(
                 || <$fractal>::default(),
-                <$fractal as DynamicalFamily>::Child::from,
+                <$fractal as HasChild>::Child::from,
             );
             $self.interface.consume_click();
             $ui.close_menu();

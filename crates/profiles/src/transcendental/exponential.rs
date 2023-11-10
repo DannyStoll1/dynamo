@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use crate::macros::{degree_impl_transcendental, profile_imports};
+use crate::macros::{degree_impl_transcendental, has_child_impl, profile_imports};
 use dynamo_common::math_utils::slog;
 profile_imports!();
 
@@ -30,7 +30,6 @@ impl DynamicalFamily for Exponential
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, lambda: &Cplx) -> Cplx
@@ -86,6 +85,16 @@ impl DynamicalFamily for Exponential
     {
         ZERO
     }
+}
+
+impl FamilyDefaults for Exponential
+{
+    default_bounds!();
+}
+
+impl HasChild for Exponential
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, lambda: &Self::Param) -> Bounds
     {
@@ -129,7 +138,6 @@ impl DynamicalFamily for CosineAdd
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -166,6 +174,16 @@ impl DynamicalFamily for CosineAdd
     {
         ZERO
     }
+}
+
+impl FamilyDefaults for CosineAdd
+{
+    default_bounds!();
+}
+
+impl HasChild for CosineAdd
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
@@ -199,7 +217,6 @@ impl DynamicalFamily for Cosine
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, lambda: &Cplx) -> Cplx
@@ -232,12 +249,10 @@ impl DynamicalFamily for Cosine
     {
         ZERO
     }
-
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(5.5)
-    }
 }
+
+default_bounds_impl!(Cosine);
+has_child_impl!(Cosine, 5.5);
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -266,7 +281,6 @@ impl DynamicalFamily for SineWander
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -291,17 +305,19 @@ impl DynamicalFamily for SineWander
     {
         PI.into()
     }
+}
+
+impl FamilyDefaults for SineWander
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         ONE
     }
-
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(5.5)
-    }
 }
+
+has_child_impl!(SineWander, 5.5);
 
 impl MarkedPoints for Cosine
 {

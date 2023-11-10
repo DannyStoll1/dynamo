@@ -27,7 +27,6 @@ impl<const D: i32> Default for Unicritical<D>
 impl<const D: i32> DynamicalFamily for Unicritical<D>
 {
     parameter_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
@@ -61,20 +60,30 @@ impl<const D: i32> DynamicalFamily for Unicritical<D>
         1e-18
     }
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn name(&self) -> String
     {
-        Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
+        format!("Unicritical({D})")
     }
+}
+
+impl<const D: i32> FamilyDefaults for Unicritical<D>
+{
+    default_bounds!();
 
     fn default_selection(&self) -> Cplx
     {
         let zeta = (TAUI / Self::D_FLOAT).exp();
         (zeta - 1.) * Self::D_FLOAT
     }
+}
 
-    fn name(&self) -> String
+impl<const D: i32> HasChild for Unicritical<D>
+{
+    type Child = JuliaSet<Self>;
+
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
-        format!("Unicritical({D})")
+        Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
     }
 }
 

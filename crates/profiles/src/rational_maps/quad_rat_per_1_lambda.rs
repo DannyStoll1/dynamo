@@ -1,5 +1,5 @@
 use super::quad_rat_general::QuadRatGeneral;
-use crate::macros::{degree_impl, horner_monic, profile_imports};
+use crate::macros::{degree_impl, has_child_impl, horner_monic, profile_imports};
 profile_imports!();
 
 // Maps of the form f_t(z) = (z^2+a_t)/(z^2+b_t),
@@ -46,9 +46,7 @@ impl DynamicalFamily for QuadRatPer1Lambda
     type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = Cplx;
-    type Child = JuliaSet<Self>;
     default_name!();
-    default_bounds!(Bounds::centered_square(3.));
 
     #[inline]
     fn max_iter(&self) -> Period
@@ -145,6 +143,9 @@ impl DynamicalFamily for QuadRatPer1Lambda
         self.tolerance = Self::compute_tolerance(lambda);
     }
 }
+
+default_bounds_impl!(QuadRatPer1Lambda, Bounds::centered_square(3.));
+has_child_impl!(QuadRatPer1Lambda);
 
 impl MarkedPoints for QuadRatPer1Lambda
 {
@@ -283,9 +284,7 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
     type Param = Cplx;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = QuadRatPer1Lambda;
     basic_plane_impl!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
@@ -323,20 +322,31 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
     {
         (ONE, ZERO, ZERO)
     }
+
+    fn name(&self) -> String
+    {
+        "QuadRat Per(1, λ) λ-plane".to_owned()
+    }
+}
+
+impl FamilyDefaults for QuadRatPer1LambdaParam
+{
+    default_bounds!();
+
     fn default_selection(&self) -> Cplx
     {
         ONE
     }
+}
+
+impl HasChild for QuadRatPer1LambdaParam
+{
+    type Child = QuadRatPer1Lambda;
 
     fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 4.;
         Bounds::centered_square(r)
-    }
-
-    fn name(&self) -> String
-    {
-        "QuadRat Per(1, λ) λ-plane".to_owned()
     }
 }
 
@@ -394,9 +404,7 @@ impl DynamicalFamily for QuadRatPer1_1
     type Param = CplxPair;
     type Deriv = Cplx;
     type MetaParam = NoParam;
-    type Child = JuliaSet<Self>;
     default_name!();
-    default_bounds!(Bounds::centered_square(3.));
 
     #[inline]
     fn max_iter(&self) -> Period
@@ -476,6 +484,9 @@ impl DynamicalFamily for QuadRatPer1_1
         self.general_plane.start_point(t, c)
     }
 }
+
+default_bounds_impl!(QuadRatPer1_1, Bounds::centered_square(3.));
+has_child_impl!(QuadRatPer1_1);
 
 impl MarkedPoints for QuadRatPer1_1
 {

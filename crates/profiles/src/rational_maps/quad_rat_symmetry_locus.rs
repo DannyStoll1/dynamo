@@ -1,4 +1,4 @@
-use crate::macros::{degree_impl, horner, profile_imports};
+use crate::macros::{degree_impl, has_child_impl, horner, profile_imports};
 profile_imports!();
 
 // Quadratic rational maps of the form z -> c(z+1/z)
@@ -27,7 +27,6 @@ impl DynamicalFamily for QuadRatSymmetryLocus
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -54,13 +53,10 @@ impl DynamicalFamily for QuadRatSymmetryLocus
     {
         (1.).into()
     }
-
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
-    {
-        Bounds::centered_square(4.)
-    }
 }
+
+default_bounds_impl!(QuadRatSymmetryLocus);
+has_child_impl!(QuadRatSymmetryLocus, 4.0);
 
 impl MarkedPoints for QuadRatSymmetryLocus
 {

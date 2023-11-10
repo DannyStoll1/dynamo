@@ -28,7 +28,6 @@ impl DynamicalFamily for OddCubic
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Cplx, c: &Cplx) -> Cplx
@@ -64,6 +63,16 @@ impl DynamicalFamily for OddCubic
         let u = 2. * z;
         (u * (z2 / 3. - c), 2. * (z2 - c), -u)
     }
+}
+
+impl FamilyDefaults for OddCubic
+{
+    default_bounds!();
+}
+
+impl HasChild for OddCubic
+{
+    type Child = JuliaSet<Self>;
 
     #[inline]
     fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds

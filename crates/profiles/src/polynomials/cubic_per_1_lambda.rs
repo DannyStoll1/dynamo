@@ -1,4 +1,4 @@
-use crate::macros::{horner, horner_monic, profile_imports};
+use crate::macros::{horner, horner_monic, profile_imports, has_child_impl};
 use dynamo_common::types::variables::PlaneID;
 profile_imports!();
 
@@ -116,15 +116,20 @@ impl DynamicalFamily for CubicPer1Lambda
         format!("Cubic Per(1, {}) {}", self.multiplier, self.starting_crit)
     }
 
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_crit = self.starting_crit.swap();
+    }
+}
+
+has_child_impl!(CubicPer1Lambda);
+
+impl FamilyDefaults for CubicPer1Lambda
+{
     fn default_bounds(&self) -> Bounds
     {
         let r = 4. / (self.multiplier.norm() + 0.01);
         Bounds::centered_square(r)
-    }
-
-    fn cycle_active_plane(&mut self)
-    {
-        self.starting_crit = self.starting_crit.swap();
     }
 }
 
@@ -352,8 +357,7 @@ impl Default for CubicPer1LambdaParam
 
 impl DynamicalFamily for CubicPer1LambdaParam
 {
-    parameter_plane_impl!(CubicPer1Lambda);
-    default_bounds!();
+    parameter_plane_impl!();
 
     #[inline]
     fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
@@ -409,20 +413,30 @@ impl DynamicalFamily for CubicPer1LambdaParam
         "Cubic Per(1, lambda) lambda-plane".to_owned()
     }
 
+    fn cycle_active_plane(&mut self)
+    {
+        self.starting_crit = self.starting_crit.swap();
+    }
+}
+
+impl FamilyDefaults for CubicPer1LambdaParam
+{
+    default_bounds!();
+
     fn default_selection(&self) -> Cplx
     {
         ZERO
     }
+}
+
+impl HasChild for CubicPer1LambdaParam
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 4. / (point.norm() + 0.01);
         Bounds::centered_square(r)
-    }
-
-    fn cycle_active_plane(&mut self)
-    {
-        self.starting_crit = self.starting_crit.swap();
     }
 }
 
@@ -493,7 +507,6 @@ impl DynamicalFamily for CubicPer1_1
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     fn periodicity_tolerance(&self) -> Real
     {
@@ -541,6 +554,16 @@ impl DynamicalFamily for CubicPer1_1
             -ONE_THIRD * (c * s / u - 1.),
         )
     }
+}
+
+impl FamilyDefaults for CubicPer1_1
+{
+    default_bounds!();
+}
+
+impl HasChild for CubicPer1_1
+{
+    type Child = JuliaSet<Self>;
 
     #[inline]
     fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
@@ -668,7 +691,6 @@ impl DynamicalFamily for CubicPer1_0
 {
     parameter_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[allow(clippy::suspicious_operation_groupings)]
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
@@ -699,6 +721,16 @@ impl DynamicalFamily for CubicPer1_0
         let z2 = z.powi(2);
         (z2 * (z + c), z * (2. * c + 3. * z), z2)
     }
+}
+
+impl FamilyDefaults for CubicPer1_0
+{
+    default_bounds!();
+}
+
+impl HasChild for CubicPer1_0
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, c: &Self::Param) -> Bounds
     {
@@ -1286,11 +1318,9 @@ impl DynamicalFamily for CubicPer1LambdaModuli
     type Param = CplxPair;
     type MetaParam = Cplx;
     type Deriv = Cplx;
-    type Child = JuliaSet<Self>;
 
     basic_plane_impl!();
     default_name!();
-    default_bounds!();
 
     #[inline]
     fn map(&self, z: Self::Var, CplxPair { a, b }: &Self::Param) -> Self::Var
@@ -1368,6 +1398,16 @@ impl DynamicalFamily for CubicPer1LambdaModuli
     {
         self.multiplier = value;
     }
+}
+
+impl FamilyDefaults for CubicPer1LambdaModuli
+{
+    default_bounds!();
+}
+
+impl HasChild for CubicPer1LambdaModuli
+{
+    type Child = JuliaSet<Self>;
 
     fn default_julia_bounds(&self, _point: Cplx, CplxPair { a, b }: &Self::Param) -> Bounds
     {

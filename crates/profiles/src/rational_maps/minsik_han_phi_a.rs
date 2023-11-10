@@ -37,7 +37,6 @@ impl<const D: i32> Default for MinsikHanPhi<D>
 impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
 {
     parameter_plane_impl!();
-    default_bounds!();
 
     fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
     {
@@ -70,16 +69,25 @@ impl<const D: i32> DynamicalFamily for MinsikHanPhi<D>
         ONE
     }
 
-    fn default_selection(&self) -> Cplx
-    {
-        Cplx::new(Self::D_FLOAT, 0.0)
-        // ComplexNum::new(8.03871259641341, 4.08815358590093)
-    }
-
     fn name(&self) -> String
     {
         format!("Minsik Han Family, degree {D}")
     }
+}
+
+impl<const D: i32> FamilyDefaults for MinsikHanPhi<D>
+{
+    default_bounds!();
+
+    fn default_selection(&self) -> Cplx
+    {
+        Cplx::new(Self::D_FLOAT, 0.0)
+    }
+}
+
+impl<const D: i32> HasChild for MinsikHanPhi<D>
+{
+    type Child = JuliaSet<Self>;
 }
 
 impl<const D: i32> MarkedPoints for MinsikHanPhi<D>

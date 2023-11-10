@@ -22,13 +22,29 @@ use julia::JuliaSet;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum PlaneType
+{
+    #[default]
+    Parameter,
+    Dynamical,
+}
+impl PlaneType
+{
+    #[must_use]
+    pub const fn is_dynamical(&self) -> bool
+    {
+        matches!(self, Self::Dynamical)
+    }
+}
+
 pub trait DynamicalFamily: Sync + Send
 {
     type Var: Variable;
     type Param: Parameter;
     type MetaParam: ParamList + Clone + Send + Sync + Default + Summarize;
     type Deriv: Derivative;
-    type Child: DynamicalFamily;
 
     fn point_grid(&self) -> &PointGrid;
     fn point_grid_mut(&mut self) -> &mut PointGrid;
@@ -43,15 +59,6 @@ pub trait DynamicalFamily: Sync + Send
     {
         let point_grid = self.point_grid().new_with_same_height(bounds);
         self.with_point_grid(point_grid)
-    }
-
-    #[must_use]
-    fn with_default_bounds(self) -> Self
-    where
-        Self: Sized,
-    {
-        let bounds = self.default_bounds();
-        self.with_bounds(bounds)
     }
 
     /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio
@@ -443,25 +450,6 @@ pub trait DynamicalFamily: Sync + Send
         orbit.map(|(z, _s)| z).collect()
     }
 
-    /// Default bounds for this plane
-    fn default_bounds(&self) -> Bounds;
-
-    /// Default bounds for Julia sets spawned from this plane. This is only called by Julia sets,
-    /// who reference the parent's `default_julia_bounds` in their `default_bounds`
-    /// implementations.
-    #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
-    {
-        Bounds::centered_square(2.2)
-    }
-
-    /// Point to select when the plane is first created.
-    #[inline]
-    fn default_selection(&self) -> Cplx
-    {
-        Cplx::default()
-    }
-
     /// For some families (e.g. maps with multiple free critical points),
     /// there are many possible starting points. In this case, we can maintain
     /// a plane identifier in `self`, which can by cycled at runtime to switch
@@ -483,37 +471,6 @@ pub trait DynamicalFamily: Sync + Send
     fn plane_type(&self) -> PlaneType
     {
         PlaneType::Parameter
-    }
-
-    // fn escape_coeff_d(&self, t: Cplx, c: &Self::Param) -> (Cplx, Self::Deriv, Self::Deriv) {
-    //     (ONE, ZERO, ZERO)
-    // }
-    // //
-    // /// Scaling factor by which we may conjugate our map to make the first return map at infinity
-    // /// monic.
-    // ///
-    // /// Used for computing external rays.
-    // fn monic_conj_d(&self, t: Cplx, c: &Self::Param) -> (Cplx, Cplx, Cplx) {
-    //     if self.degree() == 1 || self.escape_coeff(c) == ONE {
-    //         (ONE, ZERO, ZERO)
-    //     } else {
-    //         self.escape_coeff(c).powf(
-    //         1.0 / (self.degree_real() - 1.0))
-    //     }
-    // }
-
-    /// Default coloring algorithm to apply when loading the parameter plane.
-    fn default_coloring(&self) -> Coloring
-    {
-        let mut coloring = Coloring::default();
-        coloring.set_interior_algorithm(IncoloringAlgorithm::PeriodMultiplier);
-        coloring
-    }
-
-    /// Default coloring algorithm to apply when loading the Julia set.
-    fn default_coloring_child(&self) -> Coloring
-    {
-        Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
     }
 
     /// Define a custom fill rate for perperiod based coloring.
@@ -542,22 +499,6 @@ pub trait DynamicalFamily: Sync + Send
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum PlaneType
-{
-    #[default]
-    Parameter,
-    Dynamical,
-}
-impl PlaneType
-{
-    #[must_use]
-    pub const fn is_dynamical(&self) -> bool
-    {
-        matches!(self, Self::Dynamical)
-    }
-}
 impl std::fmt::Display for PlaneType
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
@@ -568,6 +509,61 @@ impl std::fmt::Display for PlaneType
         }
     }
 }
+
+pub trait FamilyDefaults : DynamicalFamily {
+    /// Default bounds for this plane
+    fn default_bounds(&self) -> Bounds;
+
+    /// Point to select when the plane is first created.
+    #[inline]
+    fn default_selection(&self) -> Cplx
+    {
+        Cplx::default()
+    }
+
+    /// Default coloring algorithm to apply when loading the parameter plane.
+    fn default_coloring(&self) -> Coloring
+    {
+        let mut coloring = Coloring::default();
+        coloring.set_interior_algorithm(IncoloringAlgorithm::PeriodMultiplier);
+        coloring
+    }
+
+    #[must_use]
+    fn with_default_bounds(self) -> Self
+    where
+        Self: Sized,
+    {
+        let bounds = self.default_bounds();
+        self.with_bounds(bounds)
+    }
+}
+
+pub trait HasChild: DynamicalFamily
+{
+    type Child: DynamicalFamily;
+
+    #[inline]
+    fn default_max_iter_child(&self) -> Period {
+        128
+    }
+
+    /// Default bounds for Julia sets spawned from this plane. This is only called by Julia sets,
+    /// who reference the parent's `default_julia_bounds` in their `default_bounds`
+    /// implementations.
+    #[inline]
+    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+
+    /// Default coloring algorithm to apply when loading the Julia set.
+    fn default_coloring_child(&self) -> Coloring
+    {
+        Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
+    }
+}
+
 
 pub trait MarkedPoints: DynamicalFamily
 {
@@ -1092,10 +1088,10 @@ where
 }
 
 pub trait Displayable:
-    DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints
+    DynamicalFamily + FamilyDefaults + HasChild + ExternalRays + Equipotential + Computable + MarkedPoints
 {
 }
 impl<P> Displayable for P where
-    P: DynamicalFamily + ExternalRays + Equipotential + Computable + MarkedPoints
+    P: DynamicalFamily + FamilyDefaults + HasChild + ExternalRays + Equipotential + Computable + MarkedPoints
 {
 }
