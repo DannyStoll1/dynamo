@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["dylib"]
 
 [dependencies]
-dynamo_gui = { version = "*", path = "../../gui" }
+dynamo_gui = { version = "*", path = "../../gui", features = ["scripting"] }
 dynamo_core = { version = "*", path = "../../core" }
 dynamo_common = { version = "*", path = "../../common" }
 

@@ -9,7 +9,7 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 serde = { version = "1.0.192", features = ["derive"], optional = true }
-eframe = "0.23"
+eframe = { version = "0.23", optional = true }
 egui = "0.23"
 egui_extras = { version = "0.23", features = ["image"] }
 egui_file = "0.11.0"
@@ -25,4 +25,4 @@ itertools = "0.11.0"
 
 [features]
 serde = ["dep:serde", "epaint/serde", "dynamo_core/serde", "dynamo_common/serde"]
-scripting = ["dep:libloading"]
+scripting = ["dep:libloading", "dep:eframe"]
