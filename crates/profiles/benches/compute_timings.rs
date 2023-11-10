@@ -20,7 +20,7 @@ fn biquadratic(b: &mut Bencher)
 }
 
 #[bench]
-fn per2(b: &mut Bencher)
+fn quadrat_per2(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer2::default().with_res_y(768).with_max_iter(2048);
@@ -33,7 +33,7 @@ fn per2_julia(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer2::default().with_res_y(1024).with_max_iter(2048);
-        let julia = JuliaSet::from(plane);
+        let julia = JuliaSet::from(plane).with_param(Cplx::from(0.96).into());
         let mut iter_plane = julia.compute();
         for _ in 0..9 {
             julia.compute_into(&mut iter_plane);
