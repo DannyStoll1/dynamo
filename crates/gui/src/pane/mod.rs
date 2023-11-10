@@ -327,8 +327,6 @@ where
 
         if plane.plane_type().is_dynamical() {
             marking.toggle_critical();
-        } else {
-            marking.enable_selection();
         }
 
         Self {
@@ -579,6 +577,7 @@ where
         let image = self.iter_plane.render(self.get_coloring());
         let image_frame = self.frame_mut();
         image_frame.image = image;
+        image_frame.update_texture();
     }
 
     #[inline]

@@ -26,9 +26,16 @@ impl Default for QuadRatPer3
     fractal_impl!();
 }
 
+type Prm = param::Param;
+
 impl DynamicalFamily for QuadRatPer3
 {
-    parameter_plane_impl!();
+    type Var = Cplx;
+    type Param = Prm;
+    type Deriv = Cplx;
+    type Child = JuliaSet<Self>;
+    type MetaParam = NoParam;
+    basic_plane_impl!();
     default_name!();
     default_bounds!();
 
@@ -42,7 +49,7 @@ impl DynamicalFamily for QuadRatPer3
             .to_owned()
     }
 
-    fn start_point(&self, _point: Cplx, _c: Cplx) -> Cplx
+    fn start_point(&self, _point: Cplx, _c: Prm) -> Cplx
     {
         0.0.into()
     }
@@ -54,25 +61,26 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     #[inline]
-    fn map_and_multiplier(&self, z: Cplx, c: Cplx) -> (Cplx, Cplx)
+    fn map_and_multiplier(&self, z: Cplx, Prm { a, b, c: _ }: Self::Param) -> (Cplx, Cplx)
     {
         let z2 = z.powi(2);
-        let c2 = c.powi(2);
-        let u = (z2 - c2).inv();
-        let v = c + 1.;
-        ((z2 + c2 * c - v) * u, 2.0 * (1. - c) * (u * v).powi(2) * z)
+        let v = z2 + b;
+        ((z2 + a) / v, 2.0 * (b - a) * z / v.powi(2))
     }
 
     #[inline]
-    fn map(&self, z: Cplx, c: Cplx) -> Cplx
+    fn map(&self, z: Cplx, Prm { a, b, c: _ }: Self::Param) -> Cplx
     {
         let z2 = z.powi(2);
-        let c2 = c.powi(2);
-        (z2 + c2 * c - c - 1.) / (z2 - c2)
+        (z2 + a) / (z2 + b)
     }
 
     #[inline]
-    fn gradient(&self, z: Self::Var, c: Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    fn gradient(
+        &self,
+        z: Self::Var,
+        Prm { a: _, b: _, c }: Self::Param,
+    ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
         let c2 = c.powi(2);
@@ -88,7 +96,7 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: Cplx) -> Bounds
+    fn default_julia_bounds(&self, _point: Cplx, _param: Prm) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -97,20 +105,20 @@ impl DynamicalFamily for QuadRatPer3
 impl MarkedPoints for QuadRatPer3
 {
     #[inline]
-    fn critical_points_child(&self, _param: Cplx) -> ComplexVec
+    fn critical_points_child(&self, _param: Prm) -> ComplexVec
     {
         vec![(0.).into()]
     }
 
-    fn cycles_child(&self, c: Cplx, period: Period) -> ComplexVec
+    fn cycles_child(&self, Prm { a: _, b, c }: Prm, period: Period) -> ComplexVec
     {
         match period {
             1 => {
-                let x0 = c.powi(2);
+                let x0 = -b;
                 let x1 = c * x0;
                 let x2 = 3. * x0 + 1.;
                 let u = 27. * (c - x1) - 9. * x0 + 25.;
-                let x3 = (0.5 * (u + (-4. * x2 * x2 * x2 + u.powi(2)).sqrt())).powf(ONE_THIRD);
+                let x3 = (0.5 * (u + (-4. * x2.powi(3) + u.powi(2)).sqrt())).powf(ONE_THIRD);
                 let x4 = x3 / 3.;
                 let x5 = x2 / (3. * x3);
                 let r1 = -x4 * OMEGA_BAR - x5 * OMEGA + ONE_THIRD;
@@ -122,16 +130,16 @@ impl MarkedPoints for QuadRatPer3
                 vec![-0.5 * (c - disc + 1.), -0.5 * (c + disc + 1.)]
             }
             3 => {
-                let c2 = c.powi(2);
+                let c2 = -b;
                 let u = (c - 1.).inv();
-                let a0 = u * (1. + c + c2 + c2 * c2);
+                let a0 = u * (1. + c + c2 + c2.powi(2));
                 let a1 = u * (1. + c * (1. - 2. * c2));
                 let a2 = -u * (2. + c + c2);
                 let [r0, r1, r2] = solve_cubic(a0, a1, a2);
                 vec![ONE, -c, r0, r1, r2]
             }
             4 => {
-                let c2 = c.powi(2);
+                let c2 = -b;
                 let coeffs = [
                     horner_monic!(c, -1., -4., -7., -2., 13., 29., 29., 15., -3., -8., -6., 0., 0.),
                     horner_monic!(c, -1., -4., -7., -2., 12., 22., 14., -2., -9., -6., -2., 0.),
@@ -157,7 +165,7 @@ impl HasDynamicalCovers for QuadRatPer3
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> (Cplx, Cplx);
+        let param_map: fn(Cplx) -> (Prm, Cplx);
         let bounds: Bounds;
 
         match period {
@@ -175,7 +183,10 @@ impl HasDynamicalCovers for QuadRatPer3
                     let den = u3 - u2 - u2 + 3. * u - 1.;
                     let dden = dnum - 4. * u + 4.;
 
-                    (num / den, du * (den * dnum - num * dden) / den.powi(2))
+                    (
+                        (num / den).into(),
+                        du * (den * dnum - num * dden) / den.powi(2),
+                    )
                 };
                 bounds = Bounds {
                     min_x: -5.75,
@@ -204,7 +215,7 @@ impl HasDynamicalCovers for QuadRatPer3
                     let s1 = zz / yy;
 
                     // TODO: derivative
-                    (s0 * s1 + s1 + (t + 4.), ONE)
+                    ((s0 * s1 + s1 + (t + 4.)).into(), ONE)
                     // let l = s0^2*s1 + s0*s1 + (2*t)*s0 + (t - 1);
                 };
                 bounds = Bounds {
@@ -215,7 +226,7 @@ impl HasDynamicalCovers for QuadRatPer3
                 };
             }
             _ => {
-                param_map = |t| (t, ONE);
+                param_map = |t| (t.into(), ONE);
                 bounds = self.point_grid.bounds.clone();
             }
         };
@@ -233,14 +244,14 @@ impl InfinityFirstReturnMap for QuadRatPer3
         2
     }
 
-    fn escape_coeff(&self, c: Self::Param) -> Cplx
+    fn escape_coeff(&self, prm: Self::Param) -> Cplx
     {
-        0.25 * (1. - c.inv())
+        0.25 * (1. - prm.c.inv())
     }
 
-    fn escape_coeff_d(&self, c: Self::Param) -> (Cplx, Cplx)
+    fn escape_coeff_d(&self, prm: Self::Param) -> (Cplx, Cplx)
     {
-        let u = c.inv();
+        let u = prm.c.inv();
         (0.25 * (1. - u), 0.25 * u.powi(2))
     }
 
@@ -255,4 +266,66 @@ impl EscapeEncoding for QuadRatPer3 {}
 impl ExternalRays for QuadRatPer3
 {
     ext_ray_impl_rk!(0.01, 1e6);
+}
+
+mod param
+{
+    use dynamo_common::prelude::*;
+
+    #[derive(Clone, Copy, PartialEq, Debug)]
+    pub struct Param
+    {
+        pub a: Cplx, // c^3 - c - 1
+        pub b: Cplx, // -c^2
+        pub c: Cplx,
+    }
+
+    impl Default for Param
+    {
+        fn default() -> Self
+        {
+            Self {
+                a: -ONE,
+                b: ZERO,
+                c: ZERO,
+            }
+        }
+    }
+
+    impl From<Cplx> for Param
+    {
+        #[inline]
+        fn from(c: Cplx) -> Self
+        {
+            let c2 = c.powi(2);
+            let a = (c2 - 1.) * c - 1.;
+            Self { a, b: -c2, c }
+        }
+    }
+
+    impl From<Param> for Cplx
+    {
+        #[inline]
+        fn from(param: Param) -> Self
+        {
+            param.c
+        }
+    }
+
+    impl std::fmt::Display for Param
+    {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+        {
+            self.c.fmt(f)
+        }
+    }
+
+    impl Describe for Param {}
+    impl Named for Param
+    {
+        fn name(&self) -> &str
+        {
+            "c"
+        }
+    }
 }

@@ -352,6 +352,10 @@ where
                 let param = self.parent.plane.param_map(pointer_value);
                 let start = self.parent.plane.start_point(pointer_value, param);
                 self.child_mut().mark_orbit_and_info(start.into());
+                self.parent_mut().marking_mut().enable_selection();
+            }
+            else {
+                self.child_mut().marking_mut().disable_selection();
             }
         } else if self.child().frame_contains_pixel(pointer_pos) {
             ctx.set_cursor_icon(CursorIcon::Crosshair);
@@ -363,6 +367,7 @@ where
             if clicked {
                 self.consume_click();
                 self.child_mut().mark_orbit_and_info(pointer_value);
+                self.child_mut().marking_mut().enable_selection();
             }
         } else {
             ctx.set_cursor_icon(CursorIcon::Default);
@@ -477,7 +482,10 @@ where
                     .title("Draw active rays")
                     .prompt(prompt)
                     .pane_toggles("Draw on", pane_id)
-                    .add_toggle(ToggleKey::PrefixAngles, "Include rays of shorter preperiod".to_owned())
+                    .add_toggle(
+                        ToggleKey::PrefixAngles,
+                        "Include rays of shorter preperiod".to_owned(),
+                    )
                     .build()
             }
             FindPeriodic { pane_id } => {
@@ -886,6 +894,7 @@ where
             Action::MapSelection => {
                 let plane = self.child_mut();
                 plane.map_selection();
+                plane.marking_mut().enable_selection();
             }
             Action::DrawOrbit => {
                 let plane = self.child_mut();

@@ -42,7 +42,7 @@ fn per2_julia(b: &mut Bencher)
 }
 
 #[bench]
-fn per3(b: &mut Bencher)
+fn quadrat_per3(b: &mut Bencher)
 {
     b.iter(|| {
         let plane = QuadRatPer3::default().with_res_y(768).with_max_iter(2048);

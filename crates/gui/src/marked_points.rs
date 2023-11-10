@@ -322,6 +322,11 @@ impl Marking
         self.point_sets.sched_enable(PointSetKey::SelectedPoint);
     }
 
+    pub fn disable_selection(&mut self)
+    {
+        self.point_sets.sched_disable(PointSetKey::SelectedPoint);
+    }
+
     pub fn select_point(&mut self, point: Cplx)
     {
         if let Some(selection) = self.point_sets.objects.get_mut(&PointSetKey::SelectedPoint) {
