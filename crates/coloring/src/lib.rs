@@ -54,11 +54,11 @@ impl Coloring
                 num_point_classes,
                 ..
             } => {
-                let hue = (f32::from(*class_id)) / (*num_point_classes as f32);
+                let hue = (f32::from(*class_id) + 0.5) / (*num_point_classes as f32);
                 Hsv {
                     hue,
-                    saturation: 0.8,
-                    intensity: 1.0,
+                    saturation: 0.7,
+                    intensity: 0.6,
                 }
                 .into()
             }

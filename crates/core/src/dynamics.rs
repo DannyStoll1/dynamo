@@ -465,8 +465,6 @@ pub trait DynamicalFamily: Sync + Send
 
     /// Whether or not the plane is considered "dynamical", in the sense that the dynamical map is
     /// independent of the pixel being computed.
-    ///
-    /// Currently unused.
     #[inline]
     fn plane_type(&self) -> PlaneType
     {
