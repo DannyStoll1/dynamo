@@ -239,10 +239,7 @@ pub trait Variable:
     + Describe
 {
 }
-pub trait Parameter:
-    From<Cplx> + Clone + Send + Sync + Default + PartialEq + Describe + Summarize
-{
-}
+pub trait Parameter: Clone + Send + Sync + Default + PartialEq + Describe + Summarize {}
 pub trait Derivative:
     Polar<Real>
     + Send

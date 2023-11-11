@@ -214,9 +214,7 @@ impl Transpiler
     }}
 }}
 
-impl HasChild for UserPlane {{
-    type Child = JuliaSet<Self>;
-}}
+impl HasJulia for UserPlane {{}}
 impl MarkedPoints for UserPlane {{}}
 impl EscapeEncoding for UserPlane {{}}
 impl ExternalRays for UserPlane {{}}
@@ -240,7 +238,7 @@ impl ExternalRays for UserPlane {{}}
         "#[no_mangle]\n\
         pub unsafe fn create_interface() -> *mut dyn Interface {\n\
             let parent = UserPlane::default();\n\
-            let child = <UserPlane as HasChild>::Child::from(parent.clone());\n\
+            let child = JuliaSet::from(parent.clone());\n\
 \
             let int = MainInterface::new(parent, child, 768);\n\
             Box::into_raw(Box::new(int))

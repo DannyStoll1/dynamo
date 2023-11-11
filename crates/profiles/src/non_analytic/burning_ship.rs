@@ -49,6 +49,7 @@ impl<const N: Period> DynamicalFamily for BurningShip<N>
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
+        let z = Cplx::new(z.re.abs(), z.im.abs());
         let znm1 = z.powf(Self::N_MINUS_1);
         (znm1 * z + c, Self::N_FLOAT * znm1)
     }
@@ -78,11 +79,9 @@ impl<const D: Period> FamilyDefaults for BurningShip<D>
     default_bounds!();
 }
 
-impl<const D: Period> HasChild for BurningShip<D>
+impl<const D: Period> HasJulia for BurningShip<D>
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -145,6 +144,7 @@ impl DynamicalFamily for Sailboat
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
+        let z = Cplx::new(z.re.abs(), z.im.abs()) + self.shift;
         (z.powi(2) + c, 2. * z)
     }
 
@@ -185,11 +185,9 @@ impl FamilyDefaults for Sailboat
     default_bounds!();
 }
 
-impl HasChild for Sailboat
+impl HasJulia for Sailboat
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(2.5 + self.shift.norm())
     }
@@ -219,12 +217,7 @@ impl Default for SailboatParam
 
 impl DynamicalFamily for SailboatParam
 {
-    type Param = Cplx;
-    type MetaParam = NoParam;
-    type Var = Cplx;
-    type Deriv = Cplx;
-
-    basic_plane_impl!();
+    parameter_plane_impl!();
 
     #[inline]
     fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
@@ -270,9 +263,10 @@ impl FamilyDefaults for SailboatParam
     }
 }
 
-impl HasChild for SailboatParam
-{
-    type Child = Sailboat;
+impl HasChild<Sailboat> for SailboatParam {
+    fn to_child_param(param: Self::Param) -> <<Sailboat as DynamicalFamily>::MetaParam as ParamList>::Param {
+        param
+    }
 }
 
 impl MarkedPoints for SailboatParam
@@ -289,14 +283,13 @@ impl From<SailboatParam> for Sailboat
     {
         let point = parent.default_selection();
         let param = parent.param_map(point);
-        let point_grid = parent
-            .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, &param));
+        let point_grid = parent.point_grid().clone();
         Self {
             point_grid,
             max_iter: parent.max_iter(),
             shift: param,
         }
+        .with_default_bounds()
     }
 }
 

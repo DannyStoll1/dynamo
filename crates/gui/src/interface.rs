@@ -6,7 +6,7 @@ use egui_file::FileDialog;
 
 use dynamo_color::{IncoloringAlgorithm, Palette};
 use dynamo_common::prelude::*;
-use dynamo_core::dynamics::Displayable;
+use dynamo_core::{dynamics::Displayable, prelude::HasChild};
 
 use crate::{
     actions::Action,
@@ -107,12 +107,10 @@ where
     pub message: UiMessage,
 }
 
-impl<P, J, M, T> MainInterface<P, J>
+impl<P, J> MainInterface<P, J>
 where
-    P: Displayable + Clone,
-    J: Displayable<MetaParam = M> + Clone,
-    M: ParamList<Param = T>,
-    T: From<P::Param> + std::fmt::Display,
+    P: Displayable + HasChild<J> + Clone,
+    J: Displayable + Clone,
 {
     /// Constructs a new `MainInterface` with the given parent and child panes and image height.
     pub fn new(parent: P, child: J, image_height: usize) -> Self
@@ -135,7 +133,7 @@ where
         let old_center = self.child.grid().center();
         let old_default_center = self.child.plane.default_bounds().center();
 
-        if self.child.set_param(T::from(new_param)) {
+        if self.child.set_param(P::to_child_param(new_param)) {
             let mut new_bounds = self.child.plane.default_bounds();
 
             // Set the new center to equal the old center plus whatever deviation the user has created
@@ -408,12 +406,10 @@ where
 }
 
 /// Implementation of `PanePair` for `MainInterface`, providing access to parent and child panes.
-impl<P, J, M, T> PanePair for MainInterface<P, J>
+impl<P, J> PanePair for MainInterface<P, J>
 where
-    P: Displayable + Clone,
-    J: Displayable<MetaParam = M> + Clone,
-    M: ParamList<Param = T>,
-    T: From<P::Param> + std::fmt::Display,
+    P: Displayable + HasChild<J> + Clone,
+    J: Displayable + Clone,
 {
     /// Returns a reference to the parent pane.
     fn parent(&self) -> &dyn Pane
@@ -664,12 +660,10 @@ where
 }
 
 /// Implementation of `Interactive` for `MainInterface`, handling input and dialogs.
-impl<P, J, M, T> Interactive for MainInterface<P, J>
+impl<P, J> Interactive for MainInterface<P, J>
 where
-    P: Displayable + Clone,
-    J: Displayable<MetaParam = M> + Clone,
-    M: ParamList<Param = T>,
-    T: From<P::Param> + std::fmt::Display,
+    P: Displayable + HasChild<J> + Clone,
+    J: Displayable + Clone,
 {
     /// Handles user input and updates the state of the interface accordingly.
     fn handle_input(&mut self, ctx: &Context)

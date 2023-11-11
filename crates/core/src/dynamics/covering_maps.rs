@@ -1,6 +1,6 @@
 use super::julia::JuliaSet;
 use super::{
-    DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasChild,
+    DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasChild, HasJulia,
     InfinityFirstReturnMap, MarkedPoints,
 };
 use crate::orbit::EscapeResult;
@@ -220,16 +220,24 @@ where
     }
 }
 
-impl<C> HasChild for CoveringMap<C>
-where
-    C: HasChild,
+impl<C: HasJulia> HasJulia for CoveringMap<C>
 {
-    type Child = C::Child;
+    #[inline]
+    fn default_bounds_child(&self, t: Cplx, c: &Self::Param) -> Bounds
+    {
+        self.base_curve.default_bounds_child(t, c)
+    }
 
     #[inline]
-    fn default_julia_bounds(&self, point: Cplx, param: &C::Param) -> Bounds
+    fn default_max_iter_child(&self) -> Period
     {
-        self.base_curve.default_julia_bounds(point, param)
+        self.base_curve.default_max_iter_child()
+    }
+
+    #[inline]
+    fn default_coloring_child(&self) -> Coloring
+    {
+        self.base_curve.default_coloring_child()
     }
 }
 
@@ -310,7 +318,7 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Clone
 {
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
     {
-        let param_map_d = |t| (Self::Param::from(t), Self::Deriv::one());
+        let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
         let bounds = self.point_grid().clone();
 
         println!("Marked cycle has not been implemented; falling back to base curve!");
@@ -318,7 +326,7 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Clone
     }
     fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
     {
-        let param_map_d = |t| (Self::Param::from(t), Self::Deriv::one());
+        let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
         let bounds = self.point_grid().clone();
 
         println!("Dynatomic curve has not been implemented; falling back to base curve!");
@@ -326,7 +334,7 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Clone
     }
     fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
     {
-        let param_map = |t| (Self::Param::from(t), Self::Deriv::one());
+        let param_map = |_| (Self::Param::default(), Self::Deriv::one());
         let bounds = self.point_grid().clone();
 
         println!("Misiurewicz curve has not been implemented; falling back to base curve!");

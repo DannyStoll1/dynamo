@@ -70,10 +70,7 @@ impl FamilyDefaults for RealCubicRealCrit
     default_bounds!();
 }
 
-impl HasChild for RealCubicRealCrit
-{
-    type Child = JuliaSet<Self>;
-}
+impl HasJulia for RealCubicRealCrit {}
 
 impl MarkedPoints for RealCubicRealCrit
 {
@@ -155,10 +152,7 @@ impl FamilyDefaults for RealCubicImagCrit
     default_bounds!();
 }
 
-impl HasChild for RealCubicImagCrit
-{
-    type Child = JuliaSet<Self>;
-}
+impl HasJulia for RealCubicImagCrit {}
 
 impl MarkedPoints for RealCubicImagCrit
 {

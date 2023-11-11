@@ -89,9 +89,15 @@ impl DynamicalFamily for QuadRatPer2
     }
 
     #[inline]
-    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    fn param_map(&self, point: Cplx) -> Self::Param
     {
-        (point, ONE)
+        Self::Param::from(point)
+    }
+
+    #[inline]
+    fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
+    {
+        (Self::Param::from(point), ONE)
     }
 }
 
@@ -1021,12 +1027,6 @@ impl DynamicalFamily for QuadRatPer2Cover
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
-    }
-
-    #[inline]
-    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
-    {
-        (point, ONE)
     }
 }
 

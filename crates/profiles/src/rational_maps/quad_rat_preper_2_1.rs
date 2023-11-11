@@ -61,11 +61,9 @@ impl FamilyDefaults for QuadRatPreper21
     default_bounds!();
 }
 
-impl HasChild for QuadRatPreper21
+impl HasJulia for QuadRatPreper21
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(4.)
     }

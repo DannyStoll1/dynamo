@@ -75,11 +75,9 @@ impl<const M: i32, const N: i32> FamilyDefaults for McMullenFamily<M, N>
     }
 }
 
-impl<const M: i32, const N: i32> HasChild for McMullenFamily<M, N>
+impl<const M: i32, const N: i32> HasJulia for McMullenFamily<M, N>
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds {
             min_x: -1.15,

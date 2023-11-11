@@ -81,12 +81,10 @@ impl FamilyDefaults for CubicMarked2Cycle
     default_bounds!();
 }
 
-impl HasChild for CubicMarked2Cycle
+impl HasJulia for CubicMarked2Cycle
 {
-    type Child = JuliaSet<Self>;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, param: &Cplx) -> Bounds
     {
         Bounds::square(2.2, -param / 3.)
     }

@@ -111,10 +111,7 @@ impl FamilyDefaults for Rulkov
     default_bounds!();
 }
 
-impl HasChild for Rulkov
-{
-    type Child = JuliaSet<Self>;
-}
+impl HasJulia for Rulkov {}
 
 impl MarkedPoints for Rulkov {}
 degree_impl!(Rulkov, 2);

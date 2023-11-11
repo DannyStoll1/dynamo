@@ -26,7 +26,11 @@ impl Default for QuadRatPer4
 
 impl DynamicalFamily for QuadRatPer4
 {
-    parameter_plane_impl!();
+    type Var = Cplx;
+    type Param = Cplx;
+    type Deriv = Cplx;
+    type MetaParam = NoParam;
+    basic_plane_impl!();
     default_name!();
 
     fn description(&self) -> String
@@ -114,12 +118,10 @@ impl FamilyDefaults for QuadRatPer4
     default_bounds!();
 }
 
-impl HasChild for QuadRatPer4
+impl HasJulia for QuadRatPer4
 {
-    type Child = JuliaSet<Self>;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::square(4., (2.).into())
     }

@@ -209,10 +209,7 @@ impl<const D: Period> FamilyDefaults for Chebyshev<D>
     default_bounds!(Bounds::centered_square(3.0 / f64::from(D)));
 }
 
-impl<const D: Period> HasChild for Chebyshev<D>
-{
-    type Child = JuliaSet<Self>;
-}
+impl<const D: Period> HasJulia for Chebyshev<D> {}
 
 impl<const D: Period> MarkedPoints for Chebyshev<D>
 {

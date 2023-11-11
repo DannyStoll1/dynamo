@@ -1,4 +1,4 @@
-use super::{DynamicalFamily, FamilyDefaults, HasChild, MarkedPoints};
+use super::{DynamicalFamily, FamilyDefaults, HasJulia, MarkedPoints};
 use crate::macros::basic_plane_impl;
 use crate::orbit::EscapeResult;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
@@ -26,7 +26,7 @@ where
 
 impl<T> JuliaSet<T>
 where
-    T: DynamicalFamily + HasChild,
+    T: DynamicalFamily + HasJulia,
 {
     #[must_use]
     pub fn new(parent: T, parent_selection: Cplx, max_iter: Period) -> Self
@@ -34,7 +34,7 @@ where
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(parent_selection, &local_param));
+            .new_with_same_height(parent.default_bounds_child(parent_selection, &local_param));
         let min_iter = parent.min_iter();
         let meta_params = parent.get_meta_params();
         Self {
@@ -63,19 +63,19 @@ where
 
 impl<T> From<T> for JuliaSet<T>
 where
-    T: FamilyDefaults + HasChild,
+    T: FamilyDefaults + HasJulia,
 {
     fn from(parent: T) -> Self
     {
         let selection = parent.default_selection();
-        let max_iter = parent.max_iter();
+        let max_iter = parent.default_max_iter_child();
         Self::new(parent, selection, max_iter)
     }
 }
 
 impl<T> DynamicalFamily for JuliaSet<T>
 where
-    T: DynamicalFamily,
+    T: HasJulia,
 {
     type Var = T::Var;
     type Param = NoParam;
@@ -401,7 +401,7 @@ where
 
 impl<T> FamilyDefaults for JuliaSet<T>
 where
-    T: HasChild,
+    T: HasJulia,
 {
     #[inline]
     fn default_selection(&self) -> Cplx
@@ -418,18 +418,16 @@ where
     fn default_bounds(&self) -> Bounds
     {
         self.parent
-            .default_julia_bounds(self.parent_selection, &self.local_param)
+            .default_bounds_child(self.parent_selection, &self.local_param)
     }
 }
 
-impl<T> HasChild for JuliaSet<T>
+impl<T> HasJulia for JuliaSet<T>
 where
-    T: DynamicalFamily,
+    T: HasJulia,
 {
-    type Child = Self;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         self.point_grid.bounds.clone()
     }
@@ -437,7 +435,7 @@ where
 
 impl<P> MarkedPoints for JuliaSet<P>
 where
-    P: DynamicalFamily + MarkedPoints,
+    P: HasJulia + MarkedPoints,
 {
     #[inline]
     fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
@@ -472,7 +470,7 @@ where
 
 impl<P> InfinityFirstReturnMap for JuliaSet<P>
 where
-    P: DynamicalFamily + InfinityFirstReturnMap,
+    P: HasJulia + InfinityFirstReturnMap,
 {
     #[inline]
     fn degree_real(&self) -> f64
@@ -506,7 +504,7 @@ where
     }
 }
 
-impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
+impl<P: EscapeEncoding + HasJulia> EscapeEncoding for JuliaSet<P>
 {
     fn encode_escape_result(
         &self,
@@ -522,7 +520,7 @@ impl<P: EscapeEncoding> EscapeEncoding for JuliaSet<P>
 
 impl<P> ExternalRays for JuliaSet<P>
 where
-    P: InfinityFirstReturnMap,
+    P: HasJulia + InfinityFirstReturnMap,
 {
     fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {

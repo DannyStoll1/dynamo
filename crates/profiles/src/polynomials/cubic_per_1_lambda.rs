@@ -1,4 +1,4 @@
-use crate::macros::{horner, horner_monic, profile_imports, has_child_impl};
+use crate::macros::{has_child_impl, horner, horner_monic, profile_imports};
 use dynamo_common::types::variables::PlaneID;
 profile_imports!();
 
@@ -402,12 +402,6 @@ impl DynamicalFamily for CubicPer1LambdaParam
         }
     }
 
-    #[inline]
-    fn param_map(&self, point: Cplx) -> Self::Param
-    {
-        point
-    }
-
     fn name(&self) -> String
     {
         "Cubic Per(1, lambda) lambda-plane".to_owned()
@@ -429,11 +423,19 @@ impl FamilyDefaults for CubicPer1LambdaParam
     }
 }
 
-impl HasChild for CubicPer1LambdaParam
+impl HasChild<CubicPer1Lambda> for CubicPer1LambdaParam
 {
-    type Child = JuliaSet<Self>;
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<CubicPer1Lambda as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
+        param
+    }
+}
 
-    fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
+impl HasJulia for CubicPer1LambdaParam
+{
+    fn default_bounds_child(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 4. / (point.norm() + 0.01);
         Bounds::centered_square(r)
@@ -471,7 +473,7 @@ impl From<CubicPer1LambdaParam> for CubicPer1Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, &param));
+            .new_with_same_height(parent.default_bounds_child(point, &param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),
@@ -561,12 +563,10 @@ impl FamilyDefaults for CubicPer1_1
     default_bounds!();
 }
 
-impl HasChild for CubicPer1_1
+impl HasJulia for CubicPer1_1
 {
-    type Child = JuliaSet<Self>;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -728,11 +728,9 @@ impl FamilyDefaults for CubicPer1_0
     default_bounds!();
 }
 
-impl HasChild for CubicPer1_0
+impl HasJulia for CubicPer1_0
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, c: &Self::Param) -> Bounds
     {
         if c.is_nan() {
             Bounds::centered_square(2.5)
@@ -1405,11 +1403,9 @@ impl FamilyDefaults for CubicPer1LambdaModuli
     default_bounds!();
 }
 
-impl HasChild for CubicPer1LambdaModuli
+impl HasJulia for CubicPer1LambdaModuli
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, CplxPair { a, b }: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, CplxPair { a, b }: &Self::Param) -> Bounds
     {
         let radius = (2. * (b / a).sqrt().norm()).max(6.0);
         Bounds::centered_square(radius)
@@ -1487,7 +1483,7 @@ impl From<CubicPer1LambdaParam> for CubicPer1LambdaModuli
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, &param));
+            .new_with_same_height(parent.default_bounds_child(point, &param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),

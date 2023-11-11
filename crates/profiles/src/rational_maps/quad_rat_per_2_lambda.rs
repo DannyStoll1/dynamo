@@ -117,7 +117,15 @@ impl DynamicalFamily for QuadRatPer2Lambda
     }
 }
 
-default_bounds_impl!(QuadRatPer2Lambda, Bounds::centered_square(3.));
+impl FamilyDefaults for QuadRatPer2Lambda
+{
+    fn default_bounds(&self) -> Bounds
+    {
+        let r = 4. / (self.multiplier.norm() + 0.01);
+        Bounds::centered_square(r)
+    }
+}
+
 has_child_impl!(QuadRatPer2Lambda);
 
 impl MarkedPoints for QuadRatPer2Lambda
@@ -230,14 +238,13 @@ impl FamilyDefaults for QuadRatPer2LambdaParam
     }
 }
 
-impl HasChild for QuadRatPer2LambdaParam
+impl HasChild<QuadRatPer2Lambda> for QuadRatPer2LambdaParam
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<QuadRatPer2Lambda as DynamicalFamily>::MetaParam as ParamList>::Param
     {
-        let r = 4. / (point.norm() + 0.01);
-        Bounds::centered_square(r)
+        param
     }
 }
 
@@ -254,10 +261,7 @@ impl From<QuadRatPer2LambdaParam> for QuadRatPer2Lambda
     fn from(parent: QuadRatPer2LambdaParam) -> Self
     {
         let point = parent.default_selection();
-        let param = parent.param_map(point);
-        let point_grid = parent
-            .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, &param));
+        let point_grid = parent.point_grid().clone();
         let general_plane = QuadRatGeneral {
             point_grid,
             max_iter: parent.max_iter(),
@@ -266,6 +270,7 @@ impl From<QuadRatPer2LambdaParam> for QuadRatPer2Lambda
             general_plane,
             multiplier: point,
         }
+        .with_default_bounds()
     }
 }
 

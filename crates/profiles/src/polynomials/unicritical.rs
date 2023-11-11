@@ -77,11 +77,10 @@ impl<const D: i32> FamilyDefaults for Unicritical<D>
     }
 }
 
-impl<const D: i32> HasChild for Unicritical<D>
+impl<const D: i32> HasJulia for Unicritical<D>
 {
-    type Child = JuliaSet<Self>;
 
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
     }

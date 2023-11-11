@@ -92,11 +92,9 @@ impl FamilyDefaults for CubicPer3_0
     }
 }
 
-impl HasChild for CubicPer3_0
+impl HasJulia for CubicPer3_0
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, point: Cplx, c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, point: Cplx, c: &Self::Param) -> Bounds
     {
         let crit = self.start_point(point, c);
         // let center = (crit + 2. + c.a + c.b) * ONE_THIRD;

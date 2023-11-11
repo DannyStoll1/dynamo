@@ -93,6 +93,11 @@ impl DynamicalFamily for QuadRatPer3
         let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z2)));
         (f, df_dz, df_dc)
     }
+
+    #[inline]
+    fn param_map(&self, point: Cplx) -> Self::Param {
+        point.into()
+    }
 }
 
 has_child_impl!(QuadRatPer3, 4.0);

@@ -75,12 +75,6 @@ impl DynamicalFamily for Exponential
     }
 
     #[inline]
-    fn param_map(&self, lambda: Cplx) -> Cplx
-    {
-        lambda
-    }
-
-    #[inline]
     fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
@@ -92,11 +86,9 @@ impl FamilyDefaults for Exponential
     default_bounds!();
 }
 
-impl HasChild for Exponential
+impl HasJulia for Exponential
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, lambda: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, lambda: &Self::Param) -> Bounds
     {
         Bounds::square(5., *lambda)
     }
@@ -158,18 +150,6 @@ impl DynamicalFamily for CosineAdd
     }
 
     #[inline]
-    fn param_map(&self, t: Cplx) -> Cplx
-    {
-        t
-    }
-
-    #[inline]
-    fn param_map_d(&self, t: Cplx) -> (Self::Param, Self::Deriv)
-    {
-        (t, ONE)
-    }
-
-    #[inline]
     fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         ZERO
@@ -181,11 +161,9 @@ impl FamilyDefaults for CosineAdd
     default_bounds!();
 }
 
-impl HasChild for CosineAdd
+impl HasJulia for CosineAdd
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(5.5)
     }
@@ -236,12 +214,6 @@ impl DynamicalFamily for Cosine
     {
         let cos = z.cos();
         (cos * lambda, -z.sin() * lambda, cos)
-    }
-
-    #[inline]
-    fn param_map(&self, lambda: Cplx) -> Cplx
-    {
-        lambda
     }
 
     #[inline]

@@ -207,14 +207,6 @@ impl DynamicalFamily for BiquadraticMult
         self.starting_plane = self.starting_plane.swap();
     }
 
-    fn dynam_map(&self, point: Cplx) -> Self::Var
-    {
-        match self.starting_plane {
-            PlaneID::ZPlane => Bicomplex::PlaneA(point),
-            PlaneID::WPlane => Bicomplex::PlaneB(point),
-        }
-    }
-
     fn periodicity_tolerance(&self) -> Real
     {
         1e-14
@@ -255,13 +247,24 @@ impl FamilyDefaults for BiquadraticMult
     }
 }
 
-impl HasChild for BiquadraticMult
+impl HasJulia for BiquadraticMult
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, c: &Self::Param) -> Bounds
     {
         Bounds::square(2.5, -0.5 * c.a)
+    }
+
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        match self.starting_plane {
+            PlaneID::ZPlane => Bicomplex::PlaneA(point),
+            PlaneID::WPlane => Bicomplex::PlaneB(point),
+        }
+    }
+
+    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    {
+        (self.dynam_map(point), ONE)
     }
 }
 
@@ -422,7 +425,7 @@ impl Default for BiquadraticMultParam
 
 impl DynamicalFamily for BiquadraticMultParam
 {
-    type Param = param::OuterParam;
+    type Param = CplxPair;
     type Var = Bicomplex;
     type Deriv = Cplx;
     type MetaParam = NoParam;
@@ -480,11 +483,19 @@ impl FamilyDefaults for BiquadraticMultParam
     }
 }
 
-impl HasChild for BiquadraticMultParam
+impl HasChild<BiquadraticMult> for BiquadraticMultParam
 {
-    type Child = BiquadraticMult;
+    fn to_child_param(
+        CplxPair { a, b }: Self::Param,
+    ) -> <<BiquadraticMult as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
+        a * b
+    }
+}
 
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+impl HasJulia for BiquadraticMultParam
+{
+    fn default_bounds_child(&self, _point: Cplx, _param: &Self::Param) -> Bounds
     {
         Bounds::centered_square(3.5)
     }
@@ -631,11 +642,9 @@ impl FamilyDefaults for BiquadraticMultSecondIterate
     default_bounds!();
 }
 
-impl HasChild for BiquadraticMultSecondIterate
+impl HasJulia for BiquadraticMultSecondIterate
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(2.5)
     }
@@ -758,14 +767,6 @@ impl DynamicalFamily for BiquadraticMultSection
         self.starting_plane = self.starting_plane.swap();
     }
 
-    fn dynam_map(&self, point: Cplx) -> Self::Var
-    {
-        match self.starting_plane {
-            PlaneID::ZPlane => Bicomplex::PlaneA(point),
-            PlaneID::WPlane => Bicomplex::PlaneB(point),
-        }
-    }
-
     fn periodicity_tolerance(&self) -> Real
     {
         1e-14
@@ -782,13 +783,24 @@ impl FamilyDefaults for BiquadraticMultSection
     }
 }
 
-impl HasChild for BiquadraticMultSection
+impl HasJulia for BiquadraticMultSection
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, a: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, a: &Self::Param) -> Bounds
     {
         Bounds::square(2.5, -0.5 * a)
+    }
+
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        match self.starting_plane {
+            PlaneID::ZPlane => Bicomplex::PlaneA(point),
+            PlaneID::WPlane => Bicomplex::PlaneB(point),
+        }
+    }
+
+    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    {
+        (self.dynam_map(point), ONE)
     }
 }
 

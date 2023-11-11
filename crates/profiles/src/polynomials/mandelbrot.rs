@@ -30,11 +30,6 @@ impl DynamicalFamily for Mandelbrot
     parameter_plane_impl!();
     default_name!();
 
-    fn param_map(&self, point: Cplx) -> Self::Param
-    {
-        point
-    }
-
     fn escape_radius(&self) -> Real
     {
         1e26
@@ -113,12 +108,10 @@ impl FamilyDefaults for Mandelbrot
     default_bounds!();
 }
 
-impl HasChild for Mandelbrot
+impl HasJulia for Mandelbrot
 {
-    type Child = JuliaSet<Self>;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }

@@ -85,13 +85,9 @@ impl FamilyDefaults for RiemannXi
     }
 }
 
-impl HasChild for RiemannXi
-{
-    type Child = RiemannXiNewton;
-
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        Bounds::square(30., Cplx::new(0.5, 0.))
+impl HasChild<RiemannXiNewton> for RiemannXi {
+    fn to_child_param(param: Self::Param) -> <<RiemannXiNewton as DynamicalFamily>::MetaParam as ParamList>::Param {
+        param
     }
 }
 
@@ -179,7 +175,10 @@ impl DynamicalFamily for RiemannXiNewton
 
 impl FamilyDefaults for RiemannXiNewton
 {
-    default_bounds!();
+    fn default_bounds(&self) -> Bounds
+    {
+        Bounds::square(30., Cplx::new(0.5, 0.))
+    }
 
     #[inline]
     fn default_selection(&self) -> Cplx
@@ -188,13 +187,9 @@ impl FamilyDefaults for RiemannXiNewton
     }
 }
 
-impl HasChild for RiemannXiNewton
-{
-    type Child = Self;
-
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
-    {
-        self.default_bounds()
+impl HasChild<Self> for RiemannXiNewton {
+    fn to_child_param(param: Self::Param) -> <<Self as DynamicalFamily>::MetaParam as ParamList>::Param {
+        param
     }
 }
 

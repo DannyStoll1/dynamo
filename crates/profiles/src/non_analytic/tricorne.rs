@@ -62,10 +62,7 @@ impl<const N: Period> FamilyDefaults for Tricorne<N>
     default_bounds!();
 }
 
-impl<const N: Period> HasChild for Tricorne<N>
-{
-    type Child = JuliaSet<Self>;
-}
+impl<const N: Period> HasJulia for Tricorne<N> {}
 
 impl<const N: Period> MarkedPoints for Tricorne<N>
 {

@@ -85,10 +85,7 @@ impl<const D: i32> FamilyDefaults for MinsikHanPhi<D>
     }
 }
 
-impl<const D: i32> HasChild for MinsikHanPhi<D>
-{
-    type Child = JuliaSet<Self>;
-}
+impl<const D: i32> HasJulia for MinsikHanPhi<D> {}
 
 impl<const D: i32> MarkedPoints for MinsikHanPhi<D>
 {

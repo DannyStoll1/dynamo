@@ -84,6 +84,11 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
             fill_rate: 8.0 / Self::MOD.norm(),
         }
     }
+
+    #[inline]
+    fn param_map(&self, point: Cplx) -> Self::Param {
+        point.into()
+    }
 }
 
 impl<const A: i64, const B: i64> FamilyDefaults for GaussianMandel<A, B>
@@ -101,11 +106,9 @@ impl<const A: i64, const B: i64> FamilyDefaults for GaussianMandel<A, B>
     }
 }
 
-impl<const A: i64, const B: i64> HasChild for GaussianMandel<A, B>
+impl<const A: i64, const B: i64> HasJulia for GaussianMandel<A, B>
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         self.default_bounds()
     }

@@ -23,6 +23,7 @@ macro_rules! parameter_plane_impl {
         type Deriv = Cplx;
 
         dynamo_core::macros::basic_plane_impl!();
+        dynamo_core::macros::param_map!();
     };
     ($var: ty, $param: ty, $deriv: ty, $meta_param: ty) => {
         type Var = $var;
@@ -36,16 +37,12 @@ macro_rules! parameter_plane_impl {
 
 macro_rules! has_child_impl {
     ($struct: ty) => {
-        impl HasChild for $struct
-        {
-            type Child = JuliaSet<Self>;
-        }
+        impl HasJulia for $struct {}
     };
     ($struct: ty, $radius: literal) => {
-        impl HasChild for $struct
+        impl HasJulia for $struct
         {
-            type Child = JuliaSet<Self>;
-            fn default_julia_bounds(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+            fn default_bounds_child(&self, _point: Cplx, _param: &Self::Param) -> Bounds
             {
                 Bounds::centered_square(4.)
             }

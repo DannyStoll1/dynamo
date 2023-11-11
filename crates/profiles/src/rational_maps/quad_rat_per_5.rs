@@ -137,11 +137,9 @@ impl FamilyDefaults for QuadRatPer5
     }
 }
 
-impl HasChild for QuadRatPer5
+impl HasJulia for QuadRatPer5
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, param: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, param: &Self::Param) -> Bounds
     {
         Bounds::square(20., self.start_point(ONE, param))
     }

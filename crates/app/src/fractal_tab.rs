@@ -342,7 +342,13 @@ impl FractalTab
                     });
                 });
                 ui.menu_button("Cubic Per(1, λ)", |ui| {
-                    fractal_menu_button!(self, ui, "λ-plane", CubicPer1LambdaParam);
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ-plane",
+                        CubicPer1LambdaParam,
+                        CubicPer1Lambda
+                    );
                     fractal_menu_button!(
                         self,
                         ui,
@@ -385,7 +391,13 @@ impl FractalTab
                     );
                 });
                 ui.menu_button("Per(2, λ)", |ui| {
-                    fractal_menu_button!(self, ui, "λ-plane", CubicPer2LambdaParam);
+                    fractal_menu_button!(
+                        self,
+                        ui,
+                        "λ-plane",
+                        CubicPer2LambdaParam,
+                        CubicPer2Lambda
+                    );
                     fractal_menu_button!(
                         self,
                         ui,
@@ -441,7 +453,7 @@ impl FractalTab
                 });
             });
             ui.menu_button("Biquadratic Maps", |ui| {
-                fractal_menu_button!(self, ui, "λ-plane", BiquadraticMultParam);
+                fractal_menu_button!(self, ui, "λ-plane", BiquadraticMultParam, BiquadraticMult);
                 fractal_menu_button!(
                     self,
                     ui,
@@ -516,7 +528,7 @@ impl FractalTab
             });
             fractal_menu_button!(self, ui, "QuadRat Preper(2, 2)", QuadRatPreper22);
             ui.menu_button("QuadRat Per(1, λ)", |ui| {
-                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer1LambdaParam);
+                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer1LambdaParam, QuadRatPer1Lambda);
                 fractal_menu_button!(
                     self,
                     ui,
@@ -557,7 +569,7 @@ impl FractalTab
                 );
             });
             ui.menu_button("QuadRat Per(2, λ)", |ui| {
-                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer2LambdaParam);
+                fractal_menu_button!(self, ui, "λ-plane", QuadRatPer2LambdaParam, QuadRatPer2Lambda);
                 fractal_menu_button!(
                     self,
                     ui,
@@ -617,7 +629,13 @@ impl FractalTab
             fractal_menu_button!(self, ui, "z -> λcos(z)", Cosine);
             fractal_menu_button!(self, ui, "z -> cos(z) + c", CosineAdd);
             fractal_menu_button!(self, ui, "z -> sin(z) + z + τc", SineWander);
-            fractal_menu_button!(self, ui, "Riemann Xi Newton [SLOW!]", RiemannXi);
+            fractal_menu_button!(
+                self,
+                ui,
+                "Riemann Xi Newton [SLOW!]",
+                RiemannXi,
+                RiemannXiNewton
+            );
         });
     }
 
@@ -634,7 +652,7 @@ impl FractalTab
                     fractal_menu_button!(self, ui, format!("Degree {}", D), BurningShip<D>);
                 });
             });
-            fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam);
+            fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam, Sailboat);
             fractal_menu_button!(self, ui, "Rulkov Map", Rulkov);
         });
     }
@@ -674,12 +692,10 @@ impl FractalTab
         // });
     }
 
-    fn change_fractal<P, J, M, T>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
+    fn change_fractal<P, J>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
     where
-        P: Displayable + Clone + 'static,
-        J: Displayable + DynamicalFamily<MetaParam = M> + Clone + 'static,
-        M: ParamList<Param = T>,
-        T: From<P::Param> + std::fmt::Display,
+        P: Displayable + HasChild<J> + Clone + 'static,
+        J: Displayable + DynamicalFamily + Clone + 'static,
     {
         use dynamo_gui::interface::PanePair;
         let image_height = self.interface.get_image_height();
@@ -751,7 +767,7 @@ impl Default for FractalTab
         let height = IMAGE_HEIGHT;
 
         let parent_plane = Profile::default().with_res_y(height).with_max_iter(1024);
-        let child_plane = <Profile as HasChild>::Child::from(parent_plane.clone());
+        let child_plane = JuliaSet::from(parent_plane.clone());
 
         let interface = Box::new(MainInterface::new(parent_plane, child_plane, height));
 

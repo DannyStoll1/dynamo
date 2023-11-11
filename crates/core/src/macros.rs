@@ -82,6 +82,23 @@ macro_rules! basic_plane_impl {
 }
 
 #[macro_export]
+macro_rules! param_map {
+    () => {
+        #[inline]
+        fn param_map(&self, t: Cplx) -> Self::Param
+        {
+            t
+        }
+
+        #[inline]
+        fn param_map_d(&self, t: Cplx) -> (Self::Param, Self::Deriv)
+        {
+            (t, ONE)
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! default_name {
     () => {
         fn name(&self) -> String
@@ -192,5 +209,5 @@ macro_rules! basic_escape_encoding {
 
 pub use {
     basic_escape_encoding, basic_plane_impl, default_bounds, default_bounds_impl, default_name,
-    fractal_impl, point_grid_getters,
+    fractal_impl, param_map, point_grid_getters,
 };

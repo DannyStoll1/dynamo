@@ -236,11 +236,7 @@ pub trait DynamicalFamily: Sync + Send
 
     /// Map points in the image to parameters. Used for multi-parameter systems or covering maps
     /// over existing parameter planes.
-    #[inline]
-    fn param_map(&self, point: Cplx) -> Self::Param
-    {
-        point.into()
-    }
+    fn param_map(&self, point: Cplx) -> Self::Param;
 
     /// param_map together with its derivative.
     /// TODO: implement this correctly
@@ -248,22 +244,6 @@ pub trait DynamicalFamily: Sync + Send
     fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
     {
         (self.param_map(point), Self::Deriv::one())
-    }
-
-    /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
-    /// over existing dynamical planes.
-    ///
-    /// Currently, this is only called in the implementation for `start_point` in Julia sets.
-    #[inline]
-    fn dynam_map(&self, point: Cplx) -> Self::Var
-    {
-        point.into()
-    }
-
-    #[inline]
-    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
-    {
-        (point.into(), Self::Deriv::one())
     }
 
     #[inline]
@@ -537,20 +517,17 @@ pub trait FamilyDefaults : DynamicalFamily {
     }
 }
 
-pub trait HasChild: DynamicalFamily
-{
-    type Child: DynamicalFamily;
-
+pub trait HasJulia: DynamicalFamily {
     #[inline]
     fn default_max_iter_child(&self) -> Period {
         128
     }
 
     /// Default bounds for Julia sets spawned from this plane. This is only called by Julia sets,
-    /// who reference the parent's `default_julia_bounds` in their `default_bounds`
+    /// who reference the parent's `default_bounds_child` in their `default_bounds`
     /// implementations.
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(2.2)
     }
@@ -560,12 +537,39 @@ pub trait HasChild: DynamicalFamily
     {
         Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
     }
+
+    /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
+    /// over existing dynamical planes.
+    ///
+    /// Currently, this is only called in the implementation for `start_point` in Julia sets.
+    #[inline]
+    fn dynam_map(&self, point: Cplx) -> Self::Var
+    {
+        point.into()
+    }
+
+    #[inline]
+    fn dynam_map_d(&self, point: Cplx) -> (Self::Var, Self::Deriv)
+    {
+        (point.into(), Self::Deriv::one())
+    }
+}
+
+pub trait HasChild<C: DynamicalFamily>: DynamicalFamily
+{
+    fn to_child_param(param: Self::Param) -> <C::MetaParam as ParamList>::Param;
+}
+
+impl<T: HasJulia> HasChild<JuliaSet<T>> for T {
+    fn to_child_param(param: Self::Param) -> <<JuliaSet<T> as DynamicalFamily>::MetaParam as ParamList>::Param {
+        param
+    }
 }
 
 
 pub trait MarkedPoints: DynamicalFamily
 {
-    /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
+    /// Criticaanalyzerl points of the map associated to a given parameter, which can be marked on the dynamical plane.
     #[inline]
     fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
@@ -1086,10 +1090,10 @@ where
 }
 
 pub trait Displayable:
-    DynamicalFamily + FamilyDefaults + HasChild + ExternalRays + Equipotential + Computable + MarkedPoints
+    DynamicalFamily + FamilyDefaults + ExternalRays + Equipotential + Computable + MarkedPoints
 {
 }
 impl<P> Displayable for P where
-    P: DynamicalFamily + FamilyDefaults + HasChild + ExternalRays + Equipotential + Computable + MarkedPoints
+    P: DynamicalFamily + FamilyDefaults + ExternalRays + Equipotential + Computable + MarkedPoints
 {
 }

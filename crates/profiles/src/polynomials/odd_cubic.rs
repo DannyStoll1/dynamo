@@ -70,12 +70,10 @@ impl FamilyDefaults for OddCubic
     default_bounds!();
 }
 
-impl HasChild for OddCubic
+impl HasJulia for OddCubic
 {
-    type Child = JuliaSet<Self>;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, _param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _param: &Cplx) -> Bounds
     {
         Bounds::centered_square(2.2)
     }

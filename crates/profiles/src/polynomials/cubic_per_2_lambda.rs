@@ -105,11 +105,9 @@ impl FamilyDefaults for CubicPer2Lambda
     default_bounds!();
 }
 
-impl HasChild for CubicPer2Lambda
+impl HasJulia for CubicPer2Lambda
 {
-    type Child = JuliaSet<Self>;
-
-    fn default_julia_bounds(&self, _point: Cplx, _c: &Self::Param) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::centered_square(4.)
     }
@@ -214,6 +212,7 @@ impl DynamicalFamily for CubicPer2LambdaParam
     type Deriv = Cplx;
 
     basic_plane_impl!();
+    param_map!();
 
     #[inline]
     fn map(&self, z: Self::Var, l: &Self::Param) -> Self::Var
@@ -286,11 +285,15 @@ impl FamilyDefaults for CubicPer2LambdaParam
     }
 }
 
-impl HasChild for CubicPer2LambdaParam
-{
-    type Child = CubicPer2Lambda;
+impl HasChild<CubicPer2Lambda> for CubicPer2LambdaParam {
+    fn to_child_param(param: Self::Param) -> <<CubicPer2Lambda as DynamicalFamily>::MetaParam as ParamList>::Param {
+        param
+    }
+}
 
-    fn default_julia_bounds(&self, point: Cplx, _param: &Self::Param) -> Bounds
+impl HasJulia for CubicPer2LambdaParam
+{
+    fn default_bounds_child(&self, point: Cplx, _param: &Self::Param) -> Bounds
     {
         let r = 3.5 / (point.norm() + 0.01);
         Bounds::centered_square(r)
@@ -313,7 +316,7 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
         let param = parent.param_map(point);
         let point_grid = parent
             .point_grid()
-            .new_with_same_height(parent.default_julia_bounds(point, &param));
+            .new_with_same_height(parent.default_bounds_child(point, &param));
         Self {
             point_grid,
             max_iter: parent.max_iter(),
@@ -384,12 +387,10 @@ impl FamilyDefaults for CubicPer2CritMarked
     default_bounds!();
 }
 
-impl HasChild for CubicPer2CritMarked
+impl HasJulia for CubicPer2CritMarked
 {
-    type Child = JuliaSet<Self>;
-
     #[inline]
-    fn default_julia_bounds(&self, _point: Cplx, param: &Cplx) -> Bounds
+    fn default_bounds_child(&self, _point: Cplx, param: &Cplx) -> Bounds
     {
         Bounds::square(2.2, param / 2.)
     }
