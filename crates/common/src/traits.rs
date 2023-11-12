@@ -268,10 +268,7 @@ impl<V> Variable for V where
         + Describe
 {
 }
-impl<P> Parameter for P where
-    P: From<Cplx> + Clone + Send + Sync + Default + PartialEq + Describe + Summarize
-{
-}
+impl<P> Parameter for P where P: Clone + Send + Sync + Default + PartialEq + Describe + Summarize {}
 impl<D> Derivative for D where
     D: Polar<Real>
         + Send

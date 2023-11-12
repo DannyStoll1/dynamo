@@ -32,26 +32,6 @@ where
 }
 impl<T> Summarize for Pair<T> where T: std::fmt::Display {}
 
-impl<T> From<Cplx> for Pair<T>
-where
-    T: std::fmt::Display,
-{
-    fn from(_z: Cplx) -> Self
-    {
-        unimplemented!()
-    }
-}
-
-impl<T> From<Pair<T>> for Cplx
-where
-    T: std::fmt::Display,
-{
-    fn from(_value: Pair<T>) -> Self
-    {
-        unimplemented!()
-    }
-}
-
 pub type RealPair = Pair<Real>;
 pub type CplxPair = Pair<Cplx>;
 
@@ -67,22 +47,6 @@ pub struct ComplexQuad
 }
 
 impl Summarize for ComplexQuad {}
-
-impl From<Cplx> for ComplexQuad
-{
-    fn from(_z: Cplx) -> Self
-    {
-        unimplemented!()
-    }
-}
-
-impl From<ComplexQuad> for Cplx
-{
-    fn from(_value: ComplexQuad) -> Self
-    {
-        unimplemented!()
-    }
-}
 
 impl Norm<Real> for Cplx
 {
