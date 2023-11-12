@@ -144,7 +144,7 @@ pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
 ];
 
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 21] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
@@ -156,11 +156,20 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 21] = [
     },
     // External ray to point
     Hotkey {
-        shortcut: Some(CTRL_X),
+        shortcut: Some(KEY_Y),
         action: DrawExternalRay {
             select_landing_point: true,
         },
         show_in_menu: true,
+        menu_action_override: None,
+    },
+    // External ray to point
+    Hotkey {
+        shortcut: Some(CTRL_X),
+        action: DrawExternalRay {
+            select_landing_point: true,
+        },
+        show_in_menu: false,
         menu_action_override: None,
     },
     // Rays of exact period

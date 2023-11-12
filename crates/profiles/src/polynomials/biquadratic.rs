@@ -434,7 +434,10 @@ impl DynamicalFamily for BiquadraticMultParam
     #[inline]
     fn param_map(&self, t: Cplx) -> Self::Param
     {
-        t.into()
+        CplxPair {
+            a: 1e-4.into(),
+            b: 1e4 * t,
+        }
     }
 
     #[inline]
