@@ -1068,7 +1068,10 @@ impl MarkedPoints for QuadRatPer2Cover
     }
 }
 
-impl EscapeEncoding for QuadRatPer2 {}
+impl EscapeEncoding for QuadRatPer2
+{
+    basic_escape_encoding!(2.0, 2);
+}
 impl ExternalRays for QuadRatPer2 {}
 
 impl EscapeEncoding for QuadRatPer2Cover {}

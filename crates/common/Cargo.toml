@@ -1,6 +1,6 @@
 [package]
 name = "dynamo_common"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 authors = ["Danny Stoll <dastoll@umich.edu>"]
 description = "A tool for studying discrete time dynamical systems - Utilities and Common Files"
