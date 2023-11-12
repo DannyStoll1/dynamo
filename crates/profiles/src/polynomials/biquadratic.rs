@@ -93,6 +93,7 @@ impl EscapeEncoding for Biquadratic
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -100,7 +101,10 @@ impl EscapeEncoding for Biquadratic
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
         let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 
@@ -379,6 +383,7 @@ impl EscapeEncoding for BiquadraticMult
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -386,7 +391,10 @@ impl EscapeEncoding for BiquadraticMult
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
         let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 
@@ -520,6 +528,7 @@ impl EscapeEncoding for BiquadraticMultParam
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -527,7 +536,10 @@ impl EscapeEncoding for BiquadraticMultParam
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
         let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 
@@ -664,6 +676,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -671,7 +684,10 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
         let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 
@@ -871,6 +887,7 @@ impl EscapeEncoding for BiquadraticMultSection
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -878,7 +895,10 @@ impl EscapeEncoding for BiquadraticMultSection
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
         let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 

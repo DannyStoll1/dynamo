@@ -25,13 +25,18 @@ pub struct Coloring
 {
     algorithm: IncoloringAlgorithm,
     palette: Palette,
+    esc_period: Period,
 }
 impl Coloring
 {
     #[must_use]
     pub const fn new(algorithm: IncoloringAlgorithm, palette: Palette) -> Self
     {
-        Self { algorithm, palette }
+        Self {
+            algorithm,
+            palette,
+            esc_period: 1,
+        }
     }
 
     #[must_use]
@@ -41,7 +46,10 @@ impl Coloring
     {
         use PointInfo::*;
         match point_info {
-            Escaping { potential } => self.palette.map_color32(*potential),
+            Escaping {
+                potential,
+                phase: None,
+            } => self.palette.map_color32(*potential),
             Periodic(data) => self.algorithm.color_periodic(&self.palette, data),
             PeriodicKnownPotential(data) => {
                 self.algorithm.color_known_potential(&self.palette, data)
@@ -49,6 +57,12 @@ impl Coloring
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
             Unknown => self.palette.unknown_color,
+            Escaping {
+                potential,
+                phase: Some(phase),
+            } => self
+                .palette
+                .map_color32_phase(*potential, *phase, self.esc_period),
             MarkedPoint {
                 class_id,
                 num_point_classes,
@@ -116,6 +130,13 @@ impl Coloring
     pub const fn with_interior_algorithm(mut self, algorithm: IncoloringAlgorithm) -> Self
     {
         self.algorithm = algorithm;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_escape_period(mut self, esc_period: Period) -> Self
+    {
+        self.esc_period = esc_period;
         self
     }
 

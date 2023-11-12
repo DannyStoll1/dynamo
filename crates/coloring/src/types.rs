@@ -35,6 +35,21 @@ impl Hsv
         }
     }
 
+    pub const fn with_hue(mut self, hue: f32) -> Self {
+        self.hue = hue;
+        self
+    }
+
+    pub const fn with_saturation(mut self, saturation: f32) -> Self {
+        self.saturation = saturation;
+        self
+    }
+
+    pub const fn with_intensity(mut self, intensity: f32) -> Self {
+        self.intensity = intensity;
+        self
+    }
+
     fn as_rgb_tuple_round(&self) -> (u8, u8, u8)
     {
         let c = self.saturation;

@@ -12,6 +12,7 @@ pub enum PointInfo<D>
     Escaping
     {
         potential: IterCount,
+        phase: Option<Period>,
     },
     Periodic(PointInfoPeriodic<D>),
     PeriodicKnownPotential(PointInfoKnownPotential<D>),

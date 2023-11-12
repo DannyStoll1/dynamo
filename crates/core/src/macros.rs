@@ -173,6 +173,7 @@ macro_rules! basic_escape_encoding {
             if z.is_nan() {
                 return PointInfo::Escaping {
                     potential: f64::from(iters) - 1.,
+                    phase: None,
                 };
             }
 
@@ -180,7 +181,10 @@ macro_rules! basic_escape_encoding {
             let v = z.norm_sqr().log2();
             let residual = (v / u).log($degree);
             let potential = IterCount::from(iters) - IterCount::from(residual);
-            PointInfo::Escaping { potential }
+            PointInfo::Escaping {
+                potential,
+                phase: None,
+            }
         }
     };
     ($degree: expr, $period: expr) => {
@@ -193,7 +197,8 @@ macro_rules! basic_escape_encoding {
         {
             if z.is_nan() {
                 return PointInfo::Escaping {
-                    potential: f64::from(iters) - 1.,
+                    potential: IterCount::from(iters - $period),
+                    phase: Some(iters % $period),
                 };
             }
 
@@ -202,7 +207,10 @@ macro_rules! basic_escape_encoding {
             let residual = (v / u).log($degree);
             let potential =
                 ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
-            PointInfo::Escaping { potential }
+            PointInfo::Escaping {
+                potential,
+                phase: Some(iters % $period),
+            }
         }
     };
 }

@@ -1,6 +1,6 @@
 use super::Hsv;
-use dynamo_common::symbolic_dynamics::OrbitSchema;
 use dynamo_common::types::IterCount;
+use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
 use egui::Color32;
 use image::Rgb;
 use rand::prelude::*;
@@ -254,6 +254,26 @@ impl Palette
         Color32::from_rgb(r, g, b)
     }
 
+    #[must_use]
+    pub fn map_color32_phase(&self, value: IterCount, phase: Period, esc_period: Period)
+        -> Color32
+    {
+        if esc_period > 1 {
+            let potential = (value + 1.0 as IterCount).log2();
+
+            let r = self.color_map_r.get_value_f64(potential) as f32;
+            let b = self.color_map_b.get_value_f64(potential) as f32;
+            DiscretePalette::default()
+                .with_num_colors(esc_period as f32)
+                .map_hsv(phase as f32, 1.0)
+                .with_intensity(r)
+                .with_saturation(b)
+                .into()
+        } else {
+            self.map_color32(value)
+        }
+    }
+
     pub fn scale_period(&mut self, scale_factor: f64)
     {
         *self.color_map_r.get_period_mut() *= scale_factor;
@@ -304,6 +324,13 @@ impl DiscretePalette
             saturation: Self::DEFAULT_SATURATION,
             luminosity: Self::DEFAULT_LUMINOSITY,
         }
+    }
+
+    #[must_use]
+    pub const fn with_num_colors(mut self, num_colors: f32) -> Self
+    {
+        self.num_colors = num_colors;
+        self
     }
 
     #[must_use]

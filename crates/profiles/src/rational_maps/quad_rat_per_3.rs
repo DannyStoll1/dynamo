@@ -95,7 +95,8 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     #[inline]
-    fn param_map(&self, point: Cplx) -> Self::Param {
+    fn param_map(&self, point: Cplx) -> Self::Param
+    {
         point.into()
     }
 }
@@ -263,7 +264,10 @@ impl InfinityFirstReturnMap for QuadRatPer3
     }
 }
 
-impl EscapeEncoding for QuadRatPer3 {}
+impl EscapeEncoding for QuadRatPer3
+{
+    basic_escape_encoding!(2., 3);
+}
 impl ExternalRays for QuadRatPer3
 {
     ext_ray_impl_rk!(0.01, 1e6);

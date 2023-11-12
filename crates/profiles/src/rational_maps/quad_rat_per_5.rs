@@ -211,7 +211,8 @@ impl EscapeEncoding for QuadRatPer5
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
+                potential: f64::from(iters) - 5.,
+                phase: Some(iters % 5)
             };
         }
 
@@ -220,7 +221,10 @@ impl EscapeEncoding for QuadRatPer5
         let delta = top_coeff(*a, *b).norm_sqr().log2();
         let residual = ((u + delta) / (v + delta)).log2();
         let potential = (residual as IterCount).mul_add(5., f64::from(iters));
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: Some(iters % 5),
+        }
     }
 }
 impl ExternalRays for QuadRatPer5 {}

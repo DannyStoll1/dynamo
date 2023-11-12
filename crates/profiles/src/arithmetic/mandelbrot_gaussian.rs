@@ -86,7 +86,8 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
     }
 
     #[inline]
-    fn param_map(&self, point: Cplx) -> Self::Param {
+    fn param_map(&self, point: Cplx) -> Self::Param
+    {
         point.into()
     }
 }
@@ -158,6 +159,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: Real::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -166,7 +168,10 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
         let q = self.escape_coeff(c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 

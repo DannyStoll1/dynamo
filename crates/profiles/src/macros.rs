@@ -150,18 +150,23 @@ macro_rules! degree_impl_transcendental {
                 if z.is_nan() {
                     return PointInfo::Escaping {
                         potential: f64::from(iters) - 1.,
+                        phase: None,
                     };
                 }
                 if z.is_infinite() {
                     return PointInfo::Escaping {
                         potential: f64::from(iters) + 1.,
+                        phase: None,
                     };
                 }
                 let u = slog(self.escape_radius());
                 let v = slog(z.norm_sqr());
                 let residual = v - u;
                 let potential = f64::from(iters) - (residual as IterCount);
-                PointInfo::Escaping { potential }
+                PointInfo::Escaping {
+                    potential,
+                    phase: None,
+                }
             }
         }
 

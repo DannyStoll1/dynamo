@@ -306,7 +306,7 @@ impl MarkedPoints for CubicPer1Lambda
 
 impl EscapeEncoding for CubicPer1Lambda
 {
-    basic_escape_encoding!(3., 1.);
+    basic_escape_encoding!(3.);
 }
 
 impl InfinityFirstReturnMap for CubicPer1Lambda
@@ -453,7 +453,7 @@ impl MarkedPoints for CubicPer1LambdaParam
 
 impl EscapeEncoding for CubicPer1LambdaParam
 {
-    basic_escape_encoding!(3., 1.);
+    basic_escape_encoding!(3.);
 }
 
 impl InfinityFirstReturnMap for CubicPer1LambdaParam
@@ -649,6 +649,7 @@ impl EscapeEncoding for CubicPer1_1
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -656,7 +657,10 @@ impl EscapeEncoding for CubicPer1_1
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
         let potential = f64::from(iters) - (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 
@@ -1463,6 +1467,7 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 1.,
+                phase: None,
             };
         }
 
@@ -1471,7 +1476,10 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         let delta = 0.5 * a.norm().log2();
         let residual = ((v + delta) / (u + delta)).log(3.);
         let potential = IterCount::from(iters) - IterCount::from(residual);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 

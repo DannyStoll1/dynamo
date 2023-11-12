@@ -488,7 +488,7 @@ impl std::fmt::Display for PlaneType
     }
 }
 
-pub trait FamilyDefaults : DynamicalFamily {
+pub trait FamilyDefaults : DynamicalFamily + InfinityFirstReturnMap {
     /// Default bounds for this plane
     fn default_bounds(&self) -> Bounds;
 
@@ -502,7 +502,7 @@ pub trait FamilyDefaults : DynamicalFamily {
     /// Default coloring algorithm to apply when loading the parameter plane.
     fn default_coloring(&self) -> Coloring
     {
-        let mut coloring = Coloring::default();
+        let mut coloring = Coloring::default().with_escape_period(self.escaping_period());
         coloring.set_interior_algorithm(IncoloringAlgorithm::PeriodMultiplier);
         coloring
     }
@@ -517,7 +517,7 @@ pub trait FamilyDefaults : DynamicalFamily {
     }
 }
 
-pub trait HasJulia: DynamicalFamily {
+pub trait HasJulia: DynamicalFamily + InfinityFirstReturnMap {
     #[inline]
     fn default_max_iter_child(&self) -> Period {
         128
@@ -536,6 +536,7 @@ pub trait HasJulia: DynamicalFamily {
     fn default_coloring_child(&self) -> Coloring
     {
         Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
+            .with_escape_period(1)
     }
 
     /// Map points in the image to dynamical variables. Used for multivariable systems or covering maps
@@ -965,6 +966,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: Real::from(iters) - 1.,
+                phase: None
             };
         }
 
@@ -973,7 +975,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         let q = self.escape_coeff(&c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping { potential, phase: None }
     }
 }
 

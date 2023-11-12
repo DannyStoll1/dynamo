@@ -138,6 +138,7 @@ impl EscapeEncoding for QuadRatSymmetryLocus
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 2.,
+                phase: None,
             };
         }
 
@@ -146,7 +147,10 @@ impl EscapeEncoding for QuadRatSymmetryLocus
         let v = z.norm_sqr().log(expansion_rate);
         let residual = u - v;
         let potential = IterCount::from(iters) + (residual as IterCount);
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
     }
 }
 

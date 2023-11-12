@@ -1,4 +1,4 @@
-use crate::macros::{degree_impl, profile_imports, has_child_impl};
+use crate::macros::{degree_impl, has_child_impl, profile_imports};
 use crate::macros::{horner, horner_monic};
 profile_imports!();
 
@@ -104,7 +104,7 @@ impl MarkedPoints for QuadRatPreper22
 
 impl InfinityFirstReturnMap for QuadRatPreper22
 {
-    degree_impl!(2, 1);
+    degree_impl!(2, 2);
     // TODO: angle_map_large_param, escaping_phase
 }
 
@@ -120,6 +120,7 @@ impl EscapeEncoding for QuadRatPreper22
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 2.,
+                phase: Some(iters % 2),
             };
         }
 
@@ -128,7 +129,10 @@ impl EscapeEncoding for QuadRatPreper22
         let v = z.norm_sqr().log(expansion_rate);
         let residual = u - v;
         let potential = 2.0f64.mul_add(residual as IterCount, IterCount::from(iters));
-        PointInfo::Escaping { potential }
+        PointInfo::Escaping {
+            potential,
+            phase: Some(iters % 2),
+        }
     }
 }
 

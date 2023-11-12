@@ -105,12 +105,21 @@ where
             .unwrap_or_default();
 
         let result_summary = match &self.result {
-            Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
+            Escaping {
+                potential,
+                phase: None,
+            } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
+            Escaping {
+                potential,
+                phase: Some(p),
+            } => format!("Escaped with phase {p}, potential: {potential:.DISPLAY_PREC$}"),
             Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
             PeriodicKnownPotential(data) => data.to_string(),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
-            Unknown => "Unknown result, likely due to insufficient floting-point precision".to_owned(),
+            Unknown => {
+                "Unknown result, likely due to insufficient floting-point precision".to_owned()
+            }
         };
         format!(
             "{start_desc}\
