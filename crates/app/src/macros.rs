@@ -20,10 +20,10 @@ macro_rules! fractal_menu_button {
             return;
         }
     };
-    ($self: ident, $ui: ident, $name: expr, $fractal: ident, $child: ident) => {
+    ($self: ident, $ui: ident, $name: expr, $fractal: ty, $child: ident) => {
         if $ui.button($name).clicked()
         {
-            $self.change_fractal(|| $fractal::default(), $child::from);
+            $self.change_fractal(|| <$fractal>::default(), $child::from);
             $self.interface.consume_click();
             $ui.close_menu();
             return;

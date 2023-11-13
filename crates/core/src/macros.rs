@@ -23,6 +23,18 @@ macro_rules! fractal_impl {
             }
         }
     };
+    ($param_name: ident, $param_value: expr, $bounds_fn: ident) => {
+        fn default() -> Self
+        {
+            let bounds = $bounds_fn($param_value);
+            let point_grid = PointGrid::new_by_res_y(1024, bounds);
+            Self {
+                point_grid,
+                max_iter: 1024,
+                $param_name: $param_value,
+            }
+        }
+    };
 }
 
 #[macro_export]

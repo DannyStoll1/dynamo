@@ -1,5 +1,5 @@
 pub mod burning_ship;
-pub use burning_ship::{BurningShip, Sailboat, SailboatParam};
+pub use burning_ship::{BurningShip, Sailboat};
 
 pub mod tricorne;
 pub use tricorne::Tricorne;

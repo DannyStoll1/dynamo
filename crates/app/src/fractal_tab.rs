@@ -653,7 +653,7 @@ impl FractalTab
                     fractal_menu_button!(self, ui, format!("Degree {}", D), BurningShip<D>);
                 });
             });
-            fractal_menu_button!(self, ui, "Sailboat Param", SailboatParam, Sailboat);
+            fractal_menu_button!(self, ui, "Sailboat Param", BurningShip<2>, Sailboat);
             fractal_menu_button!(self, ui, "Rulkov Map", Rulkov);
         });
     }

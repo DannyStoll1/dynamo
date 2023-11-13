@@ -87,6 +87,16 @@ impl<const D: Period> HasJulia for BurningShip<D>
     }
 }
 
+impl<const D: Period> HasChild<Sailboat<D>> for BurningShip<D>
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<Sailboat<D> as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
+        param
+    }
+}
+
 impl<const N: Period> MarkedPoints for BurningShip<N>
 {
     #[inline]
@@ -110,23 +120,30 @@ impl<const N: Period> MarkedPoints for BurningShip<N>
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Sailboat
+pub struct Sailboat<const N: Period>
 {
     point_grid: PointGrid,
     max_iter: Period,
     shift: Cplx,
 }
 
-impl Sailboat
+impl<const N: Period> Sailboat<N>
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(3.5);
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -4.,
+        max_x: 2.,
+        min_y: -3.,
+        max_y: 3.,
+    };
+    const ASPECT: Real = Self::DEFAULT_BOUNDS.aspect_ratio();
 }
-impl Default for Sailboat
+
+impl<const N: Period> Default for Sailboat<N>
 {
     fractal_impl!(shift, ZERO);
 }
 
-impl DynamicalFamily for Sailboat
+impl<const N: Period> DynamicalFamily for Sailboat<N>
 {
     type Var = Cplx;
     type Param = Cplx;
@@ -172,6 +189,11 @@ impl DynamicalFamily for Sailboat
         self.shift = new_param;
     }
 
+    fn get_param(&self) -> <Self::MetaParam as ParamList>::Param
+    {
+        self.shift
+    }
+
     #[inline]
     fn name(&self) -> String
     {
@@ -180,12 +202,27 @@ impl DynamicalFamily for Sailboat
     }
 }
 
-impl FamilyDefaults for Sailboat
+impl<const N: Period> FamilyDefaults for Sailboat<N>
 {
-    default_bounds!();
+    fn default_bounds(&self) -> Bounds
+    {
+        let center = Self::DEFAULT_BOUNDS.center();
+        let rad_y_0 = self.shift.im.abs() + Self::DEFAULT_BOUNDS.range_y() / 2.0;
+        let rad_x_1 = self.shift.re.abs() + Self::DEFAULT_BOUNDS.range_x() / 2.0;
+
+        let rad_y_1 = rad_x_1 * Self::ASPECT;
+
+        if rad_y_0 <= rad_y_1 {
+            Bounds::rect(rad_x_1, rad_y_1, center)
+        }
+        else {
+            let rad_x = rad_y_0 / Self::ASPECT;
+            Bounds::rect(rad_x, rad_y_0, center)
+        }
+    }
 }
 
-impl HasJulia for Sailboat
+impl<const N: Period> HasJulia for Sailboat<N>
 {
     fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
@@ -193,119 +230,25 @@ impl HasJulia for Sailboat
     }
 }
 
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SailboatParam
+impl<const N: Period> From<BurningShip<N>> for Sailboat<N>
 {
-    point_grid: PointGrid,
-    max_iter: Period,
-}
-
-impl SailboatParam
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.5,
-        max_x: 2.5,
-        min_y: -2.5,
-        max_y: 2.5,
-    };
-}
-impl Default for SailboatParam
-{
-    fractal_impl!();
-}
-
-impl DynamicalFamily for SailboatParam
-{
-    parameter_plane_impl!();
-
-    #[inline]
-    fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
+    fn from(fractal: BurningShip<N>) -> Self
     {
-        let z = Cplx::new(z.re.abs(), z.im.abs());
-        z.powi(2) + a
-    }
-
-    #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, a: &Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        let z = Cplx::new(z.re.abs(), z.im.abs());
-        (z.powi(2) + a, 2. * z)
-    }
-
-    #[inline]
-    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
-    {
-        *c
-    }
-
-    #[inline]
-    fn start_point_d(&self, _point: Cplx, c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        (*c, ZERO, ONE)
-    }
-
-    #[inline]
-    fn name(&self) -> String
-    {
-        "Sailboat Param".to_owned()
-    }
-}
-
-impl FamilyDefaults for SailboatParam
-{
-    default_bounds!();
-
-    fn default_selection(&self) -> Cplx
-    {
-        ZERO
-    }
-}
-
-impl HasChild<Sailboat> for SailboatParam
-{
-    fn to_child_param(
-        param: Self::Param,
-    ) -> <<Sailboat as DynamicalFamily>::MetaParam as ParamList>::Param
-    {
-        param
-    }
-}
-
-impl MarkedPoints for SailboatParam
-{
-    fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
-    {
-        vec![ZERO, ONE]
-    }
-}
-
-impl From<SailboatParam> for Sailboat
-{
-    fn from(parent: SailboatParam) -> Self
-    {
-        let point = parent.default_selection();
-        let param = parent.param_map(point);
-        let point_grid = parent.point_grid().clone();
-        Self {
-            point_grid,
-            max_iter: parent.max_iter(),
-            shift: param,
-        }
-        .with_default_bounds()
+        Self::default()
+            .with_res_y(fractal.point_grid.res_y)
+            .with_param(fractal.default_selection())
     }
 }
 
 impl<const N: Period> InfinityFirstReturnMap for BurningShip<N>
 {
-    degree_impl!(2);
+    degree_impl!(N as i64);
 }
 
 impl<const N: Period> EscapeEncoding for BurningShip<N> {}
 impl<const N: Period> ExternalRays for BurningShip<N> {}
 
-impl MarkedPoints for Sailboat
+impl<const N: Period> MarkedPoints for Sailboat<N>
 {
     #[inline]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
@@ -314,5 +257,4 @@ impl MarkedPoints for Sailboat
     }
 }
 
-degree_impl!(Sailboat, 2);
-degree_impl!(SailboatParam, 2);
+degree_impl!(Sailboat, N as i64; N: Period);

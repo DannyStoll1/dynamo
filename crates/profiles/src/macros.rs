@@ -67,6 +67,14 @@ macro_rules! degree_impl {
         impl EscapeEncoding for $plane {}
         impl ExternalRays for $plane {}
     };
+    ($plane: ident, $deg: expr; $($g:ident : $gt:ty),+) => {
+        impl<$(const $g: $gt),+> InfinityFirstReturnMap for $plane<$($g),+>
+        {
+            degree_impl!($deg);
+        }
+        impl<$(const $g: $gt),+> EscapeEncoding for $plane<$($g),+> {}
+        impl<$(const $g: $gt),+> ExternalRays for $plane<$($g),+> {}
+    };
     ($deg: expr) => {
         #[inline]
         fn degree(&self) -> AngleNum

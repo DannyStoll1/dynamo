@@ -18,35 +18,42 @@ impl Bounds
 {
     #[inline]
     #[must_use]
-    pub fn range_x(&self) -> Real
+    pub const fn range_x(&self) -> Real
     {
         self.max_x - self.min_x
     }
 
     #[inline]
     #[must_use]
-    pub fn range_y(&self) -> Real
+    pub const fn range_y(&self) -> Real
     {
         self.max_y - self.min_y
     }
 
     #[inline]
     #[must_use]
-    pub fn area(&self) -> Real
+    pub const fn area(&self) -> Real
     {
         self.range_x() * self.range_y()
     }
 
     #[inline]
     #[must_use]
-    pub fn mid_x(&self) -> Real
+    pub const fn aspect_ratio(&self) -> Real
+    {
+        self.range_y() / self.range_x()
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn mid_x(&self) -> Real
     {
         (self.max_x + self.min_x) / 2.
     }
 
     #[inline]
     #[must_use]
-    pub fn mid_y(&self) -> Real
+    pub const fn mid_y(&self) -> Real
     {
         (self.max_y + self.min_y) / 2.
     }
@@ -71,7 +78,7 @@ impl Bounds
 
     #[inline]
     #[must_use]
-    pub fn center(&self) -> Cplx
+    pub const fn center(&self) -> Cplx
     {
         let re = self.mid_x();
         let im = self.mid_y();
@@ -99,11 +106,17 @@ impl Bounds
     #[must_use]
     pub const fn square(radius: Real, center: Cplx) -> Self
     {
+        Self::rect(radius, radius, center)
+    }
+
+    #[must_use]
+    pub const fn rect(radius_x: Real, radius_y: Real, center: Cplx) -> Self
+    {
         Self {
-            min_x: -radius + center.re,
-            max_x: radius + center.re,
-            min_y: -radius + center.im,
-            max_y: radius + center.im,
+            min_x: -radius_x + center.re,
+            max_x: radius_x + center.re,
+            min_y: -radius_y + center.im,
+            max_y: radius_y + center.im,
         }
     }
 
