@@ -1,4 +1,5 @@
 use crate::macros::{degree_impl_transcendental, profile_imports};
+use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2};
 use dynamo_core::dynamics::PlaneType;
 profile_imports!();
@@ -85,8 +86,12 @@ impl FamilyDefaults for RiemannXi
     }
 }
 
-impl HasChild<RiemannXiNewton> for RiemannXi {
-    fn to_child_param(param: Self::Param) -> <<RiemannXiNewton as DynamicalFamily>::MetaParam as ParamList>::Param {
+impl HasChild<RiemannXiNewton> for RiemannXi
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<RiemannXiNewton as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
         param
     }
 }
@@ -101,7 +106,7 @@ pub struct RiemannXiNewton
 }
 impl RiemannXiNewton
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds::square(30., Cplx::new(0.5, 0.));
+    const DEFAULT_BOUNDS: Bounds = Bounds::square(30., Cplx::new(0.500001, 0.));
 }
 impl Default for RiemannXiNewton
 {
@@ -185,10 +190,19 @@ impl FamilyDefaults for RiemannXiNewton
     {
         ZERO
     }
+
+    fn default_coloring(&self) -> dynamo_color::Coloring
+    {
+        Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
+    }
 }
 
-impl HasChild<Self> for RiemannXiNewton {
-    fn to_child_param(param: Self::Param) -> <<Self as DynamicalFamily>::MetaParam as ParamList>::Param {
+impl HasChild<Self> for RiemannXiNewton
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<Self as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
         param
     }
 }

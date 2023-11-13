@@ -18,6 +18,6 @@ serde = ["dynamo_app/serde"]
 name = "Dynamo"
 identifier = "io.github.dannystoll1.dynamo"
 version = "0.7.1"
-icon = ["../docs/icons/*.png", "../docs/icons/*.icns"]
+icon = ["../../docs/icons/*.png", "../../docs/icons/*.icns"]
 short_description = "A tool for exploring dynamical systems on complex manifolds."
 osx_minimum_system_version = "10.7"

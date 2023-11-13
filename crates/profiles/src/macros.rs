@@ -143,7 +143,7 @@ macro_rules! degree_impl_transcendental {
                 &self,
                 iters: Period,
                 z: Cplx,
-                _base_param: &Cplx,
+                _base_param: &Self::Param,
             ) -> PointInfo<Self::Deriv>
             {
                 use dynamo_common::math_utils::slog;

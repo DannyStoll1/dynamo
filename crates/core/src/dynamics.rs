@@ -463,6 +463,7 @@ pub trait DynamicalFamily: Sync + Send
     {
         IncoloringAlgorithm::InternalPotential {
             periodicity_tolerance: self.periodicity_tolerance(),
+            crit_degree: 2.0,
         }
     }
 
@@ -472,6 +473,7 @@ pub trait DynamicalFamily: Sync + Send
     {
         IncoloringAlgorithm::PotentialAndPeriod {
             periodicity_tolerance: self.periodicity_tolerance(),
+            crit_degree: 2.0,
             fill_rate: 0.01,
         }
     }

@@ -273,7 +273,7 @@ pub fn riemann_xi_d(s: Cplx) -> [Cplx; 2]
 pub fn riemann_xi_d2(s: Cplx) -> [Cplx; 3]
 {
     if s.re < -5. {
-        // avoid underflow issues for large neative s
+        // avoid underflow issues for large negative s
         let [z0, z1, z2] = riemann_xi_d2(1.0 - s);
         return [z0, -z1, z2];
     }

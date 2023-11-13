@@ -81,6 +81,7 @@ impl<const A: i64, const B: i64> DynamicalFamily for GaussianMandel<A, B>
     {
         IncoloringAlgorithm::PotentialAndPeriod {
             periodicity_tolerance: self.periodicity_tolerance(),
+            crit_degree: 2.0,
             fill_rate: 8.0 / Self::MOD.norm(),
         }
     }

@@ -18,11 +18,13 @@ pub enum IncoloringAlgorithm
     InternalPotential
     {
         periodicity_tolerance: f64,
+        crit_degree: f64,
     },
     Preperiod,
     PotentialAndPeriod
     {
         periodicity_tolerance: f64,
+        crit_degree: f64,
         fill_rate: f64,
     },
     PreperiodPeriod
@@ -80,12 +82,15 @@ impl IncoloringAlgorithm
             }
             Self::InternalPotential {
                 periodicity_tolerance,
+                crit_degree,
             } => {
-                let val = Self::relative_potential(point_info, *periodicity_tolerance);
+                let val =
+                    Self::relative_potential(point_info, *periodicity_tolerance, *crit_degree);
                 palette.map_color32(val)
             }
             Self::PotentialAndPeriod {
                 periodicity_tolerance,
+                crit_degree,
                 fill_rate,
             } => {
                 let n = IterCount::from(point_info.period);
@@ -97,6 +102,7 @@ impl IncoloringAlgorithm
                     point_info.final_error,
                     *periodicity_tolerance,
                     mult_norm,
+                    *crit_degree,
                 );
 
                 let val = k / n - potential;
@@ -123,14 +129,19 @@ impl IncoloringAlgorithm
         }
     }
 
-    fn internal_potential(err: IterCount, tol: IterCount, mult_norm: IterCount) -> IterCount
+    fn internal_potential(
+        err: IterCount,
+        tol: IterCount,
+        mult_norm: IterCount,
+        crit_degree: f64,
+    ) -> IterCount
     {
         // Superattracting case
         // Assumes the first return map has local degree 2.
         // This could be improved to handle higher order critical points,
         // but we would need access to more information to estimate the order
         let potential = if mult_norm <= 1e-10 {
-            2. * (err.log(tol)).log2() as IterCount
+            2. * (err.log(tol)).log(crit_degree as IterCount) as IterCount
         }
         // Parabolic case
         else if (1. - mult_norm).abs() <= 1e-5 {
@@ -145,7 +156,11 @@ impl IncoloringAlgorithm
         potential
     }
 
-    fn relative_potential<D>(point_info: &PointInfoPeriodic<D>, tol: IterCount) -> IterCount
+    fn relative_potential<D>(
+        point_info: &PointInfoPeriodic<D>,
+        tol: IterCount,
+        crit_degree: f64,
+    ) -> IterCount
     where
         D: Polar<Real>,
     {
@@ -154,7 +169,8 @@ impl IncoloringAlgorithm
 
         let mult_norm = point_info.multiplier.norm();
 
-        let potential = Self::internal_potential(point_info.final_error, tol, mult_norm);
+        let potential =
+            Self::internal_potential(point_info.final_error, tol, mult_norm, crit_degree);
 
         let val = k / n - potential;
 

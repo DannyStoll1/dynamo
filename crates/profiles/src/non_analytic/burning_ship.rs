@@ -162,9 +162,9 @@ impl DynamicalFamily for Sailboat
     }
 
     #[inline]
-    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
+    fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
-        ZERO
+        *c
     }
 
     fn set_param(&mut self, new_param: <Self::MetaParam as ParamList>::Param)
@@ -222,8 +222,8 @@ impl DynamicalFamily for SailboatParam
     #[inline]
     fn map(&self, z: Self::Var, a: &Self::Param) -> Self::Var
     {
-        let z = Cplx::new(z.re.abs(), z.im.abs()) + a;
-        z.powi(2)
+        let z = Cplx::new(z.re.abs(), z.im.abs());
+        z.powi(2) + a
     }
 
     #[inline]
@@ -236,14 +236,14 @@ impl DynamicalFamily for SailboatParam
     #[inline]
     fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var
     {
-        -TWO_THIRDS * c
+        *c
     }
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, c: &Self::Param)
         -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        (-TWO_THIRDS * c, ZERO, Cplx::new(-TWO_THIRDS, 0.))
+        (*c, ZERO, ONE)
     }
 
     #[inline]
@@ -263,8 +263,12 @@ impl FamilyDefaults for SailboatParam
     }
 }
 
-impl HasChild<Sailboat> for SailboatParam {
-    fn to_child_param(param: Self::Param) -> <<Sailboat as DynamicalFamily>::MetaParam as ParamList>::Param {
+impl HasChild<Sailboat> for SailboatParam
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<Sailboat as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
         param
     }
 }

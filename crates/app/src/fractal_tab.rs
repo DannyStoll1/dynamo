@@ -629,6 +629,7 @@ impl FractalTab
             fractal_menu_button!(self, ui, "z -> λcos(z)", Cosine);
             fractal_menu_button!(self, ui, "z -> cos(z) + c", CosineAdd);
             fractal_menu_button!(self, ui, "z -> sin(z) + z + τc", SineWander);
+            fractal_menu_button!(self, ui, "Cosh Newton", CoshNewton, CoshNewton);
             fractal_menu_button!(
                 self,
                 ui,
