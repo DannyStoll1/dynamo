@@ -3,6 +3,7 @@
 use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 pub mod fractal_tab;
+pub mod sidebar;
 pub mod macros;
 #[cfg(feature = "scripting")]
 pub mod script_editor;

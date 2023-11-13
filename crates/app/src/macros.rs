@@ -1,76 +1,48 @@
-macro_rules! fractal_menu_button {
-    ($self: ident, $ui: ident, $name: expr, $fractal: ty) => {
-        if $ui.button($name).clicked()
-        {
-            $self.change_fractal(
-                || <$fractal>::default(),
+macro_rules! interface {
+    ($parent: ty) => {
+        || create_interface(|| <$parent>::default(), JuliaSet::from)
+    };
+    ($parent: ty, $child: ident) => {
+        || create_interface(|| <$parent>::default(), $child::from)
+    };
+    ($parent: ty, $covering: ident, $($periods: expr),+) => {
+        || create_interface(|| <$parent>::default().$covering($($periods),+), JuliaSet::from)
+    };
+}
+
+macro_rules! interface_mc {
+    ($parent: ty, $period: expr) => {
+        || {
+            create_interface(
+                || <$parent>::default().marked_cycle_curve($period),
                 JuliaSet::from,
-            );
-            $self.interface.consume_click();
-            $ui.close_menu();
-            return;
-        }
-    };
-    ($self: ident, $ui: ident, $name: expr, $fractal: ty, $covering: ident, $($periods: expr),+) => {
-        if $ui.button($name).clicked()
-        {
-            $self.change_fractal(|| <$fractal>::default().$covering($($periods),+), JuliaSet::from);
-            $self.interface.consume_click();
-            $ui.close_menu();
-            return;
-        }
-    };
-    ($self: ident, $ui: ident, $name: expr, $fractal: ty, $child: ident) => {
-        if $ui.button($name).clicked()
-        {
-            $self.change_fractal(|| <$fractal>::default(), $child::from);
-            $self.interface.consume_click();
-            $ui.close_menu();
-            return;
+            )
         }
     };
 }
 
-macro_rules! fractal_menu_button_mc {
-    ($self: ident, $ui: ident, $fractal: ty, $period: expr) => {
-        fractal_menu_button!(
-            $self,
-            $ui,
-            format!("Period {}", $period),
-            $fractal,
-            marked_cycle_curve,
-            $period
-        );
+macro_rules! interface_dyn {
+    ($parent: ty, $period: expr) => {
+        || {
+            create_interface(
+                || <$parent>::default().dynatomic_curve($period),
+                JuliaSet::from,
+            )
+        }
     };
 }
 
-macro_rules! fractal_menu_button_dyn {
-    ($self: ident, $ui: ident, $fractal: ty, $period: expr) => {
-        fractal_menu_button!(
-            $self,
-            $ui,
-            format!("Period {}", $period),
-            $fractal,
-            dynatomic_curve,
-            $period
-        );
-    };
-}
-
-macro_rules! fractal_menu_button_mis {
-    ($self: ident, $ui: ident, $fractal: ty, $preperiod: expr, $period: expr) => {
-        fractal_menu_button!(
-            $self,
-            $ui,
-            format!("Preperiod {}, Period {}", $preperiod, $period),
-            $fractal,
-            misiurewicz_curve,
-            $preperiod,
-            $period
-        );
+macro_rules! interface_mis {
+    ($parent: ty, $preperiod: expr, $period: expr) => {
+        || {
+            create_interface(
+                || <$parent>::default().misiurewicz_curve($preperiod, $period),
+                JuliaSet::from,
+            )
+        }
     };
 }
 
 pub(crate) use {
-    fractal_menu_button, fractal_menu_button_dyn, fractal_menu_button_mc, fractal_menu_button_mis,
+    interface, interface_dyn, interface_mc, interface_mis,
 };

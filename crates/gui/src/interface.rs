@@ -785,12 +785,12 @@ where
         self.child.change_height(new_height);
     }
 
-    /// Renders the UI elements of the main interface, which consists of the parent plane, child
-    /// plane, plane names, and orbit descriptions. The menu is handled by the parent struct `app::FracalTab`.
+    /// Renders the UI elements of the main interface, which consist of the parent plane, child
+    /// plane, plane names, and orbit descriptions. The menus are handled by the parent struct `app::FracalTab`.
     fn show(&mut self, ui: &mut Ui)
     {
         TableBuilder::new(ui)
-            .column(Column::auto().resizable(true))
+            .column(Column::exact(self.parent.get_image_frame().width() as f32))
             .column(Column::remainder())
             .vscroll(false)
             .stick_to_bottom(true)

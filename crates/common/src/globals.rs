@@ -14,4 +14,4 @@ pub const DISPLAY_PREC: usize = 12;
 pub const IMAGE_HEIGHT: usize = 768;
 
 pub const WIN_HEIGHT: f32 = (IMAGE_HEIGHT + 192) as f32;
-pub const WIN_WIDTH: f32 = (IMAGE_HEIGHT * 2 + 100) as f32;
+pub const WIN_WIDTH: f32 = (IMAGE_HEIGHT * 2 + 320) as f32;
