@@ -2,6 +2,8 @@ use dynamo_common::prelude::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::dialog::RayParams;
+
 use super::Pane;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -104,16 +106,23 @@ pub enum SelectOrFollow
 }
 impl SelectOrFollow
 {
-    pub fn run_on<P: Pane + ?Sized>(&self, pane: &mut P, angle: RationalAngle)
+    pub fn run_on<P: Pane + ?Sized>(&self, pane: &mut P, ray_params: &RayParams)
     {
-        pane.marking_mut().toggle_ray(angle);
+        let angle_info = &ray_params.angle_info;
+        if ray_params.include_orbit {
+            for t in angle_info.orbit(pane.degree()) {
+                pane.marking_mut().toggle_ray(t);
+            }
+        } else {
+            pane.marking_mut().toggle_ray(angle_info.angle);
+        }
         pane.schedule_redraw();
         match self {
             Self::Select => {
-                pane.select_ray_landing_point(angle);
+                pane.select_ray_landing_point(angle_info.angle);
             }
             Self::Follow => {
-                pane.follow_ray_landing_point(angle);
+                pane.select_ray_landing_point(angle_info.angle);
             }
             Self::DoNothing => {}
         }

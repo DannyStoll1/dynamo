@@ -28,6 +28,7 @@ pub enum Action
     ClearOrbit,
     DrawExternalRay
     {
+        include_orbit: bool,
         select_landing_point: bool,
     },
     DrawRaysOfPeriod,
@@ -96,11 +97,14 @@ impl Action
             }
             Self::ClearOrbit => "Hide orbit from dynamical plane.".to_owned(),
             Self::DrawExternalRay {
+                include_orbit,
                 select_landing_point,
             } => {
                 if *select_landing_point {
                     "Draw/hide an external ray and select its landing point on active image."
                         .to_owned()
+                } else if *include_orbit {
+                    "Draw/hide an external ray, together with its orbit.".to_owned()
                 } else {
                     "Draw/hide an external ray on active image.".to_owned()
                 }
@@ -218,10 +222,13 @@ impl Action
             Self::DrawOrbit => "Draw Orbit".to_owned(),
             Self::ClearOrbit => "Clear Orbit".to_owned(),
             Self::DrawExternalRay {
+                include_orbit,
                 select_landing_point,
             } => {
                 if *select_landing_point {
                     "Ray to Point...".to_owned()
+                } else if *include_orbit {
+                    "Ray orbit...".to_owned()
                 } else {
                     "Draw Ray...".to_owned()
                 }

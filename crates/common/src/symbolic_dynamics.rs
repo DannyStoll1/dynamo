@@ -17,6 +17,20 @@ pub struct AngleInfo
     pub kneading_sequence: Itinerary,
 }
 
+impl AngleInfo
+{
+    pub fn orbit(&self, degree: AngleNum) -> Box<dyn Iterator<Item = RationalAngle>>
+    {
+        let n = self.orbit_schema.period + self.orbit_schema.preperiod;
+        let mut t = self.angle;
+        Box::new((0..n).map(move |_i| {
+            let t0 = t;
+            t *= degree;
+            t0
+        }))
+    }
+}
+
 /// Period and preperiod of a point with finite orbit in a dynamical system.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

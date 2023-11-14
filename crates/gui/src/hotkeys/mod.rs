@@ -144,11 +144,12 @@ pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
 ];
 
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 23] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
         action: DrawExternalRay {
+            include_orbit: false,
             select_landing_point: false,
         },
         show_in_menu: true,
@@ -158,6 +159,7 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
     Hotkey {
         shortcut: Some(KEY_Y),
         action: DrawExternalRay {
+            include_orbit: false,
             select_landing_point: true,
         },
         show_in_menu: true,
@@ -167,9 +169,20 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
     Hotkey {
         shortcut: Some(CTRL_X),
         action: DrawExternalRay {
+            include_orbit: false,
             select_landing_point: true,
         },
         show_in_menu: false,
+        menu_action_override: None,
+    },
+    // Ray orbit
+    Hotkey {
+        shortcut: Some(SHIFT_O),
+        action: DrawExternalRay {
+            include_orbit: true,
+            select_landing_point: false,
+        },
+        show_in_menu: true,
         menu_action_override: None,
     },
     // Rays of exact period
@@ -179,13 +192,6 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 22] = [
         show_in_menu: true,
         menu_action_override: None,
     },
-    // // Active rays
-    // Hotkey {
-    //     shortcut: Some(CTRL_A),
-    //     action: DrawActiveRays,
-    //     show_in_menu: true,
-    //     menu_action_override: None,
-    // },
     // Equipotential
     Hotkey {
         shortcut: Some(KEY_G),

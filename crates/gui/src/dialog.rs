@@ -84,6 +84,7 @@ pub struct RayParams
     pub do_child: bool,
     pub angle_info: AngleInfo,
     pub follow_task: SelectOrFollow,
+    pub include_orbit: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -130,6 +131,7 @@ pub enum TextInputType
     ExternalRay
     {
         pane_id: PaneID,
+        include_orbit: bool,
         select_landing_point: bool,
     },
     ActiveRays

@@ -3,10 +3,10 @@
 use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 pub mod fractal_tab;
-pub mod sidebar;
 pub mod macros;
 #[cfg(feature = "scripting")]
 pub mod script_editor;
+pub mod sidebar;
 use fractal_tab::{FractalTab, TabID};
 
 #[cfg(not(target_arch = "wasm32"))]

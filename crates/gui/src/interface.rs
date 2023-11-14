@@ -231,6 +231,8 @@ where
                 if let Ok(angle) = text.parse::<RationalAngle>() {
                     let angle_info = angle.with_degree(self.child.degree()).to_angle_info();
 
+                    let include_orbit = toggle_map.get(DrawOrbit);
+
                     let follow_task = if toggle_map.get(FollowPoint) {
                         SelectOrFollow::Follow
                     } else if toggle_map.get(SelectPoint) {
@@ -244,6 +246,7 @@ where
                         do_child: toggle_map.get(DoChild),
                         angle_info,
                         follow_task,
+                        include_orbit,
                     };
                     let dialog = Dialog::confirm_ray(ray_params);
                     self.dialog = Some(dialog);
@@ -304,13 +307,13 @@ where
             let pane = self.get_pane_mut(PaneID::Parent);
             ray_params
                 .follow_task
-                .run_on(pane, ray_params.angle_info.angle);
+                .run_on(pane, ray_params);
         }
         if ray_params.do_child {
             let pane = self.get_pane_mut(PaneID::Child);
             ray_params
                 .follow_task
-                .run_on(pane, ray_params.angle_info.angle);
+                .run_on(pane, ray_params);
         }
     }
 
@@ -446,6 +449,7 @@ where
         let text_dialog = match input_type {
             ExternalRay {
                 pane_id,
+                include_orbit,
                 select_landing_point,
             } => {
                 let prompt = concat!(
@@ -456,6 +460,11 @@ where
                     .title("External ray angle input")
                     .prompt(prompt)
                     .pane_toggles("Draw on", pane_id)
+                    .add_toggle_with_default(
+                        ToggleKey::DrawOrbit,
+                        "Include orbit".to_owned(),
+                        include_orbit,
+                    )
                     .add_toggle_with_default(
                         ToggleKey::SelectPoint,
                         "Select landing point".to_owned(),
@@ -887,11 +896,13 @@ where
                 self.child_mut().clear_marked_orbit();
             }
             Action::DrawExternalRay {
+                include_orbit,
                 select_landing_point,
             } => {
                 if let Some(pane_id) = self.active_pane {
                     let input_type = TextInputType::ExternalRay {
                         pane_id,
+                        include_orbit: *include_orbit,
                         select_landing_point: *select_landing_point,
                     };
                     self.prompt_text(input_type);
