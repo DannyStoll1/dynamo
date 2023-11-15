@@ -1271,3 +1271,103 @@ impl MarkedPoints for Mandelbrot
 }
 
 degree_impl!(Mandelbrot, 2);
+
+#[derive(Clone, Debug)]
+pub struct MandelbrotMC3Mult
+{
+    point_grid: PointGrid,
+    max_iter: Period,
+}
+
+impl MandelbrotMC3Mult
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -1.55,
+        max_x: 0.55,
+        min_y: -1.75,
+        max_y: 1.75,
+    };
+}
+impl Default for MandelbrotMC3Mult
+{
+    fractal_impl!();
+}
+
+impl DynamicalFamily for MandelbrotMC3Mult
+{
+    type Var = Cplx;
+    type Param = CplxPair;
+    type MetaParam = NoParam;
+    type Deriv = Cplx;
+    basic_plane_impl!();
+    default_name!();
+
+    fn escape_radius(&self) -> Real
+    {
+        1e26
+    }
+
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
+    {
+        ZERO
+    }
+
+    fn param_map(&self, t: Cplx) -> Self::Param
+    {
+        CplxPair {
+            a: - t.powi(2) - t - 2.,
+            b: horner_monic!(t, 1., 2., 1.),
+        }
+    }
+
+    #[inline]
+    fn map(&self, z: Self::Var, CplxPair { a, b: _ }: &Self::Param) -> Self::Var
+    {
+        z.powi(2) + a
+    }
+
+    #[inline]
+    fn map_and_multiplier(
+        &self,
+        z: Self::Var,
+        CplxPair { a, b: _ }: &Self::Param,
+    ) -> (Self::Var, Self::Deriv)
+    {
+        (z.powi(2) + a, 2. * z)
+    }
+
+    fn early_bailout(
+        &self,
+        _start: Cplx,
+        CplxPair { a, b }: &Self::Param,
+    ) -> Option<EscapeResult<Cplx, Cplx>>
+    {
+        Some(EscapeResult::Periodic {
+            info: PointInfoPeriodic {
+                preperiod: 0,
+                period: 3,
+                multiplier: *b,
+                final_error: 0.0,
+            },
+            final_value: *a,
+        })
+    }
+}
+
+impl FamilyDefaults for MandelbrotMC3Mult
+{
+    default_bounds!();
+}
+
+impl HasJulia for MandelbrotMC3Mult
+{
+    #[inline]
+    fn default_bounds_child(&self, _point: Cplx, _param: &Self::Param) -> Bounds
+    {
+        Bounds::centered_square(2.2)
+    }
+}
+
+impl MarkedPoints for MandelbrotMC3Mult {}
+
+degree_impl!(MandelbrotMC3Mult, 2);

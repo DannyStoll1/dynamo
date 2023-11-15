@@ -1,12 +1,11 @@
 pub mod menu;
+use crate::macros::*;
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_gui::interface::{Interface, MainInterface, PanePair};
 use dynamo_profiles::*;
-use crate::macros::*;
 use menu::{Menu, State};
 use seq_macro::seq;
-
 
 pub fn create_menu() -> Menu
 {
@@ -19,6 +18,7 @@ pub fn create_menu() -> Menu
     Menu::new(state)
 }
 
+#[allow(clippy::identity_op)]
 fn polynomials_menu() -> State
 {
     State::submenu()
@@ -30,6 +30,10 @@ fn polynomials_menu() -> State
                         .with_fractal_button("Period 1", interface_mc!(Mandelbrot, 1))
                         .with_fractal_button("Period 3", interface_mc!(Mandelbrot, 3))
                         .with_fractal_button("Period 4", interface_mc!(Mandelbrot, 4))
+                        .with_fractal_button(
+                            "Period 3\nmultiplier plane",
+                            interface!(MandelbrotMC3Mult),
+                        )
                 })
                 .with_submenu("Marked Periodic Point", || {
                     State::submenu()

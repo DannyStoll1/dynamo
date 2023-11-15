@@ -34,19 +34,18 @@ impl Tile
             (self.color(), Color32::WHITE)
         };
 
-        ui.painter()
-            .rect_filled(rect, 6.0, color);
+        ui.painter().rect_filled(rect, 6.0, color);
         ui.painter().text(
             rect.center(),
             egui::Align2::CENTER_CENTER,
             &self.name,
             egui::FontId::default(),
-            text_color
+            text_color,
         );
         response
     }
 
-    fn color(&self) -> Color32
+    const fn color(&self) -> Color32
     {
         match self.item {
             Item::ChangeFractal(_) => Color32::from_rgb(43, 37, 121),
@@ -55,7 +54,8 @@ impl Tile
         }
     }
 
-    fn flash_color(&self) -> Color32 {
+    const fn flash_color(&self) -> Color32
+    {
         match self.item {
             Item::ChangeFractal(_) => Color32::from_rgb(144, 144, 237),
             Item::Submenu(_) => Color32::from_rgb(60, 179, 113),
@@ -72,19 +72,22 @@ pub struct State
 
 impl State
 {
+    #[must_use]
     pub fn submenu() -> Self
     {
         Self::default().with_tile("Go Back", Item::GoToParent)
     }
 
+    #[must_use]
     pub fn with_submenu<F>(self, name: &str, make_menu: F) -> Self
     where
-        F: Fn() -> State + 'static,
+        F: Fn() -> Self + 'static,
     {
         let item = Item::Submenu(Box::new(make_menu));
         self.with_tile(name, item)
     }
 
+    #[must_use]
     pub fn with_fractal_button(
         self,
         name: &str,
@@ -97,7 +100,7 @@ impl State
 
     pub fn add_submenu<F>(&mut self, name: &str, make_menu: F)
     where
-        F: Fn() -> State + 'static,
+        F: Fn() -> Self + 'static,
     {
         let item = Item::Submenu(Box::new(make_menu));
         self.add_tile(name, item);
@@ -161,7 +164,7 @@ impl Menu
         let mut nav_action: NavAction = NavAction::DoNothing;
 
         ui.add_space(50.);
-        for tile in self.state.tiles.iter_mut() {
+        for tile in &mut self.state.tiles {
             if tile.draw_rect(ui).clicked() {
                 match &tile.item {
                     Item::GoToParent => {

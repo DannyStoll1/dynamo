@@ -19,6 +19,7 @@ pub struct AngleInfo
 
 impl AngleInfo
 {
+    #[must_use]
     pub fn orbit(&self, degree: AngleNum) -> Box<dyn Iterator<Item = RationalAngle>>
     {
         let n = self.orbit_schema.period + self.orbit_schema.preperiod;

@@ -188,7 +188,7 @@ pub trait DynamicalFamily: Sync + Send
             return Some(EscapeResult::Bounded(z));
         }
 
-        self.extra_stop_condition(z, &c, iter)
+        self.extra_stop_condition(z, c, iter)
     }
 
     /// Lower bound on distance-squared between fast and slow orbits. If the fast and slow
@@ -406,7 +406,7 @@ pub trait DynamicalFamily: Sync + Send
         let start = self.start_point(point, &param);
         Box::new(
             orbit::simple::Simple::new(
-                |z, c| self.map(z, &c),
+                |z, c| self.map(z, c),
                 start,
                 param,
                 self.max_iter(),
@@ -421,7 +421,7 @@ pub trait DynamicalFamily: Sync + Send
         let param = self.param_map(point);
         let start = self.start_point(point, &param);
         let orbit = orbit::simple::Simple::new(
-            |z, c| self.map(z, &c),
+            |z, c| self.map(z, c),
             start,
             param,
             self.max_iter(),
@@ -889,7 +889,7 @@ where
         let escape_radius = 30.;
         let theta0 = 0.02;
 
-        let orbit = orbit::Simple::new(|z, c| self.map(z, &c), z0, c0, max_iter, escape_radius);
+        let orbit = orbit::Simple::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
         let result = orbit.last()?.1.unwrap_or_default();
         let EscapeResult::Escaped { iters, final_value } = result else {
             return None;
@@ -950,7 +950,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
                 self.encode_escaping_point(iters, final_value, c)
             }
             EscapeResult::Periodic { info, final_value } => {
-                self.identify_marked_points(final_value, &c, info)
+                self.identify_marked_points(final_value, c, info)
             }
             EscapeResult::Bounded(_) => PointInfo::Bounded,
             EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
@@ -974,7 +974,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
 
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
-        let q = self.escape_coeff(&c).norm().log2();
+        let q = self.escape_coeff(c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
         PointInfo::Escaping { potential, phase: None }

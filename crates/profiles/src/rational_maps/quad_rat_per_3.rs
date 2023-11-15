@@ -266,7 +266,7 @@ impl InfinityFirstReturnMap for QuadRatPer3
 
 impl EscapeEncoding for QuadRatPer3
 {
-    basic_escape_encoding!(2., 3);
+    basic_escape_encoding!(None, 3);
 }
 impl ExternalRays for QuadRatPer3
 {

@@ -308,7 +308,7 @@ impl PointGrid
 
     #[inline]
     #[must_use]
-    pub fn center(&self) -> Cplx
+    pub const fn center(&self) -> Cplx
     {
         let re = self.bounds.mid_x();
         let im = self.bounds.mid_y();

@@ -199,6 +199,32 @@ macro_rules! basic_escape_encoding {
             }
         }
     };
+    (None, $period: expr) => {
+        fn encode_escaping_point(
+            &self,
+            iters: Period,
+            z: Self::Var,
+            _base_param: &Self::Param,
+        ) -> PointInfo<Self::Deriv>
+        {
+            if z.is_nan() {
+                return PointInfo::Escaping {
+                    potential: IterCount::from(iters - $period),
+                    phase: Some(iters % $period),
+                };
+            }
+
+            let u = self.escape_radius().log2();
+            let v = z.norm_sqr().log2();
+            let residual = (v / u).log2();
+            let potential =
+                ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
+            PointInfo::Escaping {
+                potential,
+                phase: Some(iters % $period),
+            }
+        }
+    };
     ($degree: expr, $period: expr) => {
         fn encode_escaping_point(
             &self,

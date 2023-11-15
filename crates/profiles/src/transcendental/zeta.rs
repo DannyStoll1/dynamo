@@ -106,7 +106,7 @@ pub struct RiemannXiNewton
 }
 impl RiemannXiNewton
 {
-    const DEFAULT_BOUNDS: Bounds = Bounds::square(30., Cplx::new(0.500001, 0.));
+    const DEFAULT_BOUNDS: Bounds = Bounds::square(30., Cplx::new(0.50001, 0.));
 }
 impl Default for RiemannXiNewton
 {

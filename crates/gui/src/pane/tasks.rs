@@ -118,10 +118,7 @@ impl SelectOrFollow
         }
         pane.schedule_redraw();
         match self {
-            Self::Select => {
-                pane.select_ray_landing_point(angle_info.angle);
-            }
-            Self::Follow => {
+            Self::Select | Self::Follow => {
                 pane.select_ray_landing_point(angle_info.angle);
             }
             Self::DoNothing => {}
