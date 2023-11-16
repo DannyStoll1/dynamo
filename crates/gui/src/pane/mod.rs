@@ -26,10 +26,7 @@ pub trait Pane
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
     fn reset(&mut self);
-    fn select_nearby_point(
-        &mut self,
-        orbit_schema: OrbitSchema,
-    ) -> FindPointResult<Cplx>;
+    fn select_nearby_point(&mut self, orbit_schema: OrbitSchema) -> FindPointResult<Cplx>;
     fn map_selection(&mut self);
     fn stop_following(&mut self);
     fn set_follow_state(&mut self, follow_state: FollowState);
@@ -40,7 +37,6 @@ pub trait Pane
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
 
-    fn mark_orbit(&mut self, zs: ComplexVec, color: Color32);
     fn clear_marked_points(&mut self);
     fn clear_marked_orbit(&mut self);
     fn clear_marked_rays(&mut self);
@@ -195,7 +191,6 @@ pub trait Pane
 
     fn change_height(&mut self, new_height: usize);
 
-    fn mark_orbit_and_info(&mut self, pointer_value: Cplx);
     fn state_info(&self) -> String;
     fn pop_child_task(&mut self) -> ChildTask;
 }
@@ -397,6 +392,20 @@ where
     {
         self.plane.compute_into(&mut self.iter_plane);
     }
+
+    fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
+    {
+        let orbit::OrbitAndInfo { orbit, info } = self.plane.get_orbit_and_info(pointer_value);
+        let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
+        self.mark_orbit(orbit_pts, Color32::GREEN);
+        self.set_orbit_info(info);
+    }
+
+    fn mark_orbit(&mut self, zs: ComplexVec, color: Color32)
+    {
+        self.marking.mark_orbit_manually(zs, color);
+    }
+
 }
 
 impl<P> From<P> for WindowPane<P>
@@ -601,7 +610,10 @@ where
                 orbit_schema,
                 follow,
             } => {
-                let _ = self.select_nearby_point(orbit_schema);
+                if self.select_nearby_point(orbit_schema).is_err() {
+                    // Don't draw orbit if we failed to converge
+                    self.tasks_mut().orbit.skip();
+                }
                 if !follow {
                     self.stop_following();
                 }
@@ -610,6 +622,8 @@ where
 
         if self.tasks_mut().orbit.pop() {
             self.mark_orbit_and_info(self.selection);
+        } else {
+            self.orbit_info = None;
         }
 
         match self.tasks_mut().compute.pop() {
@@ -684,19 +698,6 @@ where
             println!("Error loading palette: {e:?}");
         }
         self.schedule_redraw();
-    }
-
-    fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
-    {
-        let orbit::OrbitAndInfo { orbit, info } = self.plane.get_orbit_and_info(pointer_value);
-        let orbit_pts = orbit.iter().map(|x| (*x).into()).collect();
-        self.mark_orbit(orbit_pts, Color32::GREEN);
-        self.set_orbit_info(info);
-    }
-
-    fn mark_orbit(&mut self, zs: ComplexVec, color: Color32)
-    {
-        self.marking.mark_orbit_manually(zs, color);
     }
 
     #[inline]

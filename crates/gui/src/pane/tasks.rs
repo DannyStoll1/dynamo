@@ -162,6 +162,7 @@ pub enum OrbitTask
 {
     Enabled,
     DrawOnce,
+    SkipOnce,
     #[default]
     Disabled,
 }
@@ -180,11 +181,21 @@ impl OrbitTask
     {
         *self = Self::DrawOnce;
     }
+    pub fn skip(&mut self)
+    {
+        if matches!(self, Self::Enabled) {
+            *self = Self::SkipOnce;
+        }
+    }
     pub fn pop(&mut self) -> bool
     {
         match self {
             Self::Disabled => false,
             Self::Enabled => true,
+            Self::SkipOnce => {
+                self.enable();
+                false
+            }
             Self::DrawOnce => {
                 self.disable();
                 true
