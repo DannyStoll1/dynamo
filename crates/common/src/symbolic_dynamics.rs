@@ -131,6 +131,18 @@ impl FromStr for OrbitSchema
     }
 }
 
+impl std::fmt::Display for OrbitSchema
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        if self.preperiod == 0 {
+            write!(f, "period {}", self.period)
+        } else {
+            write!(f, "preperiod {}, period {}", self.preperiod, self.period)
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitSchemaWithDegree

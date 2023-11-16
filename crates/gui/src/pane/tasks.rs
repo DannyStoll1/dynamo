@@ -44,6 +44,8 @@ pub struct PaneTasks
 {
     pub compute: RepeatableTask,
     pub draw: RepeatableTask,
+    pub orbit: OrbitTask,
+    pub follow: FollowState,
 }
 
 impl PaneTasks
@@ -55,14 +57,9 @@ impl PaneTasks
         Self {
             compute: task,
             draw: task,
+            orbit: OrbitTask::Disabled,
+            follow: FollowState::Idle,
         }
-    }
-    #[must_use]
-    pub fn pop(&mut self) -> Self
-    {
-        let compute = self.compute.pop();
-        let draw = self.draw.pop();
-        Self { compute, draw }
     }
 }
 
@@ -86,13 +83,119 @@ pub enum ChildTask
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum RayState
+pub enum FollowState
 {
     #[default]
     Idle,
-    SelectOnce(RationalAngle),
-    Following(RationalAngle),
-    FollowingPeriodic(OrbitSchema),
+    SelectRay
+    {
+        angle: RationalAngle, follow: bool
+    },
+    SelectPeriodic
+    {
+        orbit_schema: OrbitSchema,
+        follow: bool,
+    },
+}
+
+impl FollowState
+{
+    #[must_use]
+    pub fn pop(&mut self) -> Self
+    {
+        match self {
+            Self::SelectRay {
+                angle,
+                follow: false,
+            } => {
+                let angle = *angle;
+                *self = Self::Idle;
+                Self::SelectRay {
+                    angle,
+                    follow: false,
+                }
+            }
+            Self::SelectPeriodic {
+                orbit_schema,
+                follow: false,
+            } => {
+                let orbit_schema = *orbit_schema;
+                *self = Self::Idle;
+                Self::SelectPeriodic {
+                    orbit_schema,
+                    follow: false,
+                }
+            }
+            _ => *self,
+        }
+    }
+}
+
+impl std::fmt::Display for FollowState
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        match self {
+            Self::SelectPeriodic {
+                orbit_schema,
+                follow: true,
+            } => write!(
+                f,
+                "Following point of {orbit_schema}\n\
+                [ESC] to stop."
+            ),
+            Self::SelectRay {
+                angle,
+                follow: true,
+            } => write!(
+                f,
+                "Following landing point of ray at angle {angle}\n\
+                [ESC] to stop."
+            ),
+            _ => write!(f, ""),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum OrbitTask
+{
+    Enabled,
+    DrawOnce,
+    #[default]
+    Disabled,
+}
+
+impl OrbitTask
+{
+    pub fn disable(&mut self)
+    {
+        *self = Self::Disabled;
+    }
+    pub fn enable(&mut self)
+    {
+        *self = Self::Enabled;
+    }
+    pub fn draw_once(&mut self)
+    {
+        *self = Self::DrawOnce;
+    }
+    pub fn pop(&mut self) -> bool
+    {
+        match self {
+            Self::Disabled => false,
+            Self::Enabled => true,
+            Self::DrawOnce => {
+                self.disable();
+                true
+            }
+        }
+    }
+    #[must_use]
+    pub const fn is_enabled(&self) -> bool
+    {
+        !matches!(self, Self::Disabled)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -118,9 +221,14 @@ impl SelectOrFollow
         }
         pane.schedule_redraw();
         match self {
-            Self::Select | Self::Follow => {
-                pane.select_ray_landing_point(angle_info.angle);
-            }
+            Self::Select => pane.set_follow_state(FollowState::SelectRay {
+                angle: angle_info.angle,
+                follow: false,
+            }),
+            Self::Follow => pane.set_follow_state(FollowState::SelectRay {
+                angle: angle_info.angle,
+                follow: true,
+            }),
             Self::DoNothing => {}
         }
     }

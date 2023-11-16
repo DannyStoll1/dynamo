@@ -150,7 +150,8 @@ mod tests
 
         let mut interface = Box::new(MainInterface::new(parameter_plane, dynamical_plane, height));
         for _ in 0..10 {
-            interface.child_mut().recompute();
+            interface.child_mut().schedule_recompute();
+            interface.child_mut().process_tasks();
         }
     }
 }

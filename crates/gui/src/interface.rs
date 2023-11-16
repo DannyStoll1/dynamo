@@ -17,7 +17,7 @@ use crate::{
     },
     pane::{
         id::*,
-        tasks::{ChildTask, SelectOrFollow},
+        tasks::{ChildTask, FollowState, SelectOrFollow},
         Pane, WindowPane,
     },
 };
@@ -254,15 +254,15 @@ where
             }
             ActiveRays { pane_id } => {
                 if let Ok(o) = text.parse::<OrbitSchema>() {
-                    let include_suffixes = toggle_map.get(ToggleKey::PrefixAngles);
+                    let include_suffixes = toggle_map.get(PrefixAngles);
 
                     let degree = self.get_pane(pane_id).degree();
                     let od = o.with_degree(degree);
                     let active_angles = od.active_angles(include_suffixes);
 
                     let params = AllActiveRayParams {
-                        do_parent: toggle_map.get(ToggleKey::DoParent),
-                        do_child: toggle_map.get(ToggleKey::DoChild),
+                        do_parent: toggle_map.get(DoParent),
+                        do_child: toggle_map.get(DoChild),
                         orbit_schema: o.with_degree(degree),
                         active_angles,
                         include_suffixes,
@@ -276,21 +276,23 @@ where
                 if let Ok(point) = text.parse::<Cplx>() {
                     let pane = self.get_pane_mut(pane_id);
                     pane.select_point(point);
+                    pane.stop_following();
                 }
             }
             FindPeriodic { pane_id } => {
-                if let Ok(o) = text.parse::<OrbitSchema>() {
+                if let Ok(orbit_schema) = text.parse::<OrbitSchema>() {
+                    let follow = toggle_map.get(FollowPoint);
                     match pane_id {
                         PaneID::Child => {
-                            let pane = self.child_mut();
-                            if let Ok(selection) = pane.select_nearby_point(o) {
-                                pane.mark_orbit_and_info(selection);
-                            }
+                            self.child_mut()
+                                .set_follow_state(FollowState::SelectPeriodic {
+                                    orbit_schema,
+                                    follow,
+                                });
                         }
                         PaneID::Parent => {
-                            if let Ok(selection) = self.parent_mut().select_nearby_point(o) {
+                            if self.parent_mut().select_nearby_point(orbit_schema).is_ok() {
                                 self.process_child_task();
-                                self.child_mut().mark_orbit_and_info(selection);
                             }
                         }
                     }
@@ -305,15 +307,11 @@ where
     {
         if ray_params.do_parent {
             let pane = self.get_pane_mut(PaneID::Parent);
-            ray_params
-                .follow_task
-                .run_on(pane, ray_params);
+            ray_params.follow_task.run_on(pane, ray_params);
         }
         if ray_params.do_child {
             let pane = self.get_pane_mut(PaneID::Child);
-            ray_params
-                .follow_task
-                .run_on(pane, ray_params);
+            ray_params.follow_task.run_on(pane, ray_params);
         }
     }
 
@@ -349,9 +347,6 @@ where
 
             if clicked {
                 self.consume_click();
-                let param = self.parent.plane.param_map(pointer_value);
-                let start = self.parent.plane.start_point(pointer_value, &param);
-                self.child_mut().mark_orbit_and_info(start.into());
                 self.parent_mut().marking_mut().enable_selection();
             }
         } else if self.child().frame_contains_pixel(pointer_pos) {
@@ -363,7 +358,6 @@ where
 
             if clicked {
                 self.consume_click();
-                self.child_mut().mark_orbit_and_info(pointer_value);
                 self.child_mut().marking_mut().enable_selection();
             }
         } else {
@@ -394,7 +388,7 @@ where
     {
         self.live_mode ^= true;
         if self.live_mode {
-            self.parent.stop_following_ray_landing_point();
+            self.parent.stop_following();
             self.child.frame_mut().set_live();
         } else {
             self.child.frame_mut().unset_live();
@@ -456,7 +450,7 @@ where
                     "Input an angle to draw a ray\n",
                     "Example formats: <15/56>, <110>, <p011>, <001p010>",
                 );
-                TextDialogBuilder::new(input_type)
+                let builder = TextDialogBuilder::new(input_type)
                     .title("External ray angle input")
                     .prompt(prompt)
                     .pane_toggles("Draw on", pane_id)
@@ -469,9 +463,14 @@ where
                         ToggleKey::SelectPoint,
                         "Select landing point".to_owned(),
                         select_landing_point,
-                    )
-                    .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point".to_owned())
-                    .build()
+                    );
+                if matches!(pane_id, PaneID::Child) {
+                    builder
+                        .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point".to_owned())
+                        .build()
+                } else {
+                    builder.build()
+                }
             }
             ActiveRays { pane_id } => {
                 let prompt = concat!(
@@ -488,25 +487,31 @@ where
                     )
                     .build()
             }
-            FindPeriodic { pane_id } => {
+            FindPeriodic { pane_id, .. } => {
                 let pane = self.get_pane(pane_id);
                 let prompt = format!(
                     concat!(
-                        "Input the period to find a nearby point on {}.\n",
+                        "Input the period to find a nearby point on {pane_name}.\n",
                         "Format: <period> or <preperiod, period>"
                     ),
-                    pane.name()
+                    pane_name = pane.name()
                 );
-                TextDialogBuilder::new(input_type)
+                let builder = TextDialogBuilder::new(input_type)
                     .title("Find nearby point")
-                    .prompt(prompt)
-                    .build()
+                    .prompt(prompt);
+                if matches!(pane_id, PaneID::Child) {
+                    builder
+                        .add_toggle(ToggleKey::FollowPoint, "Follow point".to_owned())
+                        .build()
+                } else {
+                    builder.build()
+                }
             }
             Coordinates { pane_id } => {
                 let pane = self.get_pane(pane_id);
                 let prompt = format!(
-                    "Enter the coordinates of the point to select on {}",
-                    pane.name()
+                    "Enter the coordinates of the point to select on {pane_name}",
+                    pane_name = pane.name()
                 );
                 TextDialogBuilder::new(input_type)
                     .title("Input coordinates")
@@ -889,8 +894,10 @@ where
             }
             Action::DrawOrbit => {
                 let plane = self.child_mut();
-                let selection = plane.get_selection();
-                plane.mark_orbit_and_info(selection);
+                plane.tasks_mut().orbit.enable();
+            }
+            Action::StopFollowing => {
+                self.child_mut().stop_following();
             }
             Action::ClearOrbit => {
                 self.child_mut().clear_marked_orbit();
@@ -930,7 +937,6 @@ where
                 Some(PaneID::Parent) => self.parent.reset_selection(),
                 Some(PaneID::Child) => {
                     self.child.reset_selection();
-                    self.child.clear_marked_orbit();
                 }
                 None => {}
             },

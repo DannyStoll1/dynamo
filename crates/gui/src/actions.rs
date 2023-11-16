@@ -36,6 +36,7 @@ pub enum Action
     ClearRays,
     ClearEquipotentials,
     ClearCurves,
+    StopFollowing,
     ResetSelection,
     ResetView,
     // Image controls
@@ -114,6 +115,7 @@ impl Action
             Self::ClearRays => "Clear all external rays on active image.".to_owned(),
             Self::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
             Self::ClearCurves => "Clear all curves on active image.".to_owned(),
+            Self::StopFollowing => "Stop following points around.".to_owned(),
             Self::ResetSelection => "Reset selection to default on active image.".to_owned(),
             Self::ResetView => "Reset bounds and selection to default on active image.".to_owned(),
 
@@ -238,6 +240,7 @@ impl Action
             Self::ClearRays => "Clear Rays".to_owned(),
             Self::ClearEquipotentials => "Clear Equipotentials".to_owned(),
             Self::ClearCurves => "Clear Curves".to_owned(),
+            Self::StopFollowing => "Stop Following".to_owned(),
             Self::ResetSelection => "Reset Selection".to_owned(),
             Self::ResetView => "Reset View".to_owned(),
 

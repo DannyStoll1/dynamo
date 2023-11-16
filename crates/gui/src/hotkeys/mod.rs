@@ -144,7 +144,7 @@ pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
 ];
 
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 23] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 24] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
@@ -231,6 +231,12 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 23] = [
             menu_action_override: None,
         },
     )*
+    Hotkey {
+        shortcut: Some(KEY_ESC),
+        action: StopFollowing,
+        show_in_menu: false,
+        menu_action_override: None,
+    },
     Hotkey {
         shortcut: Some(KEY_C),
         action: ClearOrbit,

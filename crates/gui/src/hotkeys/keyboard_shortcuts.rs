@@ -117,6 +117,7 @@ pub const KEY_MINUS: KeyboardShortcut = key_press!(Key::Minus);
 pub const KEY_EQUALS: KeyboardShortcut = key_press!(Key::PlusEquals);
 pub const KEY_INSERT: KeyboardShortcut = key_press!(Key::Insert);
 pub const KEY_HOME: KeyboardShortcut = key_press!(Key::Home);
+pub const KEY_ESC: KeyboardShortcut = key_press!(Key::Escape);
 
 pub const SHIFT_A: KeyboardShortcut = shift!(Key::A);
 pub const SHIFT_B: KeyboardShortcut = shift!(Key::B);

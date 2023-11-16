@@ -26,12 +26,13 @@ pub trait Pane
     fn get_selection(&self) -> Cplx;
     fn reset_selection(&mut self);
     fn reset(&mut self);
-    fn select_nearby_point(&mut self, orbit_schema: OrbitSchema) -> FindPointResult<Cplx>;
-    fn select_ray_landing_point(&mut self, angle: RationalAngle);
+    fn select_nearby_point(
+        &mut self,
+        orbit_schema: OrbitSchema,
+    ) -> FindPointResult<Cplx>;
     fn map_selection(&mut self);
-    fn follow_ray_landing_point(&mut self, angle: RationalAngle);
-    fn stop_following_ray_landing_point(&mut self);
-    fn ray_state(&self) -> RayState;
+    fn stop_following(&mut self);
+    fn set_follow_state(&mut self, follow_state: FollowState);
     fn degree(&self) -> AngleNum;
 
     fn draw_equipotential(&mut self);
@@ -55,12 +56,6 @@ pub trait Pane
     fn grid(&self) -> &PointGrid;
 
     fn grid_mut(&mut self) -> &mut PointGrid;
-
-    fn rescale(&mut self, new_bounds: Bounds)
-    {
-        self.grid_mut().change_bounds(new_bounds);
-        self.schedule_compute();
-    }
 
     fn schedule_compute(&mut self)
     {
@@ -124,15 +119,6 @@ pub trait Pane
         self.schedule_redraw();
     }
 
-    fn compute(&mut self);
-
-    fn recompute(&mut self);
-
-    fn draw(&mut self);
-    fn redraw(&mut self);
-
-    fn process_marking_tasks(&mut self);
-
     fn zoom(&mut self, scale: Real, base_point: Cplx);
 
     #[inline]
@@ -168,30 +154,7 @@ pub trait Pane
         self.pan(translation_vector);
     }
 
-    fn process_tasks(&mut self)
-    {
-        self.process_marking_tasks();
-
-        let tasks = self.tasks_mut().pop();
-        match tasks.compute {
-            RepeatableTask::Rerun => {
-                self.recompute();
-            }
-            RepeatableTask::DoNothing => {}
-            RepeatableTask::InitRun => {
-                self.compute();
-            }
-        }
-        match tasks.draw {
-            RepeatableTask::Rerun => {
-                self.redraw();
-            }
-            RepeatableTask::DoNothing => {}
-            RepeatableTask::InitRun => {
-                self.draw();
-            }
-        }
-    }
+    fn process_tasks(&mut self);
 
     fn frame_contains_pixel(&self, pointer_pos: Pos2) -> bool
     {
@@ -257,7 +220,6 @@ where
     orbit_info: Option<orbit::Info<P::Param, P::Var, P::Deriv>>,
     pub marking: Marking,
     pub zoom_factor: Real,
-    pub ray_state: RayState,
     pub child_task: ChildTask,
 }
 impl<P> WindowPane<P>
@@ -285,7 +247,7 @@ where
             false
         } else {
             self.plane.set_param(new_param);
-            if matches!(self.ray_state, RayState::Idle) {
+            if matches!(self.tasks().follow, FollowState::Idle) {
                 self.select_point(self.plane.default_selection());
             }
             self.schedule_recompute();
@@ -293,17 +255,11 @@ where
             true
         };
 
-        self.clear_marked_orbit();
         self.clear_equipotentials();
-
-        if let RayState::Following(angle) = self.ray_state() {
-            self.select_ray_landing_point_now(angle);
-        }
 
         update
     }
 
-    #[must_use]
     /// Creates a new `WindowPane` with the given plane and coloring.
     /// Initializes the image frame, tasks, selection, and marking based on the plane type.
     ///
@@ -315,6 +271,7 @@ where
     /// # Returns
     ///
     /// `WindowPane<P>`: A new instance of `WindowPane` with the specified plane and coloring.
+    #[must_use]
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
         let iter_plane = IterPlane::create(plane.point_grid().clone());
@@ -338,7 +295,6 @@ where
             orbit_info: None,
             marking,
             zoom_factor: 1.,
-            ray_state: RayState::Idle,
             child_task: ChildTask::Idle,
         }
     }
@@ -376,21 +332,10 @@ where
     }
 
     #[inline]
-    fn select_point_keep_following(&mut self, point: Cplx)
-    {
-        if self.selection != point {
-            self.selection = point;
-            self.marking.select_point(point);
-            self.child_task = ChildTask::UpdateParam;
-            self.schedule_redraw();
-        }
-    }
-
-    #[inline]
     fn select_ray_landing_point_now(&mut self, angle: RationalAngle)
     {
         if let Some(approx_landing_point) = self.marking().ray_landing_point(angle) {
-            self.select_point_keep_following(approx_landing_point);
+            self.select_point(approx_landing_point);
         }
     }
 
@@ -415,6 +360,42 @@ where
         self.get_orbit_info()
             .as_ref()
             .map_or_else(String::new, |info| info.summary(&conf))
+    }
+
+    #[inline]
+    fn process_marking_tasks(&mut self)
+    {
+        let period_coloring = self.coloring.get_period_coloring();
+        self.marking
+            .process_all_tasks(&self.plane, self.selection, period_coloring);
+    }
+
+    fn draw(&mut self)
+    {
+        let image = self.iter_plane.render(self.get_coloring());
+        let image_frame = self.frame_mut();
+        image_frame.image = image;
+        image_frame.update_texture();
+    }
+
+    fn redraw(&mut self)
+    {
+        let coloring = self.coloring.clone();
+        self.iter_plane
+            .render_into(&mut self.image_frame.image, &coloring);
+        self.image_frame.update_texture();
+    }
+
+    #[inline]
+    fn compute(&mut self)
+    {
+        self.iter_plane = self.plane.compute();
+    }
+
+    #[inline]
+    fn recompute(&mut self)
+    {
+        self.plane.compute_into(&mut self.iter_plane);
     }
 }
 
@@ -492,9 +473,21 @@ where
         self.selection
     }
     #[inline]
+    fn select_point(&mut self, point: Cplx)
+    {
+        if self.selection != point {
+            self.selection = point;
+            self.marking.select_point(point);
+            self.child_task = ChildTask::UpdateParam;
+            self.schedule_redraw();
+        }
+    }
+    #[inline]
     fn reset_selection(&mut self)
     {
         self.select_point(self.plane.default_selection());
+        self.clear_marked_orbit();
+        self.stop_following();
     }
     #[inline]
     fn reset(&mut self)
@@ -507,14 +500,14 @@ where
         self.schedule_recompute();
     }
     #[inline]
-    fn stop_following_ray_landing_point(&mut self)
+    fn stop_following(&mut self)
     {
-        self.ray_state = RayState::Idle;
+        self.tasks_mut().follow = FollowState::Idle;
     }
     #[inline]
-    fn ray_state(&self) -> RayState
+    fn set_follow_state(&mut self, follow_state: FollowState)
     {
-        self.ray_state
+        self.tasks_mut().follow = follow_state;
     }
 
     #[inline]
@@ -540,12 +533,6 @@ where
     {
         &mut self.marking
     }
-    #[inline]
-    fn select_point(&mut self, point: Cplx)
-    {
-        self.select_point_keep_following(point);
-        self.stop_following_ray_landing_point();
-    }
 
     fn select_nearby_point(&mut self, o: OrbitSchema) -> FindPointResult<Cplx>
     {
@@ -567,16 +554,6 @@ where
         }
     }
 
-    fn follow_ray_landing_point(&mut self, angle: RationalAngle)
-    {
-        self.ray_state = RayState::Following(angle);
-    }
-
-    fn select_ray_landing_point(&mut self, angle: RationalAngle)
-    {
-        self.ray_state = RayState::SelectOnce(angle);
-    }
-
     #[inline]
     fn cycle_active_plane(&mut self)
     {
@@ -593,59 +570,10 @@ where
         self.schedule_redraw();
     }
 
-    #[inline]
-    fn draw(&mut self)
-    {
-        let image = self.iter_plane.render(self.get_coloring());
-        let image_frame = self.frame_mut();
-        image_frame.image = image;
-        image_frame.update_texture();
-    }
-
-    #[inline]
-    fn redraw(&mut self)
-    {
-        let coloring = self.coloring.clone();
-        self.iter_plane
-            .render_into(&mut self.image_frame.image, &coloring);
-        self.image_frame.update_texture();
-    }
-    fn process_marking_tasks(&mut self)
-    {
-        let period_coloring = self.coloring.get_period_coloring();
-        self.marking
-            .process_all_tasks(&self.plane, self.selection, period_coloring);
-        match self.ray_state {
-            RayState::SelectOnce(angle) => {
-                self.select_ray_landing_point_now(angle);
-                self.ray_state = RayState::Idle;
-            }
-            RayState::Following(angle) => {
-                self.select_ray_landing_point_now(angle);
-            }
-            RayState::FollowingPeriodic(orbit_schema) => {
-                let _ = self.select_nearby_point(orbit_schema);
-            }
-            RayState::Idle => {}
-        }
-    }
-
     fn change_height(&mut self, new_height: usize)
     {
         self.plane.point_grid_mut().resize_y(new_height);
         self.schedule_compute();
-    }
-
-    #[inline]
-    fn compute(&mut self)
-    {
-        self.iter_plane = self.plane.compute();
-    }
-
-    #[inline]
-    fn recompute(&mut self)
-    {
-        self.plane.compute_into(&mut self.iter_plane);
     }
 
     #[inline]
@@ -655,6 +583,53 @@ where
         self.grid_mut().zoom(scale, base_point);
         self.schedule_recompute();
         self.schedule_redraw();
+    }
+
+    fn process_tasks(&mut self)
+    {
+        self.process_marking_tasks();
+
+        match self.tasks_mut().follow.pop() {
+            FollowState::Idle => {}
+            FollowState::SelectRay { angle, follow } => {
+                self.select_ray_landing_point_now(angle);
+                if !follow {
+                    self.stop_following();
+                }
+            }
+            FollowState::SelectPeriodic {
+                orbit_schema,
+                follow,
+            } => {
+                let _ = self.select_nearby_point(orbit_schema);
+                if !follow {
+                    self.stop_following();
+                }
+            }
+        }
+
+        if self.tasks_mut().orbit.pop() {
+            self.mark_orbit_and_info(self.selection);
+        }
+
+        match self.tasks_mut().compute.pop() {
+            RepeatableTask::Rerun => {
+                self.recompute();
+            }
+            RepeatableTask::DoNothing => {}
+            RepeatableTask::InitRun => {
+                self.compute();
+            }
+        }
+        match self.tasks_mut().draw.pop() {
+            RepeatableTask::Rerun => {
+                self.redraw();
+            }
+            RepeatableTask::DoNothing => {}
+            RepeatableTask::InitRun => {
+                self.draw();
+            }
+        }
     }
 
     fn select_preperiod_smooth_coloring(&mut self)
@@ -724,11 +699,14 @@ where
         self.marking.mark_orbit_manually(zs, color);
     }
 
+    #[inline]
     fn clear_marked_orbit(&mut self)
     {
         self.marking.disable_orbit();
+        self.tasks_mut().orbit.disable();
     }
 
+    #[inline]
     fn clear_marked_rays(&mut self)
     {
         self.marking.disable_all_rays();
@@ -742,6 +720,7 @@ where
     fn clear_curves(&mut self)
     {
         self.marking.disable_all_curves();
+        self.tasks_mut().orbit.disable();
     }
 
     fn put_marked_curves(&self, ui: &mut Ui)
@@ -770,10 +749,11 @@ where
     fn state_info(&self) -> String
     {
         format!(
-            "{iters_info}\n{selection_info}\n{orbit_info}",
+            "{iters_info}\n{selection_info}\n{orbit_info}\n\n{follow_state}",
             iters_info = self.describe_max_iter(),
             selection_info = self.describe_selection(),
             orbit_info = self.describe_orbit_info(),
+            follow_state = self.tasks().follow,
         )
     }
 
