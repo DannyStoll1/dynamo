@@ -501,7 +501,11 @@ where
                     .prompt(prompt);
                 if matches!(pane_id, PaneID::Child) {
                     builder
-                        .add_toggle(ToggleKey::FollowPoint, "Follow point".to_owned())
+                        .add_toggle_with_default(
+                            ToggleKey::FollowPoint,
+                            "Follow point".to_owned(),
+                            true,
+                        )
                         .build()
                 } else {
                     builder.build()

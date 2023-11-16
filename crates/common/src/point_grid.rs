@@ -164,8 +164,6 @@ impl PointGrid
     #[must_use]
     pub const fn infer_height(res_x: usize, bounds: &Bounds) -> usize
     {
-        debug_assert!(bounds.max_x > bounds.min_x);
-        debug_assert!(bounds.max_y > bounds.min_y);
         debug_assert!(res_x > 0);
 
         let res_x_float = res_x as Real;
@@ -177,9 +175,7 @@ impl PointGrid
     #[must_use]
     pub const fn infer_width(res_y: usize, bounds: &Bounds) -> usize
     {
-        debug_assert!(bounds.max_x > bounds.min_x);
-        debug_assert!(bounds.max_y > bounds.min_y);
-        debug_assert!(res_y > 0);
+       debug_assert!(res_y > 0);
 
         let res_y_float = res_y as Real;
         let res_x_float =
