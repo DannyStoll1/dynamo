@@ -1116,8 +1116,7 @@ impl HasDynamicalCovers for CubicPer1_0
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
     #[allow(clippy::suspicious_operation_groupings)]
@@ -1160,8 +1159,7 @@ impl HasDynamicalCovers for CubicPer1_0
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
@@ -1190,8 +1188,7 @@ impl HasDynamicalCovers for CubicPer1_0
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }
 
@@ -1221,8 +1218,7 @@ impl HasDynamicalCovers for CubicPer1_1
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
     #[allow(clippy::suspicious_operation_groupings)]
@@ -1254,8 +1250,7 @@ impl HasDynamicalCovers for CubicPer1_1
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
@@ -1280,8 +1275,7 @@ impl HasDynamicalCovers for CubicPer1_1
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }
 

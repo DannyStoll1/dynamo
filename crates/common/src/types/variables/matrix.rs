@@ -1,3 +1,4 @@
+use crate::prelude::Conj;
 use crate::traits::{Arg, FloatLike, MaybeNan, Named, Norm};
 use crate::types::{Cplx, Real};
 use derive_more::{Add, AddAssign, Display, From, Sub};
@@ -53,7 +54,7 @@ impl Norm<Real> for Point
 
 impl Arg<Real> for Point
 {
-    fn arg(&self) -> Real
+    fn arg(self) -> Real
     {
         self.y.atan2(self.x)
     }
@@ -119,6 +120,12 @@ impl Matrix2x2
     fn trace(&self) -> Real
     {
         self.v0.x + self.v1.y
+    }
+    fn transpose(mut self) -> Self {
+        let tmp = self.v0.y;
+        self.v0.y = self.v1.x;
+        self.v1.x = tmp;
+        self
     }
 }
 impl From<Matrix2x2> for Cplx
@@ -186,9 +193,14 @@ impl Norm<Real> for Matrix2x2
 }
 impl Arg<Real> for Matrix2x2
 {
-    fn arg(&self) -> Real
+    fn arg(self) -> Real
     {
         self.v0.arg()
+    }
+}
+impl Conj for Matrix2x2 {
+    fn conj(&self) -> Self {
+        self.transpose()
     }
 }
 impl MaybeNan for Matrix2x2

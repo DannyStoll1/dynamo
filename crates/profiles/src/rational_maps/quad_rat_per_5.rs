@@ -212,7 +212,7 @@ impl EscapeEncoding for QuadRatPer5
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: f64::from(iters) - 5.,
-                phase: Some(iters % 5)
+                phase: Some(iters % 5),
             };
         }
 

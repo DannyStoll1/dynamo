@@ -79,7 +79,6 @@ impl<const D: i32> FamilyDefaults for Unicritical<D>
 
 impl<const D: i32> HasJulia for Unicritical<D>
 {
-
     fn default_bounds_child(&self, _point: Cplx, _c: &Self::Param) -> Bounds
     {
         Bounds::square(Self::D_FLOAT * 1.618, Self::CRIT)
@@ -245,8 +244,7 @@ impl HasDynamicalCovers for Unicritical<3>
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
     #[allow(clippy::suspicious_operation_groupings)]
@@ -289,7 +287,6 @@ impl HasDynamicalCovers for Unicritical<3>
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

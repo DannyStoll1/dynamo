@@ -1,6 +1,6 @@
 use super::{Cplx, Real};
 use crate::consts::ZERO;
-use crate::prelude::OMEGA;
+use crate::prelude::{Conj, OMEGA};
 use crate::traits::{Arg, Describe, DescriptionConf, MaybeNan, Norm, Summarize};
 use derive_more::{Add, AddAssign, Display, From, Sub, SubAssign};
 
@@ -64,9 +64,17 @@ impl Norm<Real> for Cplx
 impl Arg<Real> for Cplx
 {
     #[inline]
-    fn arg(&self) -> Real
+    fn arg(self) -> Real
     {
-        <Self>::arg(*self)
+        <Self>::arg(self)
+    }
+}
+impl Conj for Cplx
+{
+    #[inline]
+    fn conj(&self) -> Self
+    {
+        Cplx::conj(self)
     }
 }
 impl MaybeNan for Cplx
@@ -144,7 +152,7 @@ impl Norm<Real> for Bicomplex
 }
 impl Arg<Real> for Bicomplex
 {
-    fn arg(&self) -> Real
+    fn arg(self) -> Real
     {
         match self {
             Self::PlaneA(z) | Self::PlaneB(z) => z.arg(),
@@ -166,6 +174,16 @@ impl Default for Bicomplex
     fn default() -> Self
     {
         Self::PlaneA(ZERO)
+    }
+}
+
+impl std::ops::Mul<Cplx> for Bicomplex {
+    type Output = Self;
+    fn mul(self, z: Cplx) -> Self {
+        match self {
+            Self::PlaneA(w) => Self::PlaneA(w*z),
+            Self::PlaneB(w) => Self::PlaneB(w*z),
+        }
     }
 }
 
@@ -439,9 +457,9 @@ impl Norm<Real> for EisensteinInteger
 
 impl Arg<Real> for EisensteinInteger
 {
-    fn arg(&self) -> Real
+    fn arg(self) -> Real
     {
-        Cplx::from(*self).arg()
+        Cplx::from(self).arg()
     }
 }
 
@@ -642,9 +660,9 @@ impl Norm<Real> for GaussianInteger
 
 impl Arg<Real> for GaussianInteger
 {
-    fn arg(&self) -> Real
+    fn arg(self) -> Real
     {
-        Cplx::from(*self).arg()
+        Cplx::from(self).arg()
     }
 }
 
@@ -662,5 +680,26 @@ impl crate::traits::Named for GaussianInteger
     fn name(&self) -> &str
     {
         "c"
+    }
+}
+
+impl Conj for GaussianInteger
+{
+    fn conj(&self) -> Self
+    {
+        Self {
+            a: self.a,
+            b: -self.b,
+        }
+    }
+}
+impl Conj for EisensteinInteger
+{
+    fn conj(&self) -> Self
+    {
+        Self {
+            a: self.a - self.b,
+            b: -self.b,
+        }
     }
 }

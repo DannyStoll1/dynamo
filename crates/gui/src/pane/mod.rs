@@ -405,7 +405,6 @@ where
     {
         self.marking.mark_orbit_manually(zs, color);
     }
-
 }
 
 impl<P> From<P> for WindowPane<P>

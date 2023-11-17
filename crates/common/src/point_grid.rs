@@ -175,7 +175,7 @@ impl PointGrid
     #[must_use]
     pub const fn infer_width(res_y: usize, bounds: &Bounds) -> usize
     {
-       debug_assert!(res_y > 0);
+        debug_assert!(res_y > 0);
 
         let res_y_float = res_y as Real;
         let res_x_float =

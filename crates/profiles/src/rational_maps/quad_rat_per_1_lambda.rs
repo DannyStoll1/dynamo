@@ -341,8 +341,12 @@ impl FamilyDefaults for QuadRatPer1LambdaParam
     }
 }
 
-impl HasChild<QuadRatPer1Lambda> for QuadRatPer1LambdaParam {
-    fn to_child_param(param: Self::Param) -> <<QuadRatPer1Lambda as DynamicalFamily>::MetaParam as ParamList>::Param {
+impl HasChild<QuadRatPer1Lambda> for QuadRatPer1LambdaParam
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<QuadRatPer1Lambda as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
         param
     }
 }

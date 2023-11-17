@@ -18,6 +18,7 @@ where
     covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
     point_grid: PointGrid,
     orig_bounds: Bounds,
+    multiplier_map: fn(Cplx) -> Cplx,
 }
 
 impl<C> CoveringMap<C>
@@ -25,19 +26,41 @@ where
     C: DynamicalFamily + Clone,
 {
     #[must_use]
-    pub fn new(
-        base_curve: C,
-        covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
-        point_grid: PointGrid,
-    ) -> Self
+    pub fn new(base_curve: C, covering_map_d: fn(Cplx) -> (C::Param, C::Deriv)) -> Self
     {
+        let point_grid = base_curve.point_grid().clone();
         let orig_bounds = point_grid.bounds.clone();
         Self {
             base_curve,
             covering_map_d,
             point_grid,
             orig_bounds,
+            multiplier_map: |t| t,
         }
+    }
+    #[must_use]
+    pub fn with_orig_bounds(mut self, bounds: Bounds) -> Self
+    {
+        self.orig_bounds = bounds.clone();
+        self.with_bounds(bounds)
+    }
+    #[must_use]
+    pub fn with_multiplier_map(mut self, multiplier_map: fn(Cplx) -> Cplx) -> Self
+    {
+        self.multiplier_map = multiplier_map;
+        self
+    }
+}
+
+impl<C> From<C> for CoveringMap<C>
+where
+    C: DynamicalFamily + Clone,
+    C::Param: From<Cplx>,
+{
+    fn from(base_curve: C) -> Self
+    {
+        let covering_map_d = |t: Cplx| (t.into(), C::Deriv::one());
+        Self::new(base_curve, covering_map_d)
     }
 }
 
@@ -201,6 +224,12 @@ where
     {
         self.base_curve.cycle_active_plane();
     }
+
+    #[inline]
+    fn auxiliary_value(&self, t: Cplx) -> Cplx
+    {
+        (self.multiplier_map)(t)
+    }
 }
 
 impl<C> FamilyDefaults for CoveringMap<C>
@@ -319,26 +348,26 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Clone
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
     {
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
-        let bounds = self.point_grid().clone();
 
         println!("Marked cycle has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map_d, bounds)
+        CoveringMap::new(self.clone(), param_map_d)
+            .with_orig_bounds(self.point_grid().bounds.clone())
     }
     fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
     {
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
-        let bounds = self.point_grid().clone();
 
         println!("Dynatomic curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map_d, bounds)
+        CoveringMap::new(self.clone(), param_map_d)
+            .with_orig_bounds(self.point_grid().bounds.clone())
     }
     fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
     {
-        let param_map = |_| (Self::Param::default(), Self::Deriv::one());
-        let bounds = self.point_grid().clone();
+        let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
 
         println!("Misiurewicz curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self, param_map, bounds)
+        CoveringMap::new(self.clone(), param_map_d)
+            .with_orig_bounds(self.point_grid().bounds.clone())
     }
 }
 

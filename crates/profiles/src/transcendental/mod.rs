@@ -2,7 +2,7 @@ pub mod exponential;
 pub use exponential::Exponential;
 
 pub mod cosine;
-pub use cosine::{Cosine, CosineAdd, SineWander, CoshNewton};
+pub use cosine::{CoshNewton, Cosine, CosineAdd, SineWander};
 
 pub mod zeta;
 pub use zeta::{RiemannXi, RiemannXiNewton};

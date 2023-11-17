@@ -94,9 +94,11 @@ impl FractalTab
 
     pub fn update(&mut self, ui: &mut Ui)
     {
-        egui::SidePanel::left("Fractal").default_width(220.).show_inside(ui, |ui| {
-            self.sidebar(ui);
-        });
+        egui::SidePanel::left("Fractal")
+            .default_width(220.)
+            .show_inside(ui, |ui| {
+                self.sidebar(ui);
+            });
 
         if self.should_update_interface() {
             self.interface.update(ui.ctx());

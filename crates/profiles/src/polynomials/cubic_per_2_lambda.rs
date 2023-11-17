@@ -285,8 +285,12 @@ impl FamilyDefaults for CubicPer2LambdaParam
     }
 }
 
-impl HasChild<CubicPer2Lambda> for CubicPer2LambdaParam {
-    fn to_child_param(param: Self::Param) -> <<CubicPer2Lambda as DynamicalFamily>::MetaParam as ParamList>::Param {
+impl HasChild<CubicPer2Lambda> for CubicPer2LambdaParam
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<CubicPer2Lambda as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
         param
     }
 }
@@ -513,8 +517,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
@@ -544,7 +547,6 @@ impl HasDynamicalCovers for CubicPer2CritMarked
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

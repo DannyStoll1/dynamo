@@ -179,8 +179,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
@@ -223,8 +222,7 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
@@ -278,7 +276,6 @@ impl HasDynamicalCovers for CubicMarked2Cycle
                 bounds = self.point_grid.bounds.clone();
             }
         };
-        let grid = self.point_grid.new_with_same_height(bounds);
-        CoveringMap::new(self, param_map, grid)
+        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

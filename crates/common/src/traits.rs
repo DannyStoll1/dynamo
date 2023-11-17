@@ -7,9 +7,16 @@ pub trait Norm<R>: Copy
     fn norm(&self) -> R;
     fn norm_sqr(&self) -> R;
 }
-pub trait Arg<R>: Copy
+pub trait Arg<R>
 {
-    fn arg(&self) -> R;
+    fn arg(self) -> R;
+}
+pub trait Conj: Clone
+{
+    fn conj(&self) -> Self
+    {
+        self.clone()
+    }
 }
 
 pub trait Polar<R>: Norm<R> + Arg<R> {}

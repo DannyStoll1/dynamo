@@ -43,6 +43,4 @@ macro_rules! interface_mis {
     };
 }
 
-pub(crate) use {
-    interface, interface_dyn, interface_mc, interface_mis,
-};
+pub(crate) use {interface, interface_dyn, interface_mc, interface_mis};

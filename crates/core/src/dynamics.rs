@@ -159,7 +159,12 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     #[inline]
-    fn extra_stop_condition(&self, z: Self::Var, _c: &Self::Param, iter: Period) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    fn extra_stop_condition(
+        &self,
+        z: Self::Var,
+        _c: &Self::Param,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         let r = z.norm_sqr();
         if r > self.escape_radius() || z.is_nan() {
@@ -167,8 +172,7 @@ pub trait DynamicalFamily: Sync + Send
                 iters: iter,
                 final_value: z,
             })
-        }
-        else {
+        } else {
             None
         }
     }
@@ -477,6 +481,12 @@ pub trait DynamicalFamily: Sync + Send
             fill_rate: 0.01,
         }
     }
+
+    /// Optional map for superimposed contours
+    fn auxiliary_value(&self, _t: Cplx) -> Cplx
+    {
+        ZERO
+    }
 }
 
 impl std::fmt::Display for PlaneType
@@ -490,7 +500,8 @@ impl std::fmt::Display for PlaneType
     }
 }
 
-pub trait FamilyDefaults : DynamicalFamily + InfinityFirstReturnMap {
+pub trait FamilyDefaults: DynamicalFamily + InfinityFirstReturnMap
+{
     /// Default bounds for this plane
     fn default_bounds(&self) -> Bounds;
 
@@ -519,9 +530,11 @@ pub trait FamilyDefaults : DynamicalFamily + InfinityFirstReturnMap {
     }
 }
 
-pub trait HasJulia: DynamicalFamily + InfinityFirstReturnMap {
+pub trait HasJulia: DynamicalFamily + InfinityFirstReturnMap
+{
     #[inline]
-    fn default_max_iter_child(&self) -> Period {
+    fn default_max_iter_child(&self) -> Period
+    {
         128
     }
 
@@ -537,7 +550,8 @@ pub trait HasJulia: DynamicalFamily + InfinityFirstReturnMap {
     /// Default coloring algorithm to apply when loading the Julia set.
     fn default_coloring_child(&self) -> Coloring
     {
-        Coloring::default().with_interior_algorithm(self.internal_potential_coloring())
+        Coloring::default()
+            .with_interior_algorithm(self.internal_potential_coloring())
             .with_escape_period(1)
     }
 
@@ -563,12 +577,15 @@ pub trait HasChild<C: DynamicalFamily>: DynamicalFamily
     fn to_child_param(param: Self::Param) -> <C::MetaParam as ParamList>::Param;
 }
 
-impl<T: HasJulia> HasChild<JuliaSet<T>> for T {
-    fn to_child_param(param: Self::Param) -> <<JuliaSet<T> as DynamicalFamily>::MetaParam as ParamList>::Param {
+impl<T: HasJulia> HasChild<JuliaSet<T>> for T
+{
+    fn to_child_param(
+        param: Self::Param,
+    ) -> <<JuliaSet<T> as DynamicalFamily>::MetaParam as ParamList>::Param
+    {
         param
     }
 }
-
 
 pub trait MarkedPoints: DynamicalFamily
 {
@@ -968,7 +985,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: Real::from(iters) - 1.,
-                phase: None
+                phase: None,
             };
         }
 
@@ -977,7 +994,44 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         let q = self.escape_coeff(c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
-        PointInfo::Escaping { potential, phase: None }
+        PointInfo::Escaping {
+            potential,
+            phase: None,
+        }
+    }
+
+    /// External Green's function at a point
+    fn external_potential_d(&self, t: Cplx) -> Option<(Real, Cplx)>
+    {
+        if t.is_nan() {
+            return None;
+        }
+
+        let (c, dc_dt) = self.param_map_d(t);
+        let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
+        dz_dt += dz_dc * dc_dt;
+
+        for _ in 0..self.escaping_phase() {
+            let (f, df_dz, df_dc) = self.gradient(z, &c);
+            dz_dt = df_dz * dz_dt + df_dc * dc_dt;
+            z = f;
+        }
+        for iter in 0..self.max_iter() {
+            for _j in 0..self.escaping_period() {
+                if z.norm_sqr() > self.escape_radius() {
+                    let d_absz = z.into() * dz_dt.into().conj();
+                    let norm = d_absz.norm();
+                    let direction = d_absz / norm;
+                    let log_potential = norm.log2() / self.degree_real().powi(iter as i32);
+                    return Some((log_potential, direction * log_potential));
+                }
+                let (f, df_dz, df_dc) = self.gradient(z, &c);
+                dz_dt = df_dz * dz_dt + df_dc * dc_dt;
+                z = f;
+            }
+        }
+
+        None
     }
 }
 
@@ -1082,7 +1136,9 @@ where
                     let param = self.param_map(point);
                     let start = self.start_point(point, &param);
                     let mut orbit = orbits
-                        .get_or(|| RefCell::new(orbit::CycleDetected::new(self, start, param.clone())))
+                        .get_or(|| {
+                            RefCell::new(orbit::CycleDetected::new(self, start, param.clone()))
+                        })
                         .borrow_mut();
 
                     orbit.reset(param.clone(), start);

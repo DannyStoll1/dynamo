@@ -224,13 +224,9 @@ impl HasDynamicalCovers for QuadRatPer4
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> (Cplx, Cplx);
-        let grid: PointGrid;
-        let bounds: Bounds;
-
         match period {
             3 => {
-                param_map = |c| {
+                let param_map = |c: Cplx| {
                     // cbrt(12)
                     let alpha = Cplx::new(2.289_428_485_106_66, 0.);
                     let g2 = alpha;
@@ -250,20 +246,16 @@ impl HasDynamicalCovers for QuadRatPer4
 
                     // x / xx
                 };
-                bounds = Bounds {
+                let bounds = Bounds {
                     min_x: -3.6,
                     max_x: 3.6,
                     min_y: -2.4,
                     max_y: 2.4,
                 };
-                grid = self.point_grid.clone().with_same_height(bounds);
+                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
             }
-            _ => {
-                param_map = |t| (t, ONE);
-                grid = self.point_grid.clone();
-            }
-        };
-        CoveringMap::new(self, param_map, grid)
+            _ => CoveringMap::from(self),
+        }
     }
 }
 

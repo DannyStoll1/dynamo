@@ -214,8 +214,7 @@ impl<const N: Period> FamilyDefaults for Sailboat<N>
 
         if rad_y_0 <= rad_y_1 {
             Bounds::rect(rad_x_1, rad_y_1, center)
-        }
-        else {
+        } else {
             let rad_x = rad_y_0 / Self::ASPECT;
             Bounds::rect(rad_x, rad_y_0, center)
         }
