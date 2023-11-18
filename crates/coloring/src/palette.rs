@@ -1,3 +1,5 @@
+use crate::types::{Lchuv, Xyz};
+
 use super::Hsv;
 use dynamo_common::types::IterCount;
 use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
@@ -187,7 +189,7 @@ impl Palette
         let phase_g = Uniform::new(0., 1.).sample(&mut rng);
         let phase_b = Uniform::new(0., 1.).sample(&mut rng);
 
-        ChiSquared::new(7.5).map_or(Self::black(8.), |period_dist| {
+        ChiSquared::new(7.5).map_or(Self::black(32.), |period_dist| {
             let period_r: f64 = period_dist.sample(&mut rng);
             let period_g: f64 = period_dist.sample(&mut rng);
             let period_b: f64 = period_dist.sample(&mut rng);
@@ -229,48 +231,67 @@ impl Palette
     }
 
     #[must_use]
-    pub fn map_rgb(&self, value: IterCount) -> Rgb<u8>
+    fn ext_potential_to_sinusoid_input(potential: IterCount) -> IterCount
     {
-        if value <= 0.0 {
-            let (r, g, b, _) = self.in_color.to_tuple();
-            Rgb([r, g, b])
-        } else {
-            let potential = (value + 1.0 as IterCount).log2();
-            let r = self.color_map_r.get_value_u8(potential);
-            let g = self.color_map_g.get_value_u8(potential);
-            let b = self.color_map_b.get_value_u8(potential);
-            Rgb([r, g, b])
+        (potential - 1.0).log2()
+    }
+
+    #[must_use]
+    pub fn map_rgb(&self, potential: IterCount) -> Rgb<u8>
+    {
+        let t = Self::ext_potential_to_sinusoid_input(potential);
+
+        let r = self.color_map_r.get_value_u8(t);
+        let g = self.color_map_g.get_value_u8(t);
+        let b = self.color_map_b.get_value_u8(t);
+        Rgb([r, g, b])
+    }
+
+    #[must_use]
+    pub fn map_color32(&self, potential: IterCount) -> Color32
+    {
+        let t = Self::ext_potential_to_sinusoid_input(potential);
+
+        let r = self.color_map_r.get_value_f64(t);
+        let g = self.color_map_g.get_value_f64(t);
+        let b = self.color_map_b.get_value_f64(t);
+        Xyz {
+            x: r as f32,
+            y: g as f32,
+            z: b as f32,
         }
+        .into()
+
+        // let r = self.color_map_r.get_value_u8(t);
+        // let g = self.color_map_g.get_value_u8(t);
+        // let b = self.color_map_b.get_value_u8(t);
+        // Color32::from_rgb(r, g, b)
     }
 
     #[must_use]
-    pub fn map_color32(&self, value: IterCount) -> Color32
-    {
-        let potential = (value + 1.0 as IterCount).log2();
-
-        let r = self.color_map_r.get_value_u8(potential);
-        let g = self.color_map_g.get_value_u8(potential);
-        let b = self.color_map_b.get_value_u8(potential);
-        Color32::from_rgb(r, g, b)
-    }
-
-    #[must_use]
-    pub fn map_color32_phase(&self, value: IterCount, phase: Period, esc_period: Period)
-        -> Color32
+    pub fn map_color32_phase(
+        &self,
+        potential: IterCount,
+        phase: Period,
+        esc_period: Period,
+    ) -> Color32
     {
         if esc_period > 1 {
-            let potential = (value + 1.0 as IterCount).log2();
+            let t = Self::ext_potential_to_sinusoid_input(potential);
 
-            let r = self.color_map_r.get_value_f64(potential) as f32;
-            let b = self.color_map_b.get_value_f64(potential) as f32;
+            let r = self.color_map_r.get_value_f64(t) as f32;
+            let b = self.color_map_b.get_value_f64(t) as f32;
             DiscretePalette::default()
                 .with_num_colors(esc_period as f32)
                 .map_hsv(phase as f32, 1.0)
                 .with_intensity(r)
                 .with_saturation(b)
+                // .map_lch(phase as f32, 1.0)
+                // .with_l(r)
+                // .with_c(b)
                 .into()
         } else {
-            self.map_color32(value)
+            self.map_color32(potential)
         }
     }
 
@@ -293,7 +314,6 @@ impl Default for Palette
 {
     fn default() -> Self
     {
-        // Self::new_with_contrast(3.0, 8.0, 5.0, 0.45, 0.38)
         Self::black(32.)
     }
 }
@@ -346,9 +366,30 @@ impl DiscretePalette
     }
 
     #[must_use]
+    fn map_lch(&self, period: f32, luminosity_modifier: f32) -> Lchuv
+    {
+        let h = (period / self.num_colors + self.base_hue) % 1.;
+
+        Lchuv {
+            h,
+            c: self.saturation,
+            l: self.luminosity * luminosity_modifier,
+        }
+    }
+
+    #[must_use]
     fn map_preperiodic_hsv(&self, o: OrbitSchema) -> Hsv
     {
         self.map_hsv(
+            o.period as f32,
+            0.5f32.mul_add((o.preperiod as f32).tanh(), 1.),
+        )
+    }
+
+    #[must_use]
+    fn map_preperiodic_lch(&self, o: OrbitSchema) -> Lchuv
+    {
+        self.map_lch(
             o.period as f32,
             0.5f32.mul_add((o.preperiod as f32).tanh(), 1.),
         )

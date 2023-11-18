@@ -376,6 +376,11 @@ impl Marking
         self.curves.sched_recolor_all();
     }
 
+    pub fn flush_path_cache(&mut self)
+    {
+        self.path_cache.borrow_mut().set_stale();
+    }
+
     pub fn remove_all_annotations(&mut self)
     {
         self.point_sets.disable_all();

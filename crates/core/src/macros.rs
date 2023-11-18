@@ -189,8 +189,8 @@ macro_rules! basic_escape_encoding {
                 };
             }
 
-            let u = self.escape_radius().log2();
-            let v = z.norm_sqr().log2();
+            let u = self.escape_radius().ln();
+            let v = z.norm_sqr().ln();
             let residual = (v / u).log($degree);
             let potential = IterCount::from(iters) - IterCount::from(residual);
             PointInfo::Escaping {
@@ -214,8 +214,8 @@ macro_rules! basic_escape_encoding {
                 };
             }
 
-            let u = self.escape_radius().log2();
-            let v = z.norm_sqr().log2();
+            let u = self.escape_radius().ln();
+            let v = z.norm_sqr().ln();
             let residual = (v / u).log2();
             let potential =
                 ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
@@ -240,8 +240,8 @@ macro_rules! basic_escape_encoding {
                 };
             }
 
-            let u = self.escape_radius().log2();
-            let v = z.norm_sqr().log2();
+            let u = self.escape_radius().ln();
+            let v = z.norm_sqr().ln();
             let residual = (v / u).log($degree);
             let potential =
                 ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));

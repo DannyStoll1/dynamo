@@ -176,6 +176,34 @@ fn exp2(b: &mut Bencher)
 }
 
 #[bench]
+fn log2(b: &mut Bencher)
+{
+    use test::black_box;
+    b.iter(|| {
+        let mut r = 0.42_f64;
+        for _ in 0..10_000 {
+            let u = r.log2();
+            black_box(u);
+            r += TAU % 1.0;
+        }
+    });
+}
+
+#[bench]
+fn ln(b: &mut Bencher)
+{
+    use test::black_box;
+    b.iter(|| {
+        let mut r = 0.42_f64;
+        for _ in 0..10_000 {
+            let u = r.ln();
+            black_box(u);
+            r += TAU % 1.0;
+        }
+    });
+}
+
+#[bench]
 fn norm(b: &mut Bencher)
 {
     use test::black_box;

@@ -145,12 +145,12 @@ impl HasDynamicalCovers for Mandelbrot
             4 => {
                 let param_map = |t: Cplx| {
                     let t2 = t * t;
-                    (-0.25 * t2 - 0.75 - t.inv(), 0.5 * t - t2.inv())
+                    (-0.25 * t2 - 0.75 - t.inv(), -0.5 * t + t2.inv())
                 };
                 let mult = |t: Cplx| {
                     let t2 = t.powi(2);
                     let a = horner_monic!(t2, -16., -5., 4.);
-                    let b = horner_monic!(-8., 6., 2.);
+                    let b = horner_monic!(t2, -8., 6., 2.);
                     -(a + t * b) / t2
                 };
 
@@ -184,7 +184,7 @@ impl HasDynamicalCovers for Mandelbrot
             2 => {
                 let param_map = |t: Cplx| {
                     let u = 9. / t.powi(2);
-                    ((t - 1.) * u - 3., (t - 2.) * u / t)
+                    ((t - 1.) * u - 3., (2. - t) * u / t)
                 };
                 let bounds = Bounds {
                     min_x: 0.5,

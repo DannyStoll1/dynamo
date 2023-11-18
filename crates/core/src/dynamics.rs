@@ -1,4 +1,5 @@
 use dynamo_color::{Coloring, IncoloringAlgorithm};
+use dynamo_common::math_utils::contour::{LevelCurve, LevelCurveParams};
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
 use dynamo_common::math_utils::{arithmetic::*, newton::*};
 use dynamo_common::prelude::*;
@@ -765,6 +766,55 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
     {
         (ONE, ZERO)
     }
+
+    /// Evaluate Green's function given the escape time and final value
+    fn external_potential_helper(&self, iters: Period, z: Self::Var, c: &Self::Param) -> Real
+    {
+        let u = self.escape_radius().log2();
+        let v = z.norm_sqr().log2();
+        let q = self.escape_coeff(c).norm().log2();
+        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
+        residual.mul_add(self.escaping_period() as IterCount, iters as IterCount)
+    }
+
+    /// External Green's function at a point
+    fn external_potential_d(&self, t: Cplx) -> Option<(Real, Cplx)>
+    {
+        if t.is_nan() {
+            return None;
+        }
+
+        let (c, dc_dt) = self.param_map_d(t);
+        let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
+        dz_dt += dz_dc * dc_dt;
+
+        for _ in 0..self.escaping_phase() {
+            let (f, df_dz, df_dc) = self.gradient(z, &c);
+            dz_dt = df_dz * dz_dt + df_dc * dc_dt;
+            z = f;
+        }
+        for iter in 0..self.max_iter() {
+            for _j in 0..self.escaping_period() {
+                if z.norm_sqr() > self.escape_radius() {
+                    let rescale = self.degree_real().powi(-(iter as i32));
+                    let z = z.into();
+                    let d_green = (dz_dt.into() / z).conj() * rescale;
+                    let green = z.norm().ln() * rescale;
+                    return Some((green, d_green));
+                }
+                let (f, df_dz, df_dc) = self.gradient(z, &c);
+                dz_dt = df_dz * dz_dt + df_dc * dc_dt;
+                z = f;
+            }
+        }
+
+        None
+    }
+
+    fn external_distance_estimate(&self, t: Cplx) -> Option<Real>
+    {
+        self.external_potential_d(t).map(|(g, dg)| (g / dg).norm())
+    }
 }
 
 pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
@@ -891,12 +941,31 @@ pub trait Equipotential: DynamicalFamily
 {
     /// Compute an equipotential curve through a given point.
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>;
+
+    /// Compute an equipotential using Newton's method. May be more accurate, but also slower.
+    fn equipotential_newton(&self, t0: Cplx) -> Option<Vec<Cplx>>;
 }
 impl<P> Equipotential for P
 where
     P: DynamicalFamily + InfinityFirstReturnMap,
 {
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    {
+        let (g, _) = self.external_potential_d(t0)?;
+        dbg!(g);
+        LevelCurveParams::default()
+            .step_size(1e-1) // self.point_grid().pixel_width())
+            .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
+            .max_steps(500000)
+            .contour(
+                t0,
+                |t| self.external_potential_d(t).map(|x| x.1),
+                |t| self.external_potential_d(t),
+            )
+            .map(LevelCurve::compute)
+    }
+
+    fn equipotential_newton(&self, t0: Cplx) -> Option<Vec<Cplx>>
     {
         let c0 = self.param_map(t0);
         let z0 = self.start_point(t0, &c0);
@@ -975,6 +1044,10 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         }
     }
 
+    /// Encode the potential of an escaping point.
+    /// The potential returned is equal to 
+    /// log_D(log(E)) - log_D(G) - 1,
+    /// where E is the escape radius, D is the escaping degree, and G is the Green's function.
     fn encode_escaping_point(
         &self,
         iters: Period,
@@ -984,54 +1057,20 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: Real::from(iters) - 1.,
+                potential: IterCount::from(iters).exp(),
                 phase: None,
             };
         }
 
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let q = self.escape_coeff(c).norm().log2();
-        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
-        let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
+        let u = self.escape_radius().ln();
+        let v = z.norm_sqr().ln();
+        let q = self.escape_coeff(c).norm().ln();
+        let residual = ((v + q) / (u + q)).log(self.degree_real());
+        let potential = IterCount::from(iters) - self.escaping_period() as IterCount * residual;
         PointInfo::Escaping {
             potential,
             phase: None,
         }
-    }
-
-    /// External Green's function at a point
-    fn external_potential_d(&self, t: Cplx) -> Option<(Real, Cplx)>
-    {
-        if t.is_nan() {
-            return None;
-        }
-
-        let (c, dc_dt) = self.param_map_d(t);
-        let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
-        dz_dt += dz_dc * dc_dt;
-
-        for _ in 0..self.escaping_phase() {
-            let (f, df_dz, df_dc) = self.gradient(z, &c);
-            dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-            z = f;
-        }
-        for iter in 0..self.max_iter() {
-            for _j in 0..self.escaping_period() {
-                if z.norm_sqr() > self.escape_radius() {
-                    let d_absz = z.into() * dz_dt.into().conj();
-                    let norm = d_absz.norm();
-                    let direction = d_absz / norm;
-                    let log_potential = norm.log2() / self.degree_real().powi(iter as i32);
-                    return Some((log_potential, direction * log_potential));
-                }
-                let (f, df_dz, df_dc) = self.gradient(z, &c);
-                dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-                z = f;
-            }
-        }
-
-        None
     }
 }
 

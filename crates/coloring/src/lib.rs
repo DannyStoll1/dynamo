@@ -204,4 +204,16 @@ mod tests
         assert!(hsv.saturation - hsv1.saturation < 1e-2);
         assert!(hsv.intensity - hsv1.intensity < 1e-2);
     }
+
+    #[test]
+    fn cielch()
+    {
+        use crate::types::{Lchuv, Luv, Xyz};
+
+        let lch = Lchuv { l: 0.1161, c: 1., h: 0.625 };
+        let luv = Luv::from(lch);
+        dbg!(luv);
+        let xyz = Xyz::from(luv);
+        dbg!(xyz);
+    }
 }

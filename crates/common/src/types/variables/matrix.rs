@@ -117,11 +117,12 @@ impl Matrix2x2
     {
         self.v0.x.mul_add(self.v1.y, -self.v0.y * self.v1.x)
     }
-    fn trace(&self) -> Real
+    const fn trace(&self) -> Real
     {
         self.v0.x + self.v1.y
     }
-    fn transpose(mut self) -> Self {
+    const fn transpose(mut self) -> Self
+    {
         let tmp = self.v0.y;
         self.v0.y = self.v1.x;
         self.v1.x = tmp;
@@ -198,8 +199,10 @@ impl Arg<Real> for Matrix2x2
         self.v0.arg()
     }
 }
-impl Conj for Matrix2x2 {
-    fn conj(&self) -> Self {
+impl Conj for Matrix2x2
+{
+    fn conj(&self) -> Self
+    {
         self.transpose()
     }
 }

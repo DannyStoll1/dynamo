@@ -13,6 +13,7 @@ pub trait Arg<R>
 }
 pub trait Conj: Clone
 {
+    #[must_use]
     fn conj(&self) -> Self
     {
         self.clone()
@@ -291,3 +292,44 @@ impl<D> Derivative for D where
         + Into<Cplx>
 {
 }
+
+macro_rules! impl_polar {
+    ($t: ty) => {
+        impl Norm<Real> for $t
+        {
+            #[inline]
+            fn norm(&self) -> Real
+            {
+                *self as Real
+            }
+            #[inline]
+            fn norm_sqr(&self) -> Real
+            {
+                (self * self) as Real
+            }
+        }
+        impl Arg<Real> for $t
+        {
+            #[inline]
+            fn arg(self) -> Real
+            {
+                if self >= 0.0 {
+                    0.0
+                } else {
+                    std::f64::consts::PI
+                }
+            }
+        }
+        impl Conj for $t
+        {
+            #[inline]
+            fn conj(&self) -> Self
+            {
+                *self
+            }
+        }
+    };
+}
+
+impl_polar!(f64);
+impl_polar!(f32);

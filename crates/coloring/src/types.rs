@@ -191,3 +191,170 @@ impl From<Rgb<u8>> for Hsv
         Self::from_rgb_tuple(rgb.0.into())
     }
 }
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Lchuv
+{
+    pub l: f32,
+    pub c: f32,
+    pub h: f32,
+}
+
+impl Lchuv
+{
+    #[must_use]
+    pub const fn with_l(mut self, l: f32) -> Self
+    {
+        self.l = l;
+        self
+    }
+    #[must_use]
+    pub const fn with_c(mut self, c: f32) -> Self
+    {
+        self.c = c;
+        self
+    }
+    #[must_use]
+    pub const fn with_h(mut self, h: f32) -> Self
+    {
+        self.h = h;
+        self
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Luv
+{
+    pub l: f32,
+    pub u: f32,
+    pub v: f32,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Xyz
+{
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+impl Xyz
+{
+    const REF_WHITE: Self = Self {
+        x: 0.95047,
+        y: 1.,
+        z: 1.08883,
+    };
+
+    const FROM_RGB_MATRIX: [[f32; 3]; 3] = [
+        [0.49, 0.31, 0.2],
+        [0.17697, 0.81240, 0.01063],
+        [0.0, 0.01, 0.99],
+    ];
+
+    const TO_RGB_MATRIX: [[f32; 3]; 3] = [
+        [2.36461385, -0.89654057, -0.46807648],
+        [-0.51516621, 1.4264081, 0.0887581],
+        [0.0052037, -0.01440816, 1.00920446],
+    ];
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct RgbLinear
+{
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+}
+
+impl From<Lchuv> for Luv
+{
+    fn from(Lchuv { l, c, h }: Lchuv) -> Self
+    {
+        Self {
+            l,
+            u: c * (h * TAU).cos(),
+            v: c * (h * TAU).sin(),
+        }
+    }
+}
+
+impl From<Luv> for Xyz
+{
+    fn from(Luv { l, u, v }: Luv) -> Self
+    {
+        let Self { y: yr, .. } = Self::REF_WHITE;
+
+        let l = l * 100.;
+        let u = u * 100.;
+        let v = v * 100.;
+
+        const KAPPA: f32 = 903.3;
+
+        let y = if l > 8. {
+            ((l + 16.) / 116.).powi(3) * yr
+        } else {
+            l / KAPPA * yr
+        };
+
+        const WHITE_U0: f32 = 0.1978330369967827;
+        const WHITE_V0: f32 = 0.4683304743525223;
+
+        let u0 = u / (13. * l) + WHITE_U0;
+        let v0 = v / (13. * l) + WHITE_V0;
+
+        let x = y * 2.25 * u0 / v0;
+        let z = y * ((12. - 3. * u0) / (4. * v0) - 5.);
+        Self { x, y, z }
+    }
+}
+
+fn dot<const N: usize>(v: [f32; N], w: [f32; N]) -> f32
+{
+    v.into_iter().zip(w.into_iter()).map(|(v, w)| v * w).sum()
+}
+
+impl From<Xyz> for RgbLinear
+{
+    fn from(Xyz { x, y, z }: Xyz) -> Self
+    {
+        Self {
+            r: dot(Xyz::TO_RGB_MATRIX[0], [x, y, z]),
+            g: dot(Xyz::TO_RGB_MATRIX[1], [x, y, z]),
+            b: dot(Xyz::TO_RGB_MATRIX[2], [x, y, z]),
+        }
+    }
+}
+
+impl From<RgbLinear> for Color32
+{
+    fn from(RgbLinear { r, g, b }: RgbLinear) -> Self
+    {
+        const GAMMA: f32 = 1.8;
+        Color32::from_rgb(
+            (r.powf(1. / GAMMA) * 256.) as u8,
+            (g.powf(1. / GAMMA) * 256.) as u8,
+            (b.powf(1. / GAMMA) * 256.) as u8,
+        )
+    }
+}
+
+impl From<Xyz> for Color32
+{
+    fn from(xyz: Xyz) -> Self
+    {
+        Self::from(RgbLinear::from(xyz))
+    }
+}
+
+impl From<Lchuv> for Color32
+{
+    fn from(lch: Lchuv) -> Self
+    {
+        Self::from(Xyz::from(Luv::from(lch)))
+    }
+}

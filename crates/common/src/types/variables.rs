@@ -74,7 +74,7 @@ impl Conj for Cplx
     #[inline]
     fn conj(&self) -> Self
     {
-        Cplx::conj(self)
+        Self::conj(self)
     }
 }
 impl MaybeNan for Cplx
@@ -177,12 +177,14 @@ impl Default for Bicomplex
     }
 }
 
-impl std::ops::Mul<Cplx> for Bicomplex {
+impl std::ops::Mul<Cplx> for Bicomplex
+{
     type Output = Self;
-    fn mul(self, z: Cplx) -> Self {
+    fn mul(self, z: Cplx) -> Self
+    {
         match self {
-            Self::PlaneA(w) => Self::PlaneA(w*z),
-            Self::PlaneB(w) => Self::PlaneB(w*z),
+            Self::PlaneA(w) => Self::PlaneA(w * z),
+            Self::PlaneB(w) => Self::PlaneB(w * z),
         }
     }
 }

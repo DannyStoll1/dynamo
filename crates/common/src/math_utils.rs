@@ -11,6 +11,7 @@ use std::f64::consts::PI;
 
 // pub mod erf;
 pub mod arithmetic;
+pub mod contour;
 pub mod newton;
 pub mod polynomial_roots;
 pub mod taylor;

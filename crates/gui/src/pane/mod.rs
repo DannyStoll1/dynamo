@@ -405,6 +405,13 @@ where
     {
         self.marking.mark_orbit_manually(zs, color);
     }
+
+    fn schedule_recompute_keep_old_annotations(&mut self)
+    {
+        self.tasks_mut().compute.schedule_rerun();
+        self.tasks_mut().draw.schedule_rerun();
+        self.marking_mut().flush_path_cache();
+    }
 }
 
 impl<P> From<P> for WindowPane<P>
@@ -589,8 +596,7 @@ where
     {
         self.zoom_factor *= scale;
         self.grid_mut().zoom(scale, base_point);
-        self.schedule_recompute();
-        self.schedule_redraw();
+        self.schedule_recompute_keep_old_annotations();
     }
 
     fn process_tasks(&mut self)

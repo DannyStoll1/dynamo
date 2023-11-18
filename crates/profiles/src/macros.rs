@@ -364,7 +364,7 @@ macro_rules! ext_ray_impl_rk {
                             let norm = d_absz.norm();
                             let direction = d_absz / norm;
                             let log_potential = norm.log2() / self.degree_real().powi(iter as i32);
-                            return direction * log_potential;
+                            return -direction * log_potential;
                         }
                         let (f, df_dz, df_dc) = self.gradient(z, &c);
                         dz_dt = df_dz * dz_dt + df_dc * dc_dt;
@@ -382,7 +382,7 @@ macro_rules! ext_ray_impl_rk {
                     return Some(t_list);
                 }
 
-                t -= dt;
+                t += dt;
 
                 if t.is_nan() {
                     return Some(t_list);

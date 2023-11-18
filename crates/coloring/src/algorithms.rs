@@ -1,5 +1,4 @@
-use crate::palette::Palette;
-use crate::types::Hsv;
+use crate::{palette::Palette, types::Hsv};
 use dynamo_common::prelude::*;
 use egui::Color32;
 
@@ -120,11 +119,16 @@ impl IncoloringAlgorithm
                     .period_coloring
                     .map(point_info.period as f32, luminosity_modifier as f32)
             }
-            Self::Multiplier => Hsv::new(
-                (point_info.multiplier.arg() / TAU) as f32 + 0.5,
-                1.,
-                point_info.multiplier.norm() as f32,
-            )
+            Self::Multiplier => Hsv {
+                hue: (point_info.multiplier.arg() / TAU) as f32 + 0.5,
+                saturation: 1.,
+                intensity: point_info.multiplier.norm() as f32,
+            }
+            // Self::Multiplier => Lchuv {
+            //     h: (point_info.multiplier.arg() / TAU) as f32 + 0.5,
+            //     c: 0.97,
+            //     l: point_info.multiplier.norm() as f32,
+            // }
             .into(),
         }
     }
@@ -210,11 +214,16 @@ impl IncoloringAlgorithm
 
                 palette.period_coloring.map(n as f32, luma)
             }
-            Self::Multiplier => Hsv::new(
-                (info.multiplier.arg() / TAU) as f32 + 0.5,
-                1.,
-                info.multiplier.norm() as f32,
-            )
+            Self::Multiplier => Hsv {
+                hue: (info.multiplier.arg() / TAU) as f32 + 0.5,
+                saturation: 1.,
+                intensity: info.multiplier.norm() as f32,
+            }
+            // Self::Multiplier => Lchuv {
+            //     h: (info.multiplier.arg() / TAU) as f32 + 0.5,
+            //     c: 0.97,
+            //     l: info.multiplier.norm() as f32,
+            // }
             .into(),
         }
     }
