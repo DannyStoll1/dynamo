@@ -70,7 +70,7 @@ impl IncoloringAlgorithm
                 let per = IterCount::from(point_info.period);
                 let val = IterCount::from(point_info.preperiod);
 
-                palette.map_color32(val * val / per)
+                palette.map(val * val / per)
             }
             Self::PreperiodPeriod { fill_rate } => {
                 let per = IterCount::from(point_info.period);
@@ -85,7 +85,7 @@ impl IncoloringAlgorithm
             } => {
                 let val =
                     Self::relative_potential(point_info, *periodicity_tolerance, *crit_degree);
-                palette.map_color32(val)
+                palette.map(val)
             }
             Self::PotentialAndPeriod {
                 periodicity_tolerance,
@@ -198,12 +198,12 @@ impl IncoloringAlgorithm
                 let luminosity_modifier = info.multiplier.norm() as f32;
                 palette.period_coloring.map(hue_id, luminosity_modifier)
             }
-            Self::Preperiod => palette.map_color32(rescaled_potential.floor()),
+            Self::Preperiod => palette.map(rescaled_potential.floor()),
             Self::PreperiodPeriod { fill_rate } => {
                 let luma = (rescaled_potential * fill_rate).tanh() as f32;
                 palette.period_coloring.map(info.period as f32, luma)
             }
-            Self::InternalPotential { .. } => palette.map_color32(rescaled_potential),
+            Self::InternalPotential { .. } => palette.map(rescaled_potential),
             Self::PotentialAndPeriod { fill_rate, .. } => {
                 let n = IterCount::from(info.period);
 
@@ -219,11 +219,6 @@ impl IncoloringAlgorithm
                 saturation: 1.,
                 intensity: info.multiplier.norm() as f32,
             }
-            // Self::Multiplier => Lchuv {
-            //     h: (info.multiplier.arg() / TAU) as f32 + 0.5,
-            //     c: 0.97,
-            //     l: info.multiplier.norm() as f32,
-            // }
             .into(),
         }
     }

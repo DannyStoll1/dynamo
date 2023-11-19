@@ -12,11 +12,13 @@ pub enum Error
     LoopDetected,
 }
 
+#[derive(Clone, Debug)]
 pub struct LevelCurveParams
 {
     step_size: Real,
     max_steps: usize,
     return_radius: Real,
+    use_distance_estimation: bool,
 }
 impl LevelCurveParams
 {
@@ -42,21 +44,22 @@ impl LevelCurveParams
     }
 
     #[must_use]
-    pub fn contour<D, FD, T>(
-        self,
-        point: Cplx,
-        dmap: D,
-        map_dmap: FD,
-    ) -> Option<LevelCurve<D, FD, T>>
+    pub const fn use_distance_estimation(mut self) -> Self
+    {
+        self.use_distance_estimation = true;
+        self
+    }
+
+    #[must_use]
+    pub fn contour<FD, T>(self, point: Cplx, map_dmap: FD) -> Option<LevelCurve<FD, T>>
     where
-        D: Fn(Cplx) -> Option<Cplx>,
         FD: Fn(Cplx) -> Option<(T, Cplx)>,
         T: Norm<Real>
             + std::ops::Sub<Output = T>
             + std::ops::Div<Cplx, Output = Cplx>
             + std::fmt::Debug,
     {
-        LevelCurve::try_new(self, point, dmap, map_dmap)
+        LevelCurve::try_new(self, point, map_dmap)
     }
 }
 impl Default for LevelCurveParams
@@ -67,44 +70,43 @@ impl Default for LevelCurveParams
             step_size: 1e-2,
             max_steps: 20000,
             return_radius: 1e-2,
+            use_distance_estimation: false,
         }
     }
 }
 
-pub struct LevelCurve<D, FD, T>
+pub struct LevelCurve<FD, T>
 where
-    D: Fn(Cplx) -> Option<Cplx>,
     FD: Fn(Cplx) -> Option<(T, Cplx)>,
     T: Norm<Real> + std::ops::Sub<Output = T> + std::ops::Div<Cplx, Output = Cplx>,
 {
     params: LevelCurveParams,
+    seed: Cplx,
     point: Cplx,
     deriv: Cplx,
     target: T,
-    dmap: D,
     map_dmap: FD,
     has_exited_return_radius: bool,
 }
 
-impl<D, FD, T> LevelCurve<D, FD, T>
+impl<FD, T> LevelCurve<FD, T>
 where
-    D: Fn(Cplx) -> Option<Cplx>,
     FD: Fn(Cplx) -> Option<(T, Cplx)>,
     T: Norm<Real>
         + std::ops::Sub<Output = T>
         + std::ops::Div<Cplx, Output = Cplx>
         + std::fmt::Debug,
 {
-    pub fn try_new(params: LevelCurveParams, point: Cplx, dmap: D, map_dmap: FD) -> Option<Self>
+    pub fn try_new(params: LevelCurveParams, point: Cplx, map_dmap: FD) -> Option<Self>
     {
         let (target, deriv) = (map_dmap)(point)?;
         let deriv = target / deriv.conj();
         Some(Self {
             params,
+            seed: point,
             point,
             deriv,
             target,
-            dmap,
             map_dmap,
             has_exited_return_radius: false,
         })
@@ -113,7 +115,11 @@ where
     fn step_vector(&self, t: Cplx) -> Option<Cplx>
     {
         let (f, df) = (self.map_dmap)(t)?;
-        Some(f / df.conj() * I)
+        if self.params.use_distance_estimation {
+            Some(f / df.conj() * I)
+        } else {
+            Some(df * I)
+        }
     }
 
     fn rk_step(&self) -> Option<Cplx>
@@ -121,11 +127,11 @@ where
         let t = self.point;
         let h = self.params.step_size;
 
-        let k0 = self.deriv * I;
-        let k1 = self.step_vector(t + 0.5 * h * k0)?;
-        let k2 = self.step_vector(t + 0.5 * h * k1)?;
-        let k3 = self.step_vector(t + h * k2)? * I;
-        Some(h / 6.0 * (k0 + 2. * (k1 + k2) + k3))
+        let k0 = h * self.deriv * I;
+        let k1 = h * self.step_vector(t + 0.5 * k0)?;
+        let k2 = h * self.step_vector(t + 0.5 * k1)?;
+        let k3 = h * self.step_vector(t + k2)?;
+        Some((k0 + 2. * (k1 + k2) + k3) / 6.0)
     }
 
     fn apply_newton_correction(&mut self) -> Option<()>
@@ -145,7 +151,7 @@ where
     }
 
     #[inline]
-    fn do_step(&mut self, seed: Cplx) -> Result<(), Error>
+    fn do_step(&mut self) -> Result<(), Error>
     {
         let dt = self.rk_step().ok_or(Error::FunctionUndefined)?;
 
@@ -156,31 +162,37 @@ where
 
         if self.point.is_nan() {
             Err(Error::NanEncountered)
-        } else if self.point.dist_sqr(seed) < self.params.return_radius {
+        } else if self.point.dist_sqr(self.seed) < self.params.return_radius {
             Err(Error::LoopDetected)
         } else {
             Ok(())
         }
     }
 
+    fn close_loop(&mut self, t_list: &mut Vec<Cplx>)
+    {
+        let mut dist = Real::INFINITY;
+        let mut new_dist = self.point.dist_sqr(self.seed);
+        while new_dist < dist {
+            dist = new_dist;
+            let _ = self.do_step();
+            t_list.push(self.point);
+            new_dist = self.point.dist_sqr(self.seed);
+        }
+    }
+
     pub fn compute(mut self) -> Vec<Cplx>
     {
-        let seed = self.point;
         let mut t_list = vec![self.point];
 
         for _k in 0..self.params.max_steps {
-            match self.do_step(seed) {
+            match self.do_step() {
                 Ok(()) => {
                     self.has_exited_return_radius = true;
                     t_list.push(self.point);
                 }
                 Err(Error::LoopDetected) if self.has_exited_return_radius => {
-                    // a few extra iterations to fill in the gap
-                    for _ in 0..25 {
-                        t_list.push(self.point);
-                        let _ = self.do_step(seed);
-                    }
-                    t_list.push(self.point);
+                    self.close_loop(&mut t_list);
                     break;
                 }
                 Err(Error::LoopDetected) => {
@@ -194,19 +206,20 @@ where
     }
 }
 
-pub struct GradientCurveParams
+#[derive(Clone, Debug)]
+pub struct IntegralCurveParams
 {
     step_size: Real,
     max_steps: usize,
-    tolerance: Real,
+    convergence_radius: Real,
     escape_radius: Real,
 }
-impl GradientCurveParams
+impl IntegralCurveParams
 {
     #[must_use]
-    pub const fn tolerance(mut self, tolerance: Real) -> Self
+    pub const fn convergence_radius(mut self, radius: Real) -> Self
     {
-        self.tolerance = tolerance;
+        self.convergence_radius = radius;
         self
     }
 
@@ -232,28 +245,40 @@ impl GradientCurveParams
     }
 
     #[must_use]
-    pub const fn contour<D>(self, point: Cplx, dmap: D) -> GradientAscent<D>
+    pub const fn contour<D>(self, point: Cplx, dmap: D) -> IntegralCurve<D>
     where
         D: Fn(Cplx) -> Option<Cplx>,
     {
-        GradientAscent::new(self, point, dmap)
+        IntegralCurve::new(self, point, dmap)
+    }
+}
+impl Default for IntegralCurveParams
+{
+    fn default() -> Self
+    {
+        Self {
+            step_size: 1e-2,
+            max_steps: 20000,
+            escape_radius: 1e2,
+            convergence_radius: 1e-6,
+        }
     }
 }
 
-pub struct GradientAscent<D>
+pub struct IntegralCurve<D>
 where
     D: Fn(Cplx) -> Option<Cplx>,
 {
-    params: GradientCurveParams,
+    params: IntegralCurveParams,
     point: Cplx,
     direction: D,
 }
 
-impl<D> GradientAscent<D>
+impl<D> IntegralCurve<D>
 where
     D: Fn(Cplx) -> Option<Cplx>,
 {
-    pub const fn new(params: GradientCurveParams, point: Cplx, direction: D) -> Self
+    pub const fn new(params: IntegralCurveParams, point: Cplx, direction: D) -> Self
     {
         Self {
             params,
@@ -267,11 +292,11 @@ where
         let t = self.point;
         let h = self.params.step_size;
 
-        let k0 = (self.direction)(t)?;
-        let k1 = (self.direction)(t + 0.5 * h * k0)?;
-        let k2 = (self.direction)(t + 0.5 * h * k1)?;
-        let k3 = (self.direction)(t + h * k2)?;
-        Some(h / 6.0 * (k0 + 2. * (k1 + k2) + k3))
+        let k0 = h * (self.direction)(t)?;
+        let k1 = h * (self.direction)(t + k0 / 3.0)?;
+        let k2 = h * (self.direction)(t - k0 / 3.0 + k1)?;
+        let k3 = h * (self.direction)(t + k0 - k1 + k2)?;
+        Some(0.125 * (k0 + 3. * (k1 + k2) + k3))
     }
 
     #[inline]
@@ -285,15 +310,17 @@ where
             return Err(Error::NanEncountered);
         }
         let r = dt.norm_sqr();
-        if r < self.params.tolerance || r > self.params.escape_radius {
+        if r < self.params.convergence_radius || r > self.params.escape_radius {
             Err(Error::Converged)
         } else {
             Ok(())
         }
     }
 
-    pub fn compute(mut self) -> Vec<Cplx>
+    pub fn compute(mut self) -> Option<Vec<Cplx>>
     {
+        let _ = (self.direction)(self.point)?;
+
         let mut t_list = vec![self.point];
 
         for _k in 0..self.params.max_steps {
@@ -301,10 +328,10 @@ where
                 Ok(()) => {
                     t_list.push(self.point);
                 }
-                Err(_) => return t_list,
+                Err(_) => return Some(t_list),
             }
         }
 
-        t_list
+        Some(t_list)
     }
 }

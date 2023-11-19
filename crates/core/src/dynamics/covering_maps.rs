@@ -18,7 +18,7 @@ where
     covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
     point_grid: PointGrid,
     orig_bounds: Bounds,
-    multiplier_map: fn(Cplx) -> Cplx,
+    multiplier_map: fn(Cplx) -> (Cplx, Cplx),
 }
 
 impl<C> CoveringMap<C>
@@ -35,7 +35,7 @@ where
             covering_map_d,
             point_grid,
             orig_bounds,
-            multiplier_map: |t| t,
+            multiplier_map: |t| (t, ONE),
         }
     }
     #[must_use]
@@ -45,7 +45,7 @@ where
         self.with_bounds(bounds)
     }
     #[must_use]
-    pub fn with_multiplier_map(mut self, multiplier_map: fn(Cplx) -> Cplx) -> Self
+    pub fn with_multiplier_map(mut self, multiplier_map: fn(Cplx) -> (Cplx, Cplx)) -> Self
     {
         self.multiplier_map = multiplier_map;
         self
@@ -226,9 +226,9 @@ where
     }
 
     #[inline]
-    fn auxiliary_value(&self, t: Cplx) -> Cplx
+    fn auxiliary_value(&self, t: Cplx) -> Option<(Cplx, Cplx)>
     {
-        (self.multiplier_map)(t)
+        Some((self.multiplier_map)(t))
     }
 }
 

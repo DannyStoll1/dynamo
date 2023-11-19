@@ -225,11 +225,51 @@ impl Lchuv
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Lchab
+{
+    pub l: f32,
+    pub c: f32,
+    pub h: f32,
+}
+
+impl Lchab
+{
+    #[must_use]
+    pub const fn with_l(mut self, l: f32) -> Self
+    {
+        self.l = l;
+        self
+    }
+    #[must_use]
+    pub const fn with_c(mut self, c: f32) -> Self
+    {
+        self.c = c;
+        self
+    }
+    #[must_use]
+    pub const fn with_h(mut self, h: f32) -> Self
+    {
+        self.h = h;
+        self
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Luv
 {
     pub l: f32,
     pub u: f32,
     pub v: f32,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Lab
+{
+    pub l: f32,
+    pub a: f32,
+    pub b: f32,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -248,6 +288,10 @@ impl Xyz
         y: 1.,
         z: 1.08883,
     };
+    const WHITE_U0: f32 = 0.197_833_03;
+    const WHITE_V0: f32 = 0.468_330_47;
+    const KAPPA: f32 = 903.3;
+    const EPS: f32 = 0.008_856;
 
     const FROM_RGB_MATRIX: [[f32; 3]; 3] = [
         [0.49, 0.31, 0.2],
@@ -256,9 +300,9 @@ impl Xyz
     ];
 
     const TO_RGB_MATRIX: [[f32; 3]; 3] = [
-        [2.36461385, -0.89654057, -0.46807648],
-        [-0.51516621, 1.4264081, 0.0887581],
-        [0.0052037, -0.01440816, 1.00920446],
+        [2.364_613_8, -0.896_540_6, -0.468_076_48],
+        [-0.515_166_2, 1.426_408, 0.088_758_1],
+        [0.005_203_7, -0.014_408_16, 1.009_204_5],
     ];
 }
 
@@ -269,6 +313,23 @@ pub struct RgbLinear
     pub r: f32,
     pub g: f32,
     pub b: f32,
+}
+
+impl RgbLinear
+{
+    const GAMMA: f32 = 1.;
+    fn gamma_map(val: f32) -> u8
+    {
+        (val * 256.) as u8
+    }
+    fn to_u8(self) -> [u8; 3]
+    {
+        [
+            Self::gamma_map(self.r),
+            Self::gamma_map(self.g),
+            Self::gamma_map(self.b),
+        ]
+    }
 }
 
 impl From<Lchuv> for Luv
@@ -283,6 +344,18 @@ impl From<Lchuv> for Luv
     }
 }
 
+impl From<Lchab> for Lab
+{
+    fn from(Lchab { l, c, h }: Lchab) -> Self
+    {
+        Self {
+            l,
+            a: c * (h * TAU).cos(),
+            b: c * (h * TAU).sin(),
+        }
+    }
+}
+
 impl From<Luv> for Xyz
 {
     fn from(Luv { l, u, v }: Luv) -> Self
@@ -293,29 +366,64 @@ impl From<Luv> for Xyz
         let u = u * 100.;
         let v = v * 100.;
 
-        const KAPPA: f32 = 903.3;
-
         let y = if l > 8. {
             ((l + 16.) / 116.).powi(3) * yr
         } else {
-            l / KAPPA * yr
+            l / Self::KAPPA * yr
         };
 
-        const WHITE_U0: f32 = 0.1978330369967827;
-        const WHITE_V0: f32 = 0.4683304743525223;
-
-        let u0 = u / (13. * l) + WHITE_U0;
-        let v0 = v / (13. * l) + WHITE_V0;
+        let u0 = u / (13. * l) + Self::WHITE_U0;
+        let v0 = v / (13. * l) + Self::WHITE_V0;
 
         let x = y * 2.25 * u0 / v0;
-        let z = y * ((12. - 3. * u0) / (4. * v0) - 5.);
+        let z = y * (u0.mul_add(-3.0, 12.0) / (4. * v0) - 5.);
         Self { x, y, z }
+    }
+}
+
+impl From<Lab> for Xyz
+{
+    fn from(Lab { l, a, b }: Lab) -> Self
+    {
+        let Self {
+            x: xr,
+            y: yr,
+            z: zr,
+        } = Self::REF_WHITE;
+
+        let l = l * 100.;
+
+        let fy = (l + 16.) / 116.;
+        let fx = a / 5. + fy;
+        let fz = fy - b / 2.;
+
+        let mut x0 = fx.powi(3);
+        if x0 <= Self::EPS {
+            x0 = fx.mul_add(116., -16.) / Self::KAPPA;
+        }
+
+        let mut z0 = fz.powi(3);
+        if z0 <= Self::EPS {
+            z0 = fz.mul_add(116., -16.) / Self::KAPPA;
+        }
+
+        let y0 = if l > 8. {
+            ((l + 16.) / 116.).powi(3)
+        } else {
+            l / Self::KAPPA
+        };
+
+        Self {
+            x: x0 * xr,
+            y: y0 * yr,
+            z: z0 * zr,
+        }
     }
 }
 
 fn dot<const N: usize>(v: [f32; N], w: [f32; N]) -> f32
 {
-    v.into_iter().zip(w.into_iter()).map(|(v, w)| v * w).sum()
+    v.into_iter().zip(w).map(|(v, w)| v * w).sum()
 }
 
 impl From<Xyz> for RgbLinear
@@ -332,14 +440,10 @@ impl From<Xyz> for RgbLinear
 
 impl From<RgbLinear> for Color32
 {
-    fn from(RgbLinear { r, g, b }: RgbLinear) -> Self
+    fn from(rgb: RgbLinear) -> Self
     {
-        const GAMMA: f32 = 1.8;
-        Color32::from_rgb(
-            (r.powf(1. / GAMMA) * 256.) as u8,
-            (g.powf(1. / GAMMA) * 256.) as u8,
-            (b.powf(1. / GAMMA) * 256.) as u8,
-        )
+        let [r, g, b] = rgb.to_u8();
+        Self::from_rgb(r, g, b)
     }
 }
 
@@ -351,10 +455,72 @@ impl From<Xyz> for Color32
     }
 }
 
+impl From<RgbLinear> for Rgb<u8>
+{
+    fn from(rgb: RgbLinear) -> Self
+    {
+        Self(rgb.to_u8())
+    }
+}
+
+impl From<Xyz> for Rgb<u8>
+{
+    fn from(xyz: Xyz) -> Self
+    {
+        Self::from(RgbLinear::from(xyz))
+    }
+}
+
+impl From<Lchuv> for Xyz
+{
+    fn from(lch: Lchuv) -> Self
+    {
+        Self::from(Luv::from(lch))
+    }
+}
+
+impl From<Lchab> for Xyz
+{
+    fn from(lch: Lchab) -> Self
+    {
+        Self::from(Lab::from(lch))
+    }
+}
+
+impl From<Lchuv> for Rgb<u8>
+{
+    fn from(lch: Lchuv) -> Self
+    {
+        Self::from(Xyz::from(lch))
+    }
+}
+
+impl From<Lchab> for Rgb<u8>
+{
+    fn from(lch: Lchab) -> Self
+    {
+        Self::from(Xyz::from(Lab::from(lch)))
+    }
+}
+
 impl From<Lchuv> for Color32
 {
     fn from(lch: Lchuv) -> Self
     {
-        Self::from(Xyz::from(Luv::from(lch)))
+        Self::from(Xyz::from(lch))
     }
 }
+
+impl From<Lchab> for Color32
+{
+    fn from(lch: Lchab) -> Self
+    {
+        Self::from(Xyz::from(lch))
+    }
+}
+
+pub trait FromCartesian: From<RgbLinear> + From<Xyz> {}
+pub trait FromPolar: From<Hsv> + From<Lchab> + From<Lchuv> {}
+
+impl<T> FromCartesian for T where T: From<RgbLinear> + From<Xyz> {}
+impl<T> FromPolar for T where T: From<Hsv> + From<Lchuv> + From<Lchab> {}

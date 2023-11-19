@@ -2,8 +2,8 @@ use crate::sidebar;
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_gui::hotkeys::{
-    Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS,
-    SELECTION_HOTKEYS,
+    Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
+    PALETTE_HOTKEYS, SELECTION_HOTKEYS,
 };
 use dynamo_gui::interface::{Interface, MainInterface};
 use dynamo_profiles::*;
@@ -211,6 +211,11 @@ impl FractalTab
     {
         ui.menu_button("Annotations", |ui| {
             self.menu_state.open();
+            ui.menu_button("Cycles", |ui| {
+                for hotkey in &CYCLES_HOTKEYS {
+                    self.hotkey_button(ui, hotkey);
+                }
+            });
             for hotkey in &ANNOTATION_HOTKEYS {
                 self.hotkey_button(ui, hotkey);
             }

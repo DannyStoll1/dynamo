@@ -133,14 +133,17 @@ impl HasDynamicalCovers for Mandelbrot
                 CoveringMap::new(self, param_map).with_orig_bounds(bounds)
             }
             3 => {
-                let param_map = |t| (-1.75 * (1. + 7. * t * t), -24.5 * t);
+                let param_map = |t| (-0.25 * (t * t + 7.), -0.5 * t);
+                let mult = |t| (horner_monic!(t, 1., 7., -1.), horner!(t, 7., -2., 3.));
                 let bounds = Bounds {
-                    min_x: -0.3,
-                    max_x: 0.3,
-                    min_y: -0.5,
-                    max_y: 0.5,
+                    min_x: -2.1,
+                    max_x: 2.1,
+                    min_y: -3.5,
+                    max_y: 3.5,
                 };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
+                CoveringMap::new(self, param_map)
+                    .with_orig_bounds(bounds)
+                    .with_multiplier_map(mult)
             }
             4 => {
                 let param_map = |t: Cplx| {
@@ -150,8 +153,10 @@ impl HasDynamicalCovers for Mandelbrot
                 let mult = |t: Cplx| {
                     let t2 = t.powi(2);
                     let a = horner_monic!(t2, -16., -5., 4.);
-                    let b = horner_monic!(t2, -8., 6., 2.);
-                    -(a + t * b) / t2
+                    let b = horner!(t2, -8., 6., 2.);
+                    let u = (-8. * t - 32.) / (t * t2);
+                    let v = horner!(t, -6., -8., -6., -4.);
+                    (-(a + t * b) / t2, u + v)
                 };
 
                 let bounds = Bounds {
@@ -198,7 +203,7 @@ impl HasDynamicalCovers for Mandelbrot
                 let param_map = |t: Cplx| {
                     let t2 = t * t;
 
-                    let v = t2 * (t2 - 3. * t + 6.) - t - t + 2.;
+                    let v = t2 * (t2 - 3. * t + 6.) - 2. * t + 2.;
                     let dv_dt = horner!(t, -2., 12., -9., 4.);
 
                     let w = (t2 - t).inv();
@@ -208,13 +213,30 @@ impl HasDynamicalCovers for Mandelbrot
                     let du_dt = dv_dt + dw_dt;
                     (-0.25 * u * w, -0.25 * (du_dt * w + u * dw_dt))
                 };
+                let mult = |t: Cplx| {
+                    let t2 = t.powi(2);
+                    let t3 = t * t2;
+                    let a = t3 - t2 + 2. * t - 1.;
+                    let b = t3 - t2 + 1.;
+                    let c = 1. - t3 + 3. * t2 - 2. * t;
+
+                    let u = t2 - t;
+                    let u2 = u.powi(2);
+
+                    let mu = a * b * c / (u * u2);
+                    let dmu =
+                        -((t2 - t + 1.) / u2).powi(2) * horner!(t, 3., -8., 2., 6., 7., -10., 3.);
+                    (mu, dmu)
+                };
                 let bounds = Bounds {
                     min_x: -2.5,
                     max_x: 3.5,
                     min_y: -3.,
                     max_y: 3.,
                 };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
+                CoveringMap::new(self, param_map)
+                    .with_orig_bounds(bounds)
+                    .with_multiplier_map(mult)
             }
             _ => CoveringMap::from(self),
         }

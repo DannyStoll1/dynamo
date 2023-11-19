@@ -1,4 +1,4 @@
-use crate::pane::id::*;
+use crate::{marked_points::ContourType, pane::id::*};
 use dynamo_color::{IncoloringAlgorithm, Palette};
 use dynamo_common::types::{IterCount, Period};
 
@@ -32,7 +32,7 @@ pub enum Action
         select_landing_point: bool,
     },
     DrawRaysOfPeriod,
-    DrawEquipotential,
+    DrawContour(ContourType),
     ClearRays,
     ClearEquipotentials,
     ClearCurves,
@@ -58,6 +58,7 @@ pub enum Action
     SetColoringPreperiodPeriod,
     ScalePalettePeriod(f64),
     ShiftPalettePhase(f64),
+    ToggleEscapePhaseColoring,
 }
 impl Action
 {
@@ -111,7 +112,15 @@ impl Action
                 }
             }
             Self::DrawRaysOfPeriod => "Draw all rays of a given period and preperiod.".to_owned(),
-            Self::DrawEquipotential => "Draw equipotential through selection.".to_owned(),
+            Self::DrawContour(contour_type) => match contour_type {
+                ContourType::Equipotential => "Draw equipotential through selection.".to_owned(),
+                ContourType::Multiplier => {
+                    "Draw a contour for the multiplier map on dynamical varieties.".to_owned()
+                }
+                ContourType::ExtendRay => {
+                    "Extend an external ray outwards from the selection.".to_owned()
+                }
+            },
             Self::ClearRays => "Clear all external rays on active image.".to_owned(),
             Self::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
             Self::ClearCurves => "Clear all curves on active image.".to_owned(),
@@ -192,6 +201,9 @@ impl Action
                 format!("{} the period of the color palette.", inc_or_dec(*scale))
             }
             Self::ShiftPalettePhase(_) => "Shift the phase of the color palette.".to_owned(),
+            Self::ToggleEscapePhaseColoring => {
+                "Toggle coloring based on phase at time of escape.".to_owned()
+            }
         }
     }
 
@@ -236,7 +248,12 @@ impl Action
                 }
             }
             Self::DrawRaysOfPeriod => "Rays of Period".to_owned(),
-            Self::DrawEquipotential => "Equipotential".to_owned(),
+            Self::DrawContour(contour_type) => match contour_type {
+                ContourType::Equipotential => "Equipotential".to_owned(),
+                ContourType::Multiplier => "Multiplier Contour".to_owned(),
+                ContourType::ExtendRay => "Extend Ray".to_owned(),
+            },
+
             Self::ClearRays => "Clear Rays".to_owned(),
             Self::ClearEquipotentials => "Clear Equipotentials".to_owned(),
             Self::ClearCurves => "Clear Curves".to_owned(),
@@ -277,6 +294,7 @@ impl Action
             Self::SetColoringPreperiodPeriod => "Period + Conv. Time".to_owned(),
             Self::ScalePalettePeriod(scale) => format!("{} density", inc_or_dec(1.0 / scale)),
             Self::ShiftPalettePhase(_) => "Adjust Phase".to_owned(),
+            Self::ToggleEscapePhaseColoring => "Phase Coloring".to_owned(),
         }
     }
 }

@@ -26,6 +26,7 @@ pub struct Coloring
     algorithm: IncoloringAlgorithm,
     palette: Palette,
     esc_period: Period,
+    do_escape_phase_coloring: bool,
 }
 impl Coloring
 {
@@ -36,6 +37,7 @@ impl Coloring
             algorithm,
             palette,
             esc_period: 1,
+            do_escape_phase_coloring: false,
         }
     }
 
@@ -48,8 +50,12 @@ impl Coloring
         match point_info {
             Escaping {
                 potential,
-                phase: None,
-            } => self.palette.map_color32(*potential),
+                phase: Some(phase),
+            } if self.do_escape_phase_coloring => {
+                self.palette
+                    .map_color32_phase(*potential, *phase, self.esc_period)
+            }
+            Escaping { potential, .. } => self.palette.map(*potential),
             Periodic(data) => self.algorithm.color_periodic(&self.palette, data),
             PeriodicKnownPotential(data) => {
                 self.algorithm.color_known_potential(&self.palette, data)
@@ -57,12 +63,6 @@ impl Coloring
             Bounded => self.palette.in_color,
             Wandering => self.palette.wandering_color,
             Unknown => self.palette.unknown_color,
-            Escaping {
-                potential,
-                phase: Some(phase),
-            } => self
-                .palette
-                .map_color32_phase(*potential, *phase, self.esc_period),
             MarkedPoint {
                 class_id,
                 num_point_classes,
@@ -140,6 +140,11 @@ impl Coloring
         self
     }
 
+    pub fn toggle_escape_phase_coloring(&mut self)
+    {
+        self.do_escape_phase_coloring ^= true;
+    }
+
     #[cfg(feature = "serde")]
     pub fn save_to_file<P>(&self, filename: P) -> std::io::Result<()>
     where
@@ -210,7 +215,11 @@ mod tests
     {
         use crate::types::{Lchuv, Luv, Xyz};
 
-        let lch = Lchuv { l: 0.1161, c: 1., h: 0.625 };
+        let lch = Lchuv {
+            l: 0.1161,
+            c: 1.,
+            h: 0.625,
+        };
         let luv = Luv::from(lch);
         dbg!(luv);
         let xyz = Xyz::from(luv);

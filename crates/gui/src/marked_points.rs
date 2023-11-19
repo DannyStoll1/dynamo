@@ -73,13 +73,32 @@ impl ObjectKey for PointSetKey
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum ContourType
+{
+    Equipotential,
+    Multiplier,
+    ExtendRay,
+}
+impl ContourType
+{
+    const fn color(self) -> Color32
+    {
+        match self {
+            Self::Equipotential => Color32::YELLOW,
+            Self::Multiplier => Color32::from_rgb(255, 160, 122),
+            Self::ExtendRay => Color32::from_rgb(127, 127, 127),
+        }
+    }
+}
+
 /// Keys of curve objects in the data store. Each key may be toggled by the API.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum CurveKey
 {
     Orbit,
     Ray(RationalAngle),
-    Equipotential(hashing::HashedCplx),
+    Contour(ContourType, hashing::HashedCplx),
 }
 impl ObjectKey for CurveKey
 {
@@ -92,7 +111,7 @@ impl ObjectKey for CurveKey
                 let o = angle.with_degree(degree).orbit_schema();
                 palette.map_preperiodic(o)
             }
-            Self::Equipotential(_) => Color32::YELLOW,
+            Self::Contour(ctype, _) => ctype.color(),
         }
     }
 
@@ -102,9 +121,15 @@ impl ObjectKey for CurveKey
             Self::Orbit => plane.iter_orbit(selection).map(Into::into).collect(),
             Self::Ray(angle) => plane.external_ray(*angle).unwrap_or_default(),
 
-            Self::Equipotential(point) => {
-                plane.equipotential(Cplx::from(*point)).unwrap_or_default()
-            }
+            Self::Contour(ctype, point) => match ctype {
+                ContourType::Equipotential => {
+                    plane.equipotential(Cplx::from(*point)).unwrap_or_default()
+                }
+                ContourType::Multiplier => {
+                    plane.aux_contour(Cplx::from(*point)).unwrap_or_default()
+                }
+                ContourType::ExtendRay => plane.extend_ray(Cplx::from(*point)).unwrap_or_default(),
+            },
         }
     }
 }
@@ -357,10 +382,10 @@ impl Marking
         self.path_cache.borrow_mut().set_stale();
     }
 
-    pub fn toggle_equipotential(&mut self, base_point: Cplx)
+    pub fn toggle_contour(&mut self, contour_type: ContourType, base_point: Cplx)
     {
         self.curves
-            .sched_toggle(CurveKey::Equipotential(base_point.into()));
+            .sched_toggle(CurveKey::Contour(contour_type, base_point.into()));
         self.path_cache.borrow_mut().set_stale();
     }
 
@@ -421,13 +446,13 @@ impl Marking
         self.path_cache.borrow_mut().set_stale();
     }
 
-    pub fn disable_all_equipotentials(&mut self)
+    pub fn disable_all_contours(&mut self)
     {
         let to_remove: Vec<_> = self
             .curves
             .objects
             .keys()
-            .filter(|k| matches!(k, CurveKey::Equipotential(_)))
+            .filter(|k| matches!(k, CurveKey::Contour(..)))
             .copied()
             .collect();
         for key in &to_remove {

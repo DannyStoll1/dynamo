@@ -64,7 +64,8 @@ macro_rules! degree_impl {
         {
             degree_impl!($deg, $period);
         }
-        impl EscapeEncoding for $plane {}
+        impl EscapeEncoding for $plane {
+        }
         impl ExternalRays for $plane {}
     };
     ($plane: ident, $deg: expr; $($g:ident : $gt:ty),+) => {
@@ -334,71 +335,26 @@ macro_rules! ext_ray_impl_rk {
     ($step: literal, $esc: expr) => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
         {
-            use dynamo_common::math_utils::runge_kutta_step;
-            const R: Real = 48.0;
-            const STEP_SIZE: Real = $step;
-            let escape_radius: Real = $esc;
-            let pixel_width = self.point_grid().pixel_width() * 0.03;
+            use dynamo_common::math_utils::contour::IntegralCurveParams;
+            const R: Real = $esc;
+            const BAILOUT: Real = 2.0 * R * R;
 
-            let mut t: Cplx = R * angle.to_circle();
-            let mut t_list = vec![t];
-
-            let mut deriv_green = |t: Cplx| {
-                if t.is_nan() {
-                    panic!();
-                }
-
-                let (c, dc_dt) = self.param_map_d(t);
-                let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
-                dz_dt += dz_dc * dc_dt;
-
-                for _ in 0..self.escaping_phase() {
-                    let (f, df_dz, df_dc) = self.gradient(z, &c);
-                    dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-                    z = f;
-                }
-                for iter in 0..self.max_iter() {
-                    for _j in 0..self.escaping_period() {
-                        if z.norm_sqr() > escape_radius {
-                            let d_absz = z * dz_dt.conj();
-                            let norm = d_absz.norm();
-                            let direction = d_absz / norm;
-                            let log_potential = norm.log2() / self.degree_real().powi(iter as i32);
-                            return -direction * log_potential;
-                        }
-                        let (f, df_dz, df_dc) = self.gradient(z, &c);
-                        dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-                        z = f;
-                    }
-                }
-
-                NAN
-            };
-
-            for _k in 0..RAY_DEPTH * RAY_SHARPNESS {
-                let dt = runge_kutta_step(&mut deriv_green, t, STEP_SIZE);
-
-                if dt.norm() < pixel_width {
-                    return Some(t_list);
-                }
-
-                t += dt;
-
-                if t.is_nan() {
-                    return Some(t_list);
-                }
-
-                t_list.push(t);
-            }
-
-            Some(t_list)
+            IntegralCurveParams::default()
+                .step_size($step)
+                .max_steps(10_000)
+                .convergence_radius(0.0)
+                .escape_radius(BAILOUT)
+                .contour(R * angle.to_circle(), |t| {
+                    self.external_potential_d(t).map(|(g, dg)| -g / dg.conj())
+                })
+                .compute()
         }
     };
     ($step: literal) => {
-        ext_ray_impl_rk!($step, 1e6);
+        ext_ray_impl_rk!($step, 5e2);
     };
     () => {
-        ext_ray_impl_rk!(3e-2);
+        ext_ray_impl_rk!(1e-2);
     };
 }
 

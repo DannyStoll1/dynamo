@@ -12,8 +12,8 @@ use crate::{
     actions::Action,
     dialog::*,
     hotkeys::{
-        keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS,
-        INCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+        keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS,
+        IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
     pane::{
         id::*,
@@ -697,6 +697,7 @@ where
             .iter()
             .chain(IMAGE_HOTKEYS.iter())
             .chain(ANNOTATION_HOTKEYS.iter())
+            .chain(CYCLES_HOTKEYS.iter())
             .chain(SELECTION_HOTKEYS.iter())
             .chain(INCOLORING_HOTKEYS.iter())
             .chain(PALETTE_HOTKEYS.iter())
@@ -925,8 +926,9 @@ where
                     self.prompt_text(input_type);
                 }
             }
-            Action::DrawEquipotential => {
-                self.get_active_pane_mut().map(Pane::draw_equipotential);
+            Action::DrawContour(contour_type) => {
+                self.get_active_pane_mut()
+                    .map(|p| p.draw_contour(*contour_type));
             }
             Action::ClearRays => {
                 self.get_active_pane_mut().map(Pane::clear_marked_rays);
@@ -1006,6 +1008,12 @@ where
             }
             Action::ShiftPalettePhase(phase) => {
                 self.get_active_pane_mut().map(|p| p.shift_palette(*phase));
+            }
+            Action::ToggleEscapePhaseColoring => {
+                self.get_active_pane_mut().map(|p| {
+                    p.get_coloring_mut().toggle_escape_phase_coloring();
+                    p.schedule_redraw();
+                });
             }
         }
     }

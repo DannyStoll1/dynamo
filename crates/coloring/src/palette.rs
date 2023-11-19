@@ -1,16 +1,24 @@
-use crate::types::{Lchuv, Xyz};
+use crate::types::{FromCartesian, FromPolar, Lchab, RgbLinear, Xyz};
 
 use super::Hsv;
 use dynamo_common::types::IterCount;
 use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
 use egui::Color32;
-use image::Rgb;
 use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution, Uniform};
 use std::f64::consts::PI;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum CartesianColorSpace
+{
+    #[default]
+    Rgb,
+    Xyz,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -20,6 +28,8 @@ pub struct Sinusoid
     phase: f64,
     amplitude: f64,
     midline: f64,
+    #[serde(default)]
+    degree: i32,
 }
 impl Sinusoid
 {
@@ -30,17 +40,17 @@ impl Sinusoid
             phase: 0.,
             amplitude: 0.5,
             midline: 0.5,
+            degree: 2,
         }
     }
     fn get_value_f64(&self, potential: IterCount) -> f64
     {
         let theta = 2.0 * PI * (potential / self.period - self.phase);
-        self.amplitude.mul_add(theta.cos(), self.midline)
-    }
-    fn get_value_u8(&self, potential: IterCount) -> u8
-    {
-        let gamma = self.get_value_f64(potential);
-        (256. * gamma) as u8
+        let mut val = theta.cos();
+        if self.degree > 1 {
+            val = val.powi(self.degree).abs() * val.signum();
+        }
+        self.amplitude.mul_add(val, self.midline)
     }
     fn get_period_mut(&mut self) -> &mut f64
     {
@@ -84,11 +94,12 @@ impl Default for Sinusoid
             amplitude: 0.5,
             midline: 0.5,
             phase: 0.,
+            degree: 1,
         }
     }
 }
 
-mod colors
+mod defaults
 {
     use egui::Color32;
     pub(super) const fn white() -> Color32
@@ -119,14 +130,16 @@ pub struct Palette
     pub color_map_r: Sinusoid,
     pub color_map_g: Sinusoid,
     pub color_map_b: Sinusoid,
-    #[serde(default = "DiscretePalette::default")]
+    #[cfg_attr(feature = "serde", serde(default = "DiscretePalette::default"))]
     pub period_coloring: DiscretePalette,
-    #[serde(default = "colors::black")]
+    #[cfg_attr(feature = "serde", serde(default = "defaults::black"))]
     pub in_color: Color32,
-    #[serde(default = "colors::brown")]
+    #[cfg_attr(feature = "serde", serde(default = "defaults::brown"))]
     pub wandering_color: Color32,
-    #[serde(default = "colors::gray")]
+    #[cfg_attr(feature = "serde", serde(default = "defaults::gray"))]
     pub unknown_color: Color32,
+    #[cfg_attr(feature = "serde", serde(default = "CartesianColorSpace::default"))]
+    pub color_space: CartesianColorSpace,
 }
 
 impl Palette
@@ -142,6 +155,7 @@ impl Palette
             in_color: Color32::BLACK,
             wandering_color: Color32::BROWN,
             unknown_color: Color32::GRAY,
+            color_space: CartesianColorSpace::Xyz,
         }
     }
 
@@ -157,6 +171,7 @@ impl Palette
             in_color: Color32::BLACK,
             wandering_color: Color32::BROWN,
             unknown_color: Color32::GRAY,
+            color_space: CartesianColorSpace::Rgb,
         }
     }
 
@@ -168,6 +183,7 @@ impl Palette
             amplitude: 0.5,
             midline: 0.5,
             phase: 0.5,
+            degree: 1,
         };
         Self {
             color_map_r: color_map,
@@ -177,6 +193,7 @@ impl Palette
             in_color: Color32::WHITE,
             wandering_color: Color32::BROWN,
             unknown_color: Color32::GRAY,
+            color_space: CartesianColorSpace::Xyz,
         }
     }
 
@@ -197,6 +214,7 @@ impl Palette
             Self::new(period_r, period_g, period_b)
                 .with_phases(phase_r, phase_g, phase_b)
                 .with_contrast(contrast, brightness)
+                .with_degree(2)
         })
     }
 
@@ -206,6 +224,15 @@ impl Palette
         self.color_map_r.phase = phase_r;
         self.color_map_g.phase = phase_g;
         self.color_map_b.phase = phase_b;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_degree(mut self, degree: i32) -> Self
+    {
+        self.color_map_r.degree = degree;
+        self.color_map_g.degree = degree;
+        self.color_map_b.degree = degree;
         self
     }
 
@@ -237,35 +264,28 @@ impl Palette
     }
 
     #[must_use]
-    pub fn map_rgb(&self, potential: IterCount) -> Rgb<u8>
+    pub fn map<T: FromCartesian>(&self, potential: IterCount) -> T
     {
         let t = Self::ext_potential_to_sinusoid_input(potential);
 
-        let r = self.color_map_r.get_value_u8(t);
-        let g = self.color_map_g.get_value_u8(t);
-        let b = self.color_map_b.get_value_u8(t);
-        Rgb([r, g, b])
-    }
+        let v0 = self.color_map_r.get_value_f64(t) as f32;
+        let v1 = self.color_map_g.get_value_f64(t) as f32;
+        let v2 = self.color_map_b.get_value_f64(t) as f32;
 
-    #[must_use]
-    pub fn map_color32(&self, potential: IterCount) -> Color32
-    {
-        let t = Self::ext_potential_to_sinusoid_input(potential);
-
-        let r = self.color_map_r.get_value_f64(t);
-        let g = self.color_map_g.get_value_f64(t);
-        let b = self.color_map_b.get_value_f64(t);
-        Xyz {
-            x: r as f32,
-            y: g as f32,
-            z: b as f32,
+        match self.color_space {
+            CartesianColorSpace::Rgb => RgbLinear {
+                r: v0,
+                g: v1,
+                b: v2,
+            }
+            .into(),
+            CartesianColorSpace::Xyz => Xyz {
+                x: v0,
+                y: v1,
+                z: v2,
+            }
+            .into(),
         }
-        .into()
-
-        // let r = self.color_map_r.get_value_u8(t);
-        // let g = self.color_map_g.get_value_u8(t);
-        // let b = self.color_map_b.get_value_u8(t);
-        // Color32::from_rgb(r, g, b)
     }
 
     #[must_use]
@@ -283,15 +303,15 @@ impl Palette
             let b = self.color_map_b.get_value_f64(t) as f32;
             DiscretePalette::default()
                 .with_num_colors(esc_period as f32)
-                .map_hsv(phase as f32, 1.0)
-                .with_intensity(r)
-                .with_saturation(b)
-                // .map_lch(phase as f32, 1.0)
-                // .with_l(r)
-                // .with_c(b)
+                // .map_hsv(phase as f32, 1.0)
+                // .with_intensity(r)
+                // .with_saturation(b)
+                .map_lch(phase as f32, 1.0)
+                .with_l(r)
+                .with_c(b)
                 .into()
         } else {
-            self.map_color32(potential)
+            self.map(potential)
         }
     }
 
@@ -366,11 +386,11 @@ impl DiscretePalette
     }
 
     #[must_use]
-    fn map_lch(&self, period: f32, luminosity_modifier: f32) -> Lchuv
+    fn map_lch(&self, period: f32, luminosity_modifier: f32) -> Lchab
     {
-        let h = (period / self.num_colors + self.base_hue) % 1.;
+        let h = (period / self.num_colors + self.base_hue + 0.15) % 1.;
 
-        Lchuv {
+        Lchab {
             h,
             c: self.saturation,
             l: self.luminosity * luminosity_modifier,
@@ -387,7 +407,7 @@ impl DiscretePalette
     }
 
     #[must_use]
-    fn map_preperiodic_lch(&self, o: OrbitSchema) -> Lchuv
+    fn map_preperiodic_lch(&self, o: OrbitSchema) -> Lchab
     {
         self.map_lch(
             o.period as f32,
@@ -396,13 +416,13 @@ impl DiscretePalette
     }
 
     #[must_use]
-    pub fn map<T: From<Hsv>>(&self, period: f32, luminosity_modifier: f32) -> T
+    pub fn map<T: FromPolar>(&self, period: f32, luminosity_modifier: f32) -> T
     {
         self.map_hsv(period, luminosity_modifier).into()
     }
 
     #[must_use]
-    pub fn map_preperiodic<T: From<Hsv>>(&self, orbit_schema: OrbitSchema) -> T
+    pub fn map_preperiodic<T: FromPolar>(&self, orbit_schema: OrbitSchema) -> T
     {
         self.map_preperiodic_hsv(orbit_schema).into()
     }

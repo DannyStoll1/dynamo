@@ -1,6 +1,8 @@
 use egui::{Color32, Pos2, Ui};
 use std::path::Path;
 
+use crate::marked_points::ContourType;
+
 use super::image_frame::ImageFrame;
 use super::marked_points::Marking;
 use dynamo_color::prelude::*;
@@ -32,7 +34,7 @@ pub trait Pane
     fn set_follow_state(&mut self, follow_state: FollowState);
     fn degree(&self) -> AngleNum;
 
-    fn draw_equipotential(&mut self);
+    fn draw_contour(&mut self, contour_type: ContourType);
 
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
@@ -532,10 +534,10 @@ where
     }
 
     #[inline]
-    fn draw_equipotential(&mut self)
+    fn draw_contour(&mut self, contour_type: ContourType)
     {
         let selection = self.get_selection();
-        self.marking_mut().toggle_equipotential(selection);
+        self.marking_mut().toggle_contour(contour_type, selection);
     }
 
     #[inline]
@@ -720,7 +722,7 @@ where
 
     fn clear_equipotentials(&mut self)
     {
-        self.marking.disable_all_equipotentials();
+        self.marking.disable_all_contours();
     }
 
     fn clear_curves(&mut self)

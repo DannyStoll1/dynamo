@@ -1,6 +1,7 @@
 pub mod keyboard_shortcuts;
 use crate::{
     actions::Action,
+    marked_points::ContourType,
     pane::id::{PaneID::*, PaneSelection::*},
 };
 use dynamo_color::IncoloringAlgorithm;
@@ -86,7 +87,7 @@ pub static FILE_HOTKEYS: [Hotkey; 6] = [
     },
 ];
 
-pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
+pub static PALETTE_HOTKEYS: [Hotkey; 10] = [
     Hotkey {
         shortcut: Some(CTRL_K),
         action: SavePalette(ActivePane),
@@ -141,10 +142,34 @@ pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
         show_in_menu: true,
         menu_action_override: None,
     },
+    Hotkey {
+        shortcut: Some(KEY_J),
+        action: ToggleEscapePhaseColoring,
+        show_in_menu: true,
+        menu_action_override: None,
+    },
 ];
 
 seq!(n in 1..=6 {
-pub static ANNOTATION_HOTKEYS: [Hotkey; 24] = [
+pub static CYCLES_HOTKEYS: [Hotkey; 12] = [
+    #(
+        Hotkey {
+            shortcut: Some(CTRL_~n),
+            action: ToggleCycles(Id(Child), n),
+            show_in_menu: true,
+            menu_action_override: None,
+        },
+        Hotkey {
+            shortcut: Some(CTRL_SHIFT_~n),
+            action: ToggleCycles(Id(Parent), n),
+            show_in_menu: false,
+            menu_action_override: None,
+        },
+    )*
+];
+});
+
+pub static ANNOTATION_HOTKEYS: [Hotkey; 14] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
@@ -195,7 +220,21 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 24] = [
     // Equipotential
     Hotkey {
         shortcut: Some(KEY_G),
-        action: DrawEquipotential,
+        action: DrawContour(ContourType::Equipotential),
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // Multiplier contour
+    Hotkey {
+        shortcut: Some(KEY_M),
+        action: DrawContour(ContourType::Multiplier),
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // Extend Ray
+    Hotkey {
+        shortcut: Some(SHIFT_E),
+        action: DrawContour(ContourType::ExtendRay),
         show_in_menu: true,
         menu_action_override: None,
     },
@@ -217,20 +256,6 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 24] = [
         show_in_menu: true,
         menu_action_override: None,
     },
-    #(
-        Hotkey {
-            shortcut: Some(CTRL_~n),
-            action: ToggleCycles(Id(Child), n),
-            show_in_menu: true,
-            menu_action_override: None,
-        },
-        Hotkey {
-            shortcut: Some(CTRL_SHIFT_~n),
-            action: ToggleCycles(Id(Parent), n),
-            show_in_menu: false,
-            menu_action_override: None,
-        },
-    )*
     Hotkey {
         shortcut: Some(KEY_ESC),
         action: StopFollowing,
@@ -250,7 +275,6 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 24] = [
         menu_action_override: None,
     },
 ];
-});
 
 pub static SELECTION_HOTKEYS: [Hotkey; 5] = [
     Hotkey {

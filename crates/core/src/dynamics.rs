@@ -1,5 +1,7 @@
 use dynamo_color::{Coloring, IncoloringAlgorithm};
-use dynamo_common::math_utils::contour::{LevelCurve, LevelCurveParams};
+use dynamo_common::math_utils::contour::{
+    IntegralCurve, IntegralCurveParams, LevelCurve, LevelCurveParams,
+};
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
 use dynamo_common::math_utils::{arithmetic::*, newton::*};
 use dynamo_common::prelude::*;
@@ -484,9 +486,9 @@ pub trait DynamicalFamily: Sync + Send
     }
 
     /// Optional map for superimposed contours
-    fn auxiliary_value(&self, _t: Cplx) -> Cplx
+    fn auxiliary_value(&self, _t: Cplx) -> Option<(Cplx, Cplx)>
     {
-        ZERO
+        None
     }
 }
 
@@ -942,79 +944,56 @@ pub trait Equipotential: DynamicalFamily
     /// Compute an equipotential curve through a given point.
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>;
 
-    /// Compute an equipotential using Newton's method. May be more accurate, but also slower.
-    fn equipotential_newton(&self, t0: Cplx) -> Option<Vec<Cplx>>;
+    /// Draw a contour for the auxiliary map
+    fn aux_contour(&self, t0: Cplx) -> Option<Vec<Cplx>>;
+
+    /// Extend an external ray outwards
+    fn extend_ray(&self, t0: Cplx) -> Option<Vec<Cplx>>;
 }
 impl<P> Equipotential for P
 where
     P: DynamicalFamily + InfinityFirstReturnMap,
 {
+    /// Compute an equipotential by solving the ODE gamma'(t) = i∇G(t),
+    /// where G is the exterior Green's function.
     fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
     {
-        let (g, _) = self.external_potential_d(t0)?;
-        dbg!(g);
         LevelCurveParams::default()
             .step_size(1e-1) // self.point_grid().pixel_width())
             .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
-            .max_steps(500000)
-            .contour(
-                t0,
-                |t| self.external_potential_d(t).map(|x| x.1),
-                |t| self.external_potential_d(t),
-            )
+            .max_steps(500_000)
+            .use_distance_estimation()
+            .contour(t0, |t| self.external_potential_d(t))
             .map(LevelCurve::compute)
     }
 
-    fn equipotential_newton(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    /// Compute an equipotential by solving the ODE gamma'(t) = ∇G(t),
+    /// where G is the exterior Green's function.
+    fn extend_ray(&self, t0: Cplx) -> Option<Vec<Cplx>>
     {
-        let c0 = self.param_map(t0);
-        let z0 = self.start_point(t0, &c0);
+        IntegralCurveParams::default()
+            .step_size(1e-2)
+            .max_steps(50000)
+            .escape_radius(500.)
+            .convergence_radius(0.)
+            .contour(t0, |t| {
+                self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
+            })
+            .compute()
+    }
 
-        // Computation time is exponential in iteration count, so we limit ourselves to 13.
-        let max_iter = 13;
-        let escape_radius = 30.;
-        let theta0 = 0.02;
-
-        let orbit = orbit::Simple::new(|z, c| self.map(z, c), z0, c0, max_iter, escape_radius);
-        let result = orbit.last()?.1.unwrap_or_default();
-        let EscapeResult::Escaped { iters, final_value } = result else {
-            return None;
-        };
-
-        let mut target = final_value.into();
-
-        let compute = |t| {
-            let (c, dc_dt) = self.param_map_d(t);
-            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
-
-            // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
-            dz_dt += dc_dt * dz_dc;
-
-            let mut df_dz: Self::Deriv;
-            let mut df_dc: Self::Deriv;
-
-            for _ in 0..iters {
-                (z, df_dz, df_dc) = self.gradient(z, &c);
-                dz_dt = dz_dt * df_dz + df_dc;
-            }
-            (z.into(), dz_dt.into())
-        };
-
-        let num_points = (self.degree_real().powi(iters as i32) / theta0) as usize;
-        let rotate = (theta0 * TAUI).exp();
-
-        // let mut result = vec![t0; num_points];
-        let mut t = t0;
-
-        let result = std::iter::once(t)
-            .chain((0..num_points).map(|_| {
-                target *= rotate;
-                t = find_target_newton_relative(compute, t, target).unwrap_or(t);
-                t
-            }))
-            .collect();
-
-        Some(result)
+    fn aux_contour(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    {
+        LevelCurveParams::default()
+            .step_size(1e-2)
+            .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
+            .max_steps(5000)
+            .use_distance_estimation()
+            .contour(t0, |t| {
+                self.auxiliary_value(t)
+                    .map(|(mu, dmu)| (mu.norm().ln(), (dmu / mu).conj()))
+            })
+            .map(LevelCurve::compute)
     }
 }
 
@@ -1045,7 +1024,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
     }
 
     /// Encode the potential of an escaping point.
-    /// The potential returned is equal to 
+    /// The potential returned is equal to
     /// log_D(log(E)) - log_D(G) - 1,
     /// where E is the escape radius, D is the escaping degree, and G is the Green's function.
     fn encode_escaping_point(
@@ -1066,7 +1045,8 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         let v = z.norm_sqr().ln();
         let q = self.escape_coeff(c).norm().ln();
         let residual = ((v + q) / (u + q)).log(self.degree_real());
-        let potential = IterCount::from(iters) - self.escaping_period() as IterCount * residual;
+
+        let potential = (-residual).mul_add(self.escaping_period().into(), iters.into());
         PointInfo::Escaping {
             potential,
             phase: None,
