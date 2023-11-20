@@ -109,6 +109,7 @@ impl Transpiler
             pub struct UserPlane {{\n\
                 point_grid: PointGrid,\n\
                 max_iter: Period,\n\
+                compute_mode: ComputeMode,\n\
             }}\n\
             impl UserPlane {{\n\
                 const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(2.5);\n\

@@ -51,7 +51,8 @@ impl Coloring
                 potential,
                 phase: Some(phase),
             } if self.do_escape_phase_coloring => {
-                self.palette.map_phase(potential.ln(), *phase, self.esc_period)
+                self.palette
+                    .map_phase(potential.ln(), *phase, self.esc_period)
             }
             Escaping { potential, .. } => self.palette.map(potential.ln()),
             Periodic(data) => self.algorithm.color_periodic(&self.palette, data),
@@ -59,10 +60,10 @@ impl Coloring
                 self.algorithm.color_known_potential(&self.palette, data)
             }
             Bounded => T::from_color32(self.palette.in_color),
-            DistanceEstimate { distance, phase } if self.do_escape_phase_coloring => {
-                self.palette.map_phase(distance.ln(), *phase, self.esc_period)
-            }
-            DistanceEstimate { distance, .. } => self.palette.map(distance.ln() / 2.),
+            DistanceEstimate { distance, phase } if self.do_escape_phase_coloring => self
+                .palette
+                .map_phase(-distance.ln() / 2., *phase, self.esc_period),
+            DistanceEstimate { distance, .. } => self.palette.map(-distance.ln() / 2.),
             Wandering => T::from_color32(self.palette.wandering_color),
             Unknown => T::from_color32(self.palette.unknown_color),
             MarkedPoint {
