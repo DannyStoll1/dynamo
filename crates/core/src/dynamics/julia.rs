@@ -1,4 +1,4 @@
-use super::{DynamicalFamily, FamilyDefaults, HasJulia, MarkedPoints};
+use super::{ComputeMode, DynamicalFamily, FamilyDefaults, HasJulia, MarkedPoints};
 use crate::macros::basic_plane_impl;
 use crate::orbit::EscapeResult;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
@@ -22,6 +22,7 @@ where
     pub meta_params: T::MetaParam,
     pub local_param: T::Param,
     pub parent_selection: Cplx,
+    pub compute_mode: ComputeMode,
 }
 
 impl<T> JuliaSet<T>
@@ -45,6 +46,7 @@ where
             meta_params,
             local_param,
             parent_selection,
+            compute_mode: ComputeMode::SmoothPotential,
         }
     }
 

@@ -10,6 +10,7 @@ profile_imports!();
 pub struct MinsikHanPhi<const D: i32>
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -24,6 +25,7 @@ impl<const D: i32> MinsikHanPhi<D>
     {
         Self {
             point_grid,
+            compute_mode: ComputeMode::SmoothPotential,
             max_iter,
         }
     }

@@ -7,6 +7,7 @@ profile_imports!();
 pub struct QuadRatPer4
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

@@ -68,6 +68,7 @@ impl ChebyshevCoeffTable
 pub struct Chebyshev<const D: Period>
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     coeffs: Vec<Real>,
     coeffs_d: Vec<Real>,
@@ -95,6 +96,7 @@ impl<const D: Period> Default for Chebyshev<D>
             .collect();
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             coeffs,
             coeffs_d,

@@ -9,8 +9,9 @@ type EInt = EisensteinInteger;
 pub struct EisensteinMandel<const A: i64, const B: i64>
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
-    cache: Cache<(EInt, EInt), EscapeResult<EInt, EInt>>,
+    cache: Cache<(EInt, EInt), PointInfo<EInt>>,
 }
 
 impl<const A: i64, const B: i64> EisensteinMandel<A, B>
@@ -26,6 +27,7 @@ impl<const A: i64, const B: i64> Default for EisensteinMandel<A, B>
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             cache: Cache::new(),
         }
@@ -41,11 +43,7 @@ impl<const A: i64, const B: i64> DynamicalFamily for EisensteinMandel<A, B>
     type MetaParam = NoParam;
 
     #[inline]
-    fn early_bailout(
-        &self,
-        start: Self::Var,
-        c: &Self::Param,
-    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    fn early_bailout(&self, start: Self::Var, c: &Self::Param) -> Option<PointInfo<Self::Deriv>>
     {
         self.cache.get(&(start, *c))
     }
@@ -138,8 +136,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         c: &EInt,
     ) -> PointInfo<EInt>
     {
-        self.cache.insert((start, *c), result.clone());
-        match result {
+        let info = match result {
             EscapeResult::Periodic {
                 mut info,
                 final_value,
@@ -147,13 +144,14 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
                 info.multiplier = info.multiplier % Self::MOD;
                 self.identify_marked_points(final_value, c, info)
             }
-            EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
             EscapeResult::Bounded(_) => PointInfo::Bounded,
             EscapeResult::Escaped { iters, final_value } => {
                 self.encode_escaping_point(iters, final_value, c)
             }
             EscapeResult::Unknown => PointInfo::Unknown,
-        }
+        };
+        self.cache.insert((start, *c), info.clone());
+        info
     }
 
     fn encode_escaping_point(&self, iters: Period, z: EInt, c: &EInt) -> PointInfo<EInt>

@@ -25,6 +25,11 @@ pub enum PointInfo<D>
         class_id: PointClassId,
         num_point_classes: usize,
     },
+    DistanceEstimate
+    {
+        distance: Real,
+        phase: Period,
+    },
     Unknown,
 }
 

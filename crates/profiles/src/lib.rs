@@ -83,15 +83,15 @@ mod tests
     #[test]
     fn orbit()
     {
+        use orbit::Orbit;
         let plane: Tricorne<4> = Default::default();
         let param = Cplx::new(0.3, 0.1);
-        let start = Cplx::from(0.0);
 
-        let mut orbit = orbit::CycleDetected::new(&plane, start, param);
+        let mut orbit = orbit::CycleDetected::new(&plane).init(param);
 
         let result = orbit.run_until_complete();
         dbg!(&result);
-        assert!(matches!(result, EscapeResult::Periodic { .. }));
+        assert!(matches!(result, PointInfo::Periodic { .. }));
     }
 
     #[test]

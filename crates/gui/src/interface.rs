@@ -13,7 +13,7 @@ use crate::{
     dialog::*,
     hotkeys::{
         keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS,
-        IMAGE_HOTKEYS, INCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+        IMAGE_HOTKEYS, INCOLORING_HOTKEYS, OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
     },
     pane::{
         id::*,
@@ -700,6 +700,7 @@ where
             .chain(CYCLES_HOTKEYS.iter())
             .chain(SELECTION_HOTKEYS.iter())
             .chain(INCOLORING_HOTKEYS.iter())
+            .chain(OUTCOLORING_HOTKEYS.iter())
             .chain(PALETTE_HOTKEYS.iter())
         {
             if let Some(s) = shortcut.as_ref() {
@@ -980,11 +981,11 @@ where
                 self.set_palette(*palette);
             }
             Action::SetPaletteWhite => {
-                let white_palette = Palette::white(32.);
+                let white_palette = Palette::white(16.);
                 self.set_palette(white_palette);
             }
             Action::SetPaletteBlack => {
-                let black_palette = Palette::black(32.);
+                let black_palette = Palette::black(16.);
                 self.set_palette(black_palette);
             }
             Action::SetColoring(algorithm) => {
@@ -1014,6 +1015,14 @@ where
                     p.get_coloring_mut().toggle_escape_phase_coloring();
                     p.schedule_redraw();
                 });
+            }
+            Action::CycleComputeMode(selection, change) => {
+                self.get_selected_pane_ids(*selection)
+                    .into_iter()
+                    .for_each(|pane_id| {
+                        let pane = self.get_pane_mut(pane_id);
+                        pane.change_compute_mode(*change);
+                    });
             }
         }
     }

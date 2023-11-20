@@ -89,11 +89,22 @@ where
         self
     }
 
-    fn early_bailout(
-        &self,
-        start: Self::Var,
-        param: &Self::Param,
-    ) -> Option<EscapeResult<C::Var, C::Deriv>>
+    fn compute_mode(&self) -> super::ComputeMode
+    {
+        self.base_curve.compute_mode()
+    }
+
+    fn compute_mode_mut(&mut self) -> &mut super::ComputeMode
+    {
+        self.base_curve.compute_mode_mut()
+    }
+
+    fn set_compute_mode(&mut self, compute_mode: super::ComputeMode)
+    {
+        self.base_curve.set_compute_mode(compute_mode)
+    }
+
+    fn early_bailout(&self, start: Self::Var, param: &Self::Param) -> Option<PointInfo<C::Deriv>>
     {
         self.base_curve.early_bailout(start, param)
     }

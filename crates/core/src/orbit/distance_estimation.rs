@@ -1,23 +1,24 @@
 use super::{EscapeResult, Orbit};
-use crate::{dynamics::EscapeEncoding, prelude::DynamicalFamily};
+use crate::dynamics::EscapeEncoding;
 use dynamo_common::prelude::*;
 use num_traits::One;
 
-pub struct CycleDetected<'a, P: DynamicalFamily>
+pub struct DistanceEstimation<'a, P: EscapeEncoding>
 {
     family: &'a P,
+    param: P::Param,
     periodicity_tolerance: Real,
-    pub param: P::Param,
     pub z_init: P::Var,
     pub z_slow: P::Var,
     pub z_fast: P::Var,
     pub multiplier: P::Deriv,
+    pub dc_dt: P::Deriv,
+    pub dz_dt: P::Deriv,
     pub iter: Period,
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
-    running: bool,
 }
 
-impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
+impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
 {
     pub fn new(family: &'a P) -> Self
     {
@@ -29,23 +30,26 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
             z_slow: P::Var::default(),
             z_fast: P::Var::default(),
             multiplier: P::Deriv::one(),
+            dc_dt: P::Deriv::one(),
+            dz_dt: P::Deriv::one(),
             iter: 0,
             state: None,
-            running: true,
         }
     }
 
-    /// Initialize an orbit. Should only be called once, before running any computations.
     #[must_use]
-    pub fn init(mut self, selection: Cplx) -> Self
+    fn init(mut self, selection: Cplx) -> Self
     {
-        let c = self.family.param_map(selection);
-        let z = self.family.start_point(selection, &c);
+        let (c, dc_dt) = self.family.param_map_d(selection);
+        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
+        dz_dt += dz_dc * dc_dt;
 
         self.param = c;
         self.z_init = z;
         self.z_slow = z;
         self.z_fast = z;
+        self.dc_dt = dc_dt;
+        self.dz_dt = dz_dt;
         self
     }
 
@@ -58,9 +62,11 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
     #[inline]
     fn apply_map_and_update_multiplier(&mut self)
     {
-        let (z_new, deriv) = self.family.map_and_multiplier(self.z_fast, &self.param);
-        self.multiplier *= deriv;
-        self.z_fast = z_new;
+        let (f, df_dz, df_dc) = self.family.gradient(self.z_fast, &self.param);
+
+        self.multiplier *= df_dz;
+        self.dz_dt = df_dz * self.dz_dt + df_dc * self.dc_dt;
+        self.z_fast = f;
     }
 
     #[inline]
@@ -117,10 +123,26 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
         None
     }
 }
-
-impl<'a, P: EscapeEncoding> Orbit for CycleDetected<'a, P>
+impl<'a, P: EscapeEncoding> Orbit for DistanceEstimation<'a, P>
 {
     type Outcome = PointInfo<P::Deriv>;
+
+    fn reset(&mut self, selection: Cplx)
+    {
+        let (c, dc_dt) = self.family.param_map_d(selection);
+        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
+        dz_dt += dz_dc * dc_dt;
+
+        self.state = None;
+        self.param = c;
+        self.z_init = z;
+        self.z_slow = z;
+        self.z_fast = z;
+        self.multiplier = P::Deriv::one();
+        self.dc_dt = dc_dt;
+        self.dz_dt = dz_dt;
+        self.iter = 0;
+    }
 
     fn run_until_complete(&mut self) -> Self::Outcome
     {
@@ -139,49 +161,18 @@ impl<'a, P: EscapeEncoding> Orbit for CycleDetected<'a, P>
                 self.check_periodicity();
             }
         }
+
+        if let Some(EscapeResult::Escaped { iters, final_value }) = self.state {
+            let norm_z = final_value.into().norm();
+            let distance = norm_z * norm_z.ln() / self.dz_dt.norm();
+            return PointInfo::DistanceEstimate {
+                distance,
+                phase: iters % self.family.escaping_period(),
+            };
+        }
+
         #[allow(clippy::unwrap_used)]
         self.family
             .encode_escape_result(self.state.clone().unwrap(), self.z_init, &self.param)
-    }
-
-    fn reset(&mut self, selection: Cplx)
-    {
-        let c = self.family.param_map(selection);
-        let z = self.family.start_point(selection, &c);
-
-        self.state = None;
-        self.param = c;
-        self.z_init = z;
-        self.z_slow = z;
-        self.z_fast = z;
-        self.multiplier = P::Deriv::one();
-        self.iter = 0;
-    }
-}
-
-impl<'a, P: DynamicalFamily> Iterator for CycleDetected<'a, P>
-{
-    type Item = (P::Var, Option<EscapeResult<P::Var, P::Deriv>>);
-
-    fn next(&mut self) -> Option<Self::Item>
-    {
-        if self.state.is_none() {
-            let retval = self.z_fast;
-            self.iter += 1;
-            if self.iter % 2 == 1 {
-                self.apply_map_to_slow();
-                self.apply_map_and_update_multiplier();
-                self.enforce_stop_condition();
-            } else {
-                self.apply_map_and_update_multiplier();
-                self.check_periodicity();
-            }
-            Some((retval, self.state.clone()))
-        } else if self.running {
-            self.running = false;
-            Some((self.z_fast, self.state.clone()))
-        } else {
-            None
-        }
     }
 }

@@ -8,6 +8,7 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter: 1024,
+                compute_mode: ComputeMode::default(),
             }
         }
     };
@@ -19,6 +20,7 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter: 1024,
+                compute_mode: ComputeMode::default(),
                 $param_name: $param_value,
             }
         }
@@ -31,6 +33,7 @@ macro_rules! fractal_impl {
             Self {
                 point_grid,
                 max_iter: 1024,
+                compute_mode: ComputeMode::default(),
                 $param_name: $param_value,
             }
         }
@@ -57,6 +60,24 @@ macro_rules! point_grid_getters {
         {
             self.point_grid = point_grid;
             self
+        }
+
+        #[inline]
+        fn compute_mode(&self) -> ComputeMode
+        {
+            self.compute_mode
+        }
+
+        #[inline]
+        fn compute_mode_mut(&mut self) -> &mut ComputeMode
+        {
+            &mut self.compute_mode
+        }
+
+        #[inline]
+        fn set_compute_mode(&mut self, compute_mode: ComputeMode)
+        {
+            self.compute_mode = compute_mode;
         }
     };
 }

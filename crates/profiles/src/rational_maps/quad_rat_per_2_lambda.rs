@@ -71,6 +71,18 @@ impl DynamicalFamily for QuadRatPer2Lambda
     }
 
     #[inline]
+    fn compute_mode(&self) -> ComputeMode
+    {
+        self.general_plane.compute_mode()
+    }
+
+    #[inline]
+    fn compute_mode_mut(&mut self) -> &mut ComputeMode
+    {
+        self.general_plane.compute_mode_mut()
+    }
+
+    #[inline]
     fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
     {
         self.general_plane.map(z, c)
@@ -147,6 +159,7 @@ impl MarkedPoints for QuadRatPer2Lambda
 pub struct QuadRatPer2LambdaParam
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -167,6 +180,7 @@ impl Default for QuadRatPer2LambdaParam
         let point_grid = PointGrid::new_by_res_y(1024, Self::DEFAULT_BOUNDS);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
         }
     }
@@ -264,6 +278,7 @@ impl From<QuadRatPer2LambdaParam> for QuadRatPer2Lambda
         let point_grid = parent.point_grid().clone();
         let general_plane = QuadRatGeneral {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: parent.max_iter(),
         };
         Self {

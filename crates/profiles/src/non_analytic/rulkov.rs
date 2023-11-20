@@ -43,6 +43,7 @@ fn f(z: Point, c: &Point) -> Point
 pub struct Rulkov
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 impl Rulkov

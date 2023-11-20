@@ -1,5 +1,5 @@
 pub mod mandelbrot;
-pub use mandelbrot::{Mandelbrot, MandelbrotMC3Mult};
+pub use mandelbrot::Mandelbrot;
 
 pub mod cubic_per_1_lambda;
 pub use cubic_per_1_lambda::{

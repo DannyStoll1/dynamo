@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
 use dynamo_common::prelude::*;
-use egui::Color32;
-use image::Rgb;
 
 pub mod algorithms;
 pub mod fractal_image;
@@ -12,7 +10,7 @@ pub mod types;
 
 pub use algorithms::IncoloringAlgorithm;
 pub use palette::Palette;
-use types::Hsv;
+use types::{FromColor, Hsv};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -42,9 +40,10 @@ impl Coloring
     }
 
     #[must_use]
-    pub fn map_color32<D>(&self, point_info: &PointInfo<D>) -> Color32
+    pub fn map<D, T>(&self, point_info: &PointInfo<D>) -> T
     where
         D: Polar<Real>,
+        T: FromColor,
     {
         use PointInfo::*;
         match point_info {
@@ -52,17 +51,20 @@ impl Coloring
                 potential,
                 phase: Some(phase),
             } if self.do_escape_phase_coloring => {
-                self.palette
-                    .map_color32_phase(*potential, *phase, self.esc_period)
+                self.palette.map_phase(potential.ln(), *phase, self.esc_period)
             }
-            Escaping { potential, .. } => self.palette.map(*potential),
+            Escaping { potential, .. } => self.palette.map(potential.ln()),
             Periodic(data) => self.algorithm.color_periodic(&self.palette, data),
             PeriodicKnownPotential(data) => {
                 self.algorithm.color_known_potential(&self.palette, data)
             }
-            Bounded => self.palette.in_color,
-            Wandering => self.palette.wandering_color,
-            Unknown => self.palette.unknown_color,
+            Bounded => T::from_color32(self.palette.in_color),
+            DistanceEstimate { distance, phase } if self.do_escape_phase_coloring => {
+                self.palette.map_phase(distance.ln(), *phase, self.esc_period)
+            }
+            DistanceEstimate { distance, .. } => self.palette.map(distance.ln() / 2.),
+            Wandering => T::from_color32(self.palette.wandering_color),
+            Unknown => T::from_color32(self.palette.unknown_color),
             MarkedPoint {
                 class_id,
                 num_point_classes,
@@ -77,15 +79,6 @@ impl Coloring
                 .into()
             }
         }
-    }
-
-    #[must_use]
-    pub fn map_rgb<D>(&self, point_info: &PointInfo<D>) -> Rgb<u8>
-    where
-        D: Polar<Real>,
-    {
-        let (r, g, b, _a) = self.map_color32(point_info).to_tuple();
-        Rgb([r, g, b])
     }
 
     pub fn set_palette(&mut self, palette: Palette)

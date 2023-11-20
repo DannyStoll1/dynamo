@@ -7,6 +7,7 @@ profile_imports!();
 pub struct Biquadratic
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     multiplier: Cplx,
 }
@@ -113,6 +114,7 @@ impl EscapeEncoding for Biquadratic
 pub struct BiquadraticMult
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     multiplier: Cplx,
     starting_plane: PlaneID,
@@ -137,6 +139,7 @@ impl Default for BiquadraticMult
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             multiplier,
             starting_plane: PlaneID::ZPlane,
@@ -403,6 +406,7 @@ impl EscapeEncoding for BiquadraticMult
 pub struct BiquadraticMultParam
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     starting_plane: PlaneID,
 }
@@ -424,6 +428,7 @@ impl Default for BiquadraticMultParam
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             starting_plane: PlaneID::ZPlane,
         }
@@ -552,6 +557,7 @@ impl From<BiquadraticMultParam> for BiquadraticMult
         let point_grid = parent.point_grid().clone();
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: parent.max_iter(),
             multiplier: param.a * param.b,
             starting_plane: parent.starting_plane,
@@ -565,6 +571,7 @@ impl From<BiquadraticMultParam> for BiquadraticMult
 pub struct BiquadraticMultSecondIterate
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     multiplier: Cplx,
 }
@@ -696,6 +703,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
 pub struct BiquadraticMultSection
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     starting_plane: PlaneID,
 }
@@ -718,6 +726,7 @@ impl Default for BiquadraticMultSection
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             starting_plane: PlaneID::ZPlane,
         }

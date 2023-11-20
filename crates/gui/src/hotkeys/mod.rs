@@ -1,6 +1,6 @@
 pub mod keyboard_shortcuts;
 use crate::{
-    actions::Action,
+    actions::{Action, ChangeBoolean},
     marked_points::ContourType,
     pane::id::{PaneID::*, PaneSelection::*},
 };
@@ -87,7 +87,7 @@ pub static FILE_HOTKEYS: [Hotkey; 6] = [
     },
 ];
 
-pub static PALETTE_HOTKEYS: [Hotkey; 10] = [
+pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
     Hotkey {
         shortcut: Some(CTRL_K),
         action: SavePalette(ActivePane),
@@ -139,12 +139,6 @@ pub static PALETTE_HOTKEYS: [Hotkey; 10] = [
     Hotkey {
         shortcut: Some(KEY_RIGHT),
         action: ShiftPalettePhase(0.02),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_J),
-        action: ToggleEscapePhaseColoring,
         show_in_menu: true,
         menu_action_override: None,
     },
@@ -455,24 +449,29 @@ pub static INCOLORING_HOTKEYS: [Hotkey; 8] = [
     },
 ];
 
-// egui::SidePanel::right("hotkey_guide").show(ui.ctx(), |ui| {
-//     ui.vertical(|ui| {
-//         ui.label("Ctrl-Q: Quit");
-//         ui.label("Ctrl-S: Save image");
-//         ui.label("");
-//         ui.label("E: External Ray");
-//         ui.label("Ctrl-X: Ray to point");
-//         ui.label("Ctrl-F: Find periodic point");
-//         ui.label("O: Get orbit");
-//         ui.horizontal(|ui| {
-//             let function = RichText::new("Exit");
-//             let hotkey = RichText::new("Ctrl-Q").strong().color(epaint::Color32::YELLOW);
-//             ui.add(
-//                 egui::Label::new(function)
-//             );
-//             ui.add(
-//                 egui::Label::new(hotkey)
-//             );
-//         });
-//     });
-// });
+pub static OUTCOLORING_HOTKEYS: [Hotkey; 4] = [
+    Hotkey {
+        shortcut: Some(KEY_J),
+        action: ToggleEscapePhaseColoring,
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    Hotkey {
+        shortcut: Some(KEY_D),
+        action: CycleComputeMode(ActivePane, ChangeBoolean::Toggle),
+        show_in_menu: false,
+        menu_action_override: Some(CycleComputeMode(ActivePane, ChangeBoolean::Enable)),
+    },
+    Hotkey {
+        shortcut: None,
+        action: CycleComputeMode(BothPanes, ChangeBoolean::Disable),
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    Hotkey {
+        shortcut: None,
+        action: CycleComputeMode(BothPanes, ChangeBoolean::Enable),
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+];

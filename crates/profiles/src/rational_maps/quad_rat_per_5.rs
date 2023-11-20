@@ -48,6 +48,7 @@ fn top_coeff(a: Cplx, b: Cplx) -> Cplx
 pub struct QuadRatPer5
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 impl QuadRatPer5

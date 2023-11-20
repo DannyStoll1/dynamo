@@ -31,7 +31,7 @@ where
         self.iter_counts
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
-                img.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info);
+                img.pixels[x + (height - y - 1) * width] = coloring.map(point_info);
             });
         img
     }
@@ -43,7 +43,7 @@ where
         self.iter_counts
             .indexed_iter()
             .for_each(|((x, y), point_info)| {
-                image.pixels[x + (height - y - 1) * width] = coloring.map_color32(point_info);
+                image.pixels[x + (height - y - 1) * width] = coloring.map(point_info);
             });
     }
     fn save(&self, coloring: &Coloring, filename: String)
@@ -54,7 +54,7 @@ where
 
         for (x, y, pixel) in image.enumerate_pixels_mut() {
             let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
-            *pixel = coloring.map_rgb(iter_count);
+            *pixel = coloring.map::<_, Rgb<u8>>(iter_count);
         }
         if let Err(e) = image.save(filename.clone()) {
             println!("Error saving file: {e:?}");
@@ -70,7 +70,7 @@ where
 
         for (x, y, pixel) in image.enumerate_pixels_mut() {
             let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
-            *pixel = coloring.map_rgb(iter_count);
+            *pixel = coloring.map(iter_count);
         }
         image
     }

@@ -519,8 +519,40 @@ impl From<Lchab> for Color32
     }
 }
 
+pub trait FromColor32
+{
+    fn from_color32(color32: Color32) -> Self;
+}
+impl FromColor32 for Color32
+{
+    #[inline]
+    fn from_color32(color32: Color32) -> Self
+    {
+        color32
+    }
+}
+impl FromColor32 for Rgb<u8>
+{
+    #[inline]
+    fn from_color32(color32: Color32) -> Self
+    {
+        let [r, g, b, _a] = color32.to_array();
+        Self([r, g, b])
+    }
+}
+impl FromColor32 for Hsv
+{
+    #[inline]
+    fn from_color32(color32: Color32) -> Self
+    {
+        Self::from(color32)
+    }
+}
+
 pub trait FromCartesian: From<RgbLinear> + From<Xyz> {}
 pub trait FromPolar: From<Hsv> + From<Lchab> + From<Lchuv> {}
+pub trait FromColor: FromPolar + FromCartesian + FromColor32 {}
 
 impl<T> FromCartesian for T where T: From<RgbLinear> + From<Xyz> {}
 impl<T> FromPolar for T where T: From<Hsv> + From<Lchuv> + From<Lchab> {}
+impl<T> FromColor for T where T: FromCartesian + FromPolar + FromColor32 {}

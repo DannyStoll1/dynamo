@@ -1,6 +1,8 @@
-use crate::{palette::Palette, types::Hsv};
+use crate::{
+    palette::Palette,
+    types::{FromColor, Hsv},
+};
 use dynamo_common::prelude::*;
-use egui::Color32;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -51,12 +53,13 @@ impl IncoloringAlgorithm
     }
 
     #[must_use]
-    pub fn color_periodic<D>(&self, palette: &Palette, point_info: &PointInfoPeriodic<D>) -> Color32
+    pub fn color_periodic<D, T>(&self, palette: &Palette, point_info: &PointInfoPeriodic<D>) -> T
     where
         D: Polar<Real>,
+        T: FromColor,
     {
         match self {
-            Self::Solid => palette.in_color,
+            Self::Solid => T::from_color32(palette.in_color),
             Self::Period => {
                 let hue_id = point_info.period as f32;
                 palette.period_coloring.map(hue_id, PERIOD_LUMA_MODIFIER)
@@ -70,7 +73,7 @@ impl IncoloringAlgorithm
                 let per = IterCount::from(point_info.period);
                 let val = IterCount::from(point_info.preperiod);
 
-                palette.map(val * val / per)
+                palette.map((val * val / per).ln())
             }
             Self::PreperiodPeriod { fill_rate } => {
                 let per = IterCount::from(point_info.period);
@@ -85,7 +88,7 @@ impl IncoloringAlgorithm
             } => {
                 let val =
                     Self::relative_potential(point_info, *periodicity_tolerance, *crit_degree);
-                palette.map(val)
+                palette.map(val.ln())
             }
             Self::PotentialAndPeriod {
                 periodicity_tolerance,
@@ -181,15 +184,15 @@ impl IncoloringAlgorithm
         val.powi(2) * n
     }
 
-    pub fn color_known_potential<D: Polar<Real>>(
+    pub fn color_known_potential<D: Polar<Real>, T: FromColor>(
         &self,
         palette: &Palette,
         info: &PointInfoKnownPotential<D>,
-    ) -> Color32
+    ) -> T
     {
-        let rescaled_potential = info.potential.powi(2) / info.period as f64;
+        let rescaled_potential = (info.potential.powi(2) / info.period as f64).ln();
         match self {
-            Self::Solid => palette.in_color,
+            Self::Solid => T::from_color32(palette.in_color),
             Self::Period => palette
                 .period_coloring
                 .map(info.period as f32, PERIOD_LUMA_MODIFIER),

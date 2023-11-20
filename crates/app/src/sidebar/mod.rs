@@ -30,10 +30,6 @@ fn polynomials_menu() -> State
                         .with_fractal_button("Period 1", interface_mc!(Mandelbrot, 1))
                         .with_fractal_button("Period 3", interface_mc!(Mandelbrot, 3))
                         .with_fractal_button("Period 4", interface_mc!(Mandelbrot, 4))
-                        .with_fractal_button(
-                            "Period 3\nmultiplier plane",
-                            interface!(MandelbrotMC3Mult),
-                        )
                 })
                 .with_submenu("Marked Periodic Point", || {
                     State::submenu()

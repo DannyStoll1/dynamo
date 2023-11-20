@@ -8,6 +8,7 @@ profile_imports!();
 pub struct CubicMarked2Cycle
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

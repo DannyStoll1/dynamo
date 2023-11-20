@@ -17,6 +17,7 @@ const I6: Cplx = Cplx::new(0., 6.);
 pub struct CubicPer1Lambda
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     multiplier: Cplx,
     starting_crit: PlaneID,
@@ -35,6 +36,7 @@ impl Default for CubicPer1Lambda
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             multiplier: ZERO,
             starting_crit: PlaneID::ZPlane,
@@ -322,6 +324,7 @@ impl InfinityFirstReturnMap for CubicPer1Lambda
 pub struct CubicPer1LambdaParam
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     starting_crit: PlaneID,
 }
@@ -349,6 +352,7 @@ impl Default for CubicPer1LambdaParam
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             starting_crit: PlaneID::ZPlane,
         }
@@ -476,6 +480,7 @@ impl From<CubicPer1LambdaParam> for CubicPer1Lambda
             .new_with_same_height(parent.default_bounds_child(point, &param));
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: parent.max_iter(),
             multiplier: param,
             starting_crit: parent.starting_crit,
@@ -487,6 +492,7 @@ impl From<CubicPer1LambdaParam> for CubicPer1Lambda
 pub struct CubicPer1_1
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -674,6 +680,7 @@ impl ExternalRays for CubicPer1LambdaModuli {}
 pub struct CubicPer1_0
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -1284,6 +1291,7 @@ impl HasDynamicalCovers for CubicPer1_1
 pub struct CubicPer1LambdaModuli
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     multiplier: Cplx,
     starting_crit: PlaneID,
@@ -1301,6 +1309,7 @@ impl Default for CubicPer1LambdaModuli
         let point_grid = PointGrid::new_by_res_y(1024, Self::DEFAULT_BOUNDS);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             multiplier: ZERO,
             starting_crit: PlaneID::ZPlane,
@@ -1488,6 +1497,7 @@ impl From<CubicPer1LambdaParam> for CubicPer1LambdaModuli
             .new_with_same_height(parent.default_bounds_child(point, &param));
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: parent.max_iter(),
             multiplier: param,
             starting_crit: PlaneID::ZPlane,

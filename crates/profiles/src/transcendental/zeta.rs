@@ -9,6 +9,7 @@ profile_imports!();
 pub struct RiemannXi
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 impl RiemannXi
@@ -101,6 +102,7 @@ impl HasChild<RiemannXiNewton> for RiemannXi
 pub struct RiemannXiNewton
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     param: Cplx,
 }
@@ -118,6 +120,7 @@ impl From<RiemannXi> for RiemannXiNewton
     {
         Self {
             point_grid: plane.point_grid.clone(),
+            compute_mode: ComputeMode::default(),
             max_iter: plane.max_iter,
             param: plane.default_selection(),
         }

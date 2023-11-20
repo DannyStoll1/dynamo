@@ -6,6 +6,7 @@ profile_imports!();
 pub struct RealCubicRealCrit
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -88,6 +89,7 @@ degree_impl!(RealCubicImagCrit, 3);
 pub struct RealCubicImagCrit
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

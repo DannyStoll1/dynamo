@@ -7,6 +7,7 @@ profile_imports!();
 pub struct CubicPer2Lambda
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     multiplier: Cplx,
     starting_crit: PlaneID,
@@ -24,6 +25,7 @@ impl Default for CubicPer2Lambda
         let point_grid = PointGrid::default().with_same_height(Self::DEFAULT_BOUNDS);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             multiplier: ZERO,
             starting_crit: PlaneID::ZPlane,
@@ -186,6 +188,7 @@ impl ExternalRays for CubicPer2LambdaParam {}
 pub struct CubicPer2LambdaParam
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
     starting_crit: PlaneID,
 }
@@ -198,6 +201,7 @@ impl Default for CubicPer2LambdaParam
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
             starting_crit: PlaneID::ZPlane,
         }
@@ -323,6 +327,7 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
             .new_with_same_height(parent.default_bounds_child(point, &param));
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: parent.max_iter(),
             multiplier: param,
             starting_crit: parent.starting_crit,
@@ -335,6 +340,7 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
 pub struct CubicPer2CritMarked
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

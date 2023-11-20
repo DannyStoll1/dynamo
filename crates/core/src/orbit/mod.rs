@@ -2,9 +2,11 @@ use crate::dynamics::DynamicalFamily;
 use dynamo_common::prelude::*;
 use num_traits::One;
 
+pub mod distance_estimation;
 pub mod floyd;
 pub mod simple;
 
+pub use distance_estimation::DistanceEstimation;
 pub use floyd::CycleDetected;
 pub use simple::Simple;
 
@@ -25,7 +27,6 @@ pub enum EscapeResult<V, D>
         info: PointInfoPeriodic<D>,
         final_value: V,
     },
-    KnownPotential(PointInfoKnownPotential<D>),
     Bounded(V),
     #[default]
     Unknown,
@@ -113,6 +114,9 @@ where
                 potential,
                 phase: Some(p),
             } => format!("Escaped with phase {p}, potential: {potential:.DISPLAY_PREC$}"),
+            DistanceEstimate { distance, phase } => {
+                format!("Escaped with phase {phase}, est. distance: {distance:.DISPLAY_PREC$}")
+            }
             Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
             PeriodicKnownPotential(data) => data.to_string(),
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
@@ -129,32 +133,12 @@ where
     }
 }
 
-// impl<P, V, D> std::fmt::Display for OrbitInfo<P, V, D>
-// where
-//     P: Describe,
-//     V: std::fmt::Display,
-//     D: std::fmt::Display,
-// {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
-//     {
-//
-//         use PointInfo::*;
-//         let result_summary = match &self.result
-//         {
-//             Escaping { potential } => format!("Escaped, potential: {potential:.DISPLAY_PREC$}"),
-//             Periodic(data) | MarkedPoint { data, .. } => data.to_string(),
-//             PeriodicKnownPotential(data) => data.to_string(),
-//             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
-//             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
-//         };
-//         write!(
-//             f,
-//             "{start:.*}\n\
-//             {param_desc}\
-//             {result_summary}",
-//             DISPLAY_PREC,
-//             start = self.start,
-//             param_desc = self.param.describe_in_orbit_info()
-//         )
-//     }
-// }
+pub trait Orbit: Send
+{
+    type Outcome;
+
+    /// Re-initialize aan orbit.
+    fn reset(&mut self, selection: Cplx);
+
+    fn run_until_complete(&mut self) -> Self::Outcome;
+}

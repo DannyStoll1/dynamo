@@ -7,6 +7,7 @@ profile_imports!();
 pub struct QuadRatPer2
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -954,6 +955,7 @@ impl HasDynamicalCovers for QuadRatPer2
 pub struct QuadRatPer2Cover
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

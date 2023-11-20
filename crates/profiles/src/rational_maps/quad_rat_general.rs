@@ -8,6 +8,7 @@ profile_imports!();
 pub struct QuadRatGeneral
 {
     pub point_grid: PointGrid,
+    pub compute_mode: ComputeMode,
     pub max_iter: Period,
 }
 
@@ -19,6 +20,7 @@ impl Default for QuadRatGeneral
         let point_grid = PointGrid::new_by_res_y(1024, bounds);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
         }
     }

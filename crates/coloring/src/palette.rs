@@ -155,7 +155,7 @@ impl Palette
             in_color: Color32::BLACK,
             wandering_color: Color32::BROWN,
             unknown_color: Color32::GRAY,
-            color_space: CartesianColorSpace::Xyz,
+            color_space: CartesianColorSpace::Rgb,
         }
     }
 
@@ -193,7 +193,7 @@ impl Palette
             in_color: Color32::WHITE,
             wandering_color: Color32::BROWN,
             unknown_color: Color32::GRAY,
-            color_space: CartesianColorSpace::Xyz,
+            color_space: CartesianColorSpace::Rgb,
         }
     }
 
@@ -206,7 +206,7 @@ impl Palette
         let phase_g = Uniform::new(0., 1.).sample(&mut rng);
         let phase_b = Uniform::new(0., 1.).sample(&mut rng);
 
-        ChiSquared::new(7.5).map_or(Self::black(32.), |period_dist| {
+        ChiSquared::new(4.).map_or(Self::black(16.), |period_dist| {
             let period_r: f64 = period_dist.sample(&mut rng);
             let period_g: f64 = period_dist.sample(&mut rng);
             let period_b: f64 = period_dist.sample(&mut rng);
@@ -258,16 +258,8 @@ impl Palette
     }
 
     #[must_use]
-    fn ext_potential_to_sinusoid_input(potential: IterCount) -> IterCount
+    pub fn map<T: FromCartesian>(&self, t: IterCount) -> T
     {
-        (potential - 1.0).log2()
-    }
-
-    #[must_use]
-    pub fn map<T: FromCartesian>(&self, potential: IterCount) -> T
-    {
-        let t = Self::ext_potential_to_sinusoid_input(potential);
-
         let v0 = self.color_map_r.get_value_f64(t) as f32;
         let v1 = self.color_map_g.get_value_f64(t) as f32;
         let v2 = self.color_map_b.get_value_f64(t) as f32;
@@ -289,16 +281,14 @@ impl Palette
     }
 
     #[must_use]
-    pub fn map_color32_phase(
+    pub fn map_phase<T: FromCartesian + FromPolar>(
         &self,
-        potential: IterCount,
+        t: IterCount,
         phase: Period,
         esc_period: Period,
-    ) -> Color32
+    ) -> T
     {
         if esc_period > 1 {
-            let t = Self::ext_potential_to_sinusoid_input(potential);
-
             let r = self.color_map_r.get_value_f64(t) as f32;
             let b = self.color_map_b.get_value_f64(t) as f32;
             DiscretePalette::default()
@@ -311,7 +301,7 @@ impl Palette
                 .with_c(b)
                 .into()
         } else {
-            self.map(potential)
+            self.map(t)
         }
     }
 
@@ -334,7 +324,7 @@ impl Default for Palette
 {
     fn default() -> Self
     {
-        Self::black(32.)
+        Self::black(16.)
     }
 }
 

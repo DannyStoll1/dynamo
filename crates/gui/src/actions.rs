@@ -59,6 +59,7 @@ pub enum Action
     ScalePalettePeriod(f64),
     ShiftPalettePhase(f64),
     ToggleEscapePhaseColoring,
+    CycleComputeMode(PaneSelection, ChangeBoolean),
 }
 impl Action
 {
@@ -204,6 +205,11 @@ impl Action
             Self::ToggleEscapePhaseColoring => {
                 "Toggle coloring based on phase at time of escape.".to_owned()
             }
+            Self::CycleComputeMode(_, change) => match change {
+                ChangeBoolean::Enable => "Use distance estimation to color escape regions".to_owned(),
+                ChangeBoolean::Disable => "Use Green's function to color escape regions".to_owned(),
+                ChangeBoolean::Toggle => "Cycle between exterior coloring modes (smooth potential and distance estimate).".to_owned(),
+            },
         }
     }
 
@@ -295,6 +301,11 @@ impl Action
             Self::ScalePalettePeriod(scale) => format!("{} density", inc_or_dec(1.0 / scale)),
             Self::ShiftPalettePhase(_) => "Adjust Phase".to_owned(),
             Self::ToggleEscapePhaseColoring => "Phase Coloring".to_owned(),
+            Self::CycleComputeMode(_, change) => match change {
+                ChangeBoolean::Enable => "Distance Estimation".to_owned(),
+                ChangeBoolean::Disable => "External Potential".to_owned(),
+                ChangeBoolean::Toggle => "Cycle Outcoloring".to_owned(),
+            },
         }
     }
 }
@@ -318,5 +329,42 @@ fn inc_or_dec(scale: f64) -> String
         "Decrease".to_owned()
     } else {
         "Increase".to_owned()
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ChangeBoolean
+{
+    Enable,
+    Disable,
+    Toggle,
+}
+impl ChangeBoolean
+{
+    pub fn switch(&self, target: &mut bool)
+    {
+        match self {
+            Self::Enable => {
+                *target = true;
+            }
+            Self::Disable => {
+                *target = false;
+            }
+            Self::Toggle => {
+                *target ^= true;
+            }
+        }
+    }
+}
+impl std::fmt::Display for ChangeBoolean
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        match self {
+            Self::Enable => write!(f, "Enable"),
+            Self::Disable => write!(f, "Disable"),
+            Self::Toggle => write!(f, "Toggle"),
+        }
     }
 }

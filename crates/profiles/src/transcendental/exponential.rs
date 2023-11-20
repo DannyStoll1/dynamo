@@ -9,6 +9,7 @@ profile_imports!();
 pub struct Exponential
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -108,6 +109,7 @@ impl MarkedPoints for Exponential
 pub struct CosineAdd
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -174,6 +176,7 @@ impl HasJulia for CosineAdd
 pub struct Cosine
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -231,6 +234,7 @@ has_child_impl!(Cosine, 5.5);
 pub struct SineWander
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

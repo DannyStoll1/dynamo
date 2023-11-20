@@ -8,6 +8,7 @@ profile_imports!();
 pub struct CubicPer3_0
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

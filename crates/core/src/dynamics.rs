@@ -19,7 +19,7 @@ pub mod julia;
 pub mod newton;
 
 use crate::error::{FindPointError, FindPointResult};
-use crate::orbit::{self, EscapeResult};
+use crate::orbit::{self, EscapeResult, Orbit};
 use julia::JuliaSet;
 
 #[cfg(feature = "serde")]
@@ -39,6 +39,40 @@ impl PlaneType
     pub const fn is_dynamical(&self) -> bool
     {
         matches!(self, Self::Dynamical)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ComputeMode
+{
+    #[default]
+    SmoothPotential,
+    DistanceEstimation,
+}
+impl ComputeMode
+{
+    pub fn cycle(&mut self)
+    {
+        match self {
+            Self::DistanceEstimation => *self = Self::SmoothPotential,
+            Self::SmoothPotential => *self = Self::DistanceEstimation,
+        }
+    }
+
+    pub fn create_orbit<'a, P: EscapeEncoding>(
+        &self,
+        family: &'a P,
+    ) -> RefCell<Box<dyn Orbit<Outcome = PointInfo<P::Deriv>> + 'a>>
+    {
+        match self {
+            ComputeMode::SmoothPotential => {
+                RefCell::new(Box::new(orbit::CycleDetected::new(family)))
+            }
+            ComputeMode::DistanceEstimation => {
+                RefCell::new(Box::new(orbit::DistanceEstimation::new(family)))
+            }
+        }
     }
 }
 
@@ -91,6 +125,13 @@ pub trait DynamicalFamily: Sync + Send
     #[must_use]
     fn with_max_iter(self, max_iter: Period) -> Self;
 
+    fn compute_mode(&self) -> ComputeMode;
+    fn compute_mode_mut(&mut self) -> &mut ComputeMode;
+    fn set_compute_mode(&mut self, compute_mode: ComputeMode)
+    {
+        *self.compute_mode_mut() = compute_mode;
+    }
+
     fn name(&self) -> String;
     fn long_name(&self) -> String
     {
@@ -128,11 +169,7 @@ pub trait DynamicalFamily: Sync + Send
     ///
     /// If this function returns `None`, then the orbit is computed.
     /// Otherwise, the output of this function is forwarded to `encode_escape_result`.
-    fn early_bailout(
-        &self,
-        _start: Self::Var,
-        _c: &Self::Param,
-    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    fn early_bailout(&self, _start: Self::Var, _c: &Self::Param) -> Option<PointInfo<Self::Deriv>>
     {
         None
     }
@@ -395,11 +432,11 @@ pub trait DynamicalFamily: Sync + Send
         find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
     }
 
-    fn run_point(&self, start: Self::Var, c: Self::Param) -> EscapeResult<Self::Var, Self::Deriv>
+    fn run_point(&self, selection: Cplx) -> EscapeResult<Self::Var, Self::Deriv>
     where
         Self: Clone,
     {
-        let orbit = orbit::CycleDetected::new(self, start, c);
+        let orbit = orbit::CycleDetected::new(self).init(selection);
         if let Some((_, state)) = orbit.last() {
             state.unwrap_or_default()
         } else {
@@ -770,11 +807,11 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
     }
 
     /// Evaluate Green's function given the escape time and final value
-    fn external_potential_helper(&self, iters: Period, z: Self::Var, c: &Self::Param) -> Real
+    fn smooth_iter_count(&self, iters: Period, z: Self::Var, c: &Self::Param) -> Real
     {
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let q = self.escape_coeff(c).norm().log2();
+        let u = self.escape_radius().ln();
+        let v = z.norm_sqr().ln();
+        let q = self.escape_coeff(c).norm().ln();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
         residual.mul_add(self.escaping_period() as IterCount, iters as IterCount)
     }
@@ -1018,7 +1055,6 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
                 self.identify_marked_points(final_value, c, info)
             }
             EscapeResult::Bounded(_) => PointInfo::Bounded,
-            EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
             EscapeResult::Unknown => PointInfo::Unknown,
         }
     }
@@ -1041,12 +1077,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
             };
         }
 
-        let u = self.escape_radius().ln();
-        let v = z.norm_sqr().ln();
-        let q = self.escape_coeff(c).norm().ln();
-        let residual = ((v + q) / (u + q)).log(self.degree_real());
-
-        let potential = (-residual).mul_add(self.escaping_period().into(), iters.into());
+        let potential = self.smooth_iter_count(iters, z, c);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -1064,20 +1095,6 @@ pub trait Computable: DynamicalFamily
     }
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
-
-    fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>;
-
-    fn get_orbit_info(&self, point: Cplx) -> orbit::Info<Self::Param, Self::Var, Self::Deriv>
-    {
-        let param = self.param_map(point);
-        let start = self.start_point(point, &param);
-        let result = self.run_and_encode_point(start, param.clone());
-        orbit::Info {
-            param,
-            start,
-            result,
-        }
-    }
 
     fn get_orbit_and_info(
         &self,
@@ -1099,22 +1116,14 @@ impl<P> Computable for P
 where
     P: DynamicalFamily + EscapeEncoding,
 {
-    fn run_and_encode_point(&self, start: Self::Var, c: Self::Param) -> PointInfo<Self::Deriv>
-    {
-        let mut orbit = orbit::CycleDetected::new(self, start, c.clone());
-        let state = orbit.run_until_complete();
-
-        self.encode_escape_result(state, start, &c)
-    }
-
     fn get_orbit_and_info(
         &self,
         point: Cplx,
     ) -> orbit::OrbitAndInfo<Self::Param, Self::Var, Self::Deriv>
     {
-        let param = self.param_map(point);
-        let start = self.start_point(point, &param);
-        let orbit = orbit::CycleDetected::new(self, start, param.clone());
+        let orbit = orbit::CycleDetected::new(self).init(point);
+        let start = orbit.z_fast;
+        let param = orbit.param.clone();
         let mut final_state = None;
         let trajectory: Vec<Self::Var> = orbit
             .map(|(z, s)| {
@@ -1151,18 +1160,13 @@ where
             .for_each(|(chunk_idx, mut chunk)| {
                 chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
                     let y = chunk_idx * chunk_size + local_y;
-                    let point = self.point_grid().map_pixel(x, y);
-                    let param = self.param_map(point);
-                    let start = self.start_point(point, &param);
                     let mut orbit = orbits
-                        .get_or(|| {
-                            RefCell::new(orbit::CycleDetected::new(self, start, param.clone()))
-                        })
+                        .get_or(|| self.compute_mode().create_orbit(self))
                         .borrow_mut();
 
-                    orbit.reset(param.clone(), start);
-                    let result = orbit.run_until_complete();
-                    *count = self.encode_escape_result(result, start, &param);
+                    let point = self.point_grid().map_pixel(x, y);
+                    orbit.reset(point);
+                    *count = orbit.run_until_complete();
                 });
             });
     }

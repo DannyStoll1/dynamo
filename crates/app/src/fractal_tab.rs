@@ -3,7 +3,7 @@ use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_gui::hotkeys::{
     Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
-    PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+    OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
 };
 use dynamo_gui::interface::{Interface, MainInterface};
 use dynamo_profiles::*;
@@ -166,6 +166,9 @@ impl FractalTab
                     self.hotkey_button(ui, hotkey);
                 }
             });
+            for hotkey in &OUTCOLORING_HOTKEYS {
+                self.hotkey_button(ui, hotkey);
+            }
         });
     }
 

@@ -91,6 +91,18 @@ impl DynamicalFamily for QuadRatPer1Lambda
         self
     }
 
+    #[inline]
+    fn compute_mode(&self) -> ComputeMode
+    {
+        self.general_plane.compute_mode()
+    }
+
+    #[inline]
+    fn compute_mode_mut(&mut self) -> &mut ComputeMode
+    {
+        self.general_plane.compute_mode_mut()
+    }
+
     fn param_map(&self, t: Cplx) -> Self::Param
     {
         let alpha = 0.25 * t / self.multiplier;
@@ -259,6 +271,7 @@ impl MarkedPoints for QuadRatPer1Lambda
 pub struct QuadRatPer1LambdaParam
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 
@@ -279,6 +292,7 @@ impl Default for QuadRatPer1LambdaParam
         let point_grid = PointGrid::new_by_res_y(1024, Self::DEFAULT_BOUNDS);
         Self {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: 1024,
         }
     }
@@ -367,6 +381,7 @@ impl From<QuadRatPer1LambdaParam> for QuadRatPer1Lambda
         let point_grid = parent.point_grid().clone();
         let general_plane = QuadRatGeneral {
             point_grid,
+            compute_mode: ComputeMode::default(),
             max_iter: parent.max_iter(),
         };
         Self {
@@ -447,6 +462,18 @@ impl DynamicalFamily for QuadRatPer1_1
     {
         self.general_plane.point_grid = point_grid;
         self
+    }
+
+    #[inline]
+    fn compute_mode(&self) -> ComputeMode
+    {
+        self.general_plane.compute_mode()
+    }
+
+    #[inline]
+    fn compute_mode_mut(&mut self) -> &mut ComputeMode
+    {
+        self.general_plane.compute_mode_mut()
     }
 
     #[inline]

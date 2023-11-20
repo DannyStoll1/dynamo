@@ -6,6 +6,7 @@ profile_imports!();
 pub struct OddCubic
 {
     point_grid: PointGrid,
+    compute_mode: ComputeMode,
     max_iter: Period,
 }
 

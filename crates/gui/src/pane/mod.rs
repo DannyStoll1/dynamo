@@ -1,6 +1,7 @@
 use egui::{Color32, Pos2, Ui};
 use std::path::Path;
 
+use crate::actions::ChangeBoolean;
 use crate::marked_points::ContourType;
 
 use super::image_frame::ImageFrame;
@@ -184,6 +185,7 @@ pub trait Pane
     fn marking_mut(&mut self) -> &mut Marking;
 
     fn cycle_active_plane(&mut self);
+    fn change_compute_mode(&mut self, change: ChangeBoolean);
 
     fn scale_max_iter(&mut self, factor: f64);
 
@@ -577,6 +579,22 @@ where
         self.plane.cycle_active_plane();
         self.schedule_recompute();
         self.schedule_redraw();
+    }
+
+    fn change_compute_mode(&mut self, change: ChangeBoolean)
+    {
+        match change {
+            ChangeBoolean::Enable => {
+                self.plane.set_compute_mode(ComputeMode::DistanceEstimation);
+            }
+            ChangeBoolean::Disable => {
+                self.plane.set_compute_mode(ComputeMode::SmoothPotential);
+            }
+            ChangeBoolean::Toggle => {
+                self.plane.compute_mode_mut().cycle();
+            }
+        }
+        self.schedule_recompute();
     }
 
     fn scale_max_iter(&mut self, factor: f64)

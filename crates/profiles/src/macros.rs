@@ -133,7 +133,6 @@ macro_rules! degree_impl_transcendental {
             {
                 match state {
                     EscapeResult::Periodic { info, .. } => PointInfo::Periodic(info),
-                    EscapeResult::KnownPotential(data) => PointInfo::PeriodicKnownPotential(data),
                     EscapeResult::Escaped { iters, final_value } => {
                         self.encode_escaping_point(iters, final_value, base_param)
                     }
