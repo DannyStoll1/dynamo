@@ -1,12 +1,12 @@
 use crate::types::{FromCartesian, FromPolar, Lchab, RgbLinear, Xyz};
 
 use super::Hsv;
+use dynamo_common::consts::TAU;
 use dynamo_common::types::IterCount;
 use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
 use egui::Color32;
 use rand::prelude::*;
 use rand_distr::{ChiSquared, Distribution, Uniform};
-use std::f64::consts::PI;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -40,12 +40,18 @@ impl Sinusoid
             phase: 0.,
             amplitude: 0.5,
             midline: 0.5,
-            degree: 2,
+            degree: 1,
         }
     }
     fn get_value_f64(&self, potential: IterCount) -> f64
     {
-        let theta = 2.0 * PI * (potential / self.period - self.phase);
+        let theta = TAU * (potential / self.period - self.phase);
+
+        if self.degree < 0 {
+            let val = theta.tanh() * (-1.0f64).powi(self.degree);
+            return self.amplitude.mul_add(val, self.midline);
+        }
+
         let mut val = theta.cos();
         if self.degree > 1 {
             val = val.powi(self.degree).abs() * val.signum();

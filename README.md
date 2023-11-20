@@ -6,7 +6,7 @@ A powerful tool for studying complex dynamics. Inspired heavily by the following
 - Brian and Susanna Boyd's [Dynamics Explorer](https://sourceforge.net/projects/detool/)
 - Matt Noonan's [FractalStream](https://pi.math.cornell.edu/~noonan/fstream.html)
 
-Dynamo hopes to combine the strengths of these excellent tools, though it is currently in a very early stage.
+Dynamo hopes to combine the strengths of these excellent tools.
 
 ## Features
 
@@ -16,8 +16,9 @@ Dynamo hopes to combine the strengths of these excellent tools, though it is cur
 - Live tracking for critical points and cycles
 - Smooth coloring for both escaping and non-escaping components
 - Period coloring
+- Distance estimation
 - External rays (working for quadratic polynomials and some other families, unstable in general)
-- Equipotentials (not fully reliable, working on a better implementation)
+- Equipotentials
 - Optimized for performance
 
 As of version 0.5.1, saved images now contain all annotations.
@@ -29,6 +30,9 @@ To install and run, just clone the repository, navigate to `bin`, and run `cargo
 
 You may need to first [install Rust](https://rustup.rs/). At present, the nightly toolchain is required; you can install this with `rustup install nightly`.
 
+Alternatively, you can download a precompiled binary from the "Releases" tags on the right.
+Binaries are available for Linux, macOS, and Windows.
+
 ## Usage
 
 ### Navigation
@@ -37,9 +41,9 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - Ctrl-Z: zoom in far
 - V: zoom out from selection
 - Ctrl-V: zoom out far
-- Shift+arrows: pan view
+- Shift-arrows: pan view
 - Space: Center selection
-- Shift+Space: Reset selection
+- Shift-Space: Reset selection
 - Home: Reset view and selection
 
 ### Dynamics
@@ -47,7 +51,12 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - F: Apply map to selection [dynamical plane]
 - Ctrl-F: Find parameter of given preperiod/period near selection [active plane]
 - E: External ray [active plane]
-- Ctrl-X: External ray to point [active plane]
+- Ctrl-X or Y: External ray to point [active plane]
+- Ctrl-E: Draw all rays of a given period [active plane]
+- Shift-O: Draw all rays in the orbit of a given angle [active plane]
+- Shift-E: Extend ray outwords (works in all families where `gradient` is implemented) [active plane]
+- G: Equipotential [active plane]
+- M: Multiplier contour (only for marked cycle curves) [active plane]
 
 ### Computation
 
@@ -59,12 +68,12 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 ### Annotations
 
 - I: Toggle selection [active plane]
-- Ctrl-\<N\>: Toggle cycles of period \<N\>, if they are implemented for the given system [dynamical plane]
-- Ctrl-Shift-\<N\>: Toggle component centers of period \<N\>, if they are implemented for the given system [parameter plane]
-- O: Toggle marked points [parameter plane]
+- Ctrl-\<N\>: Toggle cycles of period \<N\>, if they are implemented for the given map [dynamical plane]
+- Ctrl-Shift-\<N\>: Toggle component centers of period \<N\>, if they are implemented for the given family [parameter plane]
 - P: Toggle critical points [dynamical plane]
-- C: Clear orbit
-- Shift-C: Clear all marked curves
+- O: Draw orbit [parameter plane]
+- C: Clear orbit [dynamical plane]
+- Shift-C: Clear all marked curves [active plane]
 
 ### Coloring
 
@@ -79,6 +88,9 @@ You may need to first [install Rust](https://rustup.rs/). At present, the nightl
 - 5: Internal coloration: Potential of linearizing coordinate
 - Up/Down: Change coloring period
 - Right/Left: Change coloring phase
+- D: Toggle distance estimation
+- Ctrl-K: Save palette
+- Ctrl-L: Load palette
 
 ### User Scripts (Experimental)
 
@@ -119,9 +131,9 @@ Example syntax:
 - [x] Mark orbits
 - [x] Marked points
 - :hammer: External rays
-- :hammer: Equipotentials
+- [x] Equipotentials
 - Saving improvements
-  - [ ] Save/load palettes
+  - [x] Save/load palettes
   - [x] Save images
     - [x] Marked points/curves in saved images
   - [ ] Save program state
