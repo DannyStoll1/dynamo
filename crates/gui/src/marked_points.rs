@@ -754,13 +754,29 @@ impl<'a> CurveDrawJob<'a>
 
                 let corners = [
                     (x0 - nx, y0 - ny),
+                    (
+                        0.866f32.mul_add(ny, 0.5f32.mul_add(-nx, x0)),
+                        0.866f32.mul_add(-nx, 0.5f32.mul_add(-ny, y0)),
+                    ), // hexagonal corner
+                    (
+                        0.866f32.mul_add(ny, 0.5f32.mul_add(nx, x0)),
+                        0.866f32.mul_add(-nx, 0.5f32.mul_add(ny, y0)),
+                    ),
                     (x0 + nx, y0 + ny),
                     (x1 + nx, y1 + ny),
+                    (
+                        0.866f32.mul_add(-ny, 0.5f32.mul_add(nx, x1)),
+                        0.866f32.mul_add(nx, 0.5f32.mul_add(ny, y1)),
+                    ),
+                    (
+                        0.866f32.mul_add(-ny, 0.5f32.mul_add(-nx, x1)),
+                        0.866f32.mul_add(nx, 0.5f32.mul_add(-ny, y1)),
+                    ),
                     (x1 - nx, y1 - ny),
                 ]
                 .map(|(x, y)| imageproc::point::Point::new(x as i32, y as i32));
 
-                if corners[0] != corners[3] {
+                if corners[0] != corners[7] {
                     draw_polygon_mut(image, &corners, self.color);
                 }
             });
