@@ -251,7 +251,6 @@ where
                 self.select_point(self.plane.default_selection());
             }
             self.schedule_recompute();
-            self.schedule_redraw();
             true
         };
 

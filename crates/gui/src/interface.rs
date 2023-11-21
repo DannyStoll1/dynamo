@@ -277,6 +277,7 @@ where
                     let pane = self.get_pane_mut(pane_id);
                     pane.select_point(point);
                     pane.stop_following();
+                    self.process_child_task();
                 }
             }
             FindPeriodic { pane_id } => {
