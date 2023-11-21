@@ -18,7 +18,8 @@ pub enum Action
     LoadPalette(PaneSelection),
     // Annotation toggles
     ToggleSelectionMarker,
-    ToggleCritical(PaneSelection),
+    ToggleCritical,
+    ToggleMarked(PaneSelection),
     ToggleCycles(PaneSelection, Period),
     // Dynamics
     FindPeriodicPoint,
@@ -33,6 +34,7 @@ pub enum Action
     },
     DrawRaysOfPeriod,
     DrawContour(ContourType),
+    DrawAuxContours,
     ClearRays,
     ClearEquipotentials,
     ClearCurves,
@@ -77,8 +79,9 @@ impl Action
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle selection marker on active image.".to_owned(),
-            Self::ToggleCritical(pane_id) => {
-                format!("Toggle critical points on {pane_id} image.")
+            Self::ToggleCritical => "Toggle critical points on dynamical plane.".to_owned(),
+            Self::ToggleMarked(pane_id) => {
+                format!("Toggle marked points on {pane_id} image.")
             }
             Self::ToggleCycles(pane_id, period) => {
                 format!("Toggle known cycles (or component centers) of period {period} on {pane_id} image.")
@@ -115,13 +118,14 @@ impl Action
             Self::DrawRaysOfPeriod => "Draw all rays of a given period and preperiod.".to_owned(),
             Self::DrawContour(contour_type) => match contour_type {
                 ContourType::Equipotential => "Draw equipotential through selection.".to_owned(),
-                ContourType::Multiplier => {
+                ContourType::Multiplier(..) => {
                     "Draw a contour for the multiplier map on dynamical varieties.".to_owned()
                 }
                 ContourType::ExtendRay => {
                     "Extend an external ray outwards from the selection.".to_owned()
                 }
             },
+            Self::DrawAuxContours => "Draw contours for the multiplier map a dynamical variety.".to_owned(),
             Self::ClearRays => "Clear all external rays on active image.".to_owned(),
             Self::ClearEquipotentials => "Clear all equipotentials on active image.".to_owned(),
             Self::ClearCurves => "Clear all curves on active image.".to_owned(),
@@ -227,12 +231,8 @@ impl Action
 
             // Annotation Toggles
             Self::ToggleSelectionMarker => "Toggle Selection".to_owned(),
-            Self::ToggleCritical(pane_id) => match pane_id {
-                PaneSelection::ActivePane => "Toggle marked pts (active pane)".to_owned(),
-                PaneSelection::BothPanes => "Toggle marked pts".to_owned(),
-                PaneSelection::Id(PaneID::Parent) => "Toggle marked pts (parent)".to_owned(),
-                PaneSelection::Id(PaneID::Child) => "Toggle Critical".to_owned(),
-            },
+            Self::ToggleCritical => "Toggle Critical".to_owned(),
+            Self::ToggleMarked(_) => "Toggle Marked pts".to_owned(),
             Self::ToggleCycles(_, p) => format!("Toggle {p}-cycles"),
 
             // Dynamics
@@ -256,10 +256,10 @@ impl Action
             Self::DrawRaysOfPeriod => "Rays of Period".to_owned(),
             Self::DrawContour(contour_type) => match contour_type {
                 ContourType::Equipotential => "Equipotential".to_owned(),
-                ContourType::Multiplier => "Multiplier Contour".to_owned(),
+                ContourType::Multiplier(..) => "Multiplier Contour".to_owned(),
                 ContourType::ExtendRay => "Extend Ray".to_owned(),
             },
-
+            Self::DrawAuxContours => "Multiplier Contours".to_owned(),
             Self::ClearRays => "Clear Rays".to_owned(),
             Self::ClearEquipotentials => "Clear Equipotentials".to_owned(),
             Self::ClearCurves => "Clear Curves".to_owned(),

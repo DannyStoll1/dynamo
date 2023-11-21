@@ -1,7 +1,5 @@
 use dynamo_color::{Coloring, IncoloringAlgorithm};
-use dynamo_common::math_utils::contour::{
-    IntegralCurve, IntegralCurveParams, LevelCurve, LevelCurveParams,
-};
+use dynamo_common::math_utils::contour::*;
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
 use dynamo_common::math_utils::{arithmetic::*, newton::*};
 use dynamo_common::prelude::*;
@@ -66,10 +64,8 @@ impl ComputeMode
     ) -> RefCell<Box<dyn Orbit<Outcome = PointInfo<P::Deriv>> + 'a>>
     {
         match self {
-            ComputeMode::SmoothPotential => {
-                RefCell::new(Box::new(orbit::CycleDetected::new(family)))
-            }
-            ComputeMode::DistanceEstimation => {
+            Self::SmoothPotential => RefCell::new(Box::new(orbit::CycleDetected::new(family))),
+            Self::DistanceEstimation => {
                 RefCell::new(Box::new(orbit::DistanceEstimation::new(family)))
             }
         }
@@ -688,6 +684,12 @@ pub trait MarkedPoints: DynamicalFamily
         vec![]
     }
 
+    #[inline]
+    fn other_marked_points(&self) -> Vec<Cplx>
+    {
+        Vec::new()
+    }
+
     /// Attracting periodic points that are specially marked. Used for custom colorings, e.g. to
     /// color Newton parameter planes according to which root the critical orbit converges to.
     #[inline]
@@ -916,7 +918,6 @@ pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
                 let target = Cplx::new(u, v).exp();
                 match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
                     Ok((sol, t_k, d_k)) => {
-                        // dbg!(target, sol);
                         t_curr = sol;
 
                         if t_curr.is_nan() {
@@ -979,13 +980,13 @@ pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
 pub trait Equipotential: DynamicalFamily
 {
     /// Compute an equipotential curve through a given point.
-    fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>;
+    fn equipotential<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 
     /// Draw a contour for the auxiliary map
-    fn aux_contour(&self, t0: Cplx) -> Option<Vec<Cplx>>;
+    fn aux_contour<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 
     /// Extend an external ray outwards
-    fn extend_ray(&self, t0: Cplx) -> Option<Vec<Cplx>>;
+    fn extend_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 }
 impl<P> Equipotential for P
 where
@@ -993,44 +994,49 @@ where
 {
     /// Compute an equipotential by solving the ODE gamma'(t) = i∇G(t),
     /// where G is the exterior Green's function.
-    fn equipotential(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    fn equipotential<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
     {
-        LevelCurveParams::default()
-            .step_size(1e-1) // self.point_grid().pixel_width())
-            .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
-            .max_steps(500_000)
-            .use_distance_estimation()
-            .contour(t0, |t| self.external_potential_d(t))
-            .map(LevelCurve::compute)
+        Box::new(
+            LevelCurveParams::default()
+                .step_size(1e-1) // self.point_grid().pixel_width())
+                .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
+                .max_steps(500_000)
+                .use_distance_estimation()
+                .contour(|t| self.external_potential_d(t))
+                .init_seed(t0),
+        )
     }
 
     /// Compute an equipotential by solving the ODE gamma'(t) = ∇G(t),
     /// where G is the exterior Green's function.
-    fn extend_ray(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    fn extend_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
     {
-        IntegralCurveParams::default()
-            .step_size(1e-2)
-            .max_steps(50000)
-            .escape_radius(500.)
-            .convergence_radius(0.)
-            .contour(t0, |t| {
-                self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
-            })
-            .compute()
+        Box::new(
+            IntegralCurveParams::default()
+                .step_size(1e-2)
+                .max_steps(50000)
+                .escape_radius(500.)
+                .convergence_radius(0.)
+                .contour(t0, |t| {
+                    self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
+                }),
+        )
     }
 
-    fn aux_contour(&self, t0: Cplx) -> Option<Vec<Cplx>>
+    fn aux_contour<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
     {
-        LevelCurveParams::default()
-            .step_size(1e-2)
-            .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
-            .max_steps(5000)
-            .use_distance_estimation()
-            .contour(t0, |t| {
-                self.auxiliary_value(t)
-                    .map(|(mu, dmu)| (mu.norm().ln(), (dmu / mu).conj()))
-            })
-            .map(LevelCurve::compute)
+        Box::new(
+            LevelCurveParams::default()
+                .step_size(1e-2)
+                .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
+                .max_steps(5000)
+                // .use_distance_estimation()
+                .contour(|t| {
+                    self.auxiliary_value(t)
+                        .map(|(mu, dmu)| (mu.norm().ln(), (dmu / mu).conj()))
+                })
+                .init_seed(t0),
+        )
     }
 }
 

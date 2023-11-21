@@ -163,7 +163,7 @@ pub static CYCLES_HOTKEYS: [Hotkey; 12] = [
 ];
 });
 
-pub static ANNOTATION_HOTKEYS: [Hotkey; 14] = [
+pub static ANNOTATION_HOTKEYS: [Hotkey; 15] = [
     // External ray
     Hotkey {
         shortcut: Some(KEY_E),
@@ -221,7 +221,14 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 14] = [
     // Multiplier contour
     Hotkey {
         shortcut: Some(KEY_M),
-        action: DrawContour(ContourType::Multiplier),
+        action: DrawContour(ContourType::multiplier_auto()),
+        show_in_menu: true,
+        menu_action_override: None,
+    },
+    // Many multiplier contours
+    Hotkey {
+        shortcut: Some(SHIFT_M),
+        action: DrawAuxContours,
         show_in_menu: true,
         menu_action_override: None,
     },
@@ -234,13 +241,13 @@ pub static ANNOTATION_HOTKEYS: [Hotkey; 14] = [
     },
     Hotkey {
         shortcut: Some(KEY_P),
-        action: ToggleCritical(Id(Child)),
+        action: ToggleCritical,
         show_in_menu: true,
         menu_action_override: None,
     },
     Hotkey {
         shortcut: Some(SHIFT_P),
-        action: ToggleCritical(Id(Parent)),
+        action: ToggleMarked(ActivePane),
         show_in_menu: false,
         menu_action_override: None,
     },

@@ -36,6 +36,7 @@ pub trait Pane
     fn degree(&self) -> AngleNum;
 
     fn draw_contour(&mut self, contour_type: ContourType);
+    fn draw_aux_contours(&mut self);
 
     fn get_image_frame(&self) -> &ImageFrame;
     fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
@@ -539,7 +540,26 @@ where
     fn draw_contour(&mut self, contour_type: ContourType)
     {
         let selection = self.get_selection();
+
         self.marking_mut().toggle_contour(contour_type, selection);
+    }
+    fn draw_aux_contours(&mut self)
+    {
+        let selection = self.get_selection();
+        // let Some((mu, dmu)) = self.plane().auxiliary_value(selection) else {
+        //     return;
+        // };
+        //
+        // let val = mu.norm().ln();
+        // let dval = dmu.norm() / val;
+
+        for i in -8..=10 {
+            // let target = dval.mul_add(Real::from(i) * 1e-1, val);
+            let target = Real::from(i) / 2.0;
+
+            self.marking_mut()
+                .toggle_contour(ContourType::multiplier(target), selection);
+        }
     }
 
     #[inline]

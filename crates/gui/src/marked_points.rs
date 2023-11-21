@@ -16,6 +16,8 @@ use dynamo_core::dynamics::Displayable;
 
 use crate::image_frame::ImageFrame;
 
+use self::hashing::HashedReal;
+
 const POINT_RADIUS: f32 = 3.5;
 const CURVE_THICKNESS: f32 = 1.4;
 
@@ -40,6 +42,7 @@ pub enum PointSetKey
 {
     SelectedPoint,
     CriticalPoints,
+    MiscMarkedPoints,
     PeriodicPoints(Period),
     PreperiodicPoints(OrbitSchema),
 }
@@ -51,6 +54,7 @@ impl ObjectKey for PointSetKey
         match self {
             Self::SelectedPoint => Color32::WHITE,
             Self::CriticalPoints => Color32::RED,
+            Self::MiscMarkedPoints => Color32::from_rgb(255, 0, 64),
             Self::PeriodicPoints(period) => palette.map(*period as f32, 1.),
             Self::PreperiodicPoints(o) => palette.map_preperiodic(*o),
         }
@@ -65,6 +69,7 @@ impl ObjectKey for PointSetKey
                 .into_iter()
                 .map(Into::into)
                 .collect(),
+            Self::MiscMarkedPoints => plane.other_marked_points(),
             Self::PeriodicPoints(period) => {
                 plane.cycles(*period).into_iter().map(Into::into).collect()
             }
@@ -77,16 +82,28 @@ impl ObjectKey for PointSetKey
 pub enum ContourType
 {
     Equipotential,
-    Multiplier,
+    Multiplier(Option<HashedReal>),
     ExtendRay,
 }
 impl ContourType
 {
+    #[must_use]
+    pub fn multiplier(target: Real) -> Self
+    {
+        Self::Multiplier(Some(target.into()))
+    }
+
+    #[must_use]
+    pub const fn multiplier_auto() -> Self
+    {
+        Self::Multiplier(None)
+    }
+
     const fn color(self) -> Color32
     {
         match self {
             Self::Equipotential => Color32::YELLOW,
-            Self::Multiplier => Color32::from_rgb(255, 160, 122),
+            Self::Multiplier(_) => Color32::from_rgb(255, 160, 122),
             Self::ExtendRay => Color32::from_rgb(127, 127, 127),
         }
     }
@@ -122,13 +139,14 @@ impl ObjectKey for CurveKey
             Self::Ray(angle) => plane.external_ray(*angle).unwrap_or_default(),
 
             Self::Contour(ctype, point) => match ctype {
-                ContourType::Equipotential => {
-                    plane.equipotential(Cplx::from(*point)).unwrap_or_default()
+                ContourType::Equipotential => plane.equipotential(Cplx::from(*point)).compute(),
+                ContourType::Multiplier(Some(target)) => {
+                    let mut contour = plane.aux_contour(Cplx::from(*point));
+                    contour.set_target((*target).into());
+                    contour.compute()
                 }
-                ContourType::Multiplier => {
-                    plane.aux_contour(Cplx::from(*point)).unwrap_or_default()
-                }
-                ContourType::ExtendRay => plane.extend_ray(Cplx::from(*point)).unwrap_or_default(),
+                ContourType::Multiplier(_) => plane.aux_contour(Cplx::from(*point)).compute(),
+                ContourType::ExtendRay => plane.extend_ray(Cplx::from(*point)).compute(),
             },
         }
     }
@@ -362,6 +380,11 @@ impl Marking
     pub fn toggle_critical(&mut self)
     {
         self.point_sets.sched_toggle(PointSetKey::CriticalPoints);
+    }
+
+    pub fn toggle_misc_marked(&mut self)
+    {
+        self.point_sets.sched_toggle(PointSetKey::MiscMarkedPoints);
     }
 
     pub fn toggle_cycles_of_period(&mut self, period: Period)
@@ -618,7 +641,7 @@ mod hashing
     use dynamo_common::types::{Cplx, Real};
 
     #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
-    pub(super) struct HashedReal(u64);
+    pub struct HashedReal(u64);
 
     impl From<Real> for HashedReal
     {

@@ -863,12 +863,17 @@ where
                     pane.schedule_redraw();
                 }
             }
-            Action::ToggleCritical(selection) => {
+            Action::ToggleCritical => {
+                let pane = self.child_mut();
+                pane.marking_mut().toggle_critical();
+                pane.schedule_redraw();
+            }
+            Action::ToggleMarked(selection) => {
                 self.get_selected_pane_ids(*selection)
                     .into_iter()
                     .for_each(|pane_id| {
                         let pane = self.get_pane_mut(pane_id);
-                        pane.marking_mut().toggle_critical();
+                        pane.marking_mut().toggle_misc_marked();
                         pane.schedule_redraw();
                     });
             }
@@ -930,6 +935,9 @@ where
             Action::DrawContour(contour_type) => {
                 self.get_active_pane_mut()
                     .map(|p| p.draw_contour(*contour_type));
+            }
+            Action::DrawAuxContours => {
+                self.get_active_pane_mut().map(Pane::draw_aux_contours);
             }
             Action::ClearRays => {
                 self.get_active_pane_mut().map(Pane::clear_marked_rays);

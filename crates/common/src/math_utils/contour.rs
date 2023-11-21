@@ -1,4 +1,4 @@
-use crate::prelude::{Cplx, Dist, Norm, Real};
+use crate::prelude::{Cplx, Dist, Norm, Real, NAN};
 
 const I: Cplx = Cplx::new(0., 1.);
 
@@ -10,6 +10,14 @@ pub enum Error
     NanEncountered,
     Converged,
     LoopDetected,
+}
+
+pub trait Contour
+{
+    type Target;
+    fn set_target(&mut self, _target: Self::Target) {}
+    fn compute(&mut self) -> Vec<Cplx>;
+    fn base_point(&self) -> Cplx;
 }
 
 #[derive(Clone, Debug)]
@@ -51,15 +59,16 @@ impl LevelCurveParams
     }
 
     #[must_use]
-    pub fn contour<FD, T>(self, point: Cplx, map_dmap: FD) -> Option<LevelCurve<FD, T>>
+    pub fn contour<FD, T>(self, map_dmap: FD) -> LevelCurve<FD, T>
     where
         FD: Fn(Cplx) -> Option<(T, Cplx)>,
         T: Norm<Real>
+            + Default
             + std::ops::Sub<Output = T>
             + std::ops::Div<Cplx, Output = Cplx>
             + std::fmt::Debug,
     {
-        LevelCurve::try_new(self, point, map_dmap)
+        LevelCurve::new(self, map_dmap)
     }
 }
 impl Default for LevelCurveParams
@@ -78,12 +87,11 @@ impl Default for LevelCurveParams
 pub struct LevelCurve<FD, T>
 where
     FD: Fn(Cplx) -> Option<(T, Cplx)>,
-    T: Norm<Real> + std::ops::Sub<Output = T> + std::ops::Div<Cplx, Output = Cplx>,
+    T: Norm<Real> + Default + std::ops::Sub<Output = T> + std::ops::Div<Cplx, Output = Cplx>,
 {
     params: LevelCurveParams,
-    seed: Cplx,
+    pub seed: Cplx,
     point: Cplx,
-    deriv: Cplx,
     target: T,
     map_dmap: FD,
     has_exited_return_radius: bool,
@@ -93,23 +101,47 @@ impl<FD, T> LevelCurve<FD, T>
 where
     FD: Fn(Cplx) -> Option<(T, Cplx)>,
     T: Norm<Real>
+        + Default
         + std::ops::Sub<Output = T>
         + std::ops::Div<Cplx, Output = Cplx>
         + std::fmt::Debug,
 {
-    pub fn try_new(params: LevelCurveParams, point: Cplx, map_dmap: FD) -> Option<Self>
+    pub fn new(params: LevelCurveParams, map_dmap: FD) -> Self
     {
-        let (target, deriv) = (map_dmap)(point)?;
-        let deriv = target / deriv.conj();
-        Some(Self {
+        Self {
             params,
-            seed: point,
-            point,
-            deriv,
-            target,
+            seed: Cplx::default(),
+            point: Cplx::default(),
+            target: T::default(),
             map_dmap,
             has_exited_return_radius: false,
-        })
+        }
+    }
+
+    #[must_use]
+    pub fn init_seed(mut self, point: Cplx) -> Self
+    {
+        self.auto_compute_target(point);
+        self.seed = point;
+        self.point = point;
+        self
+    }
+
+    fn auto_compute_target(&mut self, point: Cplx)
+    {
+        if let Some((target, _)) = (self.map_dmap)(point) {
+            self.target = target;
+        } else {
+            self.point = NAN;
+        }
+    }
+
+    #[must_use]
+    pub const fn with_seed(mut self, point: Cplx) -> Self
+    {
+        self.seed = point;
+        self.point = point;
+        self
     }
 
     fn step_vector(&self, t: Cplx) -> Option<Cplx>
@@ -127,20 +159,26 @@ where
         let t = self.point;
         let h = self.params.step_size;
 
-        let k0 = h * self.deriv * I;
+        let k0 = h * self.step_vector(t)?;
         let k1 = h * self.step_vector(t + 0.5 * k0)?;
         let k2 = h * self.step_vector(t + 0.5 * k1)?;
         let k3 = h * self.step_vector(t + k2)?;
         Some((k0 + 2. * (k1 + k2) + k3) / 6.0)
     }
 
-    fn apply_newton_correction(&mut self) -> Option<()>
+    fn newton_correction(&self) -> Option<Cplx>
     {
         let (val, d_val) = (self.map_dmap)(self.point)?;
-        self.deriv = val / d_val.conj();
 
         // The perturbation vector is parallel to d_val
         let correction = (self.target - val) / d_val.conj();
+
+        Some(correction)
+    }
+
+    fn apply_newton_correction(&mut self) -> Option<()>
+    {
+        let correction = self.newton_correction()?;
         if correction.norm_sqr() > self.params.step_size {
             return None;
         }
@@ -181,7 +219,34 @@ where
         }
     }
 
-    pub fn compute(mut self) -> Vec<Cplx>
+    // pub fn compute(mut self) -> Vec<Cplx>
+    // {
+    //     self.run_once()
+    // }
+    //
+    // pub fn compute_targets(mut self, targets: impl IntoIterator<Item = T>) -> Vec<Vec<Cplx>>
+    // {
+    //     targets
+    //         .into_iter()
+    //         .filter_map(|target| {
+    //             self.set_target(target)?;
+    //             Some(self.run_once())
+    //         })
+    //         .collect()
+    // }
+}
+
+impl<FD, T> Contour for LevelCurve<FD, T>
+where
+    FD: Fn(Cplx) -> Option<(T, Cplx)>,
+    T: Norm<Real>
+        + Default
+        + std::ops::Sub<Output = T>
+        + std::ops::Div<Cplx, Output = Cplx>
+        + std::fmt::Debug,
+{
+    type Target = T;
+    fn compute(&mut self) -> Vec<Cplx>
     {
         let mut t_list = vec![self.point];
 
@@ -203,6 +268,29 @@ where
         }
 
         t_list
+    }
+
+    /// Should only be called after `with_seed`.
+    fn set_target(&mut self, target: T)
+    {
+        const NEWTON_ITERS: usize = 8;
+
+        self.target = target;
+
+        for _ in 0..NEWTON_ITERS {
+            if let Some(corr) = self.newton_correction() {
+                self.point += corr;
+            } else {
+                break;
+            }
+        }
+        self.seed = self.point;
+    }
+
+    #[inline]
+    fn base_point(&self) -> Cplx
+    {
+        self.point
     }
 }
 
@@ -316,11 +404,14 @@ where
             Ok(())
         }
     }
-
-    pub fn compute(mut self) -> Option<Vec<Cplx>>
+}
+impl<D> Contour for IntegralCurve<D>
+where
+    D: Fn(Cplx) -> Option<Cplx>,
+{
+    type Target = Real;
+    fn compute(&mut self) -> Vec<Cplx>
     {
-        let _ = (self.direction)(self.point)?;
-
         let mut t_list = vec![self.point];
 
         for _k in 0..self.params.max_steps {
@@ -328,10 +419,20 @@ where
                 Ok(()) => {
                     t_list.push(self.point);
                 }
-                Err(_) => return Some(t_list),
+                Err(_) => break,
             }
         }
 
-        Some(t_list)
+        if t_list.len() > 1 {
+            t_list
+        } else {
+            Vec::new()
+        }
+    }
+
+    #[inline]
+    fn base_point(&self) -> Cplx
+    {
+        self.point
     }
 }

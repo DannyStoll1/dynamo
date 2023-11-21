@@ -334,11 +334,11 @@ macro_rules! ext_ray_impl_rk {
     ($step: literal, $esc: expr) => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
         {
-            use dynamo_common::math_utils::contour::IntegralCurveParams;
+            use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams};
             const R: Real = $esc;
             const BAILOUT: Real = 2.0 * R * R;
 
-            IntegralCurveParams::default()
+            let ray = IntegralCurveParams::default()
                 .step_size($step)
                 .max_steps(10_000)
                 .convergence_radius(0.0)
@@ -346,7 +346,13 @@ macro_rules! ext_ray_impl_rk {
                 .contour(R * angle.to_circle(), |t| {
                     self.external_potential_d(t).map(|(g, dg)| -g / dg.conj())
                 })
-                .compute()
+                .compute();
+
+            if ray.len() > 0 {
+                Some(ray)
+            } else {
+                None
+            }
         }
     };
     ($step: literal) => {

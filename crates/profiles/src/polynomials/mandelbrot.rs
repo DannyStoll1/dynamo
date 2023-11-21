@@ -128,8 +128,8 @@ impl HasDynamicalCovers for Mandelbrot
                 let bounds = Bounds {
                     min_x: -1.8,
                     max_x: 1.8,
-                    min_y: -1.0,
-                    max_y: 1.0,
+                    min_y: -1.3,
+                    max_y: 1.3,
                 };
                 CoveringMap::new(self, param_map).with_orig_bounds(bounds)
             }
@@ -159,6 +159,8 @@ impl HasDynamicalCovers for Mandelbrot
                     let v = horner!(t, -6., -8., -6., -4.);
                     (-(a + t * b) / t2, u + v)
                 };
+                // Critical points of the multiplier
+                let marked_points = solve_polynomial([16., 4., 0., 3., 4., 3., 2.]);
 
                 let bounds = Bounds {
                     min_x: -2.9,
@@ -169,6 +171,7 @@ impl HasDynamicalCovers for Mandelbrot
                 CoveringMap::new(self, param_map)
                     .with_orig_bounds(bounds)
                     .with_multiplier_map(mult)
+                    .with_marked_points(marked_points)
             }
             _ => CoveringMap::from(self),
         }
@@ -177,16 +180,7 @@ impl HasDynamicalCovers for Mandelbrot
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         match period {
-            1 => {
-                let param_map = |t: Cplx| (0.25 - t.powi(2), -2. * t);
-                let bounds = Bounds {
-                    min_x: -1.8,
-                    max_x: 1.8,
-                    min_y: -1.0,
-                    max_y: 1.0,
-                };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-            }
+            1 => self.marked_cycle_curve(1),
             2 => {
                 let param_map = |t: Cplx| {
                     let u = 9. / t.powi(2);

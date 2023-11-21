@@ -685,6 +685,11 @@ impl MarkedPoints for QuadRatPer2
     {
         cycles(*c, period)
     }
+
+    fn other_marked_points(&self) -> Vec<Cplx>
+    {
+        vec![-ONE]
+    }
 }
 
 impl HasDynamicalCovers for QuadRatPer2
@@ -819,43 +824,63 @@ impl HasDynamicalCovers for QuadRatPer2
         const B5D: Cplx = Cplx::new(5. * B5.re, 5. * B5.im);
         const B6D: Cplx = Cplx::new(6. * B6.re, 6. * B6.im);
 
-        let param_map: fn(Cplx) -> (Self::Param, Cplx);
-        let bounds: Bounds;
-
         match period {
             1 => {
-                param_map = |t| {
-                    (
-                        (0.125 * (4. - t * (t + 2.)) * t).into(),
-                        -0.125 * (3. * t - 2.) * (t + 2.),
-                    )
+                let param_map = |t: Cplx| {
+                    let t2 = t.powi(2);
+                    (((t2 - t - 1.) * t).into(), 3. * t2 - 2. * t - 1.)
                 };
-                bounds = Bounds {
-                    min_x: -5.0,
-                    max_x: 3.0,
-                    min_y: -3.0,
-                    max_y: 3.0,
+                let bounds = Bounds {
+                    min_x: -1.5,
+                    max_x: 2.5,
+                    min_y: -1.7,
+                    max_y: 1.7,
                 };
+                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
             }
             4 => {
-                param_map = |t| {
+                let param_map = |t: Cplx| {
                     let t2 = t.powi(2);
                     (
                         (t2 * t - 2. * t2 + 4. * t - 1.).into(),
                         3. * t2 - 4. * t - 4.,
                     )
                 };
-                bounds = Bounds {
+                let mult = |t: Cplx| {
+                    let t2 = t.powi(2);
+                    let a = horner_monic!(t2, 5., 7.);
+                    let b = t * (-7. - 3. * t2);
+                    let c = t2 - 2. * t + 4.;
+
+                    let c2 = c.powi(2);
+                    let da = horner_monic!(t2, 8., 15.);
+                    let db = t * horner!(t2, -22., -8.);
+
+                    (16. * (a + b) / c2, -16. * (da + db) / (c2 * c))
+                };
+                // Critical points of the multiplier
+                let marked_points = solve_quartic(
+                    Cplx::new(8., 0.),
+                    Cplx::new(-22., 0.),
+                    Cplx::new(15., 0.),
+                    Cplx::new(-8., 0.),
+                )
+                .to_vec();
+                let bounds = Bounds {
                     min_x: -1.,
                     max_x: 1.4,
                     min_y: -2.2,
                     max_y: 2.2,
                 };
+                CoveringMap::new(self, param_map)
+                    .with_orig_bounds(bounds)
+                    .with_multiplier_map(mult)
+                    .with_marked_points(marked_points)
             }
             5 => {
-                param_map = |t| {
-                    // t = sqrt(-2235)
-                    // ((-2043332879690812551104*t + 322671215001188162496)*c^6 + (-7211787718815174272*t + 38457203855637713472)*c^5 + (-10445615819508480*t + 113836835145028800)*c^4 + (-7931553616080*t + 135137329840080)*c^3 + (-3321323160*t + 79799557200)*c^2 + (-724598*t + 23400162)*c + (-64*t + 2724))/((-165726073638468871360*t + 59671792608719217337728)*c^6 + (-532082528560799520*t + 218792941658814953376)*c^5 + (-681491680626360*t + 334169395252260120)*c^4 + (-435333784880*t + 272101938829200)*c^3 + (-138715290*t + 124564255830)*c^2 + (-17640*t + 30391956)*c + 3087)
+                let param_map = |t: Cplx| {
+                    // k = sqrt(-2235)
+                    // ((-2043332879690812551104*k + 322671215001188162496)*c^6 + (-7211787718815174272*k + 38457203855637713472)*c^5 + (-10445615819508480*k + 113836835145028800)*c^4 + (-7931553616080*k + 135137329840080)*c^3 + (-3321323160*k + 79799557200)*c^2 + (-724598*k + 23400162)*c + (-64*k + 2724))/((-165726073638468871360*k + 59671792608719217337728)*c^6 + (-532082528560799520*k + 218792941658814953376)*c^5 + (-681491680626360*k + 334169395252260120)*c^4 + (-435333784880*k + 272101938829200)*c^3 + (-138715290*k + 124564255830)*c^2 + (-17640*k + 30391956)*c + 3087)
                     let pole = Cplx::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
                     let angle = Cplx::new(1., 0.);
 
@@ -872,19 +897,16 @@ impl HasDynamicalCovers for QuadRatPer2
                         du * (numer * d_denom - denom * d_numer) / (denom * denom),
                     )
                 };
-                bounds = Bounds {
+                let bounds = Bounds {
                     min_x: -8.,
                     max_x: 5.5,
                     min_y: -1.5,
                     max_y: 8.,
                 };
+                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
             }
-            _ => {
-                param_map = |t| (t.into(), ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
-        };
-        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
+            _ => CoveringMap::from(self),
+        }
     }
 
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>

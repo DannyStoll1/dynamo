@@ -19,6 +19,7 @@ where
     point_grid: PointGrid,
     orig_bounds: Bounds,
     multiplier_map: fn(Cplx) -> (Cplx, Cplx),
+    marked_points: Vec<Cplx>,
 }
 
 impl<C> CoveringMap<C>
@@ -36,6 +37,7 @@ where
             point_grid,
             orig_bounds,
             multiplier_map: |t| (t, ONE),
+            marked_points: Vec::new(),
         }
     }
     #[must_use]
@@ -48,6 +50,12 @@ where
     pub fn with_multiplier_map(mut self, multiplier_map: fn(Cplx) -> (Cplx, Cplx)) -> Self
     {
         self.multiplier_map = multiplier_map;
+        self
+    }
+    #[must_use]
+    pub fn with_marked_points(mut self, marked_points: Vec<Cplx>) -> Self
+    {
+        self.marked_points = marked_points;
         self
     }
 }
@@ -101,7 +109,7 @@ where
 
     fn set_compute_mode(&mut self, compute_mode: super::ComputeMode)
     {
-        self.base_curve.set_compute_mode(compute_mode)
+        self.base_curve.set_compute_mode(compute_mode);
     }
 
     fn early_bailout(&self, start: Self::Var, param: &Self::Param) -> Option<PointInfo<C::Deriv>>
@@ -301,6 +309,12 @@ where
     fn precycles_child(&self, c: &C::Param, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
         self.base_curve.precycles_child(c, orbit_schema)
+    }
+
+    #[inline]
+    fn other_marked_points(&self) -> Vec<Cplx>
+    {
+        self.marked_points.clone()
     }
 }
 

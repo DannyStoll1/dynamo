@@ -141,6 +141,11 @@ impl MarkedPoints for CubicPer3_0
             _ => vec![],
         }
     }
+    #[inline]
+    fn other_marked_points(&self) -> Vec<Cplx>
+    {
+        vec![-ONE, ONE]
+    }
 }
 
 degree_impl!(CubicPer3_0, 3);
