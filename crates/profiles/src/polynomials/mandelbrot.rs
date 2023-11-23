@@ -182,17 +182,12 @@ impl HasDynamicalCovers for Mandelbrot
         match period {
             1 => self.marked_cycle_curve(1),
             2 => {
-                let param_map = |t: Cplx| {
-                    let u = 9. / t.powi(2);
-                    ((t - 1.) * u - 3., (2. - t) * u / t)
-                };
-                let bounds = Bounds {
-                    min_x: 0.5,
-                    max_x: 8.3,
-                    min_y: -2.7,
-                    max_y: 2.7,
-                };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
+                let param_map = |z: Cplx| (-(z.powi(2) + z + 1.), -2. * z - 1.);
+                let mult = |z: Cplx| (-4. * z * (z + 1.), -8. * z - 4.);
+                let bounds = Bounds::square(1.4, (-0.5).into());
+                CoveringMap::new(self, param_map)
+                    .with_orig_bounds(bounds)
+                    .with_multiplier_map(mult)
             }
             3 => {
                 let param_map = |t: Cplx| {

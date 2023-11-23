@@ -104,7 +104,7 @@ impl ContourType
         match self {
             Self::Equipotential => Color32::YELLOW,
             Self::Multiplier(_) => Color32::from_rgb(255, 160, 122),
-            Self::ExtendRay => Color32::from_rgb(127, 127, 127),
+            Self::ExtendRay => Color32::RED, //Color32::from_rgb(127, 127, 127),
         }
     }
 }
