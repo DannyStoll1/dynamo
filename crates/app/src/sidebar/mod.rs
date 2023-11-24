@@ -259,7 +259,7 @@ fn rational_maps_menu() -> State
         .with_submenu("QuadRat Per(2)", || {
             State::submenu()
                 .with_fractal_button("Moduli space", interface!(QuadRatPer2))
-                .with_fractal_button("3-fold cover", interface!(QuadRatPer2Cover))
+                .with_fractal_button("3-fold cover", interface!(QuadRatPer2InfPuncture))
                 .with_submenu("Marked Cycle", || {
                     State::submenu()
                         .with_fractal_button("Period 1", interface_mc!(QuadRatPer2, 1))

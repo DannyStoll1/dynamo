@@ -191,6 +191,9 @@ impl HasDynamicalCovers for Mandelbrot
             }
             3 => {
                 let param_map = |t: Cplx| {
+                    // const A: f64 = -0.801937735804838;
+                    // const D: f64 = -1.80193773580484;
+                    // let t = (A * t - 1.) / (t + D);
                     let t2 = t * t;
 
                     let v = t2 * (t2 - 3. * t + 6.) - 2. * t + 2.;

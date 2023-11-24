@@ -1156,3 +1156,119 @@ mod param
         }
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct QuadRatPer2InfPuncture
+{
+    point_grid: PointGrid,
+    compute_mode: ComputeMode,
+    max_iter: Period,
+}
+
+impl QuadRatPer2InfPuncture
+{
+    const DEFAULT_BOUNDS: Bounds = Bounds {
+        min_x: -2.8,
+        max_x: 3.2,
+        min_y: -2.8,
+        max_y: 2.8,
+    };
+}
+impl Default for QuadRatPer2InfPuncture
+{
+    fractal_impl!();
+}
+
+impl DynamicalFamily for QuadRatPer2InfPuncture
+{
+    parameter_plane_impl!();
+    default_name!();
+
+    fn description(&self) -> String
+    {
+        "The moduli space of quadratic rational maps with a critical 2-cycle, \
+            parameterized as $f_c(z) = (z^2 + c)/(z^2 - 1)$. In these coordinates, \
+            ∞ <-> 1 is the critical 2-cycle. The plane is colored according to the \
+            activity of the free critical point 0."
+            .to_owned()
+    }
+
+    #[inline]
+    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
+    {
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
+        let c2z2 = z2 * c2;
+        (c * c2 + c2z2 - 1.) / (c * (c2z2 - 1.))
+    }
+
+    #[inline]
+    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
+    {
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
+        let denom = z2 * c2 - 1.;
+        (
+            (c * c2 + denom) / (c * denom),
+            -2. * c2.powi(2) * z / denom.powi(2),
+        )
+    }
+
+    #[inline]
+    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        let z2 = z.powi(2);
+        let c2 = c.powi(2);
+        let c3 = c * c2;
+        let denom = z2 * c2 - 1.;
+        let denom2 = denom.powi(2);
+        (
+            (c3 + denom) / (c * denom),
+            -2. * c2.powi(2) * z / denom2,
+            (-2. * c3 - denom2) / (c2 * denom2),
+        )
+    }
+
+    #[inline]
+    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
+    {
+        ZERO
+    }
+
+    #[inline]
+    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
+        -> (Self::Var, Self::Deriv, Self::Deriv)
+    {
+        (ZERO, ZERO, ZERO)
+    }
+}
+
+impl FamilyDefaults for QuadRatPer2InfPuncture
+{
+    default_bounds!();
+}
+
+has_child_impl!(QuadRatPer2InfPuncture, 4.);
+
+impl InfinityFirstReturnMap for QuadRatPer2InfPuncture
+{
+    degree_impl!(2, 2, 0.5);
+
+    #[inline]
+    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
+    {
+        angle + RationalAngle::ONE_HALF
+    }
+}
+
+impl MarkedPoints for QuadRatPer2InfPuncture
+{
+    #[inline]
+    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
+    {
+        cycles(*c, period)
+    }
+}
+
+impl EscapeEncoding for QuadRatPer2InfPuncture {}
+impl ExternalRays for QuadRatPer2InfPuncture {}

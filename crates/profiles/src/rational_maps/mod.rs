@@ -3,8 +3,7 @@ pub use quad_rat_per_1_lambda::{QuadRatPer1Lambda, QuadRatPer1LambdaParam, QuadR
 pub mod quad_rat_per_2_lambda;
 pub use quad_rat_per_2_lambda::{QuadRatPer2Lambda, QuadRatPer2LambdaParam};
 pub mod quad_rat_per_2;
-pub use quad_rat_per_2::QuadRatPer2;
-pub use quad_rat_per_2::QuadRatPer2Cover;
+pub use quad_rat_per_2::{QuadRatPer2, QuadRatPer2Cover, QuadRatPer2InfPuncture};
 pub mod quad_rat_per_3;
 pub use quad_rat_per_3::QuadRatPer3;
 pub mod quad_rat_per_4;
