@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use directories::UserDirs;
 use egui::{Context, CursorIcon, InputState, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
@@ -531,9 +532,7 @@ where
     /// Open a dialog prompt to save an image.
     fn prompt_save_image(&mut self, pane_selection: PaneSelection)
     {
-        let path = PathBuf::from("images");
-        let _ = std::fs::create_dir(&path);
-        let mut file_dialog = FileDialog::save_file(Some(path))
+        let mut file_dialog = FileDialog::save_file(images_dir())
             .title("Save Image")
             .show_rename(false)
             .show_new_folder(true);
@@ -1054,4 +1053,16 @@ where
         self.show_dialog(ctx);
         self.update_panes();
     }
+}
+
+fn images_dir() -> Option<PathBuf>
+{
+    // let proj_dirs = ProjectDirs::from("com", "Zero Ideal", "Dynamo")?;
+    let user_dirs = UserDirs::new()?;
+    let pictures = user_dirs
+        .picture_dir()
+        .map_or_else(|| user_dirs.home_dir().join("Pictures"), ToOwned::to_owned);
+    let dynamo_images = pictures.join("Dynamo");
+    std::fs::create_dir_all(&dynamo_images).ok()?;
+    Some(dynamo_images)
 }

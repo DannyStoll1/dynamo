@@ -174,22 +174,31 @@ impl HasDynamicalCovers for QuadRatPer3
         match period {
             1 => {
                 param_map = |t| {
-                    let pole = 1.324_717_957_244_75;
-                    let u = 1. / t + pole;
-                    let u2 = u.powi(2);
-                    let u3 = u2 * u;
+                    const A: [Real; 4] = [
+                        -0.0766191060128845,
+                        0.752462859133074,
+                        -1.19671169573930,
+                        0.939323118340078,
+                    ];
+                    const B: [Real; 2] = [0.241446353046259, -0.822991177325292];
+                    const AD: [Real; 5] = [
+                        0.118622564877287,
+                        -0.424645137142348,
+                        0.912808732028113,
+                        -1.54610927810313,
+                        0.939323118340078,
+                    ];
+                    const BD: [Real; 4] = [
+                        0.0582963413993389,
+                        -0.397416436708878,
+                        1.16020718404779,
+                        -1.64598235465058,
+                    ];
 
-                    let du = -u2.inv();
-
-                    let num = u3 - u + 1.;
-                    let dnum = 3. * u2 - 1.;
-                    let den = u3 - u2 - u2 + 3. * u - 1.;
-                    let dden = dnum - 4. * u + 4.;
-
-                    (
-                        (num / den).into(),
-                        du * (den * dnum - num * dden) / den.powi(2),
-                    )
+                    let c = horner!(t, A[0], A[1], A[2], A[3]) / horner_monic!(t, B[0], B[1]);
+                    let dc_dt = horner!(t, AD[0], AD[1], AD[2], AD[3], AD[4])
+                        / horner_monic!(t, BD[0], BD[1], BD[2], BD[3]);
+                    (c.into(), dc_dt)
                 };
                 bounds = Bounds {
                     min_x: -5.75,

@@ -24,7 +24,7 @@ where
 
 impl<C> CoveringMap<C>
 where
-    C: DynamicalFamily + Clone,
+    C: DynamicalFamily,
 {
     #[must_use]
     pub fn new(base_curve: C, covering_map_d: fn(Cplx) -> (C::Param, C::Deriv)) -> Self
@@ -62,7 +62,7 @@ where
 
 impl<C> From<C> for CoveringMap<C>
 where
-    C: DynamicalFamily + Clone,
+    C: DynamicalFamily,
     C::Param: From<Cplx>,
 {
     fn from(base_curve: C) -> Self
@@ -368,31 +368,31 @@ impl<C: EscapeEncoding> EscapeEncoding for CoveringMap<C>
     }
 }
 
-pub trait HasDynamicalCovers: super::DynamicalFamily + Clone
+pub trait HasDynamicalCovers: super::DynamicalFamily + Sized
 {
     fn marked_cycle_curve(self, _period: Period) -> CoveringMap<Self>
     {
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
+        let bounds = self.point_grid().bounds.clone();
 
         println!("Marked cycle has not been implemented; falling back to base curve!");
-        CoveringMap::new(self.clone(), param_map_d)
-            .with_orig_bounds(self.point_grid().bounds.clone())
+        CoveringMap::new(self, param_map_d).with_orig_bounds(bounds)
     }
     fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
     {
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
+        let bounds = self.point_grid().bounds.clone();
 
         println!("Dynatomic curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self.clone(), param_map_d)
-            .with_orig_bounds(self.point_grid().bounds.clone())
+        CoveringMap::new(self, param_map_d).with_orig_bounds(bounds)
     }
     fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
     {
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
+        let bounds = self.point_grid().bounds.clone();
 
         println!("Misiurewicz curve has not been implemented; falling back to base curve!");
-        CoveringMap::new(self.clone(), param_map_d)
-            .with_orig_bounds(self.point_grid().bounds.clone())
+        CoveringMap::new(self, param_map_d).with_orig_bounds(bounds)
     }
 }
 
