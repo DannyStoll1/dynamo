@@ -55,6 +55,26 @@ impl DynamicalFamily for CosineAdd
     {
         ZERO
     }
+
+    #[inline]
+    fn extra_stop_condition(
+        &self,
+        z: Self::Var,
+        _c: &Self::Param,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        if z.im.abs() > 350. {
+            Some(EscapeResult::Escaped {
+                iters: iter,
+                final_value: z,
+            })
+        } else if z.re.abs() > 1e15 {
+            Some(EscapeResult::Unknown)
+        } else {
+            None
+        }
+    }
 }
 
 impl FamilyDefaults for CosineAdd
@@ -123,6 +143,26 @@ impl DynamicalFamily for Cosine
     {
         ZERO
     }
+
+    #[inline]
+    fn extra_stop_condition(
+        &self,
+        z: Self::Var,
+        _c: &Self::Param,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        if z.im.abs() > 350. {
+            Some(EscapeResult::Escaped {
+                iters: iter,
+                final_value: z,
+            })
+        } else if z.re.abs() > 1e15 {
+            Some(EscapeResult::Unknown)
+        } else {
+            None
+        }
+    }
 }
 
 default_bounds_impl!(Cosine);
@@ -179,6 +219,26 @@ impl DynamicalFamily for SineWander
     fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
     {
         PI.into()
+    }
+
+    #[inline]
+    fn extra_stop_condition(
+        &self,
+        z: Self::Var,
+        _c: &Self::Param,
+        iter: Period,
+    ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
+    {
+        if z.im.abs() > 350. {
+            Some(EscapeResult::Escaped {
+                iters: iter,
+                final_value: z,
+            })
+        } else if z.re.abs() > 1e15 {
+            Some(EscapeResult::Unknown)
+        } else {
+            None
+        }
     }
 }
 
