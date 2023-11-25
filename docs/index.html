@@ -4,11 +4,11 @@
     <title>Dynamo</title>
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico" />
     <script type="module">
-      import init, { WebHandle } from "./fractal_wasm.js";
+      import init, { WebHandle } from "./dynamo_wasm.js";
 
       async function main() {
         await init();
-        const canvas_id = "fractal_app";
+        const canvas_id = "dynamo_app";
         var web_handle = new WebHandle();
         web_handle.start(canvas_id);
       }
@@ -22,6 +22,6 @@
     </style>
   </head>
   <body>
-    <canvas id="fractal_app"></canvas>
+    <canvas id="dynamo_app"></canvas>
   </body>
 </html>
