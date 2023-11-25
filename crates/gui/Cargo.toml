@@ -1,6 +1,6 @@
 [package]
 name = "dynamo_gui"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2021"
 authors = ["Danny Stoll"]
 repository = "https://github.com/dannystoll1/dynamo"

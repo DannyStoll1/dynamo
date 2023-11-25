@@ -1,6 +1,6 @@
 [package]
 name = "dynamo"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Danny Stoll"]
@@ -17,7 +17,7 @@ serde = ["dynamo_app/serde"]
 [package.metadata.bundle]
 name = "Dynamo"
 identifier = "io.github.dannystoll1.dynamo"
-version = "0.7.1"
+version = "0.8.0"
 icon = ["../../docs/icons/*.png", "../../docs/icons/*.icns"]
 short_description = "A tool for exploring dynamical systems on complex manifolds."
 osx_minimum_system_version = "10.7"
