@@ -183,8 +183,12 @@ impl UnparsedUserInput
                 .call_method1("append", ("crates/scripting/loader/python",))?;
 
             // Convert to python types
-            let map_str = &json_to_string(&self.dynamics.map).to_object(py);
-            let start_str = &json_to_string(&self.dynamics.start).to_object(py);
+            let map_str = &json_to_string(&self.dynamics.map)
+                .replace('^', "**")
+                .to_object(py);
+            let start_str = &json_to_string(&self.dynamics.start)
+                .replace('^', "**")
+                .to_object(py);
             let z_str = self.names.variable.to_object(py);
             let t_str = self.names.selection.to_object(py);
 
@@ -211,7 +215,7 @@ impl UnparsedUserInput
             let mut params_dict_py = HashMap::new();
 
             self.parameters.iter().try_for_each(|(name, val)| {
-                let parsed_val = parse_expr.call1((val,))?;
+                let parsed_val = parse_expr.call1((val.replace('^', "**"),))?;
                 params_dict_py.insert(name, parsed_val);
                 Ok::<_, ScriptError>(())
             })?;

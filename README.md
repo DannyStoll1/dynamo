@@ -118,12 +118,12 @@ Example syntax:
     mu = "2-i"
 
     [parameters]
-    a = "t**2 * (mu + mu*t - 4) / 4"
+    a = "t^2 * (mu + mu*t - 4) / 4"
     b = "t * (mu*t - 4) / 4"
 
     [dynamics]
     start = 0
-    map = "(z**2 + a)/(z**2 + b)"
+    map = "(z^2 + a)/(z^2 + b)"
 
 ## Planned Features
 
@@ -141,7 +141,7 @@ Example syntax:
 - [x] Menu items for most/all actions
 - [ ] Command-line integration
 - [x] Internal coloration
-- [ ] Drag to pan/zoom
+- [x] Drag to pan/zoom
 - [ ] Descend to child for multi-parameter systems
 - [ ] Solve for critical points and $n$-cycles automatically
 - :hammer: User-friendly scripting interface
