@@ -938,7 +938,7 @@ impl HasDynamicalCovers for QuadRatPer2
 
                     let v2 = v.powi(2);
                     let den = (v2 * v).inv();
-                    let d_den = -3. * v2 * v2 * dv;
+                    let d_den = -3. * dv / v2.powi(2);
 
                     ((num * den).into(), num * d_den + d_num * den)
                 };

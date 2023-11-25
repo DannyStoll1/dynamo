@@ -338,6 +338,19 @@ where
             return;
         };
 
+        if ctx.input(|i| i.pointer.is_decidedly_dragging()) {
+            if let Some(origin) = ctx.input(|i| i.pointer.press_origin()) {
+                let delta = ctx.input(|i| i.pointer.delta());
+                if self.parent().frame_contains_pixel(origin) {
+                    let offset = self.parent.grid().map_vec2((delta).into());
+                    self.parent.pan(-offset);
+                } else if self.child().frame_contains_pixel(origin) {
+                    let offset = self.child.grid().map_vec2((delta).into());
+                    self.child.pan(-offset);
+                }
+            }
+        }
+
         if self.parent().frame_contains_pixel(pointer_pos) {
             ctx.set_cursor_icon(CursorIcon::Crosshair);
             self.set_active_pane(Some(PaneID::Parent));

@@ -38,6 +38,7 @@ pub trait ObjectKey: Clone + std::hash::Hash + std::cmp::Eq + std::fmt::Debug
 
 /// Keys of point-set objects in the data store. Each key may be toggled by the API.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub enum PointSetKey
 {
     SelectedPoint,
@@ -79,6 +80,7 @@ impl ObjectKey for PointSetKey
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 pub enum ContourType
 {
     Equipotential,
@@ -111,6 +113,7 @@ impl ContourType
 
 /// Keys of curve objects in the data store. Each key may be toggled by the API.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[non_exhaustive]
 enum CurveKey
 {
     Orbit,

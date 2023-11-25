@@ -255,6 +255,14 @@ impl PointGrid
         Cplx::new(re, im)
     }
 
+    #[must_use]
+    pub fn map_vec2(&self, vec2: [f32; 2]) -> Cplx
+    {
+        let re = f64::from(vec2[0]) * self.pixel_width();
+        let im = -f64::from(vec2[1]) * self.pixel_height();
+        Cplx::new(re, im)
+    }
+
     #[inline]
     #[must_use]
     pub fn pixel_width(&self) -> Real
