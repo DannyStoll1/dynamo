@@ -400,6 +400,13 @@ fn non_analytic_menu() -> State
             });
             submenu
         })
+        .with_submenu("Unicorn", || {
+            let mut submenu = State::submenu();
+            seq!(D in 2..=5 {
+                submenu.add_fractal_button(&format!("Degree {d}", d=D), interface!(Unicorn<D>));
+            });
+            submenu
+        })
         .with_submenu("Burning Ship", || {
             let mut submenu = State::submenu();
             seq!(D in 2..=5 {
