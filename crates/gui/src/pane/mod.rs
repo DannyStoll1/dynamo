@@ -11,6 +11,9 @@ use dynamo_common::prelude::*;
 use dynamo_core::error::FindPointResult;
 use dynamo_core::prelude::*;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub mod id;
 pub mod tasks;
 use tasks::*;
@@ -207,6 +210,7 @@ pub trait Pane
 /// # Type Parameters
 ///
 /// * `P`: The type of the plane being displayed, which must implement the `dynamo_core::dynamics::Displayable` trait.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub(super) struct WindowPane<P>
 where
     P: Displayable,
@@ -214,9 +218,11 @@ where
     pub plane: P,
     pub coloring: Coloring,
     iter_plane: IterPlane<P::Deriv>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub image_frame: ImageFrame,
     tasks: PaneTasks,
     selection: Cplx,
+    #[cfg_attr(feature = "serde", serde(skip))]
     orbit_info: Option<orbit::Info<P::Param, P::Var, P::Deriv>>,
     pub marking: Marking,
     pub zoom_factor: Real,

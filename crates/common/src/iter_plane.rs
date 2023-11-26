@@ -3,9 +3,14 @@ use crate::point_grid::PointGrid;
 use crate::point_info::PointInfo;
 use ndarray::Array2;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct IterPlane<D>
 {
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub iter_counts: Array2<PointInfo<D>>,
     pub point_grid: PointGrid,
 }

@@ -92,6 +92,7 @@ pub trait Interactive
 }
 
 /// The main interface structure that holds the parent and child panes along with UI state.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MainInterface<P, J>
 where
     P: Displayable + Clone + 'static,
@@ -102,6 +103,7 @@ where
     image_height: usize,
     active_pane: Option<PaneID>,
     live_mode: bool,
+    #[cfg_attr(feature = "serde", serde(skip))]
     dialog: Option<Dialog>,
     // save_task: SaveTask,
     click_used: bool,

@@ -18,11 +18,15 @@ use crate::image_frame::ImageFrame;
 
 use self::hashing::HashedReal;
 
+#[cfg(feature = "serde")]
+use serde::{self, Deserialize, Serialize};
+
 const POINT_RADIUS: f32 = 3.5;
 const CURVE_THICKNESS: f32 = 1.4;
 
 type Curve = Vec<Cplx>;
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ColoredPoint
 {
     pub point: Cplx,
@@ -37,10 +41,12 @@ pub trait ObjectKey: Clone + std::hash::Hash + std::cmp::Eq + std::fmt::Debug
 }
 
 /// Keys of point-set objects in the data store. Each key may be toggled by the API.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 #[non_exhaustive]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PointSetKey
 {
+    #[default]
     SelectedPoint,
     CriticalPoints,
     MiscMarkedPoints,
@@ -79,8 +85,9 @@ impl ObjectKey for PointSetKey
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[non_exhaustive]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ContourType
 {
     Equipotential,
@@ -112,10 +119,12 @@ impl ContourType
 }
 
 /// Keys of curve objects in the data store. Each key may be toggled by the API.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 #[non_exhaustive]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 enum CurveKey
 {
+    #[default]
     Orbit,
     Ray(RationalAngle),
     Contour(ContourType, hashing::HashedCplx),
@@ -156,6 +165,7 @@ impl ObjectKey for CurveKey
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ColoredMaybeHidden<O>
 {
     pub object: O,
@@ -201,11 +211,13 @@ struct EnvironmentInfo<'plane, 'palette, P: Displayable>
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MarkedObjectStore<K, O>
 where
     K: ObjectKey<Object = O>,
 {
     pub objects: HashMap<K, ColoredMaybeHidden<O>>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     tasks: VecDeque<MarkingTask<K>>,
     pub degree: AngleNum,
 }
@@ -342,10 +354,12 @@ where
 }
 
 #[derive(Default, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Marking
 {
     point_sets: MarkedObjectStore<PointSetKey, Vec<Cplx>>,
     curves: MarkedObjectStore<CurveKey, Curve>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     path_cache: RefCell<PathCache>,
 }
 impl Marking
@@ -640,10 +654,13 @@ impl Marking
 
 mod hashing
 {
+    #[cfg(feature = "serde")]
+    use serde::{Deserialize, Serialize};
 
     use dynamo_common::types::{Cplx, Real};
 
     #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct HashedReal(u64);
 
     impl From<Real> for HashedReal
@@ -663,6 +680,7 @@ mod hashing
     }
 
     #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub(super) struct HashedCplx
     {
         re: HashedReal,
