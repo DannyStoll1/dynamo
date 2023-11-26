@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use directories::UserDirs;
+use directories::{ProjectDirs, UserDirs};
 use egui::{Context, CursorIcon, InputState, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
@@ -560,9 +560,7 @@ where
 
     fn prompt_save_palette(&mut self, panes: PaneSelection)
     {
-        let path = PathBuf::from("palettes");
-        let _ = std::fs::create_dir(&path);
-        let mut file_dialog = FileDialog::save_file(Some(path))
+        let mut file_dialog = FileDialog::save_file(palettes_dir())
             .title("Save Palette")
             .show_rename(false)
             .show_new_folder(true);
@@ -577,9 +575,7 @@ where
 
     fn prompt_load_palette(&mut self, pane_selection: PaneSelection)
     {
-        let path = PathBuf::from("palettes");
-        let _ = std::fs::create_dir(&path);
-        let mut file_dialog = FileDialog::open_file(Some(path))
+        let mut file_dialog = FileDialog::open_file(palettes_dir())
             .title("Load Palette")
             .show_rename(false)
             .show_new_folder(false);
@@ -1070,7 +1066,6 @@ where
 
 fn images_dir() -> Option<PathBuf>
 {
-    // let proj_dirs = ProjectDirs::from("com", "Zero Ideal", "Dynamo")?;
     let user_dirs = UserDirs::new()?;
     let pictures = user_dirs
         .picture_dir()
@@ -1078,4 +1073,12 @@ fn images_dir() -> Option<PathBuf>
     let dynamo_images = pictures.join("Dynamo");
     std::fs::create_dir_all(&dynamo_images).ok()?;
     Some(dynamo_images)
+}
+
+fn palettes_dir() -> Option<PathBuf>
+{
+    let proj_dirs = ProjectDirs::from("com", "Zero Ideal", "Dynamo")?;
+    let palettes_dir = proj_dirs.data_dir().join("palettes");
+    std::fs::create_dir_all(&palettes_dir).ok()?;
+    Some(palettes_dir)
 }
