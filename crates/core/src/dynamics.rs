@@ -613,15 +613,15 @@ pub trait HasChild<C: DynamicalFamily>: DynamicalFamily
     fn to_child_param(param: Self::Param) -> <C::MetaParam as ParamList>::Param;
 }
 
-impl<T: HasJulia> HasChild<JuliaSet<T>> for T
-{
-    fn to_child_param(
-        param: Self::Param,
-    ) -> <<JuliaSet<T> as DynamicalFamily>::MetaParam as ParamList>::Param
-    {
-        param
-    }
-}
+// impl<'parent, T: HasJulia> HasChild<JuliaSet<'parent, T>> for T
+// {
+//     fn to_child_param(
+//         param: Self::Param,
+//     ) -> <<JuliaSet<'parent, T> as DynamicalFamily>::MetaParam as ParamList>::Param
+//     {
+//         param
+//     }
+// }
 
 pub trait MarkedPoints: DynamicalFamily
 {

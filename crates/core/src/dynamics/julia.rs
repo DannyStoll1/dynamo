@@ -1,6 +1,9 @@
+use std::cell::UnsafeCell;
+use std::sync::RwLock;
+
 use super::{ComputeMode, DynamicalFamily, FamilyDefaults, HasJulia, MarkedPoints};
-use crate::macros::basic_plane_impl;
 use crate::orbit::EscapeResult;
+use crate::{macros::basic_plane_impl, selection::WithSelection};
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::math_utils::newton::find_target_newton_err_d;
@@ -10,42 +13,41 @@ use num_traits::{One, Zero};
 
 use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, PlaneType};
 
-#[derive(Clone)]
-pub struct JuliaSet<T>
+pub struct JuliaSet<'parent, T>
 where
     T: DynamicalFamily,
 {
     pub point_grid: PointGrid,
     pub max_iter: Period,
     pub min_iter: Period,
-    pub parent: T,
-    pub meta_params: T::MetaParam,
-    pub local_param: T::Param,
-    pub parent_selection: Cplx,
+    pub parent: &'parent UnsafeCell<WithSelection<T>>,
     pub compute_mode: ComputeMode,
 }
 
-impl<T> JuliaSet<T>
+unsafe impl<'parent, T: DynamicalFamily> Send for JuliaSet<'parent, T> {}
+unsafe impl<'parent, T: DynamicalFamily> Sync for JuliaSet<'parent, T> {}
+
+impl<'parent, T> JuliaSet<'parent, T>
 where
-    T: DynamicalFamily + HasJulia,
+    T: HasJulia,
 {
     #[must_use]
-    pub fn new(parent: T, parent_selection: Cplx, max_iter: Period) -> Self
+    pub fn new(
+        parent: &'parent mut WithSelection<T>,
+        parent_selection: Cplx,
+        max_iter: Period,
+    ) -> Self
     {
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
             .point_grid()
             .new_with_same_height(parent.default_bounds_child(parent_selection, &local_param));
         let min_iter = parent.min_iter();
-        let meta_params = parent.get_meta_params();
         Self {
             point_grid,
             max_iter,
             min_iter,
-            parent,
-            meta_params,
-            local_param,
-            parent_selection,
+            parent: UnsafeCell::from_mut(parent),
             compute_mode: ComputeMode::SmoothPotential,
         }
     }
@@ -57,25 +59,44 @@ where
         self
     }
 
-    pub fn map_and_multiplier_lazy(&self, z: T::Var) -> (T::Var, T::Deriv)
+    fn map_and_multiplier_lazy(&self, z: T::Var) -> (T::Var, T::Deriv)
     {
-        self.parent.map_and_multiplier(z, &self.local_param)
+        self.parent().map_and_multiplier(z, self.param())
+    }
+
+    #[inline]
+    fn param(&self) -> &T::Param
+    {
+        self.parent().selected_param()
+    }
+
+    #[inline]
+    fn point(&self) -> &Cplx
+    {
+        self.parent().selected_point()
+    }
+
+    #[inline]
+    fn parent(&self) -> &'parent WithSelection<T>
+    {
+        unsafe { &*self.parent.get() }
     }
 }
 
-impl<T> From<T> for JuliaSet<T>
-where
-    T: FamilyDefaults + HasJulia,
-{
-    fn from(parent: T) -> Self
-    {
-        let selection = parent.default_selection();
-        let max_iter = parent.default_max_iter_child();
-        Self::new(parent, selection, max_iter)
-    }
-}
+// impl<T> From<T> for JuliaSet<'static, T>
+// where
+//     T: FamilyDefaults + HasJulia,
+// {
+//     fn from(parent: T) -> Self
+//     {
+//         let selection = parent.default_selection();
+//         let max_iter = parent.default_max_iter_child();
+//         let parent = parent.into();
+//         Self::new(&parent, selection, max_iter)
+//     }
+// }
 
-impl<T> DynamicalFamily for JuliaSet<T>
+impl<'parent, T> DynamicalFamily for JuliaSet<'parent, T>
 where
     T: HasJulia,
 {
@@ -88,13 +109,13 @@ where
     #[inline]
     fn map(&self, z: Self::Var, _c: &Self::Param) -> Self::Var
     {
-        self.parent.map(z, &self.local_param)
+        self.parent().map(z, self.param())
     }
 
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, _c: &Self::Param) -> (Self::Var, Self::Deriv)
     {
-        self.parent.map_and_multiplier(z, &self.local_param)
+        self.parent().map_and_multiplier(z, self.param())
     }
 
     #[inline]
@@ -107,7 +128,7 @@ where
     #[inline]
     fn escape_radius(&self) -> Real
     {
-        self.parent.escape_radius()
+        self.parent().escape_radius()
     }
 
     #[inline]
@@ -124,7 +145,7 @@ where
         iter: Period,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
-        self.parent.extra_stop_condition(z, &self.local_param, iter)
+        self.parent().extra_stop_condition(z, self.param(), iter)
     }
 
     #[inline]
@@ -142,7 +163,7 @@ where
     #[inline]
     fn start_point(&self, point: Cplx, _param: &Self::Param) -> Self::Var
     {
-        self.parent.dynam_map(point)
+        self.parent().dynam_map(point)
     }
 
     #[inline]
@@ -152,14 +173,14 @@ where
         _param: &Self::Param,
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
-        let (z, dz_dt) = self.parent.dynam_map_d(point);
+        let (z, dz_dt) = self.parent().dynam_map_d(point);
         (z, dz_dt, Self::Deriv::zero())
     }
 
     #[inline]
     fn cycle_active_plane(&mut self)
     {
-        self.parent.cycle_active_plane();
+        // self.parent.cycle_active_plane();
     }
 
     #[inline]
@@ -171,29 +192,32 @@ where
         }: Self::MetaParam,
     )
     {
-        self.meta_params = meta_params;
-        self.local_param = local_param;
+        unsafe {
+            let parent_mut: *mut WithSelection<T> = self.parent.get();
+            parent_mut.select_param(local_param);
+            parent_mut.set_meta_param(meta_params);
+        }
     }
 
     #[inline]
     fn set_param(&mut self, local_param: T::Param)
     {
-        self.local_param = local_param;
+        self.parent().select_param(local_param);
     }
 
     #[inline]
     fn get_meta_params(&self) -> Self::MetaParam
     {
         ParamStack {
-            local_param: self.local_param.clone(),
-            meta_params: self.meta_params.clone(),
+            local_param: self.get_param(),
+            meta_params: self.parent().get_meta_params(),
         }
     }
 
     #[inline]
     fn get_param(&self) -> T::Param
     {
-        self.local_param.clone()
+        self.param().clone()
     }
 
     // #[inline]
@@ -205,35 +229,35 @@ where
     #[inline]
     fn name(&self) -> String
     {
-        let parent_name = self.parent.name();
+        let parent_name = self.parent().name();
 
         format!("Julia({parent_name})")
     }
 
     fn description(&self) -> String
     {
-        self.parent.description()
+        self.parent().description()
     }
 
     #[inline]
     fn periodicity_tolerance(&self) -> Real
     {
-        self.parent.periodicity_tolerance()
+        self.parent().periodicity_tolerance()
     }
 
     fn internal_potential_coloring(&self) -> IncoloringAlgorithm
     {
-        self.parent.internal_potential_coloring()
+        self.parent().internal_potential_coloring()
     }
 
     fn potential_and_period_coloring(&self) -> IncoloringAlgorithm
     {
-        self.parent.potential_and_period_coloring()
+        self.parent().potential_and_period_coloring()
     }
 
     fn preperiod_coloring(&self) -> IncoloringAlgorithm
     {
-        self.parent.preperiod_coloring()
+        self.parent().preperiod_coloring()
     }
 
     #[inline]
@@ -401,30 +425,30 @@ where
     // }
 }
 
-impl<T> FamilyDefaults for JuliaSet<T>
+impl<T> FamilyDefaults for JuliaSet<'_, T>
 where
     T: HasJulia,
 {
     #[inline]
     fn default_selection(&self) -> Cplx
     {
-        self.parent.start_point(ZERO, &self.local_param).into()
+        self.parent().start_point(ZERO, self.param()).into()
     }
 
     fn default_coloring(&self) -> Coloring
     {
-        self.parent.default_coloring_child()
+        self.parent().default_coloring_child()
     }
 
     #[inline]
     fn default_bounds(&self) -> Bounds
     {
-        self.parent
-            .default_bounds_child(self.parent_selection, &self.local_param)
+        self.parent()
+            .default_bounds_child(*self.point(), self.param())
     }
 }
 
-impl<T> HasJulia for JuliaSet<T>
+impl<T> HasJulia for JuliaSet<'_, T>
 where
     T: HasJulia,
 {
@@ -435,61 +459,61 @@ where
     }
 }
 
-impl<P> MarkedPoints for JuliaSet<P>
+impl<P> MarkedPoints for JuliaSet<'_, P>
 where
     P: HasJulia + MarkedPoints,
 {
     #[inline]
     fn critical_points_child(&self, _param: &Self::Param) -> Vec<Self::Var>
     {
-        self.parent.critical_points_child(&self.local_param)
+        self.parent().critical_points_child(self.param())
     }
 
     #[inline]
     fn critical_points(&self) -> Vec<Self::Var>
     {
-        self.parent.critical_points_child(&self.local_param)
+        self.parent().critical_points_child(self.param())
     }
 
     #[inline]
     fn cycles_child(&self, _param: &Self::Param, period: Period) -> Vec<Self::Var>
     {
-        self.parent.cycles_child(&self.local_param, period)
+        self.parent().cycles_child(self.param(), period)
     }
 
     #[inline]
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
-        self.parent.cycles_child(&self.local_param, period)
+        self.parent().cycles_child(self.param(), period)
     }
 
     #[inline]
     fn precycles(&self, orbit_schema: OrbitSchema) -> Vec<Self::Var>
     {
-        self.parent.precycles_child(&self.local_param, orbit_schema)
+        self.parent().precycles_child(self.param(), orbit_schema)
     }
 }
 
-impl<P> InfinityFirstReturnMap for JuliaSet<P>
+impl<P> InfinityFirstReturnMap for JuliaSet<'_, P>
 where
     P: HasJulia + InfinityFirstReturnMap,
 {
     #[inline]
     fn degree_real(&self) -> f64
     {
-        self.parent.degree_real()
+        self.parent().degree_real()
     }
 
     #[inline]
     fn degree(&self) -> AngleNum
     {
-        self.parent.degree()
+        self.parent().degree()
     }
 
     #[inline]
     fn escaping_period(&self) -> Period
     {
-        self.parent.escaping_period()
+        self.parent().escaping_period()
     }
 
     /// Always 0 for dynamical planes, since large parameter here means large starting value
@@ -502,11 +526,11 @@ where
     #[inline]
     fn escape_coeff_d(&self, _c: &Self::Param) -> (Cplx, Cplx)
     {
-        (self.parent.escape_coeff_d(&self.local_param).0, ZERO)
+        (self.parent().escape_coeff_d(self.param()).0, ZERO)
     }
 }
 
-impl<P: EscapeEncoding + HasJulia> EscapeEncoding for JuliaSet<P>
+impl<P: EscapeEncoding + HasJulia> EscapeEncoding for JuliaSet<'_, P>
 {
     fn encode_escape_result(
         &self,
@@ -515,12 +539,12 @@ impl<P: EscapeEncoding + HasJulia> EscapeEncoding for JuliaSet<P>
         NoParam: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
-        self.parent
-            .encode_escape_result(result, start, &self.local_param)
+        self.parent()
+            .encode_escape_result(result, start, self.param())
     }
 }
 
-impl<P> ExternalRays for JuliaSet<P>
+impl<P> ExternalRays for JuliaSet<'_, P>
 where
     P: HasJulia + InfinityFirstReturnMap,
 {

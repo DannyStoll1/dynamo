@@ -7,6 +7,7 @@ pub mod error;
 pub mod macros;
 pub mod orbit;
 pub mod prelude;
+pub mod selection;
 
 #[cfg(test)]
 mod tests
