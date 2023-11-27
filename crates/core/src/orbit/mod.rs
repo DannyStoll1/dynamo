@@ -4,10 +4,12 @@ use num_traits::One;
 
 pub mod distance_estimation;
 pub mod floyd;
+pub mod potential;
 pub mod simple;
 
 pub use distance_estimation::DistanceEstimation;
 pub use floyd::CycleDetected;
+pub use potential::Potential;
 pub use simple::Simple;
 
 #[cfg(feature = "serde")]

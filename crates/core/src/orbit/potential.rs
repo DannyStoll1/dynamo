@@ -1,22 +1,23 @@
 use super::{EscapeResult, Orbit};
-use crate::{dynamics::EscapeEncoding, prelude::DynamicalFamily};
+use crate::dynamics::DynamicalFamily;
 use dynamo_common::prelude::*;
 use num_traits::One;
 
-pub struct CycleDetected<'a, P: DynamicalFamily>
+pub struct Potential<'a, P: DynamicalFamily + ?Sized>
 {
     family: &'a P,
+    param: P::Param,
     periodicity_tolerance: Real,
-    pub param: P::Param,
     pub z_init: P::Var,
     pub z_slow: P::Var,
     pub z_fast: P::Var,
+    pub dc_dt: P::Deriv,
+    pub dz_dt: P::Deriv,
     pub iter: Period,
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
-    running: bool,
 }
 
-impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
+impl<'a, P: DynamicalFamily + ?Sized> Potential<'a, P>
 {
     pub fn new(family: &'a P) -> Self
     {
@@ -27,23 +28,26 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
             z_init: P::Var::default(),
             z_slow: P::Var::default(),
             z_fast: P::Var::default(),
+            dc_dt: P::Deriv::one(),
+            dz_dt: P::Deriv::one(),
             iter: 0,
             state: None,
-            running: true,
         }
     }
 
-    /// Initialize an orbit. Should only be called once, before running any computations.
     #[must_use]
-    pub fn init(mut self, selection: Cplx) -> Self
+    fn init(mut self, selection: Cplx) -> Self
     {
-        let c = self.family.param_map(selection);
-        let z = self.family.start_point(selection, &c);
+        let (c, dc_dt) = self.family.param_map_d(selection);
+        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
+        dz_dt += dz_dc * dc_dt;
 
         self.param = c;
         self.z_init = z;
         self.z_slow = z;
         self.z_fast = z;
+        self.dc_dt = dc_dt;
+        self.dz_dt = dz_dt;
         self
     }
 
@@ -54,9 +58,12 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
     }
 
     #[inline]
-    fn apply_map_to_fast(&mut self)
+    fn apply_map_and_update_multiplier(&mut self)
     {
-        self.z_fast = self.family.map(self.z_fast, &self.param);
+        let (f, df_dz, df_dc) = self.family.gradient(self.z_fast, &self.param);
+
+        self.dz_dt = df_dz * self.dz_dt + df_dc * self.dc_dt;
+        self.z_fast = f;
     }
 
     #[inline]
@@ -113,70 +120,69 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
         None
     }
 }
-
-impl<'a, P: EscapeEncoding> Orbit for CycleDetected<'a, P>
+impl<'a, P: DynamicalFamily + ?Sized> Orbit for Potential<'a, P>
 {
-    type Outcome = PointInfo<P::Deriv>;
-
-    fn run_until_complete(&mut self) -> Self::Outcome
-    {
-        if let Some(res) = self.family.early_bailout(self.z_fast, &self.param) {
-            return res;
-        }
-
-        while self.state.is_none() {
-            self.iter += 1;
-            if self.iter % 2 == 1 {
-                self.apply_map_to_slow();
-                self.apply_map_to_fast();
-                self.enforce_stop_condition();
-            } else {
-                self.apply_map_to_fast();
-                self.check_periodicity();
-            }
-        }
-        #[allow(clippy::unwrap_used)]
-        self.family
-            .encode_escape_result(self.state.clone().unwrap(), self.z_init, &self.param)
-    }
+    type Outcome = Option<(Real, Cplx)>;
 
     fn reset(&mut self, selection: Cplx)
     {
-        let c = self.family.param_map(selection);
-        let z = self.family.start_point(selection, &c);
+        let (c, dc_dt) = self.family.param_map_d(selection);
+        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
+        dz_dt += dz_dc * dc_dt;
 
         self.state = None;
         self.param = c;
         self.z_init = z;
         self.z_slow = z;
         self.z_fast = z;
+        self.dc_dt = dc_dt;
+        self.dz_dt = dz_dt;
         self.iter = 0;
     }
-}
 
-impl<'a, P: DynamicalFamily> Iterator for CycleDetected<'a, P>
-{
-    type Item = (P::Var, Option<EscapeResult<P::Var, P::Deriv>>);
-
-    fn next(&mut self) -> Option<Self::Item>
+    fn run_until_complete(&mut self) -> Self::Outcome
     {
-        if self.state.is_none() {
-            let retval = self.z_fast;
+        while self.state.is_none() {
             self.iter += 1;
             if self.iter % 2 == 1 {
                 self.apply_map_to_slow();
-                self.apply_map_to_fast();
+                self.apply_map_and_update_multiplier();
                 self.enforce_stop_condition();
             } else {
-                self.apply_map_to_fast();
+                self.apply_map_and_update_multiplier();
                 self.check_periodicity();
             }
-            Some((retval, self.state.clone()))
-        } else if self.running {
-            self.running = false;
-            Some((self.z_fast, self.state.clone()))
-        } else {
-            None
+        }
+
+        let state = self.state.as_ref()?;
+
+        match state {
+            EscapeResult::Escaped { iters, final_value } => {
+                let rescale = 2.0f64.powi(-(*iters as i32));
+                let z: Cplx = final_value.clone().into();
+                let dz_dt: Cplx = self.dz_dt.into();
+                let d_green = (dz_dt / z).conj() * rescale;
+                let green = z.norm().ln() * rescale;
+                return Some((green, d_green));
+            }
+            EscapeResult::Unknown => None,
+            EscapeResult::Bounded(..) => None,
+            EscapeResult::Periodic { info, final_value } => {
+                let z = final_value.clone();
+                let dz_dt = self.dz_dt.into();
+                let mult_norm_log = -info.multiplier.into().norm().ln();
+                for _ in 0..info.period {
+                    self.apply_map_and_update_multiplier();
+                }
+                let err: Cplx = (self.z_fast - z).into() / self.periodicity_tolerance;
+                let dz_dt_final = self.dz_dt.into();
+                let derr_dt = (dz_dt_final - dz_dt) / self.periodicity_tolerance;
+
+                Some((
+                    err.norm().ln() / mult_norm_log,
+                    -(derr_dt / err).conj() / mult_norm_log,
+                ))
+            }
         }
     }
 }

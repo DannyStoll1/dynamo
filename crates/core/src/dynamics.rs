@@ -17,7 +17,7 @@ pub mod julia;
 pub mod newton;
 
 use crate::error::{FindPointError, FindPointResult};
-use crate::orbit::{self, EscapeResult, Orbit};
+use crate::orbit::{self, EscapeResult, Orbit, Potential};
 use julia::JuliaSet;
 
 #[cfg(feature = "serde")]
@@ -821,35 +821,38 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
     /// External Green's function at a point
     fn external_potential_d(&self, t: Cplx) -> Option<(Real, Cplx)>
     {
-        if t.is_nan() {
-            return None;
-        }
-
-        let (c, dc_dt) = self.param_map_d(t);
-        let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
-        dz_dt += dz_dc * dc_dt;
-
-        for _ in 0..self.escaping_phase() {
-            let (f, df_dz, df_dc) = self.gradient(z, &c);
-            dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-            z = f;
-        }
-        for iter in 0..self.max_iter() {
-            for _j in 0..self.escaping_period() {
-                if z.norm_sqr() > self.escape_radius() {
-                    let rescale = self.degree_real().powi(-(iter as i32));
-                    let z = z.into();
-                    let d_green = (dz_dt.into() / z).conj() * rescale;
-                    let green = z.norm().ln() * rescale;
-                    return Some((green, d_green));
-                }
-                let (f, df_dz, df_dc) = self.gradient(z, &c);
-                dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-                z = f;
-            }
-        }
-
-        None
+        let mut orbit = Potential::new(self);
+        orbit.reset(t);
+        orbit.run_until_complete()
+        // if t.is_nan() {
+        //     return None;
+        // }
+        //
+        // let (c, dc_dt) = self.param_map_d(t);
+        // let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
+        // dz_dt += dz_dc * dc_dt;
+        //
+        // for _ in 0..self.escaping_phase() {
+        //     let (f, df_dz, df_dc) = self.gradient(z, &c);
+        //     dz_dt = df_dz * dz_dt + df_dc * dc_dt;
+        //     z = f;
+        // }
+        // for iter in 0..self.max_iter() {
+        //     for _j in 0..self.escaping_period() {
+        //         if z.norm_sqr() > self.escape_radius() {
+        //             let rescale = self.degree_real().powi(-(iter as i32));
+        //             let z = z.into();
+        //             let d_green = (dz_dt.into() / z).conj() * rescale;
+        //             let green = z.norm().ln() * rescale;
+        //             return Some((green, d_green));
+        //         }
+        //         let (f, df_dz, df_dc) = self.gradient(z, &c);
+        //         dz_dt = df_dz * dz_dt + df_dc * dc_dt;
+        //         z = f;
+        //     }
+        // }
+        //
+        // None
     }
 
     fn external_distance_estimate(&self, t: Cplx) -> Option<Real>
