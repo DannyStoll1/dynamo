@@ -978,15 +978,21 @@ where
     /// where G is the exterior Green's function.
     fn equipotential<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
     {
-        Box::new(
-            LevelCurveParams::default()
-                .step_size(1e-1) // self.point_grid().pixel_width())
-                .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
-                .max_steps(500_000)
-                .use_distance_estimation()
-                .contour(|t| self.external_potential_d(t))
-                .init_seed(t0),
-        )
+        let step_size = if self.plane_type().is_dynamical() {
+            1e-2
+        } else {
+            1e-1
+        };
+
+        let contour = LevelCurveParams::default()
+            .return_radius(self.point_grid().pixel_width().powi(2) * 100.0)
+            .max_steps(500_000)
+            .use_distance_estimation()
+            .step_size(step_size)
+            .contour(|t| self.external_potential_d(t))
+            .init_seed(t0);
+
+        Box::new(contour)
     }
 
     /// Outward external ray from $t_0$

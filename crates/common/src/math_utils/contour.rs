@@ -195,8 +195,10 @@ where
 
         self.point -= dt;
 
-        self.apply_newton_correction()
-            .ok_or(Error::FunctionUndefined)?;
+        for _ in 0..2 {
+            self.apply_newton_correction()
+                .ok_or(Error::FunctionUndefined)?;
+        }
 
         if self.point.is_nan() {
             Err(Error::NanEncountered)
