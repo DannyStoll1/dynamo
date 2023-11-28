@@ -1,3 +1,5 @@
+##[Check out the web demo here](dannystoll1.github.io/dynamo)]
+
 ## About
 
 A powerful tool for studying complex dynamics. Inspired heavily by the following projects:
@@ -49,19 +51,21 @@ Binaries are available for Linux, macOS, and Windows.
 ### Dynamics
 
 - F: Apply map to selection [dynamical plane]
-- Ctrl-F: Find parameter of given preperiod/period near selection [active plane]
+- Ctrl-F: Find/follow parameter of given preperiod/period near selection [active plane]
 - E: External ray [active plane]
 - Ctrl-X or Y: External ray to point [active plane]
 - Ctrl-E: Draw all rays of a given period [active plane]
 - Shift-O: Draw all rays in the orbit of a given angle [active plane]
-- Shift-E: Extend ray outwords (works in all families where `gradient` is implemented) [active plane]
+- Shift-E: Extend ray outwards from selection (works in all families where `gradient` is implemented) [active plane]
+- Shift-I: Extend ray inwards (can be numerically unstable) [active plane]
+- Shift-T: Extend ray bidirectionally [active plane]
 - G: Equipotential [active plane]
 - M: Multiplier contour (only for marked cycle curves) [active plane]
 
 ### Computation
 
-- +: Increase max iters
-- -: Decrease max iters
+- +: Increase max iters (x2)
+- -: Decrease max iters (x1/2)
 - Ctrl-S: save image (prompt in command line; currently does not include marked points/curves)
 - L: Toggle Live Julia mode (update the child plane as the cursor moves in the parent plane)
 
@@ -80,17 +84,18 @@ Binaries are available for Linux, macOS, and Windows.
 - R: Randomize palette
 - W: White palette
 - B: Black palette
+- Ctrl-K: Save palette
+- Ctrl-L: Load palette
+- Up/Down: Change palette period
+- Right/Left: Change palette phase
 - 0: Internal coloration: Solid
 - 1: Internal coloration: Period
 - 2: Internal coloration: Period and Multiplier
 - 3: Internal coloration: Multiplier
 - 4: Internal coloration: Preperiod
 - 5: Internal coloration: Potential of linearizing coordinate
-- Up/Down: Change coloring period
-- Right/Left: Change coloring phase
+- J: Toggle phase-based coloring for escape regions
 - D: Toggle distance estimation
-- Ctrl-K: Save palette
-- Ctrl-L: Load palette
 
 ### User Scripts (Experimental)
 
