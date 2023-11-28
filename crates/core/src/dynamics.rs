@@ -1019,7 +1019,7 @@ where
                 .step_size(1e-2)
                 .max_steps(50000)
                 .escape_radius(500.)
-                .convergence_radius(0.)
+                .convergence_radius(self.periodicity_tolerance())
                 .contour(t0, |t| {
                     self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
                 }),

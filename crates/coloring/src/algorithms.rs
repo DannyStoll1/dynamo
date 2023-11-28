@@ -181,7 +181,7 @@ impl IncoloringAlgorithm
 
         let val = k / n - potential;
 
-        val.powi(2) * n
+        val.powi(2) * n / 8.
     }
 
     pub fn color_known_potential<D: Polar<Real>, T: FromColor>(
