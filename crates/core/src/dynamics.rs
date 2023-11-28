@@ -1003,7 +1003,7 @@ where
                 .escape_radius(500.)
                 .convergence_radius(self.periodicity_tolerance())
                 .contour(t0, |t| {
-                    self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
+                    self.external_potential_d(t).map(|(g, dg)| -g / dg.conj())
                 }),
         )
     }
@@ -1025,7 +1025,7 @@ where
                 .escape_radius(500.)
                 .convergence_radius(self.periodicity_tolerance())
                 .contour(t0, |t| {
-                    self.external_potential_d(t).map(|(g, dg)| -g / dg.conj())
+                    self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
                 }),
         )
     }

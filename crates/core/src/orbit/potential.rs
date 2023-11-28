@@ -81,6 +81,18 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
     }
 
     #[inline]
+    fn update_fast_lazy(&mut self)
+    {
+        self.z_fast = self.family.map(self.z_fast, &self.param);
+    }
+
+    #[inline]
+    fn update_slow_lazy(&mut self)
+    {
+        self.z_slow = self.family.map(self.z_slow, &self.param);
+    }
+
+    #[inline]
     fn enforce_stop_condition(&mut self) -> bool
     {
         if let Some(state) = self
@@ -163,6 +175,44 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         Some((log_phi, 2.0 * (derr_dt / err).conj()))
     }
 
+    /// Brute force calculation of multiplier derivative
+    fn periodic_koenigs_d_param(
+        &mut self,
+        period: Period,
+        multiplier: P::Deriv,
+    ) -> Option<(Real, Cplx)>
+    {
+        const EPS: Real = 1e-6;
+
+        self.reset(self.selection + EPS);
+
+        for _ in 0..period * 50 {
+            self.update_fast_lazy();
+        }
+        while self.z_fast.dist_sqr(self.z_slow) > self.periodicity_tolerance {
+            self.update_slow_lazy();
+            self.update_fast_lazy();
+            self.iter += 1;
+            if self.iter == self.family.max_iter() {
+                return None;
+            }
+        }
+
+        let mut mult_delta = P::Deriv::one();
+        let mut dz: P::Deriv;
+
+        for _ in 0..period {
+            (self.z_fast, dz) = self.family.map_and_multiplier(self.z_fast, &self.param);
+            mult_delta *= dz;
+        }
+
+        let d_mult = (mult_delta - multiplier).into() / EPS;
+        Some((
+            multiplier.norm_sqr(),
+            2. * d_mult.conj() * multiplier.into(),
+        ))
+    }
+
     /// Logarithm of the Green's function, together with its gradient,
     /// for bounded orbits
     fn periodic_bottcher_d(&mut self, period: Period) -> Option<(Real, Cplx)>
@@ -206,7 +256,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         let phi = norm_z_log
             .ln()
             .mul_add(-(self.family.escaping_period() as Real), log_dn);
-        let grad_phi = 2.0 * z * (dz_dt / (norm_z_log * norm_z)).conj();
+        let grad_phi = -2.0 * z * (dz_dt / (norm_z_log * norm_z)).conj();
 
         (phi, grad_phi)
     }
@@ -260,8 +310,10 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
 
                 if mult_norm <= 1e-10 {
                     self.periodic_bottcher_d(period)
-                } else {
+                } else if self.family.plane_type().is_dynamical() {
                     self.periodic_koenigs_d(period, mult_norm)
+                } else {
+                    self.periodic_koenigs_d_param(period, info.multiplier)
                 }
             }
         }
