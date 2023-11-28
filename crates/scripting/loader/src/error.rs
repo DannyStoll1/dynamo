@@ -8,6 +8,7 @@ pub enum ScriptError
     UndefinedSymbol,
     ForbiddenKeyword,
     CompilationFailed,
+    MissingDirectory,
     PythonError(PyErr),
     ErrorWritingFile(std::io::Error),
     ErrorReadingToml(std::io::Error),

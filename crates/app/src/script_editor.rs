@@ -1,9 +1,10 @@
+use dynamo_common::directories::script_dir;
 use script_loader::error::ScriptError;
 use script_loader::parser::UnparsedUserInput;
 use std::path::{Path, PathBuf};
 
 pub(super) mod config;
-use config::SCRIPT_DIR;
+use config::SCRIPT_PROJ_DIR;
 
 pub mod popup;
 pub use popup::*;
@@ -135,7 +136,9 @@ impl ScriptEditor
         let script_data: UnparsedUserInput =
             toml::from_str(&self.text).map_err(ScriptError::ErrorParsingToml)?;
         let filename = format!("{}.toml", script_data.metadata.short_name);
-        let save_path = SCRIPT_DIR.join(filename);
+        let save_path = script_dir()
+            .unwrap_or(SCRIPT_PROJ_DIR.to_path_buf())
+            .join(filename);
 
         std::fs::write(&save_path, self.text.clone()).map_err(ScriptError::ErrorWritingFile)?;
         Ok(save_path)

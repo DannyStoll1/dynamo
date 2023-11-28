@@ -1,5 +1,6 @@
-use super::config::SCRIPT_DIR;
+use super::config::SCRIPT_PROJ_DIR;
 use super::{Response, ScriptEditor};
+use dynamo_common::directories::script_dir;
 use egui_file::FileDialog;
 use std::path::Path;
 
@@ -48,7 +49,7 @@ impl Popup
     #[must_use]
     pub fn load_edit() -> Self
     {
-        let path = Some((*SCRIPT_DIR).to_path_buf());
+        let path = Some(script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf()));
         let _ = std::fs::create_dir("user_scripts");
         let mut dialog = FileDialog::open_file(path).title("Select a script to edit");
         dialog.open();
@@ -62,7 +63,7 @@ impl Popup
     #[must_use]
     pub fn load() -> Self
     {
-        let path = Some((*SCRIPT_DIR).to_path_buf());
+        let path = Some(script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf()));
         let _ = std::fs::create_dir("user_scripts");
         let mut dialog = FileDialog::open_file(path).title("Select a script to load");
         dialog.open();

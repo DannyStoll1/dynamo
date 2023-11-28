@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 pub mod consts;
+pub mod directories;
 pub mod globals;
 pub mod iter_plane;
 pub mod macros;

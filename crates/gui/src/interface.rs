@@ -1,6 +1,3 @@
-use std::path::PathBuf;
-
-use directories::{ProjectDirs, UserDirs};
 use egui::{Context, CursorIcon, InputState, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
@@ -1070,23 +1067,4 @@ where
         self.show_dialog(ctx);
         self.update_panes();
     }
-}
-
-fn images_dir() -> Option<PathBuf>
-{
-    let user_dirs = UserDirs::new()?;
-    let pictures = user_dirs
-        .picture_dir()
-        .map_or_else(|| user_dirs.home_dir().join("Pictures"), ToOwned::to_owned);
-    let dynamo_images = pictures.join("Dynamo");
-    std::fs::create_dir_all(&dynamo_images).ok()?;
-    Some(dynamo_images)
-}
-
-fn palettes_dir() -> Option<PathBuf>
-{
-    let proj_dirs = ProjectDirs::from("com", "Zero Ideal", "Dynamo")?;
-    let palettes_dir = proj_dirs.data_dir().join("palettes");
-    std::fs::create_dir_all(&palettes_dir).ok()?;
-    Some(palettes_dir)
 }

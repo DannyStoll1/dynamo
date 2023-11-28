@@ -23,6 +23,7 @@ lazy_static = "1.4.0"
 regex = "1.10.2"
 poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"
+directories = "5.0.1"
 
 [features]
 serde = ["dep:serde", "num-complex/serde"]

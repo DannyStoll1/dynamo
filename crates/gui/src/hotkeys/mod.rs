@@ -159,8 +159,9 @@ pub const ANNOTATION_HOTKEYS: [Hotkey; 17] = [
     Hotkey::new(DrawContour(ContourType::InwardRay)).shortcut(SHIFT_R),
     // Bidirectional Ray
     Hotkey::new(DrawContour(ContourType::ExtendRay))
+        .bonus_action(DrawContour(ContourType::InwardRay))
         .shortcut(SHIFT_T)
-        .bonus_action(DrawContour(ContourType::InwardRay)),
+        .hide_in_menu(),
     Hotkey::new(ToggleCritical).shortcut(KEY_P),
     Hotkey::new(ToggleMarked(ActivePane))
         .shortcut(SHIFT_P)
