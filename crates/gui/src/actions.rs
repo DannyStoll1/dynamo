@@ -125,6 +125,9 @@ impl Action
                 ContourType::ExtendRay => {
                     "Extend an external ray outwards from the selection.".to_owned()
                 }
+                ContourType::InwardRay => {
+                    "Try to draw an external ray inwards from the selection.".to_owned()
+                }
             },
             Self::DrawAuxContours => "Draw contours for the multiplier map a dynamical variety.".to_owned(),
             Self::ClearRays => "Clear all external rays on active image.".to_owned(),
@@ -259,6 +262,7 @@ impl Action
                 ContourType::Equipotential => "Equipotential".to_owned(),
                 ContourType::Multiplier(..) => "Multiplier Contour".to_owned(),
                 ContourType::ExtendRay => "Extend Ray".to_owned(),
+                ContourType::InwardRay => "Inward Ray".to_owned(),
             },
             Self::DrawAuxContours => "Multiplier Contours".to_owned(),
             Self::ClearRays => "Clear Rays".to_owned(),

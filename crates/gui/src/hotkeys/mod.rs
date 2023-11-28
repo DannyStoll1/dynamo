@@ -14,6 +14,7 @@ pub struct Hotkey
 {
     pub(super) shortcut: Option<KeyboardShortcut>,
     pub(super) action: Action,
+    pub(super) bonus_action: Option<Action>,
     pub(super) show_in_menu: bool,
     /// Custom action to perform instead of standard one if called from menu
     /// Defaults to `action` if this is set to `None`.
@@ -21,11 +22,48 @@ pub struct Hotkey
 }
 impl Hotkey
 {
-    #[must_use]
-    pub const fn action(&self) -> &Action
+    pub const fn new(action: Action) -> Self
     {
-        &self.action
+        Self {
+            shortcut: None,
+            action,
+            bonus_action: None,
+            show_in_menu: true,
+            menu_action_override: None,
+        }
     }
+
+    #[must_use]
+    pub const fn shortcut(mut self, shortcut: KeyboardShortcut) -> Self
+    {
+        self.shortcut = Some(shortcut);
+        self
+    }
+    #[must_use]
+    pub const fn action(mut self, action: Action) -> Self
+    {
+        self.action = action;
+        self
+    }
+    #[must_use]
+    pub const fn bonus_action(mut self, action: Action) -> Self
+    {
+        self.bonus_action = Some(action);
+        self
+    }
+    #[must_use]
+    pub const fn menu_action_override(mut self, action: Action) -> Self
+    {
+        self.menu_action_override = Some(action);
+        self
+    }
+    #[must_use]
+    pub const fn hide_in_menu(mut self) -> Self
+    {
+        self.show_in_menu = false;
+        self
+    }
+
     #[must_use]
     pub fn menu_action(&self) -> Option<&Action>
     {
@@ -48,437 +86,152 @@ impl Hotkey
 
 use Action::*;
 
-pub static FILE_HOTKEYS: [Hotkey; 6] = [
-    Hotkey {
-        shortcut: Some(CTRL_Q),
-        action: Quit,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_W),
-        action: Close,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_T),
-        action: NewTab,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_S),
-        action: SaveImage(ActivePane),
-        show_in_menu: false,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: None,
-        action: SaveImage(Id(Parent)),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: None,
-        action: SaveImage(Id(Child)),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+pub const FILE_HOTKEYS: [Hotkey; 6] = [
+    Hotkey::new(Quit).shortcut(CTRL_Q),
+    Hotkey::new(Close).shortcut(CTRL_W),
+    Hotkey::new(NewTab).shortcut(CTRL_T),
+    Hotkey::new(SaveImage(ActivePane))
+        .shortcut(CTRL_S)
+        .hide_in_menu(),
+    Hotkey::new(SaveImage(Id(Parent))),
+    Hotkey::new(SaveImage(Id(Child))),
 ];
 
-pub static PALETTE_HOTKEYS: [Hotkey; 9] = [
-    Hotkey {
-        shortcut: Some(CTRL_K),
-        action: SavePalette(ActivePane),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_L),
-        action: LoadPalette(BothPanes),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_B),
-        action: SetPaletteBlack,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_W),
-        action: SetPaletteWhite,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_R),
-        action: RandomizePalette,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_UP),
-        action: ScalePalettePeriod(1.25),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_DOWN),
-        action: ScalePalettePeriod(0.8),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_LEFT),
-        action: ShiftPalettePhase(-0.02),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_RIGHT),
-        action: ShiftPalettePhase(0.02),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+pub const PALETTE_HOTKEYS: [Hotkey; 9] = [
+    Hotkey::new(SavePalette(ActivePane)).shortcut(CTRL_K),
+    Hotkey::new(LoadPalette(BothPanes)).shortcut(CTRL_L),
+    Hotkey::new(SetPaletteBlack).shortcut(KEY_B),
+    Hotkey::new(SetPaletteWhite).shortcut(KEY_W),
+    Hotkey::new(RandomizePalette).shortcut(KEY_R),
+    Hotkey::new(ScalePalettePeriod(1.25)).shortcut(KEY_UP),
+    Hotkey::new(ScalePalettePeriod(0.8)).shortcut(KEY_DOWN),
+    Hotkey::new(ShiftPalettePhase(-0.02)).shortcut(KEY_LEFT),
+    Hotkey::new(ShiftPalettePhase(0.02)).shortcut(KEY_RIGHT),
 ];
 
 seq!(n in 1..=6 {
-pub static CYCLES_HOTKEYS: [Hotkey; 12] = [
+pub const CYCLES_HOTKEYS: [Hotkey; 12] = [
     #(
-        Hotkey {
-            shortcut: Some(CTRL_~n),
-            action: ToggleCycles(Id(Child), n),
-            show_in_menu: true,
-            menu_action_override: None,
-        },
-        Hotkey {
-            shortcut: Some(CTRL_SHIFT_~n),
-            action: ToggleCycles(Id(Parent), n),
-            show_in_menu: false,
-            menu_action_override: None,
-        },
+        Hotkey::new(ToggleCycles(Id(Child), n)).shortcut(CTRL_~n),
+        Hotkey::new(ToggleCycles(Id(Parent), n)).shortcut(CTRL_SHIFT_~n).hide_in_menu(),
     )*
 ];
 });
 
-pub static ANNOTATION_HOTKEYS: [Hotkey; 15] = [
+pub const ANNOTATION_HOTKEYS: [Hotkey; 17] = [
     // External ray
-    Hotkey {
-        shortcut: Some(KEY_E),
-        action: DrawExternalRay {
-            include_orbit: false,
-            select_landing_point: false,
-        },
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawExternalRay {
+        include_orbit: false,
+        select_landing_point: false,
+    })
+    .shortcut(KEY_E),
     // External ray to point
-    Hotkey {
-        shortcut: Some(KEY_Y),
-        action: DrawExternalRay {
-            include_orbit: false,
-            select_landing_point: true,
-        },
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawExternalRay {
+        include_orbit: false,
+        select_landing_point: true,
+    })
+    .shortcut(KEY_Y),
     // External ray to point
-    Hotkey {
-        shortcut: Some(CTRL_X),
-        action: DrawExternalRay {
-            include_orbit: false,
-            select_landing_point: true,
-        },
-        show_in_menu: false,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawExternalRay {
+        include_orbit: false,
+        select_landing_point: true,
+    })
+    .shortcut(CTRL_X)
+    .hide_in_menu(),
     // Ray orbit
-    Hotkey {
-        shortcut: Some(SHIFT_O),
-        action: DrawExternalRay {
-            include_orbit: true,
-            select_landing_point: false,
-        },
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawExternalRay {
+        include_orbit: true,
+        select_landing_point: false,
+    })
+    .shortcut(SHIFT_O),
     // Rays of exact period
-    Hotkey {
-        shortcut: Some(CTRL_E),
-        action: DrawRaysOfPeriod,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawRaysOfPeriod).shortcut(CTRL_E),
     // Equipotential
-    Hotkey {
-        shortcut: Some(KEY_G),
-        action: DrawContour(ContourType::Equipotential),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawContour(ContourType::Equipotential)).shortcut(KEY_G),
     // Multiplier contour
-    Hotkey {
-        shortcut: Some(KEY_M),
-        action: DrawContour(ContourType::multiplier_auto()),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawContour(ContourType::multiplier_auto())).shortcut(KEY_M),
     // Many multiplier contours
-    Hotkey {
-        shortcut: Some(SHIFT_M),
-        action: DrawAuxContours,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawAuxContours).shortcut(SHIFT_M),
     // Extend Ray
-    Hotkey {
-        shortcut: Some(SHIFT_E),
-        action: DrawContour(ContourType::ExtendRay),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_P),
-        action: ToggleCritical,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_P),
-        action: ToggleMarked(ActivePane),
-        show_in_menu: false,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_O),
-        action: DrawOrbit,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_ESC),
-        action: StopFollowing,
-        show_in_menu: false,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_C),
-        action: ClearOrbit,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_C),
-        action: ClearCurves,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(DrawContour(ContourType::ExtendRay)).shortcut(SHIFT_E),
+    // Inward Ray
+    Hotkey::new(DrawContour(ContourType::InwardRay)).shortcut(SHIFT_R),
+    // Bidirectional Ray
+    Hotkey::new(DrawContour(ContourType::ExtendRay))
+        .shortcut(SHIFT_T)
+        .bonus_action(DrawContour(ContourType::InwardRay)),
+    Hotkey::new(ToggleCritical).shortcut(KEY_P),
+    Hotkey::new(ToggleMarked(ActivePane))
+        .shortcut(SHIFT_P)
+        .hide_in_menu(),
+    Hotkey::new(DrawOrbit).shortcut(KEY_O),
+    Hotkey::new(StopFollowing).shortcut(KEY_ESC).hide_in_menu(),
+    Hotkey::new(ClearOrbit).shortcut(KEY_C),
+    Hotkey::new(ClearCurves).shortcut(SHIFT_C),
 ];
 
-pub static SELECTION_HOTKEYS: [Hotkey; 5] = [
-    Hotkey {
-        shortcut: Some(KEY_I),
-        action: ToggleSelectionMarker,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_INSERT),
-        action: EnterCoordinates,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+pub const SELECTION_HOTKEYS: [Hotkey; 5] = [
+    Hotkey::new(ToggleSelectionMarker).shortcut(KEY_I),
+    Hotkey::new(EnterCoordinates).shortcut(KEY_INSERT),
     // Apply map on dynamical plane
-    Hotkey {
-        shortcut: Some(KEY_F),
-        action: MapSelection,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(MapSelection).shortcut(KEY_F),
     // Find nearby periodic point
-    Hotkey {
-        shortcut: Some(CTRL_F),
-        action: FindPeriodicPoint,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_SPACE),
-        action: ResetSelection,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(FindPeriodicPoint).shortcut(CTRL_F),
+    Hotkey::new(ResetSelection).shortcut(SHIFT_SPACE),
 ];
 
-pub static IMAGE_HOTKEYS: [Hotkey; 14] = [
+pub const IMAGE_HOTKEYS: [Hotkey; 14] = [
     // Hotkey {
     //     shortcut: Some(KEY_H),
     //     action: PromptImageHeight,
     //     show_in_menu: true,
     //     menu_action_override: None,
     // },
-    Hotkey {
-        shortcut: Some(KEY_L),
-        action: ToggleLiveMode,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_EQUALS),
-        action: ScaleMaxIter(2.0),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_MINUS),
-        action: ScaleMaxIter(0.5),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_LEFT),
-        action: Pan(-0.01, 0.),
-        show_in_menu: false,
-        menu_action_override: Some(Pan(-0.1, 0.)),
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_RIGHT),
-        action: Pan(0.01, 0.),
-        show_in_menu: false,
-        menu_action_override: Some(Pan(0.1, 0.)),
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_UP),
-        action: Pan(0., 0.01),
-        show_in_menu: false,
-        menu_action_override: Some(Pan(0., 0.1)),
-    },
-    Hotkey {
-        shortcut: Some(SHIFT_DOWN),
-        action: Pan(0., -0.01),
-        show_in_menu: false,
-        menu_action_override: Some(Pan(0., -0.1)),
-    },
-    Hotkey {
-        shortcut: Some(KEY_Z),
-        action: Zoom(0.8),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_Z),
-        action: Zoom(0.125),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_V),
-        action: Zoom(1.25),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_V),
-        action: Zoom(8.),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_SPACE),
-        action: CenterOnSelection,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(CTRL_P),
-        action: CycleActivePlane,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_HOME),
-        action: ResetView,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+    Hotkey::new(ToggleLiveMode).shortcut(KEY_L),
+    Hotkey::new(ScaleMaxIter(2.0)).shortcut(KEY_EQUALS),
+    Hotkey::new(ScaleMaxIter(0.5)).shortcut(KEY_MINUS),
+    Hotkey::new(Pan(-0.01, 0.))
+        .shortcut(SHIFT_LEFT)
+        .hide_in_menu()
+        .menu_action_override(Pan(-0.1, 0.)),
+    Hotkey::new(Pan(0.01, 0.))
+        .shortcut(SHIFT_RIGHT)
+        .hide_in_menu()
+        .menu_action_override(Pan(0.1, 0.)),
+    Hotkey::new(Pan(0., 0.01))
+        .shortcut(SHIFT_UP)
+        .hide_in_menu()
+        .menu_action_override(Pan(0., 0.1)),
+    Hotkey::new(Pan(0., -0.01))
+        .shortcut(SHIFT_DOWN)
+        .hide_in_menu()
+        .menu_action_override(Pan(0., -0.1)),
+    Hotkey::new(Zoom(0.8)).shortcut(KEY_Z),
+    Hotkey::new(Zoom(0.125)).shortcut(CTRL_Z),
+    Hotkey::new(Zoom(1.25)).shortcut(KEY_V),
+    Hotkey::new(Zoom(8.)).shortcut(CTRL_V),
+    Hotkey::new(CenterOnSelection).shortcut(KEY_SPACE),
+    Hotkey::new(CycleActivePlane).shortcut(CTRL_P),
+    Hotkey::new(ResetView).shortcut(KEY_HOME),
 ];
 
-pub static INCOLORING_HOTKEYS: [Hotkey; 8] = [
-    Hotkey {
-        shortcut: Some(KEY_0),
-        action: SetColoring(IncoloringAlgorithm::Solid),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_1),
-        action: SetColoring(IncoloringAlgorithm::Period),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_2),
-        action: SetColoring(IncoloringAlgorithm::PeriodMultiplier),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_3),
-        action: SetColoring(IncoloringAlgorithm::Multiplier),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_4),
-        action: SetColoring(IncoloringAlgorithm::Preperiod),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_5),
-        action: SetColoringInternalPotential,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_6),
-        action: SetColoringPreperiodPeriod,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_7),
-        action: SetColoringPotentialPeriod,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+pub const INCOLORING_HOTKEYS: [Hotkey; 8] = [
+    Hotkey::new(SetColoring(IncoloringAlgorithm::Solid)).shortcut(KEY_0),
+    Hotkey::new(SetColoring(IncoloringAlgorithm::Period)).shortcut(KEY_1),
+    Hotkey::new(SetColoring(IncoloringAlgorithm::PeriodMultiplier)).shortcut(KEY_2),
+    Hotkey::new(SetColoring(IncoloringAlgorithm::Multiplier)).shortcut(KEY_3),
+    Hotkey::new(SetColoring(IncoloringAlgorithm::Preperiod)).shortcut(KEY_4),
+    Hotkey::new(SetColoringInternalPotential).shortcut(KEY_5),
+    Hotkey::new(SetColoringPreperiodPeriod).shortcut(KEY_6),
+    Hotkey::new(SetColoringPotentialPeriod).shortcut(KEY_7),
 ];
 
-pub static OUTCOLORING_HOTKEYS: [Hotkey; 4] = [
-    Hotkey {
-        shortcut: Some(KEY_J),
-        action: ToggleEscapePhaseColoring,
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: Some(KEY_D),
-        action: CycleComputeMode(ActivePane, ChangeBoolean::Toggle),
-        show_in_menu: false,
-        menu_action_override: Some(CycleComputeMode(ActivePane, ChangeBoolean::Enable)),
-    },
-    Hotkey {
-        shortcut: None,
-        action: CycleComputeMode(BothPanes, ChangeBoolean::Disable),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
-    Hotkey {
-        shortcut: None,
-        action: CycleComputeMode(BothPanes, ChangeBoolean::Enable),
-        show_in_menu: true,
-        menu_action_override: None,
-    },
+pub const OUTCOLORING_HOTKEYS: [Hotkey; 4] = [
+    Hotkey::new(ToggleEscapePhaseColoring).shortcut(KEY_J),
+    Hotkey::new(CycleComputeMode(ActivePane, ChangeBoolean::Toggle))
+        .shortcut(KEY_D)
+        .hide_in_menu()
+        .menu_action_override(CycleComputeMode(ActivePane, ChangeBoolean::Enable)),
+    Hotkey::new(CycleComputeMode(BothPanes, ChangeBoolean::Disable)),
+    Hotkey::new(CycleComputeMode(BothPanes, ChangeBoolean::Enable)),
 ];

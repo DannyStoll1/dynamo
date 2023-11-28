@@ -163,6 +163,7 @@ pub const SHIFT_LEFT: KeyboardShortcut = shift!(Key::ArrowLeft);
 pub const SHIFT_RIGHT: KeyboardShortcut = shift!(Key::ArrowRight);
 pub const SHIFT_SPACE: KeyboardShortcut = shift!(Key::Space);
 
+pub const CTRL_SHIFT_E: KeyboardShortcut = ctrl_shift!(Key::E);
 pub const CTRL_SHIFT_0: KeyboardShortcut = ctrl_shift!(Key::Num0);
 pub const CTRL_SHIFT_1: KeyboardShortcut = ctrl_shift!(Key::Num1);
 pub const CTRL_SHIFT_2: KeyboardShortcut = ctrl_shift!(Key::Num2);

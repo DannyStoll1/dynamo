@@ -703,7 +703,10 @@ where
             return;
         }
         for Hotkey {
-            shortcut, action, ..
+            shortcut,
+            action,
+            bonus_action,
+            ..
         } in FILE_HOTKEYS
             .iter()
             .chain(IMAGE_HOTKEYS.iter())
@@ -717,6 +720,9 @@ where
             if let Some(s) = shortcut.as_ref() {
                 if shortcut_used!(ctx, s) {
                     self.process_action(action);
+                    if let Some(bonus_action) = bonus_action {
+                        self.process_action(bonus_action)
+                    }
                 }
             }
         }

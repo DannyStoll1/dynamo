@@ -93,6 +93,7 @@ pub enum ContourType
     Equipotential,
     Multiplier(Option<HashedReal>),
     ExtendRay,
+    InwardRay,
 }
 impl ContourType
 {
@@ -113,7 +114,7 @@ impl ContourType
         match self {
             Self::Equipotential => Color32::YELLOW,
             Self::Multiplier(_) => Color32::from_rgb(255, 160, 122),
-            Self::ExtendRay => Color32::RED, //Color32::from_rgb(127, 127, 127),
+            Self::ExtendRay | Self::InwardRay => Color32::RED, //Color32::from_rgb(127, 127, 127),
         }
     }
 }
@@ -159,6 +160,7 @@ impl ObjectKey for CurveKey
                 }
                 ContourType::Multiplier(_) => plane.aux_contour(Cplx::from(*point)).compute(),
                 ContourType::ExtendRay => plane.extend_ray(Cplx::from(*point)).compute(),
+                ContourType::InwardRay => plane.inward_ray(Cplx::from(*point)).compute(),
             },
         }
     }

@@ -985,16 +985,21 @@ pub trait Equipotential: DynamicalFamily
     /// Compute an equipotential curve through a given point.
     fn equipotential<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 
-    /// Draw a contour for the auxiliary map
+    /// Compute a level curve for the auxiliary map.
     fn aux_contour<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 
-    /// Extend an external ray outwards
+    /// Compute a ray from t0 away from the bifurcation locus
     fn extend_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
+
+    /// Compute a ray from t0 towards from the bifurcation locus
+    fn inward_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 }
 impl<P> Equipotential for P
 where
     P: DynamicalFamily + InfinityFirstReturnMap,
 {
+    /// Equipotential through $t_0$
+    ///
     /// Compute an equipotential by solving the ODE gamma'(t) = i∇G(t),
     /// where G is the exterior Green's function.
     fn equipotential<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
@@ -1010,18 +1015,43 @@ where
         )
     }
 
-    /// Compute an equipotential by solving the ODE gamma'(t) = ∇G(t),
+    /// Outward external ray from $t_0$
+    ///
+    /// Compute an equipotential away from the bifurcation locus
+    /// by solving the ODE gamma'(t) = -∇G(t),
     /// where G is the exterior Green's function.
     fn extend_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
     {
         Box::new(
             IntegralCurveParams::default()
                 .step_size(1e-2)
-                .max_steps(50000)
+                .max_steps(20000)
                 .escape_radius(500.)
                 .convergence_radius(self.periodicity_tolerance())
                 .contour(t0, |t| {
                     self.external_potential_d(t).map(|(g, dg)| g / dg.conj())
+                }),
+        )
+    }
+
+    /// Inward ray from $t_0$
+    ///
+    /// Compute an equipotential towards the bifurcation locus
+    /// by solving the ODE gamma'(t) = ∇G(t),
+    /// where G is the exterior Green's function.
+    ///
+    /// The ODE is stiff in this direction, and this method is likely
+    /// to produce inaccurate results near the bifurcation locus.
+    fn inward_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>
+    {
+        Box::new(
+            IntegralCurveParams::default()
+                .step_size(1e-2)
+                .max_steps(20000)
+                .escape_radius(500.)
+                .convergence_radius(self.periodicity_tolerance())
+                .contour(t0, |t| {
+                    self.external_potential_d(t).map(|(g, dg)| -g / dg.conj())
                 }),
         )
     }
