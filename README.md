@@ -1,5 +1,3 @@
-##[Check out the web demo here](dannystoll1.github.io/dynamo)]
-
 ## About
 
 A powerful tool for studying complex dynamics. Inspired heavily by the following projects:
@@ -9,6 +7,12 @@ A powerful tool for studying complex dynamics. Inspired heavily by the following
 - Matt Noonan's [FractalStream](https://pi.math.cornell.edu/~noonan/fstream.html)
 
 Dynamo hopes to combine the strengths of these excellent tools.
+
+## Check out the [web demo](https://dannystoll1.github.io/dynamo/)
+
+The web demo linked above is the most convenient way to use Dynamo,
+but it is slower and is missing some features,
+most notably the ability to save images.
 
 ## Features
 
