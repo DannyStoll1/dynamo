@@ -290,25 +290,6 @@ impl FractalTab
         // });
     }
 
-    fn change_fractal<P, J>(&mut self, create_plane: fn() -> P, create_child: fn(P) -> J)
-    where
-        P: Displayable + HasChild<J> + Clone + 'static,
-        J: Displayable + DynamicalFamily + Clone + 'static,
-    {
-        use dynamo_gui::interface::PanePair;
-        let image_height = self.interface.get_image_height();
-        let max_iters = 1024;
-
-        let parent_plane = create_plane()
-            .with_max_iter(max_iters)
-            .with_res_y(image_height);
-        let child_plane = create_child(parent_plane.clone());
-
-        let mut interface = MainInterface::new(parent_plane, child_plane, image_height);
-        interface.update_panes();
-        self.interface = Box::new(interface);
-    }
-
     #[cfg(feature = "scripting")]
     fn load_user_script<P: AsRef<Path>>(&mut self, script_path: P) -> Result<(), ScriptError>
     {

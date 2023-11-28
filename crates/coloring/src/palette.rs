@@ -2,7 +2,7 @@ use crate::types::{FromCartesian, FromPolar, Lchab, RgbLinear, Xyz};
 
 use super::Hsv;
 use dynamo_common::consts::TAU;
-use dynamo_common::types::IterCount;
+use dynamo_common::types::IterCountSmooth;
 use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
 use egui::Color32;
 use rand::prelude::*;
@@ -43,7 +43,7 @@ impl Sinusoid
             degree: 1,
         }
     }
-    fn get_value_f64(&self, potential: IterCount) -> f64
+    fn get_value_f64(&self, potential: IterCountSmooth) -> f64
     {
         let theta = TAU * (potential / self.period - self.phase);
 
@@ -264,7 +264,7 @@ impl Palette
     }
 
     #[must_use]
-    pub fn map<T: FromCartesian>(&self, t: IterCount) -> T
+    pub fn map<T: FromCartesian>(&self, t: IterCountSmooth) -> T
     {
         let v0 = self.color_map_r.get_value_f64(t) as f32;
         let v1 = self.color_map_g.get_value_f64(t) as f32;
@@ -289,7 +289,7 @@ impl Palette
     #[must_use]
     pub fn map_phase<T: FromCartesian + FromPolar>(
         &self,
-        t: IterCount,
+        t: IterCountSmooth,
         phase: Period,
         esc_period: Period,
     ) -> T

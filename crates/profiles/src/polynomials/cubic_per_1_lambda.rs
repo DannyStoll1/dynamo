@@ -662,7 +662,7 @@ impl EscapeEncoding for CubicPer1_1
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCount);
+        let potential = f64::from(iters) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -1478,7 +1478,7 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         let v = z.norm_sqr().log2();
         let delta = 0.5 * a.norm().log2();
         let residual = ((v + delta) / (u + delta)).log(3.);
-        let potential = IterCount::from(iters) - IterCount::from(residual);
+        let potential = IterCountSmooth::from(iters) - IterCountSmooth::from(residual);
         PointInfo::Escaping {
             potential,
             phase: None,

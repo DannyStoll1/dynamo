@@ -70,14 +70,14 @@ impl IncoloringAlgorithm
                 palette.period_coloring.map(hue_id, luminosity_modifier)
             }
             Self::Preperiod => {
-                let per = IterCount::from(point_info.period);
-                let val = IterCount::from(point_info.preperiod);
+                let per = IterCountSmooth::from(point_info.period);
+                let val = IterCountSmooth::from(point_info.preperiod);
 
                 palette.map((val * val / per).ln())
             }
             Self::PreperiodPeriod { fill_rate } => {
-                let per = IterCount::from(point_info.period);
-                let val = IterCount::from(point_info.preperiod);
+                let per = IterCountSmooth::from(point_info.period);
+                let val = IterCountSmooth::from(point_info.preperiod);
 
                 let potential = (val * fill_rate / per).tanh();
                 palette.period_coloring.map(per as f32, potential as f32)
@@ -95,8 +95,8 @@ impl IncoloringAlgorithm
                 crit_degree,
                 fill_rate,
             } => {
-                let n = IterCount::from(point_info.period);
-                let k = IterCount::from(point_info.preperiod);
+                let n = IterCountSmooth::from(point_info.period);
+                let k = IterCountSmooth::from(point_info.preperiod);
 
                 let mult_norm = point_info.multiplier.norm();
 
@@ -137,24 +137,24 @@ impl IncoloringAlgorithm
     }
 
     fn internal_potential(
-        err: IterCount,
-        tol: IterCount,
-        mult_norm: IterCount,
+        err: IterCountSmooth,
+        tol: IterCountSmooth,
+        mult_norm: IterCountSmooth,
         crit_degree: f64,
-    ) -> IterCount
+    ) -> IterCountSmooth
     {
         // Superattracting case
         // Assumes the first return map has local degree 2.
         // This could be improved to handle higher order critical points,
         // but we would need access to more information to estimate the order
         let potential = if mult_norm <= 1e-10 {
-            2. * (err.log(tol)).log(crit_degree as IterCount) as IterCount
+            2. * (err.log(tol)).log(crit_degree as IterCountSmooth) as IterCountSmooth
         }
         // Parabolic case
         else if (1. - mult_norm).abs() <= 1e-5 {
             err / tol
         } else {
-            (err / tol).log(mult_norm) as IterCount
+            (err / tol).log(mult_norm) as IterCountSmooth
         };
 
         if !potential.is_finite() {
@@ -165,14 +165,14 @@ impl IncoloringAlgorithm
 
     fn relative_potential<D>(
         point_info: &PointInfoPeriodic<D>,
-        tol: IterCount,
+        tol: IterCountSmooth,
         crit_degree: f64,
-    ) -> IterCount
+    ) -> IterCountSmooth
     where
         D: Polar<Real>,
     {
-        let n = IterCount::from(point_info.period);
-        let k = IterCount::from(point_info.preperiod);
+        let n = IterCountSmooth::from(point_info.period);
+        let k = IterCountSmooth::from(point_info.preperiod);
 
         let mult_norm = point_info.multiplier.norm();
 
@@ -208,7 +208,7 @@ impl IncoloringAlgorithm
             }
             Self::InternalPotential { .. } => palette.map(rescaled_potential),
             Self::PotentialAndPeriod { fill_rate, .. } => {
-                let n = IterCount::from(info.period);
+                let n = IterCountSmooth::from(info.period);
 
                 let coloring_rate =
                     Self::multiplier_coloring_rate(info.multiplier.norm(), *fill_rate);

@@ -221,7 +221,7 @@ impl EscapeEncoding for QuadRatPer5
         let v = z.norm_sqr().log2();
         let delta = top_coeff(*a, *b).norm_sqr().log2();
         let residual = ((u + delta) / (v + delta)).log2();
-        let potential = (residual as IterCount).mul_add(5., f64::from(iters));
+        let potential = (residual as IterCountSmooth).mul_add(5., f64::from(iters));
         PointInfo::Escaping {
             potential,
             phase: Some(iters % 5),

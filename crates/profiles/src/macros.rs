@@ -170,7 +170,7 @@ macro_rules! degree_impl_transcendental {
                 let u = slog(self.escape_radius());
                 let v = slog(z.norm_sqr());
                 let residual = v - u;
-                let potential = f64::from(iters) - (residual as IterCount);
+                let potential = f64::from(iters) - (residual as IterCountSmooth);
                 PointInfo::Escaping {
                     potential,
                     phase: None,

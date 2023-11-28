@@ -1,5 +1,5 @@
 use crate::globals::DISPLAY_PREC;
-use crate::types::{IterCount, Period, Real};
+use crate::types::{IterCountSmooth, Period, Real};
 use std::fmt::Display;
 
 #[cfg(feature = "serde")]
@@ -11,7 +11,7 @@ pub enum PointInfo<D>
 {
     Escaping
     {
-        potential: IterCount,
+        potential: IterCountSmooth,
         phase: Option<Period>,
     },
     Periodic(PointInfoPeriodic<D>),
@@ -66,7 +66,7 @@ pub struct PointInfoKnownPotential<D>
 {
     pub period: Period,
     pub multiplier: D,
-    pub potential: IterCount,
+    pub potential: IterCountSmooth,
 }
 impl<D> std::fmt::Display for PointInfoKnownPotential<D>
 where

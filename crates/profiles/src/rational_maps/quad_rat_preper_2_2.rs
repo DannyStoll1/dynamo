@@ -129,7 +129,7 @@ impl EscapeEncoding for QuadRatPreper22
         let u = self.escape_radius().log(expansion_rate);
         let v = z.norm_sqr().log(expansion_rate);
         let residual = u - v;
-        let potential = 2.0f64.mul_add(residual as IterCount, IterCount::from(iters));
+        let potential = 2.0f64.mul_add(residual as IterCountSmooth, IterCountSmooth::from(iters));
         PointInfo::Escaping {
             potential,
             phase: Some(iters % 2),

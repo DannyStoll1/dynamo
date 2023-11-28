@@ -814,8 +814,11 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
         let u = self.escape_radius().ln();
         let v = z.norm_sqr().ln();
         let q = self.escape_coeff(c).norm().ln();
-        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
-        residual.mul_add(self.escaping_period() as IterCount, iters as IterCount)
+        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCountSmooth;
+        residual.mul_add(
+            self.escaping_period() as IterCountSmooth,
+            iters as IterCountSmooth,
+        )
     }
 
     /// External Green's function at a point
@@ -824,35 +827,6 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
         let mut orbit = Potential::new(self);
         orbit.reset(t);
         orbit.run_until_complete()
-        // if t.is_nan() {
-        //     return None;
-        // }
-        //
-        // let (c, dc_dt) = self.param_map_d(t);
-        // let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
-        // dz_dt += dz_dc * dc_dt;
-        //
-        // for _ in 0..self.escaping_phase() {
-        //     let (f, df_dz, df_dc) = self.gradient(z, &c);
-        //     dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-        //     z = f;
-        // }
-        // for iter in 0..self.max_iter() {
-        //     for _j in 0..self.escaping_period() {
-        //         if z.norm_sqr() > self.escape_radius() {
-        //             let rescale = self.degree_real().powi(-(iter as i32));
-        //             let z = z.into();
-        //             let d_green = (dz_dt.into() / z).conj() * rescale;
-        //             let green = z.norm().ln() * rescale;
-        //             return Some((green, d_green));
-        //         }
-        //         let (f, df_dz, df_dc) = self.gradient(z, &c);
-        //         dz_dt = df_dz * dz_dt + df_dc * dc_dt;
-        //         z = f;
-        //     }
-        // }
-        //
-        // None
     }
 
     fn external_distance_estimate(&self, t: Cplx) -> Option<Real>
@@ -1111,7 +1085,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: IterCount::from(iters).exp(),
+                potential: IterCountSmooth::from(iters).exp(),
                 phase: None,
             };
         }

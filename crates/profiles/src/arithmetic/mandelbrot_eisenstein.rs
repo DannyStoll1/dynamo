@@ -166,8 +166,8 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let q = self.escape_coeff(c).norm().log2();
-        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCount;
-        let potential = residual.mul_add(self.escaping_period() as IterCount, iters as IterCount);
+        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCountSmooth;
+        let potential = residual.mul_add(self.escaping_period() as IterCountSmooth, iters as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,

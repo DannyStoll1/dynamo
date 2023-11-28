@@ -1,11 +1,21 @@
 use std::f64::consts::LN_2;
 
 use super::{EscapeResult, Orbit};
-use crate::dynamics::DynamicalFamily;
+use crate::dynamics::InfinityFirstReturnMap;
 use dynamo_common::prelude::*;
 use num_traits::One;
 
-pub struct Potential<'a, P: DynamicalFamily + ?Sized>
+/// An orbit that tracks the gradient of f in order to compute the Green's function and its
+/// derivative at a poin.
+///
+/// Example usage:
+///
+/// ```
+/// let mandelbrot = dynamo_profiles::Mandelbrot::new();
+/// let orbit = Potential::new(family).init(Cplx::new(-0.75, 0.001));
+/// let (green, d_green) = orbit.run_until_complete()?;
+/// ```
+pub struct Potential<'a, P: InfinityFirstReturnMap + ?Sized>
 {
     family: &'a P,
     periodicity_tolerance: Real,
@@ -22,7 +32,7 @@ pub struct Potential<'a, P: DynamicalFamily + ?Sized>
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
 }
 
-impl<'a, P: DynamicalFamily + ?Sized> Potential<'a, P>
+impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
 {
     pub fn new(family: &'a P) -> Self
     {
@@ -46,7 +56,7 @@ impl<'a, P: DynamicalFamily + ?Sized> Potential<'a, P>
     }
 
     #[must_use]
-    fn init(mut self, selection: Cplx) -> Self
+    pub fn init(mut self, selection: Cplx) -> Self
     {
         self.reset(selection);
         self
@@ -124,25 +134,35 @@ impl<'a, P: DynamicalFamily + ?Sized> Potential<'a, P>
         None
     }
 
+    /// Logarithm of the Koenigs coordinate, together with its gradient
     fn periodic_koenigs_d(&mut self, period: Period, mult_norm: Real) -> Option<(Real, Cplx)>
     {
-        let z = self.z_fast.clone();
-        let dz_dt = self.dz_dt_fast.into();
+        self.reset(self.selection);
         for _ in 0..period {
             self.update_fast();
         }
+        while self.z_fast.dist_sqr(self.z_slow) > self.periodicity_tolerance {
+            self.update_slow();
+            self.update_fast();
+            self.iter += 1;
+            if self.iter == self.family.max_iter() {
+                return None;
+            }
+        }
 
-        let err: Cplx = (self.z_fast - z).into() / self.periodicity_tolerance;
-        let dz_dt_final = self.dz_dt_fast.into();
-        let derr_dt = (dz_dt_final - dz_dt) / self.periodicity_tolerance;
+        let err = (self.z_fast - self.z_slow).into();
+        let derr_dt = (self.dz_dt_fast - self.dz_dt_slow).into();
 
-        let mult_norm_log = -mult_norm.ln();
-        Some((
-            err.norm().ln() / mult_norm_log,
-            -(derr_dt / err).conj() / mult_norm_log,
-        ))
+        // err = λ^n ϕ
+        // ϕ = 1/λ^n err
+        // log ϕ = log(err) - n log(λ)
+        let log_phi = err.norm_sqr().ln() - (self.iter as Real) * mult_norm.ln();
+
+        Some((log_phi, 2.0 * (derr_dt / err).conj()))
     }
 
+    /// Logarithm of the Green's function, together with its gradient,
+    /// for bounded orbits
     fn periodic_bottcher_d(&mut self, period: Period) -> Option<(Real, Cplx)>
     {
         self.reset(self.selection);
@@ -155,20 +175,36 @@ impl<'a, P: DynamicalFamily + ?Sized> Potential<'a, P>
             self.iter += 1;
         }
 
-        let err: Cplx = (self.z_fast - self.z_slow).into();
-        let dz_dt_fast = self.dz_dt_fast.into();
-        let dz_dt_slow = self.dz_dt_slow.into();
-        let derr_dt = dz_dt_fast - dz_dt_slow;
+        let err = (self.z_fast - self.z_slow).into();
+        let derr_dt = (self.dz_dt_fast - self.dz_dt_slow).into();
 
         let norm_err = err.norm_sqr();
-        let log_norm_err = norm_err.ln();
+        let norm_err_log = norm_err.ln();
 
-        let phi = (log_norm_err / self.log_tol).ln() + (self.iter as Real) * LN_2;
-        let grad_phi = err * (derr_dt / (log_norm_err * norm_err)).conj();
+        let phi = (norm_err_log / self.log_tol).ln() + (self.iter as Real) * LN_2;
+        let grad_phi = 2.0 * err * (derr_dt / (norm_err_log * norm_err)).conj();
+        Some((phi, grad_phi))
+    }
+
+    /// Logarithm of the Green's function, together with its gradient,
+    /// for unbounded orbits
+    fn external_bottcher_d(&mut self, iters: impl Into<Real>) -> Option<(Real, Cplx)>
+    {
+        let log_dn = iters.into() * self.family.degree_real().ln();
+
+        let z: Cplx = self.z_fast.clone().into();
+        let dz_dt: Cplx = self.dz_dt_fast.into();
+
+        let norm_z = z.norm_sqr();
+        let norm_z_log = norm_z.ln();
+
+        let phi = log_dn - norm_z_log.ln() * self.family.escaping_period() as Real;
+        let grad_phi = -2.0 * z * (dz_dt / (norm_z_log * norm_z)).conj();
+
         Some((phi, grad_phi))
     }
 }
-impl<'a, P: DynamicalFamily + ?Sized> Orbit for Potential<'a, P>
+impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
 {
     type Outcome = Option<(Real, Cplx)>;
 
@@ -207,18 +243,11 @@ impl<'a, P: DynamicalFamily + ?Sized> Orbit for Potential<'a, P>
         let state = self.state.as_ref()?;
 
         match state {
-            EscapeResult::Escaped { iters, final_value } => {
-                let rescale = 2.0f64.powi(-(*iters as i32));
-                let z: Cplx = final_value.clone().into();
-                let dz_dt: Cplx = self.dz_dt_fast.into();
-                let d_green = (dz_dt / z).conj() * rescale;
-                let green = z.norm().ln() * rescale;
-                return Some((green, d_green));
-            }
+            EscapeResult::Escaped { iters, .. } => self.external_bottcher_d(*iters),
             EscapeResult::Unknown => None,
             EscapeResult::Bounded(..) => None,
             EscapeResult::Periodic { info, .. } => {
-                let mult_norm = info.multiplier.into().norm();
+                let mult_norm = info.multiplier.into().norm_sqr();
                 let period = info.period;
 
                 if mult_norm <= 1e-10 {

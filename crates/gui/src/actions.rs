@@ -1,6 +1,6 @@
 use crate::{marked_points::ContourType, pane::id::*};
 use dynamo_color::{IncoloringAlgorithm, Palette};
-use dynamo_common::types::{IterCount, Period};
+use dynamo_common::types::{IterCountSmooth, Period};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -49,7 +49,7 @@ pub enum Action
     Pan(f64, f64),
     Zoom(f64),
     CenterOnSelection,
-    ScaleMaxIter(IterCount),
+    ScaleMaxIter(IterCountSmooth),
     // Coloring
     RandomizePalette,
     SetPalette(Palette),

@@ -101,7 +101,7 @@ impl EscapeEncoding for Biquadratic
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCount);
+        let potential = f64::from(iters) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -393,7 +393,7 @@ impl EscapeEncoding for BiquadraticMult
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
+        let potential = f64::from(iters) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -540,7 +540,7 @@ impl EscapeEncoding for BiquadraticMultParam
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
+        let potential = f64::from(iters) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -690,7 +690,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCount);
+        let potential = f64::from(iters) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -903,7 +903,7 @@ impl EscapeEncoding for BiquadraticMultSection
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCount);
+        let potential = f64::from(iters) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,

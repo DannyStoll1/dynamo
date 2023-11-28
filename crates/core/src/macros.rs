@@ -213,7 +213,7 @@ macro_rules! basic_escape_encoding {
             let u = self.escape_radius().ln();
             let v = z.norm_sqr().ln();
             let residual = (v / u).log($degree);
-            let potential = IterCount::from(iters) - IterCount::from(residual);
+            let potential = IterCountSmooth::from(iters) - IterCountSmooth::from(residual);
             PointInfo::Escaping {
                 potential,
                 phase: None,
@@ -230,7 +230,7 @@ macro_rules! basic_escape_encoding {
         {
             if z.is_nan() {
                 return PointInfo::Escaping {
-                    potential: IterCount::from(iters - $period),
+                    potential: IterCountSmooth::from(iters - $period),
                     phase: Some(iters % $period),
                 };
             }
@@ -238,8 +238,10 @@ macro_rules! basic_escape_encoding {
             let u = self.escape_radius().ln();
             let v = z.norm_sqr().ln();
             let residual = (v / u).log2();
-            let potential =
-                ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
+            let potential = ($period as IterCountSmooth).mul_add(
+                -IterCountSmooth::from(residual),
+                IterCountSmooth::from(iters),
+            );
             PointInfo::Escaping {
                 potential,
                 phase: Some(iters % $period),
@@ -256,7 +258,7 @@ macro_rules! basic_escape_encoding {
         {
             if z.is_nan() {
                 return PointInfo::Escaping {
-                    potential: IterCount::from(iters - $period),
+                    potential: IterCountSmooth::from(iters - $period),
                     phase: Some(iters % $period),
                 };
             }
@@ -264,8 +266,10 @@ macro_rules! basic_escape_encoding {
             let u = self.escape_radius().ln();
             let v = z.norm_sqr().ln();
             let residual = (v / u).log($degree);
-            let potential =
-                ($period as IterCount).mul_add(-IterCount::from(residual), IterCount::from(iters));
+            let potential = ($period as IterCountSmooth).mul_add(
+                -IterCountSmooth::from(residual),
+                IterCountSmooth::from(iters),
+            );
             PointInfo::Escaping {
                 potential,
                 phase: Some(iters % $period),
