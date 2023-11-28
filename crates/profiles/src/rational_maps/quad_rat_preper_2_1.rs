@@ -8,7 +8,7 @@ pub struct QuadRatPreper21
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatPreper21
@@ -150,14 +150,14 @@ impl EscapeEncoding for QuadRatPreper21
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Cplx,
         base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters - 1),
+                potential: (iters - 1) as IterCountSmooth,
                 phase: None,
             };
         }
@@ -166,7 +166,7 @@ impl EscapeEncoding for QuadRatPreper21
         let u = self.escape_radius().log(expansion_rate);
         let v = z.norm_sqr().log(expansion_rate);
         let residual = u - v;
-        let potential = IterCountSmooth::from(iters) + (residual as IterCountSmooth);
+        let potential = (iters as IterCountSmooth) + (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,

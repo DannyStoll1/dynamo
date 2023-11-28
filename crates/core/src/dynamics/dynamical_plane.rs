@@ -4,9 +4,9 @@ use crate::primitive_types::*;
 pub trait DynamicalPlane {
     fn point_grid(&self) -> PointGrid;
 
-    fn stop_condition(&self, iter: Period, z: ComplexNum) -> EscapeState;
+    fn stop_condition(&self, iter: IterCount, z: ComplexNum) -> EscapeState;
 
-    fn check_periodicity(&self, iter: Period, z0: ComplexNum, z1: ComplexNum) -> EscapeState;
+    fn check_periodicity(&self, iter: IterCount, z0: ComplexNum, z1: ComplexNum) -> EscapeState;
 
     fn param_map(&self, z: ComplexNum) -> ComplexNum {
         z

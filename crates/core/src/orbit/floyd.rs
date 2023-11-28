@@ -11,7 +11,7 @@ pub struct CycleDetected<'a, P: DynamicalFamily>
     pub z_init: P::Var,
     pub z_slow: P::Var,
     pub z_fast: P::Var,
-    pub iter: Period,
+    pub iter: IterCount,
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
     running: bool,
 }

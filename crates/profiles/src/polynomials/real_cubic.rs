@@ -7,7 +7,7 @@ pub struct RealCubicRealCrit
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl RealCubicRealCrit
@@ -90,7 +90,7 @@ pub struct RealCubicImagCrit
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl RealCubicImagCrit

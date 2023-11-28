@@ -7,7 +7,7 @@ pub struct NewtonCubic
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl NewtonCubic

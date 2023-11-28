@@ -625,7 +625,7 @@ where
     fn scale_max_iter(&mut self, factor: f64)
     {
         let iters = self.plane.max_iter_mut();
-        *iters = ((*iters as f64) * factor) as Period;
+        *iters = ((*iters as f64) * factor) as IterCount;
         self.schedule_recompute();
         self.schedule_redraw();
     }

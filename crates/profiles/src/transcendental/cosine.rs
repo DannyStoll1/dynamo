@@ -9,7 +9,7 @@ pub struct CosineAdd
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl CosineAdd
@@ -61,7 +61,7 @@ impl DynamicalFamily for CosineAdd
         &self,
         z: Self::Var,
         _c: &Self::Param,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         if z.im.abs() > 350. {
@@ -96,7 +96,7 @@ pub struct Cosine
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl Cosine
@@ -149,7 +149,7 @@ impl DynamicalFamily for Cosine
         &self,
         z: Self::Var,
         _c: &Self::Param,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         if z.im.abs() > 350. {
@@ -174,7 +174,7 @@ pub struct SineWander
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl SineWander
@@ -226,7 +226,7 @@ impl DynamicalFamily for SineWander
         &self,
         z: Self::Var,
         _c: &Self::Param,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         if z.im.abs() > 350. {
@@ -320,7 +320,7 @@ pub struct CoshNewton
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl CoshNewton

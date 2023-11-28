@@ -114,12 +114,12 @@ pub trait DynamicalFamily: Sync + Send
         self
     }
 
-    fn max_iter(&self) -> Period;
-    fn max_iter_mut(&mut self) -> &mut Period;
-    fn set_max_iter(&mut self, new_max_iter: Period);
+    fn max_iter(&self) -> IterCount;
+    fn max_iter_mut(&mut self) -> &mut IterCount;
+    fn set_max_iter(&mut self, new_max_iter: IterCount);
 
     #[must_use]
-    fn with_max_iter(self, max_iter: Period) -> Self;
+    fn with_max_iter(self, max_iter: IterCount) -> Self;
 
     fn compute_mode(&self) -> ComputeMode;
     fn compute_mode_mut(&mut self) -> &mut ComputeMode;
@@ -178,7 +178,7 @@ pub trait DynamicalFamily: Sync + Send
     /// For such families, it is recommended to set `min_iter` to some constant fraction of
     /// `self.max_iter()`.
     #[inline]
-    fn min_iter(&self) -> Period
+    fn min_iter(&self) -> IterCount
     {
         0
     }
@@ -199,7 +199,7 @@ pub trait DynamicalFamily: Sync + Send
         &self,
         z: Self::Var,
         _c: &Self::Param,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         let r = z.norm_sqr();
@@ -218,7 +218,7 @@ pub trait DynamicalFamily: Sync + Send
         &self,
         z: Self::Var,
         c: &Self::Param,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         if iter < self.min_iter() {
@@ -569,7 +569,7 @@ pub trait FamilyDefaults: DynamicalFamily + InfinityFirstReturnMap
 pub trait HasJulia: DynamicalFamily + InfinityFirstReturnMap
 {
     #[inline]
-    fn default_max_iter_child(&self) -> Period
+    fn default_max_iter_child(&self) -> IterCount
     {
         128
     }
@@ -809,7 +809,7 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
     }
 
     /// Evaluate Green's function given the escape time and final value
-    fn smooth_iter_count(&self, iters: Period, z: Self::Var, c: &Self::Param) -> Real
+    fn smooth_iter_count(&self, iters: IterCount, z: Self::Var, c: &Self::Param) -> Real
     {
         let u = self.escape_radius().ln();
         let v = z.norm_sqr().ln();
@@ -1078,14 +1078,14 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
     /// where E is the escape radius, D is the escaping degree, and G is the Green's function.
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Self::Var,
         c: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: IterCountSmooth::from(iters).exp(),
+                potential: (iters as IterCountSmooth).exp(),
                 phase: None,
             };
         }

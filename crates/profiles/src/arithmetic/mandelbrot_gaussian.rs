@@ -10,7 +10,7 @@ pub struct GaussianMandel<const A: i64, const B: i64>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     cache: Cache<(GInt, GInt), PointInfo<GInt>>,
 }
 
@@ -153,11 +153,11 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
         info
     }
 
-    fn encode_escaping_point(&self, iters: Period, z: GInt, c: &GInt) -> PointInfo<GInt>
+    fn encode_escaping_point(&self, iters: IterCount, z: GInt, c: &GInt) -> PointInfo<GInt>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: Real::from(iters) - 1.,
+                potential: (iters - 1) as IterCountSmooth,
                 phase: None,
             };
         }

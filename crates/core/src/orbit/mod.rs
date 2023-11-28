@@ -21,7 +21,7 @@ pub enum EscapeResult<V, D>
 {
     Escaped
     {
-        iters: Period,
+        iters: IterCount,
         final_value: V,
     },
     Periodic

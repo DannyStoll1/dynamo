@@ -108,7 +108,7 @@ impl Transpiler
             "{derives}\n\
             pub struct UserPlane {{\n\
                 point_grid: PointGrid,\n\
-                max_iter: Period,\n\
+                max_iter: IterCount,\n\
                 compute_mode: ComputeMode,\n\
             }}\n\
             impl UserPlane {{\n\

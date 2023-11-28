@@ -29,23 +29,23 @@ impl DynamicalFamily for QuadRatPer2Lambda
     type Deriv = Cplx;
     type MetaParam = Cplx;
 
-    fn max_iter(&self) -> Period
+    fn max_iter(&self) -> IterCount
     {
         self.general_plane.max_iter
     }
 
-    fn max_iter_mut(&mut self) -> &mut Period
+    fn max_iter_mut(&mut self) -> &mut IterCount
     {
         &mut self.general_plane.max_iter
     }
 
-    fn set_max_iter(&mut self, new_max_iter: Period)
+    fn set_max_iter(&mut self, new_max_iter: IterCount)
     {
         self.general_plane.max_iter = new_max_iter;
     }
 
     #[must_use]
-    fn with_max_iter(mut self, max_iter: Period) -> Self
+    fn with_max_iter(mut self, max_iter: IterCount) -> Self
     {
         self.general_plane.max_iter = max_iter;
         self
@@ -160,7 +160,7 @@ pub struct QuadRatPer2LambdaParam
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatPer2LambdaParam

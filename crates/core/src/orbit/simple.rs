@@ -9,10 +9,10 @@ where
 {
     f: F,
     param: P,
-    max_iter: Period,
+    max_iter: IterCount,
     escape_radius: Real,
     pub z: V,
-    pub iter: Period,
+    pub iter: IterCount,
     pub state: Option<EscapeResult<V, V>>,
 }
 
@@ -21,7 +21,7 @@ where
     F: Fn(V, &P) -> V,
     V: Norm<Real> + MaybeNan,
 {
-    pub const fn new(f: F, z: V, param: P, max_iter: Period, escape_radius: Real) -> Self
+    pub const fn new(f: F, z: V, param: P, max_iter: IterCount, escape_radius: Real) -> Self
     {
         Self {
             f,

@@ -10,7 +10,7 @@ pub struct RiemannXi
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 impl RiemannXi
 {
@@ -103,7 +103,7 @@ pub struct RiemannXiNewton
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     param: Cplx,
 }
 impl RiemannXiNewton

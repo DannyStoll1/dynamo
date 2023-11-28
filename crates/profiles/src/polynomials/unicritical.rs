@@ -8,7 +8,7 @@ pub struct Unicritical<const D: i32>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl<const D: i32> Unicritical<D>

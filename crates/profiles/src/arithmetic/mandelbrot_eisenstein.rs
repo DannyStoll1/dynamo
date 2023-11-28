@@ -10,7 +10,7 @@ pub struct EisensteinMandel<const A: i64, const B: i64>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     cache: Cache<(EInt, EInt), PointInfo<EInt>>,
 }
 
@@ -154,11 +154,11 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         info
     }
 
-    fn encode_escaping_point(&self, iters: Period, z: EInt, c: &EInt) -> PointInfo<EInt>
+    fn encode_escaping_point(&self, iters: IterCount, z: EInt, c: &EInt) -> PointInfo<EInt>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: Real::from(iters) - 1.,
+                potential: (iters - 1) as IterCountSmooth,
                 phase: None,
             };
         }
@@ -167,7 +167,10 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         let v = z.norm_sqr().log2();
         let q = self.escape_coeff(c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCountSmooth;
-        let potential = residual.mul_add(self.escaping_period() as IterCountSmooth, iters as IterCountSmooth);
+        let potential = residual.mul_add(
+            self.escaping_period() as IterCountSmooth,
+            iters as IterCountSmooth,
+        );
         PointInfo::Escaping {
             potential,
             phase: None,

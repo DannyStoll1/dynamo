@@ -11,7 +11,7 @@ pub struct MinsikHanPhi<const D: i32>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl<const D: i32> MinsikHanPhi<D>
@@ -21,7 +21,7 @@ impl<const D: i32> MinsikHanPhi<D>
     const DEFAULT_BOUNDS: Bounds = Bounds::centered_square(12.);
 
     #[must_use]
-    pub const fn new(point_grid: PointGrid, max_iter: Period) -> Self
+    pub const fn new(point_grid: PointGrid, max_iter: IterCount) -> Self
     {
         Self {
             point_grid,

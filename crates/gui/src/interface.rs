@@ -721,7 +721,7 @@ where
                 if shortcut_used!(ctx, s) {
                     self.process_action(action);
                     if let Some(bonus_action) = bonus_action {
-                        self.process_action(bonus_action)
+                        self.process_action(bonus_action);
                     }
                 }
             }

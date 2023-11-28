@@ -49,7 +49,7 @@ pub struct QuadRatPer5
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 impl QuadRatPer5
 {
@@ -205,15 +205,16 @@ impl EscapeEncoding for QuadRatPer5
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Cplx,
         CplxPair { a, b }: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
+        let phase = Some((iters % 5) as Period);
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 5.,
-                phase: Some(iters % 5),
+                potential: (iters as f64) - 5.,
+                phase,
             };
         }
 
@@ -221,11 +222,8 @@ impl EscapeEncoding for QuadRatPer5
         let v = z.norm_sqr().log2();
         let delta = top_coeff(*a, *b).norm_sqr().log2();
         let residual = ((u + delta) / (v + delta)).log2();
-        let potential = (residual as IterCountSmooth).mul_add(5., f64::from(iters));
-        PointInfo::Escaping {
-            potential,
-            phase: Some(iters % 5),
-        }
+        let potential = (residual as IterCountSmooth).mul_add(5., iters as f64);
+        PointInfo::Escaping { potential, phase }
     }
 }
 impl ExternalRays for QuadRatPer5 {}

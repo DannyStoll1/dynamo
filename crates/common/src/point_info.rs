@@ -1,5 +1,5 @@
 use crate::globals::DISPLAY_PREC;
-use crate::types::{IterCountSmooth, Period, Real};
+use crate::types::{IterCount, IterCountSmooth, Period, Real};
 use std::fmt::Display;
 
 #[cfg(feature = "serde")]
@@ -37,7 +37,7 @@ pub enum PointInfo<D>
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PointInfoPeriodic<D>
 {
-    pub preperiod: Period,
+    pub preperiod: IterCount,
     pub period: Period,
     pub multiplier: D,
     pub final_error: Real,

@@ -118,30 +118,30 @@ where
     }
 
     #[inline]
-    fn min_iter(&self) -> Period
+    fn min_iter(&self) -> IterCount
     {
         self.base_curve.min_iter()
     }
 
     #[inline]
-    fn max_iter(&self) -> Period
+    fn max_iter(&self) -> IterCount
     {
         self.base_curve.max_iter()
     }
 
     #[inline]
-    fn max_iter_mut(&mut self) -> &mut Period
+    fn max_iter_mut(&mut self) -> &mut IterCount
     {
         self.base_curve.max_iter_mut()
     }
 
     #[inline]
-    fn set_max_iter(&mut self, new_max_iter: Period)
+    fn set_max_iter(&mut self, new_max_iter: IterCount)
     {
         self.base_curve.set_max_iter(new_max_iter);
     }
 
-    fn with_max_iter(mut self, max_iter: Period) -> Self
+    fn with_max_iter(mut self, max_iter: IterCount) -> Self
     {
         self.set_max_iter(max_iter);
         self
@@ -277,7 +277,7 @@ impl<C: HasJulia> HasJulia for CoveringMap<C>
     }
 
     #[inline]
-    fn default_max_iter_child(&self) -> Period
+    fn default_max_iter_child(&self) -> IterCount
     {
         self.base_curve.default_max_iter_child()
     }

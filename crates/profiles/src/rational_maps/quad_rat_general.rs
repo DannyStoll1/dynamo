@@ -9,7 +9,7 @@ pub struct QuadRatGeneral
 {
     pub point_grid: PointGrid,
     pub compute_mode: ComputeMode,
-    pub max_iter: Period,
+    pub max_iter: IterCount,
 }
 
 impl Default for QuadRatGeneral

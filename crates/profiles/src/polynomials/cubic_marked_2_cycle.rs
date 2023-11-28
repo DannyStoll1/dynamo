@@ -9,7 +9,7 @@ pub struct CubicMarked2Cycle
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl CubicMarked2Cycle

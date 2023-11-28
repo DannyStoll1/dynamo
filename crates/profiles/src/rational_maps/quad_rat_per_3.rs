@@ -11,7 +11,7 @@ pub struct QuadRatPer3
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatPer3

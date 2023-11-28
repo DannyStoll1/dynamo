@@ -88,25 +88,25 @@ macro_rules! basic_plane_impl {
         $crate::macros::point_grid_getters!();
 
         #[inline]
-        fn max_iter(&self) -> Period
+        fn max_iter(&self) -> IterCount
         {
             self.max_iter
         }
 
         #[inline]
-        fn max_iter_mut(&mut self) -> &mut Period
+        fn max_iter_mut(&mut self) -> &mut IterCount
         {
             &mut self.max_iter
         }
 
         #[inline]
-        fn set_max_iter(&mut self, new_max_iter: Period)
+        fn set_max_iter(&mut self, new_max_iter: IterCount)
         {
             self.max_iter = new_max_iter
         }
 
         #[inline]
-        fn with_max_iter(mut self, max_iter: Period) -> Self
+        fn with_max_iter(mut self, max_iter: IterCount) -> Self
         {
             self.max_iter = max_iter;
             self
@@ -198,14 +198,14 @@ macro_rules! basic_escape_encoding {
     ($degree: expr) => {
         fn encode_escaping_point(
             &self,
-            iters: Period,
+            iters: IterCount,
             z: Self::Var,
             _base_param: &Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
             if z.is_nan() {
                 return PointInfo::Escaping {
-                    potential: f64::from(iters) - 1.,
+                    potential: iters as IterCountSmooth - 1.,
                     phase: None,
                 };
             }
@@ -213,7 +213,7 @@ macro_rules! basic_escape_encoding {
             let u = self.escape_radius().ln();
             let v = z.norm_sqr().ln();
             let residual = (v / u).log($degree);
-            let potential = IterCountSmooth::from(iters) - IterCountSmooth::from(residual);
+            let potential = (iters as IterCountSmooth) - IterCountSmooth::from(residual);
             PointInfo::Escaping {
                 potential,
                 phase: None,
@@ -223,35 +223,31 @@ macro_rules! basic_escape_encoding {
     (None, $period: expr) => {
         fn encode_escaping_point(
             &self,
-            iters: Period,
+            iters: IterCount,
             z: Self::Var,
             _base_param: &Self::Param,
         ) -> PointInfo<Self::Deriv>
         {
+            let phase = Some((iters % $period) as Period);
             if z.is_nan() {
                 return PointInfo::Escaping {
-                    potential: IterCountSmooth::from(iters - $period),
-                    phase: Some(iters % $period),
+                    potential: (iters - $period) as IterCountSmooth,
+                    phase,
                 };
             }
 
             let u = self.escape_radius().ln();
             let v = z.norm_sqr().ln();
             let residual = (v / u).log2();
-            let potential = ($period as IterCountSmooth).mul_add(
-                -IterCountSmooth::from(residual),
-                IterCountSmooth::from(iters),
-            );
-            PointInfo::Escaping {
-                potential,
-                phase: Some(iters % $period),
-            }
+            let potential = ($period as IterCountSmooth)
+                .mul_add(-IterCountSmooth::from(residual), (iters as IterCountSmooth));
+            PointInfo::Escaping { potential, phase }
         }
     };
     ($degree: expr, $period: expr) => {
         fn encode_escaping_point(
             &self,
-            iters: Period,
+            iters: IterCount,
             z: Self::Var,
             _base_param: &Self::Param,
         ) -> PointInfo<Self::Deriv>
@@ -266,10 +262,8 @@ macro_rules! basic_escape_encoding {
             let u = self.escape_radius().ln();
             let v = z.norm_sqr().ln();
             let residual = (v / u).log($degree);
-            let potential = ($period as IterCountSmooth).mul_add(
-                -IterCountSmooth::from(residual),
-                IterCountSmooth::from(iters),
-            );
+            let potential = ($period as IterCountSmooth)
+                .mul_add(-IterCountSmooth::from(residual), (iters as IterCountSmooth));
             PointInfo::Escaping {
                 potential,
                 phase: Some(iters % $period),

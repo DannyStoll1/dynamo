@@ -14,7 +14,7 @@ pub struct DistanceEstimation<'a, P: EscapeEncoding>
     pub multiplier: P::Deriv,
     pub dc_dt: P::Deriv,
     pub dz_dt: P::Deriv,
-    pub iter: Period,
+    pub iter: IterCount,
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
 }
 
@@ -167,7 +167,7 @@ impl<'a, P: EscapeEncoding> Orbit for DistanceEstimation<'a, P>
             let distance = norm_z * norm_z.ln() / self.dz_dt.norm();
             return PointInfo::DistanceEstimate {
                 distance,
-                phase: iters % self.family.escaping_period(),
+                phase: (iters % (self.family.escaping_period() as IterCount)) as Period,
             };
         }
 

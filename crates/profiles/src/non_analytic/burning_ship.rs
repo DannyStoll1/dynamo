@@ -8,7 +8,7 @@ pub struct BurningShip<const N: Period>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl<const N: Period> BurningShip<N>
@@ -125,7 +125,7 @@ pub struct Sailboat<const N: Period>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     shift: Cplx,
 }
 

@@ -16,8 +16,8 @@ where
     T: DynamicalFamily,
 {
     pub point_grid: PointGrid,
-    pub max_iter: Period,
-    pub min_iter: Period,
+    pub max_iter: IterCount,
+    pub min_iter: IterCount,
     pub parent: T,
     pub meta_params: T::MetaParam,
     pub local_param: T::Param,
@@ -30,7 +30,7 @@ where
     T: DynamicalFamily + HasJulia,
 {
     #[must_use]
-    pub fn new(parent: T, parent_selection: Cplx, max_iter: Period) -> Self
+    pub fn new(parent: T, parent_selection: Cplx, max_iter: IterCount) -> Self
     {
         let local_param = parent.param_map(parent_selection);
         let point_grid = parent
@@ -111,7 +111,7 @@ where
     }
 
     #[inline]
-    fn min_iter(&self) -> Period
+    fn min_iter(&self) -> IterCount
     {
         self.min_iter
     }
@@ -121,7 +121,7 @@ where
         &self,
         z: Self::Var,
         _: &NoParam,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         self.parent.extra_stop_condition(z, &self.local_param, iter)

@@ -69,7 +69,7 @@ pub struct Chebyshev<const D: Period>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     coeffs: Vec<Real>,
     coeffs_d: Vec<Real>,
 }

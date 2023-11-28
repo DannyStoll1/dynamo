@@ -10,7 +10,7 @@ pub struct Exponential
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl Exponential
@@ -50,7 +50,7 @@ impl DynamicalFamily for Exponential
         &self,
         z: Self::Var,
         _c: &Self::Param,
-        iter: Period,
+        iter: IterCount,
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         if z.re > 250. {

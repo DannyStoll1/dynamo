@@ -8,7 +8,7 @@ pub struct Biquadratic
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     multiplier: Cplx,
 }
 
@@ -86,14 +86,14 @@ impl EscapeEncoding for Biquadratic
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Self::Var,
         _base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as f64) - 1.,
                 phase: None,
             };
         }
@@ -101,7 +101,7 @@ impl EscapeEncoding for Biquadratic
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCountSmooth);
+        let potential = (iters as f64) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -115,7 +115,7 @@ pub struct BiquadraticMult
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     multiplier: Cplx,
     starting_plane: PlaneID,
 }
@@ -378,14 +378,14 @@ impl EscapeEncoding for BiquadraticMult
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Self::Var,
         _base_param: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as f64) - 1.,
                 phase: None,
             };
         }
@@ -393,7 +393,7 @@ impl EscapeEncoding for BiquadraticMult
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCountSmooth);
+        let potential = (iters as f64) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -407,7 +407,7 @@ pub struct BiquadraticMultParam
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     starting_plane: PlaneID,
 }
 
@@ -525,14 +525,14 @@ impl EscapeEncoding for BiquadraticMultParam
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Self::Var,
         _base_param: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as f64) - 1.,
                 phase: None,
             };
         }
@@ -540,7 +540,7 @@ impl EscapeEncoding for BiquadraticMultParam
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCountSmooth);
+        let potential = (iters as f64) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -572,7 +572,7 @@ pub struct BiquadraticMultSecondIterate
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     multiplier: Cplx,
 }
 
@@ -675,14 +675,14 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Cplx,
         _base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as f64) - 1.,
                 phase: None,
             };
         }
@@ -690,7 +690,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2() / 2.;
-        let potential = f64::from(iters) - (residual as IterCountSmooth);
+        let potential = (iters as f64) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -704,7 +704,7 @@ pub struct BiquadraticMultSection
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     starting_plane: PlaneID,
 }
 
@@ -888,14 +888,14 @@ impl EscapeEncoding for BiquadraticMultSection
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Self::Var,
         _base_param: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as f64) - 1.,
                 phase: None,
             };
         }
@@ -903,7 +903,7 @@ impl EscapeEncoding for BiquadraticMultSection
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log2();
-        let potential = f64::from(iters) - (residual as IterCountSmooth);
+        let potential = (iters as f64) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,

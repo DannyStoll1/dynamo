@@ -7,7 +7,7 @@ pub struct QuadRatSymmetryLocus
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatSymmetryLocus
@@ -131,14 +131,14 @@ impl EscapeEncoding for QuadRatSymmetryLocus
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Cplx,
         base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 2.,
+                potential: (iters as f64) - 2.,
                 phase: None,
             };
         }
@@ -147,7 +147,7 @@ impl EscapeEncoding for QuadRatSymmetryLocus
         let u = self.escape_radius().log(expansion_rate);
         let v = z.norm_sqr().log(expansion_rate);
         let residual = u - v;
-        let potential = IterCountSmooth::from(iters) + (residual as IterCountSmooth);
+        let potential = (iters as IterCountSmooth) + (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,

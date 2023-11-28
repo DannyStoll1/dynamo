@@ -71,13 +71,13 @@ impl IncoloringAlgorithm
             }
             Self::Preperiod => {
                 let per = IterCountSmooth::from(point_info.period);
-                let val = IterCountSmooth::from(point_info.preperiod);
+                let val = point_info.preperiod as IterCountSmooth;
 
                 palette.map((val * val / per).ln())
             }
             Self::PreperiodPeriod { fill_rate } => {
                 let per = IterCountSmooth::from(point_info.period);
-                let val = IterCountSmooth::from(point_info.preperiod);
+                let val = point_info.preperiod as IterCountSmooth;
 
                 let potential = (val * fill_rate / per).tanh();
                 palette.period_coloring.map(per as f32, potential as f32)
@@ -96,7 +96,7 @@ impl IncoloringAlgorithm
                 fill_rate,
             } => {
                 let n = IterCountSmooth::from(point_info.period);
-                let k = IterCountSmooth::from(point_info.preperiod);
+                let k = point_info.preperiod as IterCountSmooth;
 
                 let mult_norm = point_info.multiplier.norm();
 
@@ -172,7 +172,7 @@ impl IncoloringAlgorithm
         D: Polar<Real>,
     {
         let n = IterCountSmooth::from(point_info.period);
-        let k = IterCountSmooth::from(point_info.preperiod);
+        let k = point_info.preperiod as IterCountSmooth;
 
         let mult_norm = point_info.multiplier.norm();
 

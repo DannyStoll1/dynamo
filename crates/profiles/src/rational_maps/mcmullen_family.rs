@@ -7,7 +7,7 @@ pub struct McMullenFamily<const M: i32, const N: i32>
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl<const M: i32, const N: i32> McMullenFamily<M, N>

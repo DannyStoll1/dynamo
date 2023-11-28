@@ -18,7 +18,7 @@ pub struct CubicPer1Lambda
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     multiplier: Cplx,
     starting_crit: PlaneID,
 }
@@ -325,7 +325,7 @@ pub struct CubicPer1LambdaParam
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     starting_crit: PlaneID,
 }
 
@@ -493,7 +493,7 @@ pub struct CubicPer1_1
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl CubicPer1_1
@@ -520,7 +520,7 @@ impl DynamicalFamily for CubicPer1_1
     {
         1e-6
     }
-    fn min_iter(&self) -> Period
+    fn min_iter(&self) -> IterCount
     {
         self.max_iter() / 3
     }
@@ -647,14 +647,14 @@ impl EscapeEncoding for CubicPer1_1
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Cplx,
         _base_param: &Cplx,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as f64) - 1.,
                 phase: None,
             };
         }
@@ -662,7 +662,7 @@ impl EscapeEncoding for CubicPer1_1
         let u = self.escape_radius().log2();
         let v = z.norm_sqr().log2();
         let residual = (v / u).log(3.);
-        let potential = f64::from(iters) - (residual as IterCountSmooth);
+        let potential = (iters as f64) - (residual as IterCountSmooth);
         PointInfo::Escaping {
             potential,
             phase: None,
@@ -681,7 +681,7 @@ pub struct CubicPer1_0
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl CubicPer1_0
@@ -1292,7 +1292,7 @@ pub struct CubicPer1LambdaModuli
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     multiplier: Cplx,
     starting_crit: PlaneID,
 }
@@ -1462,14 +1462,14 @@ impl EscapeEncoding for CubicPer1LambdaModuli
 {
     fn encode_escaping_point(
         &self,
-        iters: Period,
+        iters: IterCount,
         z: Self::Var,
         CplxPair { a, b: _ }: &Self::Param,
     ) -> PointInfo<Self::Deriv>
     {
         if z.is_nan() {
             return PointInfo::Escaping {
-                potential: f64::from(iters) - 1.,
+                potential: (iters as IterCountSmooth) - 1.,
                 phase: None,
             };
         }
@@ -1478,7 +1478,7 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         let v = z.norm_sqr().log2();
         let delta = 0.5 * a.norm().log2();
         let residual = ((v + delta) / (u + delta)).log(3.);
-        let potential = IterCountSmooth::from(iters) - IterCountSmooth::from(residual);
+        let potential = (iters as IterCountSmooth) - IterCountSmooth::from(residual);
         PointInfo::Escaping {
             potential,
             phase: None,

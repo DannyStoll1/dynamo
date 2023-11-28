@@ -22,6 +22,7 @@ pub struct Hotkey
 }
 impl Hotkey
 {
+    #[must_use]
     pub const fn new(action: Action) -> Self
     {
         Self {

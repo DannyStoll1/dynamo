@@ -8,7 +8,7 @@ pub struct CubicPer2Lambda
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     multiplier: Cplx,
     starting_crit: PlaneID,
 }
@@ -189,7 +189,7 @@ pub struct CubicPer2LambdaParam
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
     starting_crit: PlaneID,
 }
 
@@ -341,7 +341,7 @@ pub struct CubicPer2CritMarked
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl CubicPer2CritMarked

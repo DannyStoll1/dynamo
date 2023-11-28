@@ -28,7 +28,7 @@ pub struct Potential<'a, P: InfinityFirstReturnMap + ?Sized>
     pub z_fast: P::Var,
     pub dz_dt_fast: P::Deriv,
     pub dz_dt_slow: P::Deriv,
-    pub iter: Period,
+    pub iter: IterCount,
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
 }
 
@@ -156,7 +156,9 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         // err = λ^n ϕ
         // ϕ = 1/λ^n err
         // log ϕ = log(err) - n log(λ)
-        let log_phi = err.norm_sqr().ln() - (self.iter as Real) * mult_norm.ln();
+        let log_phi = mult_norm
+            .ln()
+            .mul_add(-(self.iter as Real), err.norm_sqr().ln());
 
         Some((log_phi, 2.0 * (derr_dt / err).conj()))
     }
@@ -173,6 +175,9 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
             self.update_slow();
             self.update_fast();
             self.iter += 1;
+            if self.iter == self.family.max_iter() {
+                return None;
+            }
         }
 
         let err = (self.z_fast - self.z_slow).into();
@@ -181,27 +186,29 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         let norm_err = err.norm_sqr();
         let norm_err_log = norm_err.ln();
 
-        let phi = (norm_err_log / self.log_tol).ln() + (self.iter as Real) * LN_2;
+        let phi = LN_2.mul_add(self.iter as Real, (norm_err_log / self.log_tol).ln());
         let grad_phi = 2.0 * err * (derr_dt / (norm_err_log * norm_err)).conj();
         Some((phi, grad_phi))
     }
 
     /// Logarithm of the Green's function, together with its gradient,
     /// for unbounded orbits
-    fn external_bottcher_d(&mut self, iters: impl Into<Real>) -> Option<(Real, Cplx)>
+    fn external_bottcher_d(&mut self, iters: IterCount) -> (Real, Cplx)
     {
-        let log_dn = iters.into() * self.family.degree_real().ln();
+        let log_dn = iters as Real * self.family.degree_real().ln();
 
-        let z: Cplx = self.z_fast.clone().into();
+        let z: Cplx = self.z_fast.into();
         let dz_dt: Cplx = self.dz_dt_fast.into();
 
         let norm_z = z.norm_sqr();
         let norm_z_log = norm_z.ln();
 
-        let phi = log_dn - norm_z_log.ln() * self.family.escaping_period() as Real;
-        let grad_phi = -2.0 * z * (dz_dt / (norm_z_log * norm_z)).conj();
+        let phi = norm_z_log
+            .ln()
+            .mul_add(-(self.family.escaping_period() as Real), log_dn);
+        let grad_phi = 2.0 * z * (dz_dt / (norm_z_log * norm_z)).conj();
 
-        Some((phi, grad_phi))
+        (phi, grad_phi)
     }
 }
 impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
@@ -228,6 +235,8 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
 
     fn run_until_complete(&mut self) -> Self::Outcome
     {
+        use EscapeResult::*;
+
         while self.state.is_none() {
             self.iter += 1;
             if self.iter % 2 == 1 {
@@ -243,10 +252,9 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
         let state = self.state.as_ref()?;
 
         match state {
-            EscapeResult::Escaped { iters, .. } => self.external_bottcher_d(*iters),
-            EscapeResult::Unknown => None,
-            EscapeResult::Bounded(..) => None,
-            EscapeResult::Periodic { info, .. } => {
+            Escaped { iters, .. } => Some(self.external_bottcher_d(*iters)),
+            Unknown | Bounded(..) => None,
+            Periodic { info, .. } => {
                 let mult_norm = info.multiplier.into().norm_sqr();
                 let period = info.period;
 

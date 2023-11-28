@@ -8,7 +8,7 @@ pub struct QuadRatPer2
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatPer2
@@ -978,7 +978,7 @@ pub struct QuadRatPer2Cover
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatPer2Cover
@@ -1162,7 +1162,7 @@ pub struct QuadRatPer2InfPuncture
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
-    max_iter: Period,
+    max_iter: IterCount,
 }
 
 impl QuadRatPer2InfPuncture

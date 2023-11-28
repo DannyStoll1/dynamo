@@ -149,7 +149,7 @@ macro_rules! degree_impl_transcendental {
 
             fn encode_escaping_point(
                 &self,
-                iters: Period,
+                iters: IterCount,
                 z: Cplx,
                 _base_param: &Self::Param,
             ) -> PointInfo<Self::Deriv>
@@ -157,20 +157,20 @@ macro_rules! degree_impl_transcendental {
                 use dynamo_common::math_utils::slog;
                 if z.is_nan() {
                     return PointInfo::Escaping {
-                        potential: f64::from(iters) - 1.,
+                        potential: (iters as f64) - 1.,
                         phase: None,
                     };
                 }
                 if z.is_infinite() {
                     return PointInfo::Escaping {
-                        potential: f64::from(iters) + 1.,
+                        potential: (iters as f64) + 1.,
                         phase: None,
                     };
                 }
                 let u = slog(self.escape_radius());
                 let v = slog(z.norm_sqr());
                 let residual = v - u;
-                let potential = f64::from(iters) - (residual as IterCountSmooth);
+                let potential = (iters as f64) - (residual as IterCountSmooth);
                 PointInfo::Escaping {
                     potential,
                     phase: None,

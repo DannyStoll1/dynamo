@@ -8,7 +8,7 @@ profile_imports!();
 pub struct Mandelbrot
 {
     point_grid: PointGrid,
-    max_iter: Period,
+    max_iter: IterCount,
     compute_mode: ComputeMode,
 }
 
