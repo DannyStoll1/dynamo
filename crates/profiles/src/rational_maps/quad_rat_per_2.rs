@@ -49,7 +49,7 @@ impl DynamicalFamily for QuadRatPer2
     fn map(&self, z: Self::Var, Prm { a: _, c }: &Self::Param) -> Self::Var
     {
         let z2 = z.powi(2);
-        (z2 + c) / (z2 - 1.)
+        (z2 + c) / (1. - z2)
     }
 
     #[inline]
@@ -60,8 +60,8 @@ impl DynamicalFamily for QuadRatPer2
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
-        let u = z2 - 1.;
-        ((c + z2) / u, a * z / u.powi(2))
+        let u = 1. - z2;
+        ((c + z2) / u, -a * z / u.powi(2))
     }
 
     #[inline]
@@ -72,8 +72,8 @@ impl DynamicalFamily for QuadRatPer2
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
-        let u = (z2 - 1.).inv();
-        ((c + z2) * u, a * z * u.powi(2), u)
+        let u = 1. - z2;
+        ((c + z2) * u, -a * z * u.powi(2), u)
     }
 
     #[inline]
@@ -114,19 +114,19 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
             let x0 = (0.5 * (u + (v.powi(2) - 256.).sqrt() - 11.)).powf(ONE_THIRD);
             let x1 = 4. / x0 * ONE_THIRD;
             let x2 = x0 * ONE_THIRD;
-            let r1 = -x1 * OMEGA_BAR - x2 * OMEGA + ONE_THIRD;
-            let r2 = -x1 * OMEGA - x2 * OMEGA_BAR + ONE_THIRD;
-            vec![-x1 - x2 + ONE_THIRD, r1, r2]
+            let r1 = x1 * OMEGA_BAR + x2 * OMEGA - ONE_THIRD;
+            let r2 = x1 * OMEGA + x2 * OMEGA_BAR - ONE_THIRD;
+            vec![x1 + x2 - ONE_THIRD, r1, r2]
         }
         2 => {
-            vec![(1.).into()]
+            vec![(-1.).into()]
         }
         3 => {
             let coeffs = [
                 horner_monic!(c, 1., -1.),
-                -c - 1.,
-                3. * c - 2.,
                 c + 1.,
+                3. * c - 2.,
+                -c - 1.,
                 ONE,
                 ZERO,
                 ONE,
@@ -136,17 +136,17 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
         4 => {
             let coeffs = [
                 horner_monic!(c, 1., -4., 6., -3.),
-                -c * horner_monic!(c, 2., -3.),
+                c * horner_monic!(c, 2., -3.),
                 horner!(c, -6., 19., -20., 7.),
-                horner_monic!(c, -1., 11., -9.),
+                -horner_monic!(c, -1., 11., -9.),
                 horner!(c, 12., -28., 19.),
-                horner!(c, 4., -18., 6.),
+                -horner!(c, 4., -18., 6.),
                 horner_monic!(c, -7., 10.),
-                horner!(c, -4., 8.),
+                horner!(c, 4., -8.),
                 horner!(c, -4., 7.),
-                c - 1.,
+                1. - c,
                 Cplx::new(4., 0.),
-                TWO,
+                -TWO,
                 ONE,
             ];
             solve_polynomial(coeffs)
@@ -154,33 +154,33 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
         5 => {
             let coeffs = [
                 horner_monic!(c, 1., -9., 33., -64., 76., -66., 50., -31., 15., -5.),
-                -horner_monic!(c, 1., -7., 20., -26., 8., 18., -23., 15., -5.),
+                horner_monic!(c, 1., -7., 20., -26., 8., 18., -23., 15., -5.),
                 horner!(c, -14., 115., -378., 652., -700., 567., -386., 204., -74., 15.),
-                horner_monic!(c, 13., -81., 202., -208., -7., 205., -188., 84., -19.),
+                -horner_monic!(c, 13., -81., 202., -208., -7., 205., -188., 84., -19.),
                 horner!(c, 85., -636., 1862., -2837., 2738., -2019., 1185., -478., 103.),
-                horner!(c, -72., 398., -855., 633., 357., -879., 550., -158., 14.),
+                -horner!(c, -72., 398., -855., 633., 357., -879., 550., -158., 14.),
                 horner_monic!(c, -291., 1979., -5108., 6786., -5793., 3741., -1712., 408.),
-                horner!(c, 219., -1071., 1936., -786., -1457., 1771., -696., 88.),
+                -horner!(c, 219., -1071., 1936., -786., -1457., 1771., -696., 88.),
                 horner!(c, 606., -3735., 8345., -9421., 6869., -3538., 954., 17.),
-                horner_monic!(c, -387., 1671., -2431., -49., 2480., -1666., 295.),
+                -horner_monic!(c, -387., 1671., -2431., -49., 2480., -1666., 295.),
                 horner!(c, -751., 4182., -7780., 7018., -3921., 1127., 118.),
-                horner!(c, 364., -1396., 1498., 998., -1783., 493., 16.),
+                -horner!(c, 364., -1396., 1498., 998., -1783., 493., 16.),
                 horner_monic!(c, 437., -2221., 2975., -1496., 50., 425.),
-                horner!(c, -73., 315., -228., -556., 153., 93.),
+                -horner!(c, -73., 315., -228., -556., 153., 93.),
                 horner!(c, 126., -417., 1194., -1410., 807., 15.),
-                horner_monic!(c, -199., 409., 22., -334., 253.),
+                -horner_monic!(c, -199., 409., 22., -334., 253.),
                 horner!(c, -375., 1220., -1464., 675., 83.),
-                horner!(c, 176., -276., -243., 221., 12.),
+                -horner!(c, 176., -276., -243., 221., 12.),
                 horner_monic!(c, 185., -431., 162., 206.),
-                horner!(c, -9., 9., 72., 54.),
+                -horner!(c, -9., 9., 72., 54.),
                 horner!(c, 34., -125., 161., 11.),
-                horner_monic!(c, -43., -7., 37.),
+                -horner_monic!(c, -43., -7., 37.),
                 horner!(c, -51., 66., 42.),
-                horner!(c, 8., 18., 10.),
+                -horner!(c, 8., 18., 10.),
                 horner_monic!(c, 5., 13.),
-                horner!(c, 3., 3.),
+                -horner!(c, 3., 3.),
                 horner!(c, 2., 9.),
-                c + 1.,
+                -c - 1.,
                 ONE,
                 ZERO,
                 ONE,
@@ -193,7 +193,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     c, 1., -19., 162., -822., 2781., -6677., 11858., -16093., 17187., -14858.,
                     10683., -6549., 3486., -1617., 645., -213., 55., -10.
                 ),
-                horner!(
+                -horner!(
                     c, 1., -19., 158., -764., 2409., -5279., 8409., -10129., 9582., -7340., 4625.,
                     -2411., 1041., -363., 99., -19., 2.
                 ),
@@ -202,7 +202,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     -278_190., 223_353., -148_696., 83944., -40647., 16764., -5708., 1512., -280.,
                     28.
                 ),
-                horner!(
+                -horner!(
                     c, -27., 483., -3768., 17042., -50158., 102_498., -152_240., 170_888.,
                     -150_093., 105_861., -60722., 28380., -10696., 3144., -672., 88., -4.
                 ),
@@ -226,7 +226,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     -3738.,
                     378.
                 ),
-                horner!(
+                -horner!(
                     c,
                     337.,
                     -5671.,
@@ -265,7 +265,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     -31448.,
                     3248.
                 ),
-                horner!(
+                -horner!(
                     c,
                     -2576.,
                     40746.,
@@ -303,7 +303,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     19717.,
                     7.
                 ),
-                horner_monic!(
+                -horner_monic!(
                     c,
                     13457.,
                     -199_943.,
@@ -339,7 +339,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     88508.,
                     172.
                 ),
-                horner!(
+                -horner!(
                     c,
                     -50703.,
                     707_245.,
@@ -374,7 +374,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     297_488.,
                     2004.
                 ),
-                horner!(
+                -horner!(
                     c,
                     141_401.,
                     -1_850_969.,
@@ -408,7 +408,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     14560.,
                     4.
                 ),
-                horner!(
+                -horner!(
                     c,
                     -293_488.,
                     3_605_312.,
@@ -440,7 +440,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     72924.,
                     101.
                 ),
-                horner!(
+                -horner!(
                     c,
                     445_061.,
                     -5_136_521.,
@@ -471,7 +471,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     261_348.,
                     1192.
                 ),
-                horner!(
+                -horner!(
                     c,
                     -460_771.,
                     5_024_075.,
@@ -501,7 +501,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     8670.,
                     20.
                 ),
-                horner!(
+                -horner!(
                     c,
                     248_016.,
                     -2_648_812.,
@@ -529,7 +529,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     42170.,
                     210.
                 ),
-                horner!(
+                -horner!(
                     c,
                     92656.,
                     -614_634.,
@@ -556,7 +556,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     139_859.,
                     1555.
                 ),
-                horner!(
+                -horner!(
                     c,
                     -308_207.,
                     2_407_525.,
@@ -582,7 +582,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     8285.,
                     5.
                 ),
-                horner_monic!(
+                -horner_monic!(
                     c,
                     253_889.,
                     -1_878_479.,
@@ -598,7 +598,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     c, 10866., 53830., -332_366., 330_178., 464_512., -876_588., 402_536., 30828.,
                     120.
                 ),
-                horner!(
+                -horner!(
                     c, -52906., 402_450., -916_814., 630_094., 271_396., -499_108., 153_604.,
                     5372., 16.
                 ),
@@ -613,31 +613,31 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                     75268.,
                     1100.
                 ),
-                horner!(
+                -horner!(
                     c, -74908., 389_012., -825_772., 977_428., -608_156., 124_924., 17588., 140.
                 ),
                 horner!(c, 79287., -425_021., 757_246., -468_595., 10509., 99000., 5635., 10.),
-                horner!(c, 66679., -309_305., 471_531., -276_799., 10364., 35028., 964.),
+                -horner!(c, 66679., -309_305., 471_531., -276_799., 10364., 35028., 964.),
                 horner!(c, -1205., 27224., -32900., -66694., 54594., 17432., 130.),
-                horner!(c, -14150., 52290., -20798., -49522., 28956., 3536., 4.),
+                -horner!(c, -14150., 52290., -20798., -49522., 28956., 3536., 4.),
                 horner!(c, -19285., 54161., -32830., -2459., 23599., 854., 1.),
-                horner!(c, -7951., 22373., -24851., 4499., 8236., 108.),
+                -horner!(c, -7951., 22373., -24851., 4499., 8236., 108.),
                 horner!(c, 7563., -16232., -7724., 11956., 3604., 12.),
-                horner!(c, 4936., -6652., -5112., 6068., 504.),
+                -horner!(c, 4936., -6652., -5112., 6068., 504.),
                 horner!(c, -313., 3271., -1381., 4625., 92.),
-                horner!(c, -881., 393., 629., 1611., 12.),
+                -horner!(c, -881., 393., 629., 1611., 12.),
                 horner!(c, -216., -2526., 2254., 658.),
-                horner!(c, 210., -1222., 998., 54.),
+                -horner!(c, 210., -1222., 998., 54.),
                 horner!(c, 197., 145., 649., 3.),
-                horner!(c, -7., 203., 255., 1.),
+                -horner!(c, -7., 203., 255., 1.),
                 horner!(c, -194., 232., 104.),
-                horner!(c, -92., 88., 4.),
+                -horner!(c, -92., 88., 4.),
                 horner!(c, 27., 58.),
-                horner!(c, 18., 32.),
+                -horner!(c, 18., 32.),
                 horner!(c, 9., 14.),
-                Cplx::new(4., 0.),
+                Cplx::new(-4., 0.),
                 Cplx::new(3., 0.),
-                TWO,
+                -TWO,
                 ONE,
             ];
             solve_polynomial(coeffs)
@@ -649,9 +649,11 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
 impl MarkedPoints for QuadRatPer2
 {
     #[inline]
-    fn critical_points_child(&self, _param: &Self::Param) -> ComplexVec
+    fn critical_points_child(&self, Self::Param { a, c }: &Self::Param) -> ComplexVec
     {
-        vec![(0.).into()]
+        let u = ((1. - c) / 2.).sqrt();
+        vec![ZERO, u, -u]
+        // vec![(0.).into(), ]
     }
 
     #[allow(clippy::match_same_arms)]
