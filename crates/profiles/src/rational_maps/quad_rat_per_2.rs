@@ -649,7 +649,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
 impl MarkedPoints for QuadRatPer2
 {
     #[inline]
-    fn critical_points_child(&self, Self::Param { a, c }: &Self::Param) -> ComplexVec
+    fn critical_points_child(&self, Self::Param { a: _, c }: &Self::Param) -> ComplexVec
     {
         let u = ((1. - c) / 2.).sqrt();
         vec![ZERO, u, -u]
@@ -718,11 +718,18 @@ impl HasDynamicalCovers for QuadRatPer2
                 };
             }
             3 => {
-                const A0: Cplx = Cplx::new(1. + OMEGA.re, OMEGA.im);
-                const A1: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
-                const A2: Cplx = Cplx::new(-OMEGA.re - 2., -OMEGA.im);
-                const B2: Cplx = Cplx::new(-2. * OMEGA.re - 4., -2. * OMEGA.im);
-                param_map = |t| (horner!(t, A0, A1, A2).into(), horner!(t, A1, B2));
+                const A0: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
+                const A1: Cplx = OMEGA_BAR;
+                const A2: Cplx = Cplx::new(-1.5, OMEGA.im);
+                const A3: Cplx = Cplx::new(-OMEGA.re, OMEGA.im);
+
+                // marked point z = t
+                param_map = |t| {
+                    (
+                        horner!(t, A0, A1, A2, A3).into(),
+                        horner!(t, OMEGA_BAR, 2. * A2, 3. * A3),
+                    )
+                };
                 bounds = Bounds {
                     min_x: -1.8,
                     max_x: 1.8,
