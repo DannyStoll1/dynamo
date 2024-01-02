@@ -72,7 +72,7 @@ impl DynamicalFamily for QuadRatPer2
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
-        let u = 1. - z2;
+        let u = (1. - z2).inv();
         ((c + z2) * u, -a * z * u.powi(2), u)
     }
 
@@ -936,7 +936,7 @@ impl HasDynamicalCovers for QuadRatPer2
             (2, 1) => {
                 param_map = |t| {
                     let t2 = t.powi(2);
-                    // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
+                    // // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
                     let u = t2 * (131. * t2 - 102. * t - 106.) - 8. * t - 4.;
                     let du = t2 * (524. * t - 306.) - 212. * t - 8.;
                     let v = 13. * t2 + 2. * t + 2.;
@@ -950,6 +950,19 @@ impl HasDynamicalCovers for QuadRatPer2
                     let d_den = -3. * dv / v2.powi(2);
 
                     ((num * den).into(), num * d_den + d_num * den)
+
+                    // -2*(16*t^4 + 16*t^2 - 1)/(4*t^2 + 1)^3
+                    // let t2 = t.powi(2);
+                    //
+                    // let u = 2. * t2 * horner_monic!(t2, -16., -16.);
+                    // let du = 4. * t * horner!(t2, -16., -32., 3.);
+                    //
+                    // let v = t2 + 4.;
+                    // let dv = 2. * t;
+                    //
+                    // let den = v.powi(-3);
+                    //
+                    // ((u * den).into(), du * den - 4. * u * dv * den / v)
                 };
                 bounds = Bounds {
                     min_x: -3.4,
