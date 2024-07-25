@@ -625,7 +625,7 @@ impl<T: HasJulia> HasChild<JuliaSet<T>> for T
 
 pub trait MarkedPoints: DynamicalFamily
 {
-    /// Criticaanalyzerl points of the map associated to a given parameter, which can be marked on the dynamical plane.
+    /// Critical points of the map associated to a given parameter, which can be marked on the dynamical plane.
     #[inline]
     fn critical_points_child(&self, c: &Self::Param) -> Vec<Self::Var>
     {
