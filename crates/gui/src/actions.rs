@@ -1,4 +1,4 @@
-use crate::{marked_points::ContourType, pane::id::*};
+use crate::{marked_points::ContourType, pane::id::PaneSelection};
 use dynamo_color::{IncoloringAlgorithm, Palette};
 use dynamo_common::types::{IterCountSmooth, Period};
 
@@ -67,6 +67,7 @@ pub enum Action
 impl Action
 {
     #[must_use]
+    #[allow(clippy::too_many_lines)]
     pub fn description(&self) -> String
     {
         match self {
@@ -147,7 +148,7 @@ impl Action
             Self::Pan(x, y) => {
                 if *x == 0. {
                     if *y > 0. {
-                        format!("Pan upw by {}%", y * 100.)
+                        format!("Pan up by {}%", y * 100.)
                     } else {
                         format!("Pan down by {}%", y * 100.)
                     }
@@ -178,7 +179,7 @@ impl Action
             Self::SetPaletteWhite => "Use black on white palette.".to_owned(),
             Self::SetPaletteBlack => "Use white on black palette.".to_owned(),
             Self::SetColoring(algorithm) => {
-                use IncoloringAlgorithm::*;
+                use IncoloringAlgorithm::{InternalPotential, Multiplier, Period, PeriodMultiplier, PotentialAndPeriod, Preperiod, PreperiodPeriod, Solid};
                 let desc = match algorithm {
                     Solid => "Color bounded components black.",
                     Period => "Color bounded components by period",
@@ -287,7 +288,10 @@ impl Action
             Self::SetPaletteWhite => "White".to_owned(),
             Self::SetPaletteBlack => "Black".to_owned(),
             Self::SetColoring(algorithm) => {
-                use IncoloringAlgorithm::*;
+                use IncoloringAlgorithm::{
+                    InternalPotential, Multiplier, Period, PeriodMultiplier, PotentialAndPeriod,
+                    Preperiod, PreperiodPeriod, Solid,
+                };
                 let desc = match algorithm {
                     Solid => "Black",
                     Period => "Period",

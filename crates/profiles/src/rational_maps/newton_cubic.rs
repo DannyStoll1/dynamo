@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::{default_bounds, default_bounds_impl, default_name, degree_impl, fractal_impl, has_child_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]

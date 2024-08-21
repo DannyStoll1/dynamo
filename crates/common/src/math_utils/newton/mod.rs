@@ -4,7 +4,7 @@ use crate::{
     types::Real,
 };
 pub mod error;
-use error::{Error::*, NewtonResult};
+use error::{Error::{FailedToConverge, NanEncountered}, NewtonResult};
 use num_traits::One;
 use std::ops::{AddAssign, Div, Sub, SubAssign};
 

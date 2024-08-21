@@ -3,7 +3,7 @@ pub(crate) use dynamo_core::macros::*;
 
 macro_rules! profile_imports {
     () => {
-        use crate::macros::parameter_plane_impl;
+        use $crate::macros::parameter_plane_impl;
         use dynamo_common::math_utils::polynomial_roots::*;
         use dynamo_common::prelude::*;
         use dynamo_core::prelude::*;
@@ -83,6 +83,7 @@ macro_rules! degree_impl {
             $deg
         }
         #[inline]
+        #[allow(clippy::cast_lossless)]
         fn degree_real(&self) -> Real
         {
             $deg as Real

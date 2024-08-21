@@ -2,10 +2,10 @@ pub mod keyboard_shortcuts;
 use crate::{
     actions::{Action, ChangeBoolean},
     marked_points::ContourType,
-    pane::id::{PaneID::*, PaneSelection::*},
+    pane::id::{PaneID::{Child, Parent}, PaneSelection::{ActivePane, BothPanes, Id}},
 };
 use dynamo_color::IncoloringAlgorithm;
-use keyboard_shortcuts::*;
+use keyboard_shortcuts::{CTRL_1, CTRL_2, CTRL_3, CTRL_4, CTRL_5, CTRL_6, CTRL_E, CTRL_F, CTRL_K, CTRL_L, CTRL_P, CTRL_Q, CTRL_S, CTRL_SHIFT_1, CTRL_SHIFT_2, CTRL_SHIFT_3, CTRL_SHIFT_4, CTRL_SHIFT_5, CTRL_SHIFT_6, CTRL_T, CTRL_V, CTRL_W, CTRL_X, CTRL_Z, KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_B, KEY_C, KEY_D, KEY_DOWN, KEY_E, KEY_EQUALS, KEY_ESC, KEY_F, KEY_G, KEY_HOME, KEY_I, KEY_INSERT, KEY_J, KEY_L, KEY_LEFT, KEY_M, KEY_MINUS, KEY_O, KEY_P, KEY_R, KEY_RIGHT, KEY_SPACE, KEY_UP, KEY_V, KEY_W, KEY_Y, KEY_Z, SHIFT_C, SHIFT_DOWN, SHIFT_E, SHIFT_LEFT, SHIFT_M, SHIFT_O, SHIFT_P, SHIFT_R, SHIFT_RIGHT, SHIFT_SPACE, SHIFT_T, SHIFT_UP};
 use seq_macro::seq;
 
 use egui::{KeyboardShortcut, ModifierNames, RichText};
@@ -85,7 +85,7 @@ impl Hotkey
     }
 }
 
-use Action::*;
+use Action::{CenterOnSelection, ClearCurves, ClearOrbit, Close, CycleActivePlane, CycleComputeMode, DrawAuxContours, DrawContour, DrawExternalRay, DrawOrbit, DrawRaysOfPeriod, EnterCoordinates, FindPeriodicPoint, LoadPalette, MapSelection, NewTab, Pan, Quit, RandomizePalette, ResetSelection, ResetView, SaveImage, SavePalette, ScaleMaxIter, ScalePalettePeriod, SetColoring, SetColoringInternalPotential, SetColoringPotentialPeriod, SetColoringPreperiodPeriod, SetPaletteBlack, SetPaletteWhite, ShiftPalettePhase, StopFollowing, ToggleCritical, ToggleCycles, ToggleEscapePhaseColoring, ToggleLiveMode, ToggleMarked, ToggleSelectionMarker, Zoom};
 
 pub const FILE_HOTKEYS: [Hotkey; 6] = [
     Hotkey::new(Quit).shortcut(CTRL_Q),

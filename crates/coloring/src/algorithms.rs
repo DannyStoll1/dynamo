@@ -190,7 +190,7 @@ impl IncoloringAlgorithm
         info: &PointInfoKnownPotential<D>,
     ) -> T
     {
-        let rescaled_potential = (info.potential.powi(2) / info.period as f64).ln();
+        let rescaled_potential = (info.potential.powi(2) / f64::from(info.period)).ln();
         match self {
             Self::Solid => T::from_color32(palette.in_color),
             Self::Period => palette

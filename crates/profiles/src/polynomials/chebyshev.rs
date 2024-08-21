@@ -244,7 +244,7 @@ impl<const D: Period> InfinityFirstReturnMap for Chebyshev<D>
     #[inline]
     fn degree_real(&self) -> Real
     {
-        (2 * D) as Real
+        Real::from(2 * D)
     }
 
     fn escape_coeff_d(&self, param: &Self::Param) -> (Cplx, Cplx)

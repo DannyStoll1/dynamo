@@ -32,6 +32,7 @@ pub fn solve_cubic(a: Cplx, b: Cplx, c: Cplx) -> [Cplx; 3]
 
 // Roots of the polynomial a + bx + cx^2 + dx^3 + x^4
 #[allow(clippy::suspicious_operation_groupings)]
+#[allow(clippy::many_single_char_names)]
 #[must_use]
 pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx) -> [Cplx; 4]
 {
@@ -46,7 +47,7 @@ pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx) -> [Cplx; 4]
     let q = 0.5 * d * (0.25 * d2 - c) + b;
 
     let q1 = (0.5 * (disc_1 + (disc_1 * disc_1 - 4. * disc_0.powi(3)).sqrt())).powf(ONE_THIRD);
-    let s = 0.5 * (ONE_THIRD * (q1 + disc_0 / q1 - p - p)).sqrt();
+    let s = 0.5 * (ONE_THIRD * (q1 + disc_0 / q1 - 2. * p)).sqrt();
 
     let x0 = -0.25 * d;
     let u = -4. * s * s - p - p;

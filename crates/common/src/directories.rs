@@ -12,7 +12,7 @@ pub fn images_dir() -> Option<PathBuf>
     Some(dynamo_images)
 }
 
-pub fn palettes_dir() -> Option<PathBuf>
+#[must_use] pub fn palettes_dir() -> Option<PathBuf>
 {
     let proj_dirs = ProjectDirs::from("com", "Zero Ideal", "Dynamo")?;
     let palettes_dir = proj_dirs.data_dir().join("palettes");
@@ -20,7 +20,7 @@ pub fn palettes_dir() -> Option<PathBuf>
     Some(palettes_dir)
 }
 
-pub fn script_dir() -> Option<PathBuf>
+#[must_use] pub fn script_dir() -> Option<PathBuf>
 {
     let proj_dirs = ProjectDirs::from("com", "Zero Ideal", "Dynamo")?;
     let scripts_dir = proj_dirs.data_dir().join("scripts");

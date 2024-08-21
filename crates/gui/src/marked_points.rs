@@ -640,8 +640,8 @@ impl Marking
         let radius = POINT_RADIUS * (image.width() as f32) / 768.;
         self.iter_points()
             .for_each(|ColoredPoint { point, color }| {
-                let (r, g, b, _a) = color.to_tuple();
-                let color = Rgb([r, g, b]);
+                let (red, grn, blu, _alp) = color.to_tuple();
+                let color = Rgb([red, grn, blu]);
                 let [x, y] = grid.locate_point(point);
                 let center = (x as i32, y as i32);
                 draw_filled_circle_mut(image, center, radius as i32, color);

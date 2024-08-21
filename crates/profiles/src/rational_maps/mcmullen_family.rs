@@ -117,7 +117,7 @@ impl<const M: i32, const N: i32> MarkedPoints for McMullenFamily<M, N>
 
 impl<const M: i32, const N: i32> InfinityFirstReturnMap for McMullenFamily<M, N>
 {
-    degree_impl!(M as AngleNum);
+    degree_impl!(AngleNum::from(M));
 }
 
 impl<const M: i32, const N: i32> EscapeEncoding for McMullenFamily<M, N> {}

@@ -1,4 +1,5 @@
 #![allow(unused_imports)]
+#![allow(clippy::many_single_char_names)]
 
 pub mod macros;
 

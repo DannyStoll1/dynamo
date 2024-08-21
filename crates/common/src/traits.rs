@@ -213,6 +213,7 @@ macro_rules! try_round_impl {
     ($float: ty, $int: ty) => {
         impl TryRound<$int> for $float
         {
+            #[allow(clippy::cast_lossless)]
             fn try_round(self) -> Result<$int, FloatToIntError>
             {
                 if self.is_finite() && self > <$int>::MIN as $float && self < <$int>::MAX as $float
@@ -300,12 +301,12 @@ macro_rules! impl_polar {
             #[inline]
             fn norm(&self) -> Real
             {
-                *self as Real
+                Real::from(*self)
             }
             #[inline]
             fn norm_sqr(&self) -> Real
             {
-                (self * self) as Real
+                Real::from(self * self)
             }
         }
         impl Arg<Real> for $t

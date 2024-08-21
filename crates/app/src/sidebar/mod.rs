@@ -1,9 +1,19 @@
 pub mod menu;
-use crate::macros::*;
+use crate::macros::{interface, interface_dyn, interface_mc, interface_mis};
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_gui::interface::{Interface, MainInterface, PanePair};
-use dynamo_profiles::*;
+use dynamo_profiles::{
+    BiquadraticMult, BiquadraticMultParam, BiquadraticMultSection, BurningShip, Chebyshev,
+    CoshNewton, Cosine, CosineAdd, CubicMarked2Cycle, CubicPer1Lambda, CubicPer1LambdaModuli,
+    CubicPer1LambdaParam, CubicPer1_0, CubicPer1_1, CubicPer2CritMarked, CubicPer2Lambda,
+    CubicPer2LambdaParam, CubicPer3_0, EisensteinMandel, Exponential, GaussianMandel, Gudermannian,
+    Mandelbrot, McMullenFamily, MinsikHanPhi, NewtonCubic, OddCubic, QuadRatPer1Lambda,
+    QuadRatPer1LambdaParam, QuadRatPer1_1, QuadRatPer2, QuadRatPer2InfPuncture, QuadRatPer2Lambda,
+    QuadRatPer2LambdaParam, QuadRatPer3, QuadRatPer4, QuadRatPer5, QuadRatPreper21,
+    QuadRatPreper22, QuadRatSymmetryLocus, RealCubicImagCrit, RealCubicRealCrit, RiemannXi,
+    RiemannXiNewton, Rulkov, Sailboat, SineWander, Tricorne, Unicorn, Unicritical,
+};
 use menu::{Menu, State};
 use seq_macro::seq;
 
@@ -19,6 +29,7 @@ pub fn create_menu() -> Menu
 }
 
 #[allow(clippy::identity_op)]
+#[allow(clippy::too_many_lines)]
 fn polynomials_menu() -> State
 {
     State::submenu()
@@ -253,6 +264,7 @@ fn polynomials_menu() -> State
                 .with_fractal_button("Section (b=1): λ-plane", interface!(BiquadraticMultSection))
         })
 }
+#[allow(clippy::too_many_lines)]
 fn rational_maps_menu() -> State
 {
     State::submenu()

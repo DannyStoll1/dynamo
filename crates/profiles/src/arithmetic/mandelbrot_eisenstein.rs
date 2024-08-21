@@ -1,4 +1,4 @@
-use crate::macros::*;
+use crate::macros::{basic_plane_impl, degree_impl, profile_imports};
 use dynamo_color::prelude::*;
 use dynamo_common::cache::Cache;
 profile_imports!();
@@ -168,7 +168,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         let q = self.escape_coeff(c).norm().log2();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCountSmooth;
         let potential = residual.mul_add(
-            self.escaping_period() as IterCountSmooth,
+            IterCountSmooth::from(self.escaping_period()),
             iters as IterCountSmooth,
         );
         PointInfo::Escaping {

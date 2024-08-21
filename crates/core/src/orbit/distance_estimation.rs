@@ -38,6 +38,7 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
     }
 
     #[must_use]
+    #[allow(clippy::similar_names)]
     fn init(mut self, selection: Cplx) -> Self
     {
         let (c, dc_dt) = self.family.param_map_d(selection);
@@ -167,7 +168,7 @@ impl<'a, P: EscapeEncoding> Orbit for DistanceEstimation<'a, P>
             let distance = norm_z * norm_z.ln() / self.dz_dt.norm();
             return PointInfo::DistanceEstimate {
                 distance,
-                phase: (iters % (self.family.escaping_period() as IterCount)) as Period,
+                phase: (iters % IterCount::from(self.family.escaping_period())) as Period,
             };
         }
 

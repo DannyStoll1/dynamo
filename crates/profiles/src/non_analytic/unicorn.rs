@@ -239,6 +239,7 @@ impl HasDynamicalCovers for Unicorn<3>
     }
 
     #[allow(clippy::suspicious_operation_groupings)]
+    #[allow(clippy::single_match_else)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);

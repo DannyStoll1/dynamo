@@ -68,6 +68,26 @@ impl ToggleMap
     }
 }
 
+impl<'a> IntoIterator for &'a ToggleMap
+{
+    type IntoIter = std::slice::Iter<'a, Toggle>;
+    type Item = &'a Toggle;
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut ToggleMap
+{
+    type IntoIter = std::slice::IterMut<'a, Toggle>;
+    type Item = &'a mut Toggle;
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter_mut()
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SaveFileType
@@ -214,7 +234,7 @@ impl TextDialogBuilder
     #[must_use]
     pub fn title(mut self, title: &str) -> Self
     {
-        self.title = title.to_owned();
+        title.clone_into(&mut self.title);
         self
     }
 
@@ -346,7 +366,7 @@ impl TextDialog
                     });
 
                     let mut last_toggle_enabled = true;
-                    for toggle in self.toggle_map.iter_mut() {
+                    for toggle in &mut self.toggle_map {
                         let checkbox = egui::Checkbox::new(&mut toggle.enabled, &toggle.text);
                         if toggle.conditional {
                             ui.add_enabled(last_toggle_enabled, checkbox);

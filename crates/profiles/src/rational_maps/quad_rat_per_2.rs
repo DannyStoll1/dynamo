@@ -105,6 +105,7 @@ impl DynamicalFamily for QuadRatPer2
 default_bounds_impl!(QuadRatPer2);
 has_child_impl!(QuadRatPer2, 4.0);
 
+#[allow(clippy::too_many_lines)]
 fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
 {
     match period {

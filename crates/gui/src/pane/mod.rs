@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod id;
 pub mod tasks;
-use tasks::*;
+use tasks::{ChildTask, FollowState, PaneTasks, RepeatableTask};
 
 pub trait Pane
 {
@@ -621,8 +621,13 @@ where
         self.schedule_recompute();
     }
 
+    #[allow(clippy::cast_sign_loss)]
     fn scale_max_iter(&mut self, factor: f64)
     {
+        assert!(
+            factor > 0.0,
+            "Cannot scale max iterations by negative factor {factor}"
+        );
         let iters = self.plane.max_iter_mut();
         *iters = ((*iters as f64) * factor) as IterCount;
         self.schedule_recompute();

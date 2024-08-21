@@ -42,7 +42,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab)
     {
-        use dynamo_gui::interface::UiMessage::*;
+        use dynamo_gui::interface::UiMessage::{CloseWindow, DoNothing, NewTab, Quit};
 
         tab.update(ui);
         match tab.interface.pop_message() {

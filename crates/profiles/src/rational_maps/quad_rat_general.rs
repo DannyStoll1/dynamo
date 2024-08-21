@@ -72,6 +72,7 @@ impl MarkedPoints for QuadRatGeneral
         vec![ZERO]
     }
 
+    #[allow(clippy::too_many_lines)]
     fn cycles_child(&self, CplxPair { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {

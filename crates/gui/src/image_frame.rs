@@ -1,5 +1,5 @@
 use egui::containers::Frame;
-use egui::{Pos2, Rect, Ui, Vec2};
+use egui::{Pos2, Rect, TextureOptions, Ui, Vec2};
 use epaint::{ColorImage, Stroke, TextureHandle};
 
 #[cfg(feature = "serde")]
@@ -16,7 +16,7 @@ impl BorderMode
 {
     pub(super) const fn stroke(&self) -> Stroke
     {
-        use crate::colors::*;
+        use crate::colors::{INACTIVE, LIVE, SELECTED};
         if self.live {
             return Stroke {
                 color: LIVE,
@@ -72,7 +72,7 @@ impl ImageFrame
     {
         let texture_id = self.texture_id.get_or_insert_with(|| {
             ui.ctx()
-                .load_texture("fractal", self.image.clone(), Default::default())
+                .load_texture("fractal", self.image.clone(), TextureOptions::default())
         });
 
         Frame::none().stroke(self.border.stroke()).show(ui, |ui| {
@@ -135,7 +135,7 @@ impl ImageFrame
     pub fn update_texture(&mut self)
     {
         if let Some(handle) = self.texture_id.as_mut() {
-            handle.set(self.image.clone(), Default::default());
+            handle.set(self.image.clone(), TextureOptions::default());
         }
     }
 }

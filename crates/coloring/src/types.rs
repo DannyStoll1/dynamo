@@ -56,19 +56,22 @@ impl Hsv
         self
     }
 
+    #[allow(clippy::cast_sign_loss)]
     fn as_rgb_tuple_round(&self) -> (u8, u8, u8)
     {
-        let c = self.saturation;
-        let h = self.hue * TAU;
-        let i = self.intensity;
+        let chr = self.saturation;
+        let hue = self.hue * TAU;
+        let itn = self.intensity;
 
-        let r = 127.5 * i * c.mul_add(h.cos(), 1.);
-        let g = 127.5 * i * c.mul_add((h - TAU_3).cos(), 1.);
-        let b = 127.5 * i * c.mul_add((h + TAU_3).cos(), 1.);
+        let red = 127.5 * itn * chr.mul_add(hue.cos(), 1.);
+        let grn = 127.5 * itn * chr.mul_add((hue - TAU_3).cos(), 1.);
+        let blu = 127.5 * itn * chr.mul_add((hue + TAU_3).cos(), 1.);
 
-        (r as u8, g as u8, b as u8)
+        (red as u8, grn as u8, blu as u8)
     }
 
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::many_single_char_names)]
     fn as_rgb_tuple(&self) -> (u8, u8, u8)
     {
         let c = self.intensity * self.saturation;
@@ -93,9 +96,9 @@ impl Hsv
 
     fn from_rgb_tuple_round(rgb: (u8, u8, u8)) -> Self
     {
-        let r = rgb.0 as f32 / f32::from(u8::MAX - 1);
-        let g = rgb.1 as f32 / f32::from(u8::MAX - 1);
-        let b = rgb.2 as f32 / f32::from(u8::MAX - 1);
+        let r = f32::from(rgb.0) / f32::from(u8::MAX - 1);
+        let g = f32::from(rgb.1) / f32::from(u8::MAX - 1);
+        let b = f32::from(rgb.2) / f32::from(u8::MAX - 1);
 
         let alpha = r - (g + b) / 2.;
         let beta = SIN_60 * (g - b);
@@ -318,6 +321,8 @@ pub struct RgbLinear
 impl RgbLinear
 {
     const GAMMA: f32 = 1.;
+
+    #[allow(clippy::cast_sign_loss)]
     fn gamma_map(val: f32) -> u8
     {
         (val * 256.) as u8
@@ -358,6 +363,7 @@ impl From<Lchab> for Lab
 
 impl From<Luv> for Xyz
 {
+    #[allow(clippy::many_single_char_names)]
     fn from(Luv { l, u, v }: Luv) -> Self
     {
         let Self { y: yr, .. } = Self::REF_WHITE;
@@ -383,6 +389,7 @@ impl From<Luv> for Xyz
 
 impl From<Lab> for Xyz
 {
+    #[allow(clippy::many_single_char_names)]
     fn from(Lab { l, a, b }: Lab) -> Self
     {
         let Self {
@@ -428,6 +435,7 @@ fn dot<const N: usize>(v: [f32; N], w: [f32; N]) -> f32
 
 impl From<Xyz> for RgbLinear
 {
+    #[allow(clippy::many_single_char_names)]
     fn from(Xyz { x, y, z }: Xyz) -> Self
     {
         Self {

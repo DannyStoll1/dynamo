@@ -75,7 +75,7 @@ impl<const N: Period> MarkedPoints for Tricorne<N>
 
 impl<const N: Period> InfinityFirstReturnMap for Tricorne<N>
 {
-    degree_impl!(N as AngleNum);
+    degree_impl!(AngleNum::from(N));
 }
 impl<const N: Period> EscapeEncoding for Tricorne<N> {}
 impl<const N: Period> ExternalRays for Tricorne<N> {}

@@ -6,7 +6,7 @@ use dynamo_gui::hotkeys::{
     OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
 };
 use dynamo_gui::interface::{Interface, MainInterface};
-use dynamo_profiles::*;
+use dynamo_profiles::Mandelbrot;
 use egui::Ui;
 use egui_dock::{NodeIndex, SurfaceIndex};
 
@@ -280,6 +280,7 @@ impl FractalTab
     }
 
     #[allow(clippy::unused_self)]
+    #[allow(clippy::needless_pass_by_ref_mut)]
     fn help_menu(&mut self, _ui: &mut Ui)
     {
         // TODO: create help menu
@@ -354,7 +355,7 @@ impl Default for FractalTab
         Self {
             interface,
             sidebar_menu,
-            menu_state: Default::default(),
+            menu_state: MenuState::default(),
             id: TabID::default(),
             #[cfg(feature = "scripting")]
             popup: None,

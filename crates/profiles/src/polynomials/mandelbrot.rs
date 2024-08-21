@@ -300,6 +300,7 @@ impl MarkedPoints for Mandelbrot
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn cycles_child(&self, c: &Cplx, period: Period) -> ComplexVec
     {
         use dynamo_common::math_utils::polynomial_roots::solve_polynomial;
@@ -1011,6 +1012,7 @@ impl MarkedPoints for Mandelbrot
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn precycles_child(&self, c: &Cplx, orbit_schema: OrbitSchema) -> ComplexVec
     {
         use dynamo_common::math_utils::polynomial_roots::solve_polynomial;

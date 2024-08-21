@@ -8,13 +8,17 @@ use dynamo_core::{dynamics::Displayable, prelude::HasChild};
 
 use crate::{
     actions::Action,
-    dialog::*,
+    dialog::{
+        AllActiveRayParams, Dialog, RayParams, SaveFileType, TextDialogBuilder, TextInputType,
+        ToggleKey, ToggleMap,
+    },
     hotkeys::{
-        keyboard_shortcuts::*, Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS,
-        IMAGE_HOTKEYS, INCOLORING_HOTKEYS, OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+        keyboard_shortcuts::shortcut_used, Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS,
+        FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS,
+        SELECTION_HOTKEYS,
     },
     pane::{
-        id::*,
+        id::{PaneID, PaneSelection},
         tasks::{ChildTask, FollowState, SelectOrFollow},
         Pane, WindowPane,
     },
@@ -168,7 +172,7 @@ where
         file_type: SaveFileType,
     )
     {
-        use SaveFileType::*;
+        use SaveFileType::{Image, Palette};
 
         // Ensure file selection was confirmed
         if !file_dialog.selected() {
@@ -224,8 +228,10 @@ where
         toggle_map: &ToggleMap,
     )
     {
-        use crate::dialog::TextInputType::*;
-        use crate::dialog::ToggleKey::*;
+        use crate::dialog::TextInputType::{ActiveRays, Coordinates, ExternalRay, FindPeriodic};
+        use crate::dialog::ToggleKey::{
+            DoChild, DoParent, DrawOrbit, FollowPoint, PrefixAngles, SelectPoint,
+        };
         match input_type {
             ExternalRay { .. } => {
                 if let Ok(angle) = text.parse::<RationalAngle>() {
@@ -453,7 +459,7 @@ where
     /// Prompt for text input for a specified purpose.
     fn prompt_text(&mut self, input_type: TextInputType)
     {
-        use TextInputType::*;
+        use TextInputType::{ActiveRays, Coordinates, ExternalRay, FindPeriodic};
         let text_dialog = match input_type {
             ExternalRay {
                 pane_id,
@@ -632,7 +638,7 @@ where
 
     fn get_selected_pane_ids(&self, selection: PaneSelection) -> Vec<PaneID>
     {
-        use PaneSelection::*;
+        use PaneSelection::{ActivePane, BothPanes, Id};
         match selection {
             ActivePane => self
                 .active_pane
@@ -860,7 +866,7 @@ where
             });
     }
 
-    #[allow(clippy::option_map_unit_fn)]
+    #[allow(clippy::too_many_lines)]
     /// Processes an action and updates the state of the interface accordingly.
     fn process_action(&mut self, action: &Action)
     {
@@ -947,8 +953,9 @@ where
                 }
             }
             Action::DrawContour(contour_type) => {
-                self.get_active_pane_mut()
-                    .map(|p| p.draw_contour(*contour_type));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.draw_contour(*contour_type);
+                }
             }
             Action::DrawAuxContours => {
                 self.get_active_pane_mut().map(Pane::draw_aux_contours);
@@ -981,11 +988,14 @@ where
                 // TODO: Fill in with actual handling
             }
             Action::Pan(x, y) => {
-                self.get_active_pane_mut().map(|p| p.pan_relative(*x, *y));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.pan_relative(*x, *y);
+                }
             }
             Action::Zoom(scale) => {
-                self.get_active_pane_mut()
-                    .map(|p| p.zoom(*scale, p.get_selection()));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.zoom(*scale, p.get_selection());
+                }
             }
             Action::CenterOnSelection => {
                 if let Some(pane) = self.get_active_pane_mut() {
@@ -995,8 +1005,9 @@ where
                 }
             }
             Action::ScaleMaxIter(factor) => {
-                self.get_active_pane_mut()
-                    .map(|p| p.scale_max_iter(*factor));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.scale_max_iter(*factor);
+                }
             }
             Action::RandomizePalette => self.randomize_palette(),
             Action::SetPalette(palette) => {
@@ -1011,8 +1022,9 @@ where
                 self.set_palette(black_palette);
             }
             Action::SetColoring(algorithm) => {
-                self.get_active_pane_mut()
-                    .map(|p| p.set_coloring_algorithm(algorithm.clone()));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.set_coloring_algorithm(algorithm.clone());
+                }
             }
             Action::SetColoringInternalPotential => {
                 self.get_active_pane_mut()
@@ -1027,16 +1039,20 @@ where
                     .map(Pane::select_preperiod_period_smooth_coloring);
             }
             Action::ScalePalettePeriod(factor) => {
-                self.get_active_pane_mut().map(|p| p.scale_palette(*factor));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.scale_palette(*factor);
+                }
             }
             Action::ShiftPalettePhase(phase) => {
-                self.get_active_pane_mut().map(|p| p.shift_palette(*phase));
+                if let Some(p) = self.get_active_pane_mut() {
+                    p.shift_palette(*phase);
+                }
             }
             Action::ToggleEscapePhaseColoring => {
-                self.get_active_pane_mut().map(|p| {
+                if let Some(p) = self.get_active_pane_mut() {
                     p.get_coloring_mut().toggle_escape_phase_coloring();
                     p.schedule_redraw();
-                });
+                }
             }
             Action::CycleComputeMode(selection, change) => {
                 self.get_selected_pane_ids(*selection)

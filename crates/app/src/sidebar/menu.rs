@@ -151,7 +151,7 @@ pub struct Menu
 impl Menu
 {
     #[must_use]
-    pub fn new(state: State) -> Self
+    pub const fn new(state: State) -> Self
     {
         Self {
             state,

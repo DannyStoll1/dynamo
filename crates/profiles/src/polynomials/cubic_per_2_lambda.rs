@@ -526,6 +526,7 @@ impl HasDynamicalCovers for CubicPer2CritMarked
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
+    #[allow(clippy::single_match_else)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);

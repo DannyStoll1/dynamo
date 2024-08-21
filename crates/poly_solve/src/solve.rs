@@ -1,5 +1,5 @@
 use crate::newton::Newton;
-use crate::poly_traits::*;
+use crate::poly_traits::{Differentiable, DivideByAffine, Eval, MulConst, Normalize};
 use crate::polynomial::Polynomial;
 use num_complex::{Complex, Complex64};
 use rand::{rngs::ThreadRng, Rng};

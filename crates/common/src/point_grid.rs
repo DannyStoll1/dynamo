@@ -162,6 +162,8 @@ impl PointGrid
     }
 
     #[must_use]
+    #[allow(clippy::similar_names)]
+    #[allow(clippy::cast_sign_loss)]
     pub const fn infer_height(res_x: usize, bounds: &Bounds) -> usize
     {
         debug_assert!(res_x > 0);
@@ -173,6 +175,8 @@ impl PointGrid
     }
 
     #[must_use]
+    #[allow(clippy::similar_names)]
+    #[allow(clippy::cast_sign_loss)]
     pub const fn infer_width(res_y: usize, bounds: &Bounds) -> usize
     {
         debug_assert!(res_y > 0);
@@ -294,6 +298,7 @@ impl PointGrid
     }
 
     #[must_use]
+    #[allow(clippy::cast_sign_loss)]
     pub fn locate_point_safe(&self, z: Cplx) -> Option<(usize, usize)>
     {
         if z.re >= self.bounds.max_x

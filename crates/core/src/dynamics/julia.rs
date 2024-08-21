@@ -524,6 +524,8 @@ impl<P> ExternalRays for JuliaSet<P>
 where
     P: HasJulia + InfinityFirstReturnMap,
 {
+    #[allow(clippy::similar_names)]
+    #[allow(clippy::many_single_char_names)]
     fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         const R: Real = 16.0;

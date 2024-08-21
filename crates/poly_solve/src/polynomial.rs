@@ -1,6 +1,8 @@
+use crate::poly_traits::{Differentiable, DivideByAffine, Eval, HasVar, MulConst, Normalize, VariableOps};
 use crate::{newton::Newton, normed::Semimetric, utils::Collapse};
 use derive_more::From;
 use itertools::Itertools;
+use num_traits::{NumOps, Zero};
 use std::{
     cmp::Ordering,
     collections::{vec_deque, VecDeque},
@@ -8,17 +10,14 @@ use std::{
     ops::AddAssign,
 };
 
-use crate::poly_traits::*;
-use num_traits::{NumOps, Zero};
-
 #[derive(Clone, PartialEq, Eq, Debug, From)]
-pub struct Polynomial<T: Clone>
+pub struct Polynomial<T>
 {
     /// Coefficients of the polynomial, starting with constant term first
     pub coeffs: VecDeque<T>,
 }
 
-impl<T: VariableOps> Polynomial<T>
+impl<T> Polynomial<T>
 {
     const ZERO: Self = Self {
         coeffs: VecDeque::new(),
@@ -40,6 +39,8 @@ impl<T: VariableOps> Polynomial<T>
 
     /// Other must have lower degree for this to be correct
     fn add_assign_lower_degree_poly(&mut self, other: &Self)
+    where
+        T: Clone + AddAssign,
     {
         self.coeffs.iter_mut().zip(other.iter()).for_each(|(a, b)| {
             *a += b.clone();
@@ -47,6 +48,8 @@ impl<T: VariableOps> Polynomial<T>
     }
 
     fn clear_leading_zeros(&mut self)
+    where
+        T: Zero,
     {
         while self.coeffs.back().is_some_and(Zero::is_zero) {
             self.coeffs.pop_back();
@@ -66,6 +69,8 @@ impl<T: VariableOps> Polynomial<T>
     }
 
     pub fn add_with(&mut self, rhs: &Self)
+    where
+        T: Clone + Zero + AddAssign,
     {
         match rhs.size().cmp(&self.size()) {
             Ordering::Less => {
@@ -91,9 +96,31 @@ impl<T: VariableOps> Polynomial<T>
     }
 }
 
+impl<'a, T> IntoIterator for &'a Polynomial<T>
+{
+    type Item = &'a T;
+    type IntoIter = vec_deque::Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Polynomial<T>
+{
+    type Item = &'a mut T;
+    type IntoIter = vec_deque::IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter
+    {
+        self.iter_mut()
+    }
+}
+
 impl<R, T, const N: usize> From<[R; N]> for Polynomial<T>
 where
-    T: Clone + NumOps + From<R>,
+    T: Clone + From<R>,
 {
     fn from(coeff_arr: [R; N]) -> Self
     {
@@ -101,7 +128,7 @@ where
     }
 }
 
-impl<T: Clone + NumOps> From<Vec<T>> for Polynomial<T>
+impl<T> From<Vec<T>> for Polynomial<T>
 {
     fn from(coeffs: Vec<T>) -> Self
     {
@@ -111,7 +138,7 @@ impl<T: Clone + NumOps> From<Vec<T>> for Polynomial<T>
     }
 }
 
-impl<T: Clone + NumOps> From<&[T]> for Polynomial<T>
+impl<T: Clone> From<&[T]> for Polynomial<T>
 {
     fn from(coeffs: &[T]) -> Self
     {
@@ -121,7 +148,7 @@ impl<T: Clone + NumOps> From<&[T]> for Polynomial<T>
     }
 }
 
-impl<T: Clone> FromIterator<T> for Polynomial<T>
+impl<T> FromIterator<T> for Polynomial<T>
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self
     {
@@ -130,7 +157,7 @@ impl<T: Clone> FromIterator<T> for Polynomial<T>
     }
 }
 
-impl<T: Clone> IntoIterator for Polynomial<T>
+impl<T> IntoIterator for Polynomial<T>
 {
     type Item = T;
     type IntoIter = std::collections::vec_deque::IntoIter<T>;

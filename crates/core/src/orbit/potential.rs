@@ -243,7 +243,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
 
     /// Logarithm of the Green's function, together with its gradient,
     /// for unbounded orbits
-    fn external_bottcher_d(&mut self, iters: IterCount) -> (Real, Cplx)
+    fn external_bottcher_d(&self, iters: IterCount) -> (Real, Cplx)
     {
         let log_dn = iters as Real * self.family.degree_real().ln();
 
@@ -255,7 +255,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
 
         let phi = norm_z_log
             .ln()
-            .mul_add(-(self.family.escaping_period() as Real), log_dn);
+            .mul_add(-Real::from(self.family.escaping_period()), log_dn);
         let grad_phi = -2.0 * z * (dz_dt / (norm_z_log * norm_z)).conj();
 
         (phi, grad_phi)
@@ -285,7 +285,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
 
     fn run_until_complete(&mut self) -> Self::Outcome
     {
-        use EscapeResult::*;
+        use EscapeResult::{Bounded, Escaped, Periodic, Unknown};
 
         while self.state.is_none() {
             self.iter += 1;

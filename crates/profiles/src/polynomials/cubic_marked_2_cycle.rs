@@ -156,6 +156,7 @@ const FRAC_5_12: f64 = 5. / 12.;
 
 impl HasDynamicalCovers for CubicMarked2Cycle
 {
+    #[allow(clippy::single_match_else)]
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);

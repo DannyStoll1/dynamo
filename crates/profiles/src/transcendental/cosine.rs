@@ -1,6 +1,6 @@
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 
-use crate::macros::*;
+use crate::macros::{basic_plane_impl, default_bounds, default_bounds_impl, default_name, degree_impl_transcendental, fractal_impl, has_child_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -256,6 +256,7 @@ has_child_impl!(SineWander, 5.5);
 
 impl MarkedPoints for Cosine
 {
+    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
@@ -268,7 +269,7 @@ impl MarkedPoints for Cosine
         let mut pts = Vec::with_capacity((n_max - n_min) as usize);
 
         for n in n_min..n_max {
-            pts.push((n as Real * PI).into());
+            pts.push((Real::from(n) * PI).into());
         }
         pts
     }
@@ -276,6 +277,7 @@ impl MarkedPoints for Cosine
 
 impl MarkedPoints for CosineAdd
 {
+    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
@@ -288,7 +290,7 @@ impl MarkedPoints for CosineAdd
         let mut pts = Vec::with_capacity((n_max - n_min) as usize);
 
         for n in n_min..n_max {
-            pts.push((n as Real * PI).into());
+            pts.push((Real::from(n) * PI).into());
         }
         pts
     }
@@ -296,6 +298,7 @@ impl MarkedPoints for CosineAdd
 
 impl MarkedPoints for SineWander
 {
+    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
@@ -308,7 +311,7 @@ impl MarkedPoints for SineWander
         let mut pts = Vec::with_capacity((n_max - n_min + 1) as usize);
 
         for n in n_min..=n_max {
-            pts.push((n as Real).mul_add(TAU, PI).into());
+            pts.push(Real::from(n).mul_add(TAU, PI).into());
         }
         pts
     }

@@ -1,7 +1,7 @@
 use dynamo_color::{Coloring, IncoloringAlgorithm};
-use dynamo_common::math_utils::contour::*;
+use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams, LevelCurveParams};
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
-use dynamo_common::math_utils::{arithmetic::*, newton::*};
+use dynamo_common::math_utils::{arithmetic::{Integer, divisors, gcd, moebius}, newton::{find_root_newton, find_target_newton_err_d}};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use num_traits::{One, Zero};
@@ -816,7 +816,7 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
         let q = self.escape_coeff(c).norm().ln();
         let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCountSmooth;
         residual.mul_add(
-            self.escaping_period() as IterCountSmooth,
+            IterCountSmooth::from(self.escaping_period()),
             iters as IterCountSmooth,
         )
     }

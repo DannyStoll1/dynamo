@@ -298,7 +298,7 @@ impl CirclePartition
 
     /// Assumes angles are sorted
     #[must_use]
-    pub fn new_raw(angles: VecDeque<RationalAngle>) -> Self
+    pub const fn new_raw(angles: VecDeque<RationalAngle>) -> Self
     {
         Self { angles }
     }

@@ -31,7 +31,7 @@ pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cpl
     let mut p_2: Cplx;
     let mut dp_2: Cplx;
     let mut ddp: Cplx;
-    let mut ddp_2: Cplx;
+    let mut ddp_squared: Cplx;
     let mut tmp: Cplx;
     let mut four_dp_2: Cplx;
 
@@ -39,11 +39,11 @@ pub fn weierstrass_p(g2: Cplx, g3: Cplx, z: Cplx, tolerance: Real) -> (Cplx, Cpl
         p_2 = p * p;
         dp_2 = p * (4. * p_2 - g2) - g3;
         ddp = 6. * p_2 - g2 / 2.;
-        ddp_2 = ddp * ddp;
-        tmp = ddp_2 / (4. * dp_2) - p - p;
+        ddp_squared = ddp * ddp;
+        tmp = ddp_squared / (4. * dp_2) - p - p;
         // dp = (-4. * dp_2 * dp_2 + 12 * p * dp_2 * ddp - ddp * ddp_2) / (4. * dp_2 * dp);
         four_dp_2 = dp_2 + dp_2 + dp_2 + dp_2;
-        dp = (four_dp_2 * (3. * p * ddp - dp_2) - ddp * ddp_2) / (four_dp_2 * dp);
+        dp = (four_dp_2 * (3. * p * ddp - dp_2) - ddp * ddp_squared) / (four_dp_2 * dp);
         p = tmp;
     }
     (p, dp)

@@ -154,6 +154,7 @@ impl MarkedPoints for CubicPer1Lambda
         vec![-ONE_THIRD * (c + disc), -ONE_THIRD * (c - disc)]
     }
 
+    #[allow(clippy::too_many_lines)]
     fn cycles(&self, period: Period) -> Vec<Self::Var>
     {
         match period {
@@ -758,6 +759,7 @@ impl MarkedPoints for CubicPer1_0
         vec![ZERO, -TWO_THIRDS * c]
     }
 
+    #[allow(clippy::too_many_lines)]
     fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
@@ -1168,6 +1170,7 @@ impl HasDynamicalCovers for CubicPer1_0
         };
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
+    #[allow(clippy::single_match_else)]
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
@@ -1201,6 +1204,7 @@ impl HasDynamicalCovers for CubicPer1_0
 
 impl HasDynamicalCovers for CubicPer1_1
 {
+    #[allow(clippy::single_match_else)]
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
@@ -1229,6 +1233,7 @@ impl HasDynamicalCovers for CubicPer1_1
     }
 
     #[allow(clippy::suspicious_operation_groupings)]
+    #[allow(clippy::single_match_else)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
@@ -1259,6 +1264,7 @@ impl HasDynamicalCovers for CubicPer1_1
         };
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
+    #[allow(clippy::single_match_else)]
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
@@ -1368,7 +1374,7 @@ impl DynamicalFamily for CubicPer1LambdaModuli
     #[inline]
     fn start_point(&self, point: Cplx, CplxPair { a, b }: &Self::Param) -> Self::Var
     {
-        use PlaneID::*;
+        use PlaneID::{WPlane, ZPlane};
 
         let u = b / (3. * a);
         let crit = (-u).sqrt();

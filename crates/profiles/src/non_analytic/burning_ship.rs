@@ -243,7 +243,7 @@ impl<const N: Period> From<BurningShip<N>> for Sailboat<N>
 
 impl<const N: Period> InfinityFirstReturnMap for BurningShip<N>
 {
-    degree_impl!(N as i64);
+    degree_impl!(i64::from(N));
 }
 
 impl<const N: Period> EscapeEncoding for BurningShip<N> {}
@@ -258,4 +258,4 @@ impl<const N: Period> MarkedPoints for Sailboat<N>
     }
 }
 
-degree_impl!(Sailboat, N as i64; N: Period);
+degree_impl!(Sailboat, i64::from(N); N: Period);
