@@ -582,9 +582,8 @@ where
     {
         self.plane
             .find_nearby_preperiodic_point(self.selection, o)
-            .map(|pt| {
+            .inspect(|&pt| {
                 self.select_point(pt);
-                pt
             })
     }
 

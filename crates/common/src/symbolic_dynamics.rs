@@ -624,9 +624,7 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
         static ref BIN_PREPER: Regex = Regex::new(r"^(\d*)p(\d+)$").unwrap();
     }
 
-    let Some(captures) = BIN_PREPER.captures(text) else {
-        return None;
-    };
+    let captures = BIN_PREPER.captures(text)?;
     if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2)) {
         let per_str = per_match.as_str();
         let pre_str = pre_match.as_str();

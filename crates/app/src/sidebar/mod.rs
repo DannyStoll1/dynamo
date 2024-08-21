@@ -384,6 +384,7 @@ fn transcendental_menu() -> State
         .with_fractal_button("z -> cos(z) + c", interface!(CosineAdd))
         .with_fractal_button("z -> sin(z) + z + τc", interface!(SineWander))
         .with_fractal_button("Cosh Newton", interface!(CoshNewton, CoshNewton))
+        .with_fractal_button("z -> λarctan(sinh(z))", interface!(Gudermannian))
         .with_fractal_button(
             "Riemann Xi Newton [SLOW!]",
             interface!(RiemannXi, RiemannXiNewton),

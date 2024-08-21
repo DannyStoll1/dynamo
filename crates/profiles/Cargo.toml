@@ -12,3 +12,6 @@ seq-macro = "0.3.5"
 
 [lib]
 name = "dynamo_profiles"
+
+[features]
+serde = []

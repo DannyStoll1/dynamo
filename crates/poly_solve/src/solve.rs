@@ -3,7 +3,6 @@ use crate::poly_traits::*;
 use crate::polynomial::Polynomial;
 use num_complex::{Complex, Complex64};
 use rand::{rngs::ThreadRng, Rng};
-use std::f64::INFINITY;
 
 fn compute_cauchy_poly(poly: &Polynomial<Complex64>) -> Polynomial<f64>
 {
@@ -49,7 +48,7 @@ impl JenkinsTraubSolver
             cauchy_root,
             rng,
             best_root: Self::NAN,
-            best_norm: INFINITY,
+            best_norm: f64::INFINITY,
             stage_1_shift: Self::NAN,
         }
     }
@@ -100,7 +99,7 @@ impl JenkinsTraubSolver
     fn reset(&mut self)
     {
         self.best_root = Self::NAN;
-        self.best_norm = INFINITY;
+        self.best_norm = f64::INFINITY;
     }
 
     fn stage_0(&mut self)

@@ -118,7 +118,7 @@ impl<'a> Loader<'a>
         #[cfg(debug_assertions)]
         let status = Command::new("cargo")
             .args(["build", "-p", "transpiled-scripts"])
-            .current_dir(&self.base_dir())
+            .current_dir(self.base_dir())
             .status()
             .map_err(ScriptError::CargoCommandFailed)?;
 
