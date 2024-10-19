@@ -32,9 +32,9 @@ As of version 0.5.1, saved images now contain all annotations.
 
 ## Installation
 
-To install and run, just clone the repository, navigate to `bin`, and run `cargo +nightly run -r`.
+To install and run, just clone the repository, navigate to `bin`, and run `cargo run -r`.
 
-You may need to first [install Rust](https://rustup.rs/). At present, the nightly toolchain is required; you can install this with `rustup install nightly`.
+You may need to first [install Rust](https://rustup.rs/).
 
 Alternatively, you can download a precompiled binary from the "Releases" tags on the right.
 Binaries are available for Linux, macOS, and Windows.
@@ -107,7 +107,7 @@ Users can now write scripts at runtime to study custom dynamical systems.
 Since this requires compiling code locally, [Cargo](https://rustup.rs/) is a strict dependency.
 Python3 and [SymPy](https://www.sympy.org/en/index.html) are also required for the transpilation process. The latter can be installed with `pip install sympy`.
 
-To try out this feature, navigate to the project directory and run `cargo +nightly run -rF scripting`.
+To try out this feature, navigate to the project directory and run `cargo run -rF scripting`.
 This feature has been tested to work on Linux and Windows, but it remains highly experimental.
 
 While not as flexible as manually editing profiles in Rust, scripts still allow

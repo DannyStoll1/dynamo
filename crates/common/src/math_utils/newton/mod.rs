@@ -21,6 +21,8 @@ where
     z
 }
 
+/// Use Newton's method to find approximate root.
+///
 /// Apply Newton's method until we converge to within `tolerance`.
 /// Will loop forever if Newton's method fails to converge.
 pub fn newton_until_convergence<T, F>(f_and_df: F, start: T, target: T, tolerance: Real) -> T
@@ -42,6 +44,8 @@ where
     z
 }
 
+/// Use Newton's method to find approximate root, actual value, and derivative.
+///
 /// Apply Newton's method until we converge to within `tolerance`.
 /// Will loop forever if Newton's method fails to converge.
 /// Returns root together with value and derivative of function.
@@ -72,6 +76,8 @@ where
     (z, f, df)
 }
 
+/// Find a zero with an iteration cap.
+///
 /// Apply Newton's method until we obtain a value within `NEWTON_MAX_ERR` of 0,
 /// giving up after `NEWTON_MAX_ITERS`.
 /// Returns the approximate root, together with the value and derivative of the function there.
