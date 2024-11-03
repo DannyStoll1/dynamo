@@ -50,7 +50,7 @@ where
 
 pub trait Named
 {
-    fn name(&self) -> &str
+    fn name(&self) -> &'static str
     {
         "c"
     }
@@ -158,7 +158,7 @@ where
 
 impl Named for i32
 {
-    fn name(&self) -> &str
+    fn name(&self) -> &'static str
     {
         "n"
     }

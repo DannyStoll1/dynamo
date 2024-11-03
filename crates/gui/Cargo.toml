@@ -1,6 +1,6 @@
 [package]
 name = "dynamo_gui"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Danny Stoll"]
 repository = "https://github.com/dannystoll1/dynamo"
@@ -8,21 +8,25 @@ description = "GUI for Dynamo"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-serde = { version = "1.0.192", features = ["derive"], optional = true }
-eframe = { version = "0.23", optional = true }
-egui = "0.23"
-egui_extras = { version = "0.23", features = ["image"] }
-egui_file = "0.11.0"
-epaint = "0.23"
+serde = { workspace = true, features = ["derive"], optional = true }
+egui = { workspace = true }
+epaint = { workspace = true }
+egui_extras = { workspace = true, features = ["image"] }
+egui_file = { workspace = true }
 seq-macro = "0.3.5"
 dynamo_core = { version = "*", path = "../core" }
 dynamo_color = { version = "*", path = "../coloring", features = ["serde"] }
 dynamo_common = { version = "*", path = "../common" }
-libloading = {version = "0.8.1", optional = true}
-image = "0.24.7"
-imageproc = "0.23.0"
-itertools = "0.11.0"
+libloading = { version = "0.8.5", optional = true }
+image = { workspace = true }
+imageproc = "0.25"
+itertools = { workspace = true }
 
 [features]
-serde = ["dep:serde", "epaint/serde", "dynamo_core/serde", "dynamo_common/serde"]
-scripting = ["dep:libloading", "dep:eframe"]
+serde = [
+  "dep:serde",
+  "epaint/serde",
+  "dynamo_core/serde",
+  "dynamo_common/serde",
+]
+scripting = ["dep:libloading"]

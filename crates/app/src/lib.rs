@@ -15,7 +15,7 @@ pub fn run_app() -> Result<(), eframe::Error>
     use dynamo_common::prelude::{WIN_HEIGHT, WIN_WIDTH};
 
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(WIN_WIDTH, WIN_HEIGHT)),
+        viewport: egui::ViewportBuilder::default().with_inner_size([WIN_WIDTH, WIN_HEIGHT]),
         run_and_return: false,
         ..Default::default()
     };
@@ -25,7 +25,7 @@ pub fn run_app() -> Result<(), eframe::Error>
         options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
-            Box::<FractalApp>::default()
+            Ok(Box::<FractalApp>::default())
         }),
     )
 }

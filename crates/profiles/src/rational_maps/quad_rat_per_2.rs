@@ -1173,7 +1173,7 @@ mod param
     impl Describe for Param {}
     impl Named for Param
     {
-        fn name(&self) -> &str
+        fn name(&self) -> &'static str
         {
             "c"
         }

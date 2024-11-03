@@ -1,6 +1,6 @@
 [package]
 name = "dynamo_wasm"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["Danny Stoll"]
@@ -10,13 +10,13 @@ description = "A tool for studying discrete time dynamical systems - Web UI"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dynamo_app = { path = "../app"}
-web-sys = "0.3.65"
-eframe = "0.23.0"
+dynamo_app = { path = "../app" }
+web-sys = "0.3"
+eframe = { workspace = true }
 console_error_panic_hook = "0.1.7"
 log = "0.4.20"
-wasm-bindgen = "0.2.88"
-wasm-bindgen-futures = "0.4.38"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
 getrandom = { version = "0.2.11", features = ["js"] }
 
 [lib]

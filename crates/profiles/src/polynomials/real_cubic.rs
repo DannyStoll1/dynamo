@@ -1,4 +1,6 @@
-use crate::macros::{basic_plane_impl, default_bounds, default_name, degree_impl, fractal_impl, profile_imports};
+use crate::macros::{
+    basic_plane_impl, default_bounds, default_name, degree_impl, fractal_impl, profile_imports,
+};
 profile_imports!();
 
 #[derive(Clone, Debug)]

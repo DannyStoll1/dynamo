@@ -4,7 +4,10 @@ use crate::{
     types::Real,
 };
 pub mod error;
-use error::{Error::{FailedToConverge, NanEncountered}, NewtonResult};
+use error::{
+    Error::{FailedToConverge, NanEncountered},
+    NewtonResult,
+};
 use num_traits::One;
 use std::ops::{AddAssign, Div, Sub, SubAssign};
 
@@ -124,6 +127,7 @@ where
 
 /// Apply Newton's method until we obtain a value within `error` of `target`,
 /// giving up after `NEWTON_MAX_ITERS`.
+///
 /// Returns the approximate solution, together with the value and derivative of the function there.
 pub fn find_target_newton_err_d<T, F>(
     mut f_and_df: F,
@@ -178,6 +182,7 @@ where
 
 /// Apply Newton's method until we obtain a value within `NEWTON_MAX_ERR` of `target`,
 /// giving up after `NEWTON_MAX_ITERS`.
+///
 /// Returns the approximate solution, together with the value and derivative of the function there.
 pub fn find_target_newton_d<T, F>(f_and_df: F, start: T, target: T) -> NewtonResult<(T, T, T)>
 where
@@ -201,6 +206,7 @@ where
 
 /// Apply Newton's method until we obtain a value within `NEWTON_MAX_ERR` of `target`,
 /// giving up after `NEWTON_MAX_ITERS`.
+///
 /// Relative distance, rather than absolute distance, is used.
 /// Returns the approximate solution, together with the value and derivative of the function there.
 pub fn find_target_newton_relative_d<T, F>(

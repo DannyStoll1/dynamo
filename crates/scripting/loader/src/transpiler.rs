@@ -1,4 +1,7 @@
-use crate::{error::ScriptError, parser::{ParsedUserInput, UnparsedUserInput}};
+use crate::{
+    error::ScriptError,
+    parser::{ParsedUserInput, UnparsedUserInput},
+};
 use std::path::Path;
 
 pub struct Transpiler

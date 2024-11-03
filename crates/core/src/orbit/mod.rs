@@ -94,7 +94,10 @@ where
 {
     pub fn summary(&self, conf: &OrbitSummaryConf) -> String
     {
-        use PointInfo::{Bounded, DistanceEstimate, Escaping, MarkedPoint, Periodic, PeriodicKnownPotential, Unknown, Wandering};
+        use PointInfo::{
+            Bounded, DistanceEstimate, Escaping, MarkedPoint, Periodic, PeriodicKnownPotential,
+            Unknown, Wandering,
+        };
 
         let param_desc = self
             .param

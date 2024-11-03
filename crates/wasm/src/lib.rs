@@ -5,6 +5,8 @@ use {
     log,
     wasm_bindgen::prelude::*,
 };
+#[cfg(target_arch = "wasm32")]
+use {web_sys::HtmlCanvasElement};
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone)]
@@ -32,13 +34,13 @@ impl WebHandle
 
     /// Call this once from JavaScript to start your app.
     #[wasm_bindgen]
-    pub async fn start(&self, canvas_id: &str) -> Result<(), wasm_bindgen::JsValue>
+    pub async fn start(&self, canvas_id: HtmlCanvasElement) -> Result<(), wasm_bindgen::JsValue>
     {
         self.runner
             .start(
                 canvas_id,
                 WebOptions::default(),
-                Box::new(|_cc| Box::new(FractalApp::default())),
+                Box::new(|_cc| Ok(Box::new(FractalApp::default()))),
             )
             .await
     }

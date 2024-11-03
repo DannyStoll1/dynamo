@@ -3,12 +3,12 @@ pub(crate) use dynamo_core::macros::*;
 
 macro_rules! profile_imports {
     () => {
-        use $crate::macros::parameter_plane_impl;
         use dynamo_common::math_utils::polynomial_roots::*;
         use dynamo_common::prelude::*;
         use dynamo_core::prelude::*;
         use num_traits::ops::mul_add::MulAdd;
         use std::any::type_name;
+        use $crate::macros::parameter_plane_impl;
 
         #[cfg(feature = "serde")]
         use serde::{Deserialize, Serialize};

@@ -120,6 +120,7 @@ impl Bounds
         }
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn is_nan(&self) -> bool
     {

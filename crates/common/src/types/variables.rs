@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Eq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {a}, b: {b} ] ")]
+#[display("[ a: {a}, b: {b} ] ")]
 pub struct Pair<T>
 where
     T: std::fmt::Display,
@@ -37,7 +37,7 @@ pub type CplxPair = Pair<Cplx>;
 
 #[derive(Default, Clone, Copy, Debug, Add, From, PartialEq, Display)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[display(fmt = "[ a: {a}, b: {b}, c: {c}, d: {d} ] ")]
+#[display("[ a: {a}, b: {b}, c: {c}, d: {d} ] ")]
 pub struct ComplexQuad
 {
     pub a: Cplx,
@@ -90,9 +90,9 @@ impl MaybeNan for Cplx
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PlaneID
 {
-    #[display(fmt = "w-plane")]
+    #[display("w-plane")]
     ZPlane,
-    #[display(fmt = "z-plane")]
+    #[display("z-plane")]
     WPlane,
 }
 impl PlaneID
@@ -111,9 +111,9 @@ impl PlaneID
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Bicomplex
 {
-    #[display(fmt = "PlaneA({_0})")]
+    #[display("PlaneA({_0})")]
     PlaneA(Cplx),
-    #[display(fmt = "PlaneB({_0})")]
+    #[display("PlaneB({_0})")]
     PlaneB(Cplx),
 }
 
@@ -476,7 +476,7 @@ impl std::fmt::Display for EisensteinInteger
 impl Describe for EisensteinInteger {}
 impl crate::traits::Named for EisensteinInteger
 {
-    fn name(&self) -> &str
+    fn name(&self) -> &'static str
     {
         "c"
     }
@@ -679,7 +679,7 @@ impl std::fmt::Display for GaussianInteger
 impl Describe for GaussianInteger {}
 impl crate::traits::Named for GaussianInteger
 {
-    fn name(&self) -> &str
+    fn name(&self) -> &'static str
     {
         "c"
     }

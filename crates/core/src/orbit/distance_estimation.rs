@@ -124,7 +124,7 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
         None
     }
 }
-impl<'a, P: EscapeEncoding> Orbit for DistanceEstimation<'a, P>
+impl<P: EscapeEncoding> Orbit for DistanceEstimation<'_, P>
 {
     type Outcome = PointInfo<P::Deriv>;
 

@@ -45,7 +45,10 @@ impl Coloring
         D: Polar<Real>,
         T: FromColor,
     {
-        use PointInfo::{Bounded, DistanceEstimate, Escaping, MarkedPoint, Periodic, PeriodicKnownPotential, Unknown, Wandering};
+        use PointInfo::{
+            Bounded, DistanceEstimate, Escaping, MarkedPoint, Periodic, PeriodicKnownPotential,
+            Unknown, Wandering,
+        };
         match point_info {
             Escaping {
                 potential,

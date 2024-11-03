@@ -5,7 +5,7 @@ use derive_more::{Add, AddAssign, Display, From, Sub};
 use num_traits::{One, Zero};
 
 #[derive(Default, Clone, Copy, Debug, Add, Sub, AddAssign, Display, From, PartialEq)]
-#[display(fmt = "({x}, {y})")]
+#[display("({x}, {y})")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point
 {
@@ -14,7 +14,7 @@ pub struct Point
 }
 impl Named for Point
 {
-    fn name(&self) -> &str
+    fn name(&self) -> &'static str
     {
         "p"
     }
@@ -85,7 +85,7 @@ impl From<Point> for Cplx
 }
 
 #[derive(Default, Debug, Clone, Copy, Add, Sub, AddAssign, Display, From, PartialEq)]
-#[display(fmt = "[{v0}, {v1}]")]
+#[display("[{v0}, {v1}]")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Matrix2x2
 {

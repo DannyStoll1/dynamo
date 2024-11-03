@@ -114,7 +114,7 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
     }
 }
 
-impl<'a, P: EscapeEncoding> Orbit for CycleDetected<'a, P>
+impl<P: EscapeEncoding> Orbit for CycleDetected<'_, P>
 {
     type Outcome = PointInfo<P::Deriv>;
 
@@ -154,7 +154,7 @@ impl<'a, P: EscapeEncoding> Orbit for CycleDetected<'a, P>
     }
 }
 
-impl<'a, P: DynamicalFamily> Iterator for CycleDetected<'a, P>
+impl<P: DynamicalFamily> Iterator for CycleDetected<'_, P>
 {
     type Item = (P::Var, Option<EscapeResult<P::Var, P::Deriv>>);
 

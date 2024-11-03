@@ -2,17 +2,17 @@
 resolver = "2"
 
 members = [
-    "crates/app",
-    "crates/bin",
-    "crates/common",
-    "crates/coloring",
-    "crates/core",
-    "crates/gui",
-    "crates/wasm",
-    "crates/profiles",
-    "crates/poly_solve",
-    "crates/scripting/loader",
-    "crates/scripting/output",
+  "crates/app",
+  "crates/bin",
+  "crates/common",
+  "crates/coloring",
+  "crates/core",
+  "crates/gui",
+  "crates/wasm",
+  "crates/profiles",
+  "crates/poly_solve",
+  "crates/scripting/loader",
+  "crates/scripting/output",
 ]
 
 
@@ -20,3 +20,27 @@ members = [
 opt-level = 2
 debug = false
 overflow-checks = false
+
+
+[workspace.dependencies]
+egui = "0.29"
+eframe = "0.29"
+epaint = "0.29"
+egui_extras = "0.29"
+egui_file = "0.19"
+egui_dock = "0.14"
+image = "0.25"
+
+itertools = "0.13"
+lazy_static = "1.5"
+ndarray = "0.16"
+rayon = "1.10"
+
+num-complex = "0.4"
+num-rational = "0.4"
+num-traits = "0.2"
+
+toml = "0.8"
+derive_more = { version = "1.0", features = ["full"] }
+serde = "1.0"
+serde_json = "1.0"

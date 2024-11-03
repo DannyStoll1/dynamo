@@ -1,25 +1,25 @@
 [package]
 name = "dynamo_common"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Danny Stoll <dastoll@umich.edu>"]
 description = "A tool for studying discrete time dynamical systems - Utilities and Common Files"
 license = "GPL-3.0-or-later"
 
 [build-dependencies]
-bindgen = {version = "0.69", optional = true}
+bindgen = { version = "0.69", optional = true }
 
 [dependencies]
 num = "0.4"
-num-complex = "0.4.4"
-rayon = "1.8.0"
-ndarray = "0.15.6"
-derive_more = { version = "0.99.17", features = ["from", "add", "iterator"] }
-libc = {version = "0.2.150", optional = true}
-serde = { version = "1.0.192", features = ["derive"], optional = true }
-num-rational = "0.4.1"
-num-traits = "0.2.17"
-lazy_static = "1.4.0"
+rayon = { workspace = true }
+ndarray = { workspace = true }
+derive_more = { workspace = true }
+libc = { version = "0.2", optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+num-complex = { workspace = true }
+num-rational = { workspace = true }
+num-traits = { workspace = true }
+lazy_static = { workspace = true }
 regex = "1.10.2"
 poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"

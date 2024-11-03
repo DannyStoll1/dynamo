@@ -261,7 +261,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         (phi, grad_phi)
     }
 }
-impl<'a, P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'a, P>
+impl<P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'_, P>
 {
     type Outcome = Option<(Real, Cplx)>;
 

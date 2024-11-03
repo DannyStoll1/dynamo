@@ -316,14 +316,14 @@ where
     }
 
     #[inline]
-    const fn get_orbit_info(&self) -> &Option<orbit::Info<P::Param, P::Var, P::Deriv>>
+    const fn get_orbit_info(&self) -> Option<&orbit::Info<P::Param, P::Var, P::Deriv>>
     {
-        &self.orbit_info
+        self.orbit_info.as_ref()
     }
     #[inline]
-    fn get_orbit_info_mut(&mut self) -> &mut Option<orbit::Info<P::Param, P::Var, P::Deriv>>
+    fn get_orbit_info_mut(&mut self) -> Option<&mut orbit::Info<P::Param, P::Var, P::Deriv>>
     {
-        &mut self.orbit_info
+        self.orbit_info.as_mut()
     }
     #[inline]
     fn set_orbit_info(&mut self, info: orbit::Info<P::Param, P::Var, P::Deriv>)

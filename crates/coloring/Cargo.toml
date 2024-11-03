@@ -1,18 +1,18 @@
 [package]
 name = "dynamo_color"
-version = "0.1.0"
+version = "1.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 dynamo_common = { version = "*", path = "../common" }
-serde = { version = "1.0.192", features = ["derive"], optional = true }
-image = "0.24.7"
-egui = "0.23.0"
+serde = { workspace = true, features = ["derive"], optional = true }
+image = { workspace = true }
+egui = { workspace = true }
 rand = "0.8.5"
 rand_distr = "0.4.3"
-toml = { version = "0.8.8", optional = true }
+toml = { version = "0.8", optional = true }
 
 [features]
 serde = ["dep:serde", "dep:toml", "egui/serde", "dynamo_common/serde"]

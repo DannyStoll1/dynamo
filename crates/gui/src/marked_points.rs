@@ -758,7 +758,7 @@ struct CurveDrawJob<'a>
     thickness: f32,
     grid: &'a PointGrid,
 }
-impl<'a> CurveDrawJob<'a>
+impl CurveDrawJob<'_>
 {
     pub fn draw_thick(self, image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>)
     {

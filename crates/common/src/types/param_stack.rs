@@ -6,7 +6,7 @@ use crate::{
 use derive_more::Display;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
-#[display(fmt = "")]
+#[display("")]
 pub struct NoParam;
 impl From<Cplx> for NoParam
 {
@@ -88,7 +88,7 @@ impl ParamList for NoParam
 }
 
 #[derive(Clone, Display, Default)]
-#[display(fmt = "[{meta_params}, {local_param}]")]
+#[display("[{meta_params}, {local_param}]")]
 pub struct ParamStack<T, H>
 where
     T: Clone + Default + Summarize,

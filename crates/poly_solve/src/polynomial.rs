@@ -1,4 +1,6 @@
-use crate::poly_traits::{Differentiable, DivideByAffine, Eval, HasVar, MulConst, Normalize, VariableOps};
+use crate::poly_traits::{
+    Differentiable, DivideByAffine, Eval, HasVar, MulConst, Normalize, VariableOps,
+};
 use crate::{newton::Newton, normed::Semimetric, utils::Collapse};
 use derive_more::From;
 use itertools::Itertools;

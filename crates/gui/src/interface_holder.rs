@@ -7,7 +7,7 @@ pub struct InterfaceHolder<'i>
     pub interface: Box<dyn Interface + 'i>,
     _library: Library,
 }
-impl<'i> InterfaceHolder<'i>
+impl InterfaceHolder<'_>
 {
     #[must_use]
     pub fn new(interface: Box<dyn Interface>, library: Library) -> Self
@@ -19,7 +19,7 @@ impl<'i> InterfaceHolder<'i>
     }
 }
 
-impl<'i> Interactive for InterfaceHolder<'i>
+impl Interactive for InterfaceHolder<'_>
 {
     fn name(&self) -> String
     {
@@ -67,7 +67,7 @@ impl<'i> Interactive for InterfaceHolder<'i>
     }
 }
 
-impl<'i> Interface for InterfaceHolder<'i>
+impl Interface for InterfaceHolder<'_>
 {
     fn update(&mut self, ctx: &Context)
     {
