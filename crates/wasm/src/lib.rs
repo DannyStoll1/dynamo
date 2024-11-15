@@ -6,7 +6,7 @@ use {
     wasm_bindgen::prelude::*,
 };
 #[cfg(target_arch = "wasm32")]
-use {web_sys::HtmlCanvasElement};
+use web_sys::HtmlCanvasElement;
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone)]

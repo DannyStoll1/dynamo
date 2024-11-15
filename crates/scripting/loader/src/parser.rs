@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::str::FromStr;
+use pyo3::types::PyAnyMethods;
 
 mod defaults;
 
@@ -177,7 +178,7 @@ impl UnparsedUserInput
             .collect::<HashMap<String, Complex64>>();
 
         let py_params = Python::with_gil(|py| {
-            let sys = py.import("sys")?;
+            let sys = py.import_bound("sys")?;
             sys.getattr("path")?.call_method1("append", ("python",))?;
             sys.getattr("path")?
                 .call_method1("append", ("crates/scripting/loader/python",))?;
@@ -196,12 +197,12 @@ impl UnparsedUserInput
             let const_names_py = const_names.to_object(py);
 
             // Imports
-            let sympy = py.import("sympy")?;
+            let sympy = py.import_bound("sympy")?;
             let parse_expr = sympy.getattr("parse_expr")?;
             let symbols = sympy.getattr("symbols")?;
             let cse = sympy.getattr("cse")?;
 
-            let oxidize = py.import("oxidize")?;
+            let oxidize = py.import_bound("oxidize")?;
             let oxidize_expr = oxidize.getattr("oxidize_expr")?;
             let oxidize_cse = oxidize.getattr("oxidize_cse")?;
             let oxidize_pmap = oxidize.getattr("oxidize_param_map_cplx")?;
@@ -223,15 +224,15 @@ impl UnparsedUserInput
 
             let map_py = parse_expr.call1((map_str,))?;
             let map_d_py = map_py.call_method1("diff", (z_str,))?;
-            let map_cse_py = cse.call1(([map_py, map_d_py],))?;
+            let map_cse_py = cse.call1(([&map_py, &map_d_py],))?;
             let map = oxidize_expr.call1((map_py,))?.to_string();
             let map_d = oxidize_cse.call1((map_cse_py,))?.to_string();
 
             let start_py = parse_expr.call1((start_str,))?;
             let start_py = start_py.call_method1("subs", (&params_dict_py,))?;
             let start_d_py = start_py.call_method1("diff", (t_str,))?;
-            let start_cse_py = cse.call1(([start_py, start_d_py],))?;
-            let start = oxidize_expr.call1((start_py,))?.to_string();
+            let start_cse_py = cse.call1(([&start_py, &start_d_py],))?;
+            let start = oxidize_expr.call1((&start_py,))?.to_string();
             let start_d = oxidize_cse.call1((start_cse_py,))?.to_string();
 
             let param_map = oxidize_pmap.call1((params_dict_py,))?.to_string();
