@@ -17,7 +17,7 @@ seq-macro = "0.3.5"
 dynamo_core = { version = "*", path = "../core" }
 dynamo_color = { version = "*", path = "../coloring", features = ["serde"] }
 dynamo_common = { version = "*", path = "../common" }
-libloading = { version = "0.8.5", optional = true }
+libloading = { version = "0.8.6", optional = true }
 image = { workspace = true }
 imageproc = "0.25"
 itertools = { workspace = true }

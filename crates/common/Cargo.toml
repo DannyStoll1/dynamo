@@ -7,7 +7,7 @@ description = "A tool for studying discrete time dynamical systems - Utilities a
 license = "GPL-3.0-or-later"
 
 [build-dependencies]
-bindgen = { version = "0.70", optional = true }
+bindgen = { version = "0.71", optional = true }
 
 [dependencies]
 num = "0.4"
@@ -23,7 +23,7 @@ lazy_static = { workspace = true }
 regex = "1.11.1"
 poly_solve = { version = "*", path = "../poly_solve" }
 spfunc = "0.1.0"
-directories = "5.0.1"
+directories = "6.0.0"
 
 [features]
 serde = ["dep:serde", "num-complex/serde"]

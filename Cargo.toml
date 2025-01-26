@@ -23,15 +23,15 @@ overflow-checks = false
 
 
 [workspace.dependencies]
-egui = "0.29"
-eframe = "0.29"
-epaint = "0.29"
-egui_extras = "0.29"
-egui_file = "0.19"
-egui_dock = "0.14"
+egui = "0.30"
+eframe = "0.30"
+epaint = "0.30"
+egui_extras = "0.30"
+egui_file = "0.21"
+egui_dock = "0.15"
 image = "0.25"
 
-itertools = "0.13"
+itertools = "0.14"
 lazy_static = "1.5"
 ndarray = "0.16"
 rayon = "1.10"
