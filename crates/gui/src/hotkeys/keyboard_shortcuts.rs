@@ -1,31 +1,31 @@
 use egui::{Key, KeyboardShortcut, Modifiers};
 
 macro_rules! key_press {
-    ($key: expr) => {
+    ($key: expr_2021) => {
         KeyboardShortcut::new(Modifiers::NONE, $key)
     };
 }
 
 macro_rules! ctrl {
-    ($key: expr) => {
+    ($key: expr_2021) => {
         KeyboardShortcut::new(Modifiers::CTRL, $key)
     };
 }
 
 macro_rules! shift {
-    ($key: expr) => {
+    ($key: expr_2021) => {
         KeyboardShortcut::new(Modifiers::SHIFT, $key)
     };
 }
 
 macro_rules! ctrl_shift {
-    ($key: expr) => {
+    ($key: expr_2021) => {
         KeyboardShortcut::new(Modifiers::CTRL.plus(Modifiers::SHIFT), $key)
     };
 }
 
 macro_rules! shortcut_used {
-    ($ctx: expr, $shortcut: expr) => {
+    ($ctx: expr_2021, $shortcut: expr_2021) => {
         $ctx.input_mut(|i| i.consume_shortcut($shortcut))
     };
 }

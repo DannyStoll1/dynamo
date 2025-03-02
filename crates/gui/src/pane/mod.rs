@@ -728,11 +728,11 @@ where
         let mut image = iter_plane.write_image(self.get_coloring());
         self.marking.mark_image(self.grid(), &mut image);
 
-        if let Err(e) = image.save(filename) {
+        match image.save(filename) { Err(e) => {
             println!("Error saving file: {e:?}");
-        } else {
+        } _ => {
             println!("Image saved to {}", filename.to_string_lossy());
-        }
+        }}
 
         self.plane.point_grid_mut().resize_x(old_res_x);
     }

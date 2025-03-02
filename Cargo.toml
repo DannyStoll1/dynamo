@@ -23,12 +23,12 @@ overflow-checks = false
 
 
 [workspace.dependencies]
-egui = "0.30"
-eframe = "0.30"
-epaint = "0.30"
-egui_extras = "0.30"
-egui_file = "0.21"
-egui_dock = "0.15"
+egui = "0.31"
+eframe = "0.31"
+epaint = "0.31"
+egui_extras = "0.31"
+egui_file = "0.22"
+egui_dock = "0.16"
 image = "0.25"
 
 itertools = "0.14"
@@ -41,6 +41,6 @@ num-rational = "0.4"
 num-traits = "0.2"
 
 toml = "0.8"
-derive_more = { version = "1.0", features = ["full"] }
+derive_more = { version = "2.0", features = ["full"] }
 serde = "1.0"
 serde_json = "1.0"

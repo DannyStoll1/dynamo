@@ -234,7 +234,7 @@ impl HasDynamicalCovers for Unicorn<3>
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
@@ -278,7 +278,7 @@ impl HasDynamicalCovers for Unicorn<3>
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

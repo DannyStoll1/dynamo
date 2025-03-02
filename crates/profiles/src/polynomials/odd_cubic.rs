@@ -181,7 +181,7 @@ impl HasDynamicalCovers for OddCubic
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
@@ -216,7 +216,7 @@ impl HasDynamicalCovers for OddCubic
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
@@ -279,7 +279,7 @@ impl HasDynamicalCovers for OddCubic
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

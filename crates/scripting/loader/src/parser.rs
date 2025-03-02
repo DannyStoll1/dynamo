@@ -1,13 +1,11 @@
-use dynamo_common::types::Period;
-use lazy_static::lazy_static;
+use dynamo_common::{types::Period, macros::regex};
 use num_complex::Complex64;
-use pyo3::{Python, ToPyObject};
-use regex::Regex;
+use pyo3::types::PyAnyMethods;
+use pyo3::{IntoPyObject, Python};
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::str::FromStr;
-use pyo3::types::PyAnyMethods;
 
 mod defaults;
 
@@ -110,15 +108,9 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
 {
     match value {
         JsonValue::String(s) => {
-            lazy_static! {
-                static ref A_PLUS_BI: Regex =
-                    Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*\+\s*(-?[0-9]+\.?[0-9]*)?i")
-                        .expect("Invalid regex");
-                static ref A_MINUS_BI: Regex =
-                    Regex::new(r"(-?[0-9]+\.?[0-9]*)?\s*-\s*(-?[0-9]+\.?[0-9]*)?i")
-                        .expect("Invalid regex");
-                static ref BI: Regex = Regex::new(r"(-?[0-9]+\.?[0-9]*)?i").expect("Invalid regex");
-            }
+            let a_plus_bi = regex!(r"(-?[0-9]+\.?[0-9]*)?\s*\+\s*(-?[0-9]+\.?[0-9]*)?i");
+            let a_minus_bi = regex!(r"(-?[0-9]+\.?[0-9]*)?\s*-\s*(-?[0-9]+\.?[0-9]*)?i");
+            let bi = regex!(r"(-?[0-9]+\.?[0-9]*)?i");
 
             // Handle real numbers
             if let Ok(real) = f64::from_str(s) {
@@ -126,7 +118,7 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
 
             // Handle numbers expressed in the form "a+bi"
-            if let Some(caps) = A_PLUS_BI.captures(s) {
+            if let Some(caps) = a_plus_bi.captures(s) {
                 let a = caps
                     .get(1)
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
@@ -137,7 +129,7 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
 
             // Handle numbers expressed in the form "a-bi"
-            if let Some(caps) = A_MINUS_BI.captures(s) {
+            if let Some(caps) = a_minus_bi.captures(s) {
                 let a = caps
                     .get(1)
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
@@ -148,7 +140,7 @@ pub(crate) fn json_to_complex(value: &JsonValue) -> Result<Complex64, ScriptErro
             }
 
             // Handle numbers expressed in the form "bi"
-            if let Some(caps) = BI.captures(s) {
+            if let Some(caps) = bi.captures(s) {
                 let b = caps
                     .get(1)
                     .map_or(0.0, |m| f64::from_str(m.as_str()).unwrap_or(0.0));
@@ -178,7 +170,7 @@ impl UnparsedUserInput
             .collect::<HashMap<String, Complex64>>();
 
         let py_params = Python::with_gil(|py| {
-            let sys = py.import_bound("sys")?;
+            let sys = py.import("sys")?;
             sys.getattr("path")?.call_method1("append", ("python",))?;
             sys.getattr("path")?
                 .call_method1("append", ("crates/scripting/loader/python",))?;
@@ -186,23 +178,23 @@ impl UnparsedUserInput
             // Convert to python types
             let map_str = &json_to_string(&self.dynamics.map)
                 .replace('^', "**")
-                .to_object(py);
+                .into_pyobject(py)?;
             let start_str = &json_to_string(&self.dynamics.start)
                 .replace('^', "**")
-                .to_object(py);
-            let z_str = self.names.variable.to_object(py);
-            let t_str = self.names.selection.to_object(py);
+                .into_pyobject(py)?;
+            let z_str = self.names.variable.clone().into_pyobject(py)?;
+            let t_str = self.names.selection.clone().into_pyobject(py)?;
 
-            let param_names_py = param_names.to_object(py);
-            let const_names_py = const_names.to_object(py);
+            let param_names_py = param_names.clone().into_pyobject(py)?;
+            let const_names_py = const_names.into_pyobject(py)?;
 
             // Imports
-            let sympy = py.import_bound("sympy")?;
+            let sympy = py.import("sympy")?;
             let parse_expr = sympy.getattr("parse_expr")?;
             let symbols = sympy.getattr("symbols")?;
             let cse = sympy.getattr("cse")?;
 
-            let oxidize = py.import_bound("oxidize")?;
+            let oxidize = py.import("oxidize")?;
             let oxidize_expr = oxidize.getattr("oxidize_expr")?;
             let oxidize_cse = oxidize.getattr("oxidize_cse")?;
             let oxidize_pmap = oxidize.getattr("oxidize_param_map_cplx")?;
@@ -220,7 +212,7 @@ impl UnparsedUserInput
                 params_dict_py.insert(name, parsed_val);
                 Ok::<_, ScriptError>(())
             })?;
-            let params_dict_py = params_dict_py.to_object(py);
+            let params_dict_py = params_dict_py.into_pyobject(py)?;
 
             let map_py = parse_expr.call1((map_str,))?;
             let map_d_py = map_py.call_method1("diff", (z_str,))?;

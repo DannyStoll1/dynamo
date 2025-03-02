@@ -6,6 +6,7 @@ use std::{cmp::Ordering, collections::VecDeque, error::Error, num::ParseIntError
 use serde::{Deserialize, Serialize};
 
 use crate::prelude::*;
+use crate::macros::regex;
 
 /// Information to display about a rational angle
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -104,29 +105,26 @@ impl FromStr for OrbitSchema
     #[allow(clippy::unwrap_used)]
     fn from_str(text: &str) -> Result<Self, Self::Err>
     {
-        use ParseOrbitSchemaError as Err;
-        lazy_static! {
-            static ref PREPERIOD: Regex = Regex::new(r"^\s*(\d+)\s*,\s*(\d+)\s*$").unwrap();
-        }
+        let preperiod = regex!(r"^\s*(\d+)\s*,\s*(\d+)\s*$");
 
-        if let Some(captures) = PREPERIOD.captures(text) {
+        if let Some(captures) = preperiod.captures(text) {
             let preperiod = captures
                 .get(1)
-                .ok_or(Err::UnrecognizedFormat)?
+                .ok_or(Self::Err::UnrecognizedFormat)?
                 .as_str()
                 .parse()
-                .map_err(Err::Preperiodic)?;
+                .map_err(Self::Err::Preperiodic)?;
             let period = captures
                 .get(2)
-                .ok_or(Err::UnrecognizedFormat)?
+                .ok_or(Self::Err::UnrecognizedFormat)?
                 .as_str()
                 .parse()
-                .map_err(Err::Preperiodic)?;
+                .map_err(Self::Err::Preperiodic)?;
             Ok(Self { period, preperiod })
         } else {
             text.parse::<Period>()
                 .map(Into::into)
-                .map_err(Err::Periodic)
+                .map_err(Self::Err::Periodic)
         }
     }
 }

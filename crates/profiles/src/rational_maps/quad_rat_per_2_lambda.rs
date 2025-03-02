@@ -44,7 +44,6 @@ impl DynamicalFamily for QuadRatPer2Lambda
         self.general_plane.max_iter = new_max_iter;
     }
 
-    #[must_use]
     fn with_max_iter(mut self, max_iter: IterCount) -> Self
     {
         self.general_plane.max_iter = max_iter;

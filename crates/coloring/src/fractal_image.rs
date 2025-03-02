@@ -56,11 +56,11 @@ where
             let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map::<_, Rgb<u8>>(iter_count);
         }
-        if let Err(e) = image.save(filename.clone()) {
+        match image.save(filename.clone()) { Err(e) => {
             println!("Error saving file: {e:?}");
-        } else {
+        } _ => {
             println!("Image saved to {filename}");
-        }
+        }}
     }
     fn write_image(&self, coloring: &Coloring) -> Self::Image
     {

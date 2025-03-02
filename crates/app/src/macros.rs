@@ -5,13 +5,13 @@ macro_rules! interface {
     ($parent: ty, $child: ident) => {
         || create_interface(|| <$parent>::default(), $child::from)
     };
-    ($parent: ty, $covering: ident, $($periods: expr),+) => {
+    ($parent: ty, $covering: ident, $($periods: expr_2021),+) => {
         || create_interface(|| <$parent>::default().$covering($($periods),+), JuliaSet::from)
     };
 }
 
 macro_rules! interface_mc {
-    ($parent: ty, $period: expr) => {
+    ($parent: ty, $period: expr_2021) => {
         || {
             create_interface(
                 || <$parent>::default().marked_cycle_curve($period),
@@ -22,7 +22,7 @@ macro_rules! interface_mc {
 }
 
 macro_rules! interface_dyn {
-    ($parent: ty, $period: expr) => {
+    ($parent: ty, $period: expr_2021) => {
         || {
             create_interface(
                 || <$parent>::default().dynatomic_curve($period),
@@ -33,7 +33,7 @@ macro_rules! interface_dyn {
 }
 
 macro_rules! interface_mis {
-    ($parent: ty, $preperiod: expr, $period: expr) => {
+    ($parent: ty, $preperiod: expr_2021, $period: expr_2021) => {
         || {
             create_interface(
                 || <$parent>::default().misiurewicz_curve($preperiod, $period),

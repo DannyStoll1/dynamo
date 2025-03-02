@@ -1124,7 +1124,7 @@ impl HasDynamicalCovers for CubicPer1_0
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
@@ -1167,7 +1167,7 @@ impl HasDynamicalCovers for CubicPer1_0
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
     #[allow(clippy::single_match_else)]
@@ -1197,7 +1197,7 @@ impl HasDynamicalCovers for CubicPer1_0
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }
@@ -1228,7 +1228,7 @@ impl HasDynamicalCovers for CubicPer1_1
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
@@ -1261,7 +1261,7 @@ impl HasDynamicalCovers for CubicPer1_1
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
     #[allow(clippy::single_match_else)]
@@ -1287,7 +1287,7 @@ impl HasDynamicalCovers for CubicPer1_1
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

@@ -241,7 +241,7 @@ impl HasDynamicalCovers for QuadRatPer3
                 param_map = |t| (t.into(), ONE);
                 bounds = self.point_grid.bounds.clone();
             }
-        };
+        }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }

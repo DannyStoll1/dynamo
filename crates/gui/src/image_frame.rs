@@ -75,7 +75,7 @@ impl ImageFrame
                 .load_texture("fractal", self.image.clone(), TextureOptions::default())
         });
 
-        Frame::none().stroke(self.border.stroke()).show(ui, |ui| {
+        Frame::new().stroke(self.border.stroke()).show(ui, |ui| {
             ui.image(&*texture_id);
         });
     }

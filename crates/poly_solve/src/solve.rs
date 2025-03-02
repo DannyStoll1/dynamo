@@ -39,7 +39,7 @@ impl JenkinsTraubSolver
         let h_poly = poly.derivative();
         let cauchy_poly = compute_cauchy_poly(&poly);
         let cauchy_root = cauchy_poly.find_root_newton(1.0, Self::ERR).unwrap_or(1.0);
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
 
         Self {
             poly,
@@ -74,7 +74,7 @@ impl JenkinsTraubSolver
 
     fn get_seed(&mut self) -> Complex64
     {
-        let theta = self.rng.gen_range(0.0..std::f64::consts::TAU);
+        let theta = self.rng.random_range(0.0..std::f64::consts::TAU);
         let z = Complex::new(0., theta).exp();
         self.cauchy_root * z
     }
@@ -96,7 +96,7 @@ impl JenkinsTraubSolver
     }
 
     /// Reset best root and distance
-    fn reset(&mut self)
+    const fn reset(&mut self)
     {
         self.best_root = Self::NAN;
         self.best_norm = f64::INFINITY;

@@ -25,3 +25,10 @@ impl From<PyErr> for ScriptError
         Self::PythonError(err)
     }
 }
+impl From<std::convert::Infallible> for ScriptError
+{
+    fn from(_err: std::convert::Infallible) -> Self
+    {
+        unreachable!()
+    }
+}

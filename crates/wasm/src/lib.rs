@@ -1,12 +1,12 @@
 #[cfg(target_arch = "wasm32")]
+use web_sys::HtmlCanvasElement;
+#[cfg(target_arch = "wasm32")]
 use {
     dynamo_app::FractalApp,
     eframe::{WebLogger, WebOptions, WebRunner},
     log,
     wasm_bindgen::prelude::*,
 };
-#[cfg(target_arch = "wasm32")]
-use web_sys::HtmlCanvasElement;
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone)]

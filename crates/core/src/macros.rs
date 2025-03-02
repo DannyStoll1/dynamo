@@ -12,7 +12,7 @@ macro_rules! fractal_impl {
             }
         }
     };
-    ($param_name: ident, $param_value: expr) => {
+    ($param_name: ident, $param_value: expr_2021) => {
         fn default() -> Self
         {
             let bounds = Self::DEFAULT_BOUNDS;
@@ -25,7 +25,7 @@ macro_rules! fractal_impl {
             }
         }
     };
-    ($param_name: ident, $param_value: expr, $bounds_fn: ident) => {
+    ($param_name: ident, $param_value: expr_2021, $bounds_fn: ident) => {
         fn default() -> Self
         {
             let bounds = $bounds_fn($param_value);
@@ -156,7 +156,7 @@ macro_rules! default_bounds {
             Self::DEFAULT_BOUNDS
         }
     };
-    ($min_x: expr, $max_x: expr, $min_y: expr, $max_y: expr) => {
+    ($min_x: expr_2021, $max_x: expr_2021, $min_y: expr_2021, $max_y: expr_2021) => {
         #[inline]
         fn default_bounds(&self) -> Bounds
         {
@@ -168,7 +168,7 @@ macro_rules! default_bounds {
             };
         }
     };
-    ($bounds: expr) => {
+    ($bounds: expr_2021) => {
         #[inline]
         fn default_bounds(&self) -> Bounds
         {
@@ -185,7 +185,7 @@ macro_rules! default_bounds_impl {
             default_bounds!();
         }
     };
-    ($struct: ty $(,$args:expr)*) => {
+    ($struct: ty $(,$args:expr_2021)*) => {
         impl FamilyDefaults for $struct
         {
             default_bounds!($($args),*);
@@ -195,7 +195,7 @@ macro_rules! default_bounds_impl {
 
 #[macro_export]
 macro_rules! basic_escape_encoding {
-    ($degree: expr) => {
+    ($degree: expr_2021) => {
         fn encode_escaping_point(
             &self,
             iters: IterCount,
@@ -220,7 +220,7 @@ macro_rules! basic_escape_encoding {
             }
         }
     };
-    (None, $period: expr) => {
+    (None, $period: expr_2021) => {
         fn encode_escaping_point(
             &self,
             iters: IterCount,
@@ -244,7 +244,7 @@ macro_rules! basic_escape_encoding {
             PointInfo::Escaping { potential, phase }
         }
     };
-    ($degree: expr, $period: expr) => {
+    ($degree: expr_2021, $period: expr_2021) => {
         fn encode_escaping_point(
             &self,
             iters: IterCount,

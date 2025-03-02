@@ -5,7 +5,7 @@ use dynamo_common::consts::TAU;
 use dynamo_common::types::IterCountSmooth;
 use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
 use egui::Color32;
-use rand::prelude::*;
+use rand::rng;
 use rand_distr::{ChiSquared, Distribution, Uniform};
 
 #[cfg(feature = "serde")]
@@ -206,11 +206,12 @@ impl Palette
     #[must_use]
     pub fn new_random(contrast: f64, brightness: f64) -> Self
     {
-        let mut rng = thread_rng();
+        let mut rng = rng();
 
-        let phase_r = Uniform::new(0., 1.).sample(&mut rng);
-        let phase_g = Uniform::new(0., 1.).sample(&mut rng);
-        let phase_b = Uniform::new(0., 1.).sample(&mut rng);
+        let distr = Uniform::new(0., 1.).unwrap();
+        let phase_r = distr.sample(&mut rng);
+        let phase_g = distr.sample(&mut rng);
+        let phase_b = distr.sample(&mut rng);
 
         ChiSquared::new(4.).map_or(Self::black(16.), |period_dist| {
             let period_r: f64 = period_dist.sample(&mut rng);

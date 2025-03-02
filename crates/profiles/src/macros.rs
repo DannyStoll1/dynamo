@@ -51,7 +51,7 @@ macro_rules! has_child_impl {
 }
 
 macro_rules! degree_impl {
-    ($plane: ty, $deg: expr) => {
+    ($plane: ty, $deg: expr_2021) => {
         impl InfinityFirstReturnMap for $plane
         {
             degree_impl!($deg);
@@ -59,7 +59,7 @@ macro_rules! degree_impl {
         impl EscapeEncoding for $plane {}
         impl ExternalRays for $plane {}
     };
-    ($plane: ty, $deg: expr, $period: expr) => {
+    ($plane: ty, $deg: expr_2021, $period: expr_2021) => {
         impl InfinityFirstReturnMap for $plane
         {
             degree_impl!($deg, $period);
@@ -68,7 +68,7 @@ macro_rules! degree_impl {
         }
         impl ExternalRays for $plane {}
     };
-    ($plane: ident, $deg: expr; $($g:ident : $gt:ty),+) => {
+    ($plane: ident, $deg: expr_2021; $($g:ident : $gt:ty),+) => {
         impl<$(const $g: $gt),+> InfinityFirstReturnMap for $plane<$($g),+>
         {
             degree_impl!($deg);
@@ -76,7 +76,7 @@ macro_rules! degree_impl {
         impl<$(const $g: $gt),+> EscapeEncoding for $plane<$($g),+> {}
         impl<$(const $g: $gt),+> ExternalRays for $plane<$($g),+> {}
     };
-    ($deg: expr) => {
+    ($deg: expr_2021) => {
         #[inline]
         fn degree(&self) -> AngleNum
         {
@@ -89,7 +89,7 @@ macro_rules! degree_impl {
             $deg as Real
         }
     };
-    ($deg: expr, $period: expr) => {
+    ($deg: expr_2021, $period: expr_2021) => {
         degree_impl!($deg);
         #[inline]
         fn escaping_period(&self) -> Period
@@ -97,7 +97,7 @@ macro_rules! degree_impl {
             $period
         }
     };
-    ($deg: expr, $period: expr, $coeff: expr) => {
+    ($deg: expr_2021, $period: expr_2021, $coeff: expr_2021) => {
         degree_impl!($deg, $period);
 
         #[allow(unused_variables)]
@@ -196,7 +196,7 @@ macro_rules! degree_impl_transcendental {
 }
 
 macro_rules! cplx_arr {
-    ( [$($x:expr),*] ) => {
+    ( [$($x:expr_2021),*] ) => {
         [
             $(
                 Cplx::new($x as f64, 0.0),
@@ -332,7 +332,7 @@ macro_rules! ext_ray_impl_nonmonic_conj {
 
 #[allow(unused_macros)]
 macro_rules! ext_ray_impl_rk {
-    ($step: literal, $esc: expr) => {
+    ($step: literal, $esc: expr_2021) => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
         {
             use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams};

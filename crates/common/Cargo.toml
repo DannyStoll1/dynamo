@@ -1,7 +1,7 @@
 [package]
 name = "dynamo_common"
 version = "1.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["Danny Stoll <dastoll@umich.edu>"]
 description = "A tool for studying discrete time dynamical systems - Utilities and Common Files"
 license = "GPL-3.0-or-later"

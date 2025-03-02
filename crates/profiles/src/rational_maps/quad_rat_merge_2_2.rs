@@ -4,14 +4,14 @@ profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct QuadRatPer2
+pub struct QuadRatMerge2_2
 {
     point_grid: PointGrid,
     compute_mode: ComputeMode,
     max_iter: IterCount,
 }
 
-impl QuadRatPer2
+impl QuadRatMerge2_2
 {
     const DEFAULT_BOUNDS: Bounds = Bounds {
         min_x: -2.8,
@@ -20,14 +20,14 @@ impl QuadRatPer2
         max_y: 2.8,
     };
 }
-impl Default for QuadRatPer2
+impl Default for QuadRatMerge2_2
 {
     fractal_impl!();
 }
 
 type Prm = param::Param;
 
-impl DynamicalFamily for QuadRatPer2
+impl DynamicalFamily for QuadRatMerge2_2
 {
     type Var = Cplx;
     type Param = Prm;
@@ -60,8 +60,8 @@ impl DynamicalFamily for QuadRatPer2
     ) -> (Self::Var, Self::Deriv)
     {
         let z2 = z.powi(2);
-        let u = 1. - z2;
-        ((c + z2) / u, -a * z / u.powi(2))
+        let u = z2 - c;
+        ((z2 + c) / u, -4. * c * z / u.powi(2))
     }
 
     #[inline]
@@ -72,8 +72,9 @@ impl DynamicalFamily for QuadRatPer2
     ) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z2 = z.powi(2);
-        let u = (1. - z2).inv();
-        ((c + z2) * u, -a * z * u.powi(2), u)
+        let u = z2 - c;
+        let u2 = u.powi(2);
+        ((z2 + c) / u, -4. * c * z / u2, 2. * z2 / u2)
     }
 
     #[inline]
@@ -102,10 +103,9 @@ impl DynamicalFamily for QuadRatPer2
     }
 }
 
-default_bounds_impl!(QuadRatPer2);
-has_child_impl!(QuadRatPer2, 4.0);
+default_bounds_impl!(QuadRatMerge2_2);
+has_child_impl!(QuadRatMerge2_2, 4.0);
 
-#[allow(clippy::too_many_lines)]
 fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
 {
     match period {
@@ -647,7 +647,7 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
     }
 }
 
-impl MarkedPoints for QuadRatPer2
+impl MarkedPoints for QuadRatMerge2_2
 {
     #[inline]
     fn critical_points_child(&self, Self::Param { a: _, c }: &Self::Param) -> ComplexVec
@@ -695,431 +695,11 @@ impl MarkedPoints for QuadRatPer2
     }
 }
 
-impl HasDynamicalCovers for QuadRatPer2
-{
-    #[allow(clippy::suspicious_operation_groupings)]
-    fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
-    {
-        let param_map: fn(Cplx) -> (Self::Param, Cplx);
-        let bounds: Bounds;
-
-        match period {
-            1 => {
-                param_map = |t| {
-                    (
-                        (0.125 * (4. - t * (t + 2.)) * t).into(),
-                        -0.125 * (3. * t - 2.) * (t + 2.),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -5.0,
-                    max_x: 3.0,
-                    min_y: -3.0,
-                    max_y: 3.0,
-                };
-            }
-            3 => {
-                const A0: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
-                const A1: Cplx = OMEGA_BAR;
-                const A2: Cplx = Cplx::new(-1.5, OMEGA.im);
-                const A3: Cplx = Cplx::new(-OMEGA.re, OMEGA.im);
-
-                // marked point z = t
-                param_map = |t| {
-                    (
-                        horner!(t, A0, A1, A2, A3).into(),
-                        horner!(t, OMEGA_BAR, 2. * A2, 3. * A3),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -1.8,
-                    max_x: 1.8,
-                    min_y: -2.3,
-                    max_y: 1.2,
-                };
-            }
-            4 => {
-                const A0: Cplx = Cplx::new(-23.000_000_000_000_0, -14.000_000_000_000_0);
-                const A1: Cplx = Cplx::new(-43.595_214_843_750_0, -198.812_988_281_250);
-                const A2: Cplx = Cplx::new(393.670_501_828_194, -585.061_190_664_768);
-                const A3: Cplx = Cplx::new(1_459.268_652_908_43, -251.041_057_291_222);
-                const A4: Cplx = Cplx::new(1_689.736_576_344_38, 1_253.118_368_537_02);
-                const A5: Cplx = Cplx::new(263.170_605_532_593, 2_124.306_895_469_28);
-                const A6: Cplx = Cplx::new(-1_022.568_875_522_64, 1_244.036_197_283_33);
-                const A7: Cplx = Cplx::new(-907.580_743_841_250, 62.581_224_836_000_1);
-                const A8: Cplx = Cplx::new(-282.801_070_639_887, -262.556_139_911_993);
-                const A9: Cplx = Cplx::new(-0.301_795_185_485_805, -120.425_962_376_276);
-                const A10: Cplx = Cplx::new(19.170_516_581_915_0, -17.921_171_297_248_6);
-                const A11: Cplx = Cplx::new(3.557_389_915_786_44, 0.247_670_436_437_753);
-                const A12: Cplx = Cplx::new(0.142_742_524_186_783, 0.175_662_128_168_037);
-
-                const B0: Cplx = Cplx::new(25.000_000_000_000_0, 50.000_000_000_000_0);
-                const B1: Cplx = Cplx::new(-142.712_402_343_750, 397.741_699_218_750);
-                const B2: Cplx = Cplx::new(-1_337.901_851_534_84, 594.505_678_117_275);
-                const B3: Cplx = Cplx::new(-2_843.310_866_608_59, -1_168.741_481_766_12);
-                const B4: Cplx = Cplx::new(-1_585.989_273_688_05, -4_058.841_884_451_90);
-                const B5: Cplx = Cplx::new(1_856.770_783_331_92, -3_982.889_188_004_31);
-                const B6: Cplx = Cplx::new(3_064.650_242_836_14, -1_032.413_040_116_42);
-                const B7: Cplx = Cplx::new(1_547.932_712_252_78, 818.021_881_782_741);
-                const B8: Cplx = Cplx::new(185.634_744_083_957, 667.196_208_176_713);
-                const B9: Cplx = Cplx::new(-101.261_202_462_199, 167.059_013_936_565);
-                const B10: Cplx = Cplx::new(-36.550_008_994_382_6, 7.621_875_249_517_90);
-                const B11: Cplx = Cplx::new(-3.537_208_869_727_47, -2.524_537_531_377_27);
-                const B12: Cplx = Cplx::new(-0.027_652_124_951_167_6, -0.231_588_268_174_843);
-
-                seq!(N in 2..=12 {
-                    const DA~N: Cplx = Cplx::new((N as f64) * A~N.re, (N as f64) * A~N.im);
-                    const DB~N: Cplx = Cplx::new((N as f64) * B~N.re, (N as f64) * B~N.im);
-                });
-
-                // Mobius transformation to frame the image
-                const POLE: Cplx = Cplx::new(-0.938_566_017_637_020_7, 2.125_025_422_464_432_8);
-                const SHIFT: Cplx = Cplx::new(0.006_285_758_096_917_293, 0.695_462_186_936_383_7);
-                const ANGLE: Cplx = Cplx::new(0.301_693_891_970_828_24, 0.167_631_003_825_363_6);
-
-                param_map = |t| {
-                    let t = (t * ANGLE + SHIFT).inv() + POLE;
-                    let numer = horner!(t, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12);
-                    let denom = horner!(t, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12);
-                    let numer_d =
-                        horner!(t, A1, DA2, DA3, DA4, DA5, DA6, DA7, DA8, DA9, DA10, DA11, DA12);
-                    let denom_d =
-                        horner!(t, B1, DB2, DB3, DB4, DB5, DB6, DB7, DB8, DB9, DB10, DB11, DB12);
-                    (
-                        (-numer / denom).into(),
-                        (numer * denom_d - numer_d * denom) / denom.powi(2),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -4.3,
-                    max_x: 3.4,
-                    min_y: -4.,
-                    max_y: 4.,
-                }
-            }
-            _ => {
-                param_map = |t| (t.into(), ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
-        }
-        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-    }
-    fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
-    {
-        const A0: Cplx = Cplx::new(-5448., 6_051.300_686_629_28);
-        const A1: Cplx = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
-        const A2: Cplx = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
-        const A3: Cplx = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
-        const A4: Cplx = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
-        const A5: Cplx = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
-        const A6: Cplx = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
-
-        const B0: Cplx = Cplx::new(-6174., 0.);
-        const B1: Cplx = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
-        const B2: Cplx = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
-        const B3: Cplx = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
-        const B4: Cplx = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
-        const B5: Cplx = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
-        const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
-
-        const A2D: Cplx = Cplx::new(2. * A2.re, 2. * A2.im);
-        const A3D: Cplx = Cplx::new(3. * A3.re, 3. * A3.im);
-        const A4D: Cplx = Cplx::new(4. * A4.re, 4. * A4.im);
-        const A5D: Cplx = Cplx::new(5. * A5.re, 5. * A5.im);
-        const A6D: Cplx = Cplx::new(6. * A6.re, 6. * A6.im);
-
-        const B2D: Cplx = Cplx::new(2. * B2.re, 2. * B2.im);
-        const B3D: Cplx = Cplx::new(3. * B3.re, 3. * B3.im);
-        const B4D: Cplx = Cplx::new(4. * B4.re, 4. * B4.im);
-        const B5D: Cplx = Cplx::new(5. * B5.re, 5. * B5.im);
-        const B6D: Cplx = Cplx::new(6. * B6.re, 6. * B6.im);
-
-        match period {
-            1 => {
-                let param_map = |t: Cplx| {
-                    let t2 = t.powi(2);
-                    (((t2 - t - 1.) * t).into(), 3. * t2 - 2. * t - 1.)
-                };
-                let bounds = Bounds {
-                    min_x: -1.5,
-                    max_x: 2.5,
-                    min_y: -1.7,
-                    max_y: 1.7,
-                };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-            }
-            4 => {
-                let param_map = |t: Cplx| {
-                    let t2 = t.powi(2);
-                    (
-                        (t2 * t - 2. * t2 + 4. * t - 1.).into(),
-                        3. * t2 - 4. * t - 4.,
-                    )
-                };
-                let mult = |t: Cplx| {
-                    let t2 = t.powi(2);
-                    let a = horner_monic!(t2, 5., 7.);
-                    let b = t * (-7. - 3. * t2);
-                    let c = t2 - 2. * t + 4.;
-
-                    let c2 = c.powi(2);
-                    let da = horner_monic!(t2, 8., 15.);
-                    let db = t * horner!(t2, -22., -8.);
-
-                    (16. * (a + b) / c2, -16. * (da + db) / (c2 * c))
-                };
-                // Critical points of the multiplier
-                let marked_points = solve_quartic(
-                    Cplx::new(8., 0.),
-                    Cplx::new(-22., 0.),
-                    Cplx::new(15., 0.),
-                    Cplx::new(-8., 0.),
-                )
-                .to_vec();
-                let bounds = Bounds {
-                    min_x: -1.,
-                    max_x: 1.4,
-                    min_y: -2.2,
-                    max_y: 2.2,
-                };
-                CoveringMap::new(self, param_map)
-                    .with_orig_bounds(bounds)
-                    .with_multiplier_map(mult)
-                    .with_marked_points(marked_points)
-            }
-            5 => {
-                let param_map = |t: Cplx| {
-                    // k = sqrt(-2235)
-                    // ((-2043332879690812551104*k + 322671215001188162496)*c^6 + (-7211787718815174272*k + 38457203855637713472)*c^5 + (-10445615819508480*k + 113836835145028800)*c^4 + (-7931553616080*k + 135137329840080)*c^3 + (-3321323160*k + 79799557200)*c^2 + (-724598*k + 23400162)*c + (-64*k + 2724))/((-165726073638468871360*k + 59671792608719217337728)*c^6 + (-532082528560799520*k + 218792941658814953376)*c^5 + (-681491680626360*k + 334169395252260120)*c^4 + (-435333784880*k + 272101938829200)*c^3 + (-138715290*k + 124564255830)*c^2 + (-17640*k + 30391956)*c + 3087)
-                    let pole = Cplx::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
-                    let angle = Cplx::new(1., 0.);
-
-                    let u = angle / t + pole;
-                    let du = -angle / t.powi(2);
-
-                    let numer = horner!(u, A0, A1, A2, A3, A4, A5, A6);
-                    let d_numer = horner!(u, A1, A2D, A3D, A4D, A5D, A6D);
-                    let denom = horner!(u, B0, B1, B2, B3, B4, B5, B6);
-                    let d_denom = horner!(u, B1, B2D, B3D, B4D, B5D, B6D);
-
-                    (
-                        (-numer / denom).into(),
-                        du * (numer * d_denom - denom * d_numer) / (denom * denom),
-                    )
-                };
-                let bounds = Bounds {
-                    min_x: -8.,
-                    max_x: 5.5,
-                    min_y: -1.5,
-                    max_y: 8.,
-                };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-            }
-            _ => CoveringMap::from(self),
-        }
-    }
-
-    fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
-    {
-        let param_map: fn(Cplx) -> (Self::Param, Cplx);
-        let bounds: Bounds;
-
-        match (preperiod, period) {
-            (1, 1) => {
-                param_map = |t| ((t * (1. - t * (t + 1.))).into(), (t + 1.) * (1. - 3. * t));
-                bounds = Bounds {
-                    min_x: -3.4,
-                    max_x: 3.4,
-                    min_y: -3.1,
-                    max_y: 3.1,
-                };
-            }
-            (2, 1) => {
-                param_map = |t| {
-                    let t2 = t.powi(2);
-                    // // -25*(131*t^4 - 102*t^3 - 106*t^2 - 8*t - 4)*t^2/(13*t^2 + 2*t + 2)^3
-                    let u = t2 * (131. * t2 - 102. * t - 106.) - 8. * t - 4.;
-                    let du = t2 * (524. * t - 306.) - 212. * t - 8.;
-                    let v = 13. * t2 + 2. * t + 2.;
-                    let dv = 26. * t + 2.;
-
-                    let num = 25. * t2 * u;
-                    let d_num = 50. * t * u + 25. * t2 * du;
-
-                    let v2 = v.powi(2);
-                    let den = (v2 * v).inv();
-                    let d_den = -3. * dv / v2.powi(2);
-
-                    ((num * den).into(), num * d_den + d_num * den)
-
-                    // -2*(16*t^4 + 16*t^2 - 1)/(4*t^2 + 1)^3
-                    // let t2 = t.powi(2);
-                    //
-                    // let u = 2. * t2 * horner_monic!(t2, -16., -16.);
-                    // let du = 4. * t * horner!(t2, -16., -32., 3.);
-                    //
-                    // let v = t2 + 4.;
-                    // let dv = 2. * t;
-                    //
-                    // let den = v.powi(-3);
-                    //
-                    // ((u * den).into(), du * den - 4. * u * dv * den / v)
-                };
-                bounds = Bounds {
-                    min_x: -3.4,
-                    max_x: 3.4,
-                    min_y: -5.1,
-                    max_y: 5.1,
-                };
-            }
-            (2, 2) => {
-                param_map = |t| {
-                    //(-t^4 + 2*t^2 + 1)/(2*t^4)
-                    let t2 = t.powi(2);
-                    let t4 = t2.powi(2);
-                    ((0.5 - (t2 + 0.5) / t4).into(), 2. * (t2 + 1.) / (t4 * t))
-                };
-                bounds = Bounds {
-                    min_x: -4.,
-                    max_x: 4.,
-                    min_y: -4.,
-                    max_y: 4.,
-                };
-            }
-            (_, _) => {
-                param_map = |t| (t.into(), ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
-        }
-        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-    }
-}
-
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct QuadRatPer2Cover
-{
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
-}
-
-impl QuadRatPer2Cover
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.8,
-        max_x: 3.2,
-        min_y: -2.8,
-        max_y: 2.8,
-    };
-}
-impl Default for QuadRatPer2Cover
-{
-    fractal_impl!();
-}
-
-impl DynamicalFamily for QuadRatPer2Cover
-{
-    parameter_plane_impl!();
-    default_name!();
-
-    fn description(&self) -> String
-    {
-        "The moduli space of quadratic rational maps with a critical 2-cycle, \
-            parameterized as $f_c(z) = (z^2 + c)/(z^2 - 1)$. In these coordinates, \
-            ∞ <-> 1 is the critical 2-cycle. The plane is colored according to the \
-            activity of the free critical point 0."
-            .to_owned()
-    }
-
-    #[inline]
-    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
-    {
-        let z2 = z.powi(2);
-        (c * z2 + 1.) / (z2 - c.powi(2))
-    }
-
-    #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        let z2 = z.powi(2);
-        let c2 = c.powi(2);
-        (
-            (c * z2 + 1.) / (z2 - c2),
-            2. * z * (c2 * c + 1.) / (z2 - c2).powi(2),
-        )
-    }
-
-    #[inline]
-    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        let z2 = z.powi(2);
-        let u = (c.powi(2) - z2).inv();
-        let v = u * (c * z2 + 1.);
-
-        (-v, -2. * u * z * (c + v), u * (2. * c * v - z2))
-    }
-
-    #[inline]
-    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
-    {
-        ZERO
-    }
-
-    #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        (ZERO, ZERO, ZERO)
-    }
-}
-
-impl FamilyDefaults for QuadRatPer2Cover
-{
-    default_bounds!();
-}
-
-has_child_impl!(QuadRatPer2Cover, 4.);
-
-impl InfinityFirstReturnMap for QuadRatPer2
-{
-    degree_impl!(2, 2, 0.5);
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle + RationalAngle::ONE_HALF
-    }
-}
-
-impl InfinityFirstReturnMap for QuadRatPer2Cover
-{
-    degree_impl!(2, 2, 0.5);
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle + RationalAngle::ONE_HALF
-    }
-}
-
-impl MarkedPoints for QuadRatPer2Cover
-{
-    #[inline]
-    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        cycles(*c, period)
-    }
-}
-
-impl EscapeEncoding for QuadRatPer2
+impl EscapeEncoding for QuadRatMerge2_2
 {
     basic_escape_encoding!(None, 2);
 }
-impl ExternalRays for QuadRatPer2 {}
-
-impl EscapeEncoding for QuadRatPer2Cover {}
-impl ExternalRays for QuadRatPer2Cover {}
+impl ExternalRays for QuadRatMerge2_2 {}
 
 mod param
 {
@@ -1173,125 +753,9 @@ mod param
     impl Describe for Param {}
     impl Named for Param
     {
-        fn name(&self) -> &'static str
+        fn name(&self) -> &str
         {
             "c"
         }
     }
 }
-
-#[derive(Clone, Debug)]
-pub struct QuadRatPer2InfPuncture
-{
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
-}
-
-impl QuadRatPer2InfPuncture
-{
-    const DEFAULT_BOUNDS: Bounds = Bounds {
-        min_x: -2.8,
-        max_x: 3.2,
-        min_y: -2.8,
-        max_y: 2.8,
-    };
-}
-impl Default for QuadRatPer2InfPuncture
-{
-    fractal_impl!();
-}
-
-impl DynamicalFamily for QuadRatPer2InfPuncture
-{
-    parameter_plane_impl!();
-    default_name!();
-
-    fn description(&self) -> String
-    {
-        "The moduli space of quadratic rational maps with a critical 2-cycle, \
-            parameterized as $f_c(z) = (z^2 + c)/(z^2 - 1)$. In these coordinates, \
-            ∞ <-> 1 is the critical 2-cycle. The plane is colored according to the \
-            activity of the free critical point 0."
-            .to_owned()
-    }
-
-    #[inline]
-    fn map(&self, z: Self::Var, c: &Self::Param) -> Self::Var
-    {
-        let z2 = z.powi(2);
-        let c2 = c.powi(2);
-        let c2z2 = z2 * c2;
-        (c * c2 + c2z2 - 1.) / (c * (c2z2 - 1.))
-    }
-
-    #[inline]
-    fn map_and_multiplier(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv)
-    {
-        let z2 = z.powi(2);
-        let c2 = c.powi(2);
-        let denom = z2 * c2 - 1.;
-        (
-            (c * c2 + denom) / (c * denom),
-            -2. * c2.powi(2) * z / denom.powi(2),
-        )
-    }
-
-    #[inline]
-    fn gradient(&self, z: Self::Var, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        let z2 = z.powi(2);
-        let c2 = c.powi(2);
-        let c3 = c * c2;
-        let denom = z2 * c2 - 1.;
-        let denom2 = denom.powi(2);
-        (
-            (c3 + denom) / (c * denom),
-            -2. * c2.powi(2) * z / denom2,
-            (-2. * c3 - denom2) / (c2 * denom2),
-        )
-    }
-
-    #[inline]
-    fn start_point(&self, _point: Cplx, _c: &Self::Param) -> Self::Var
-    {
-        ZERO
-    }
-
-    #[inline]
-    fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
-    {
-        (ZERO, ZERO, ZERO)
-    }
-}
-
-impl FamilyDefaults for QuadRatPer2InfPuncture
-{
-    default_bounds!();
-}
-
-has_child_impl!(QuadRatPer2InfPuncture, 4.);
-
-impl InfinityFirstReturnMap for QuadRatPer2InfPuncture
-{
-    degree_impl!(2, 2, 0.5);
-
-    #[inline]
-    fn angle_map_large_param(&self, angle: RationalAngle) -> RationalAngle
-    {
-        angle + RationalAngle::ONE_HALF
-    }
-}
-
-impl MarkedPoints for QuadRatPer2InfPuncture
-{
-    #[inline]
-    fn cycles_child(&self, c: &Self::Param, period: Period) -> Vec<Self::Var>
-    {
-        cycles(*c, period)
-    }
-}
-
-impl EscapeEncoding for QuadRatPer2InfPuncture {}
-impl ExternalRays for QuadRatPer2InfPuncture {}
