@@ -8,7 +8,7 @@ dynamo_common = { version = "*", path = "../common" }
 dynamo_core = { version = "*", path = "../core" }
 dynamo_color = { version = "*", path = "../coloring" }
 num-traits = { workspace = true }
-seq-macro = "0.3.5"
+seq-macro = "0.3.6"
 
 [lib]
 name = "dynamo_profiles"

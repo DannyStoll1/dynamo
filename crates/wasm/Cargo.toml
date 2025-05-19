@@ -12,10 +12,10 @@ description = "A tool for studying discrete time dynamical systems - Web UI"
 [dependencies]
 dynamo_app = { path = "../app" }
 web-sys = "0.3"
-eframe = { workspace = true }
+eframe = { workspace = true, features = ["glow"] }
 # eframe = { version = "0.29" }
 console_error_panic_hook = "0.1.7"
-log = "0.4.26"
+log = "0.4.27"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 # getrandom = { version = "0.3", features = ["wasm_js"] }

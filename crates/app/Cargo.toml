@@ -16,7 +16,7 @@ dynamo_core = { version = "*", path = "../core" }
 dynamo_profiles = { version = "*", path = "../profiles" }
 dynamo_gui = { version = "*", path = "../gui" }
 script_loader = { version = "*", path = "../scripting/loader", optional = true }
-seq-macro = "0.3.5"
+seq-macro = "0.3.6"
 lazy_static = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
 
