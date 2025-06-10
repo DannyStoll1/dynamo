@@ -7,7 +7,7 @@ description = "A tool for studying discrete time dynamical systems - Utilities a
 license = "GPL-3.0-or-later"
 
 [build-dependencies]
-bindgen = { version = "0.71", optional = true }
+bindgen = { version = "0.72", optional = true }
 
 [dependencies]
 num = "0.4"

@@ -13,14 +13,14 @@ use crate::{
         ToggleKey, ToggleMap,
     },
     hotkeys::{
-        keyboard_shortcuts::shortcut_used, Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS,
-        FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS, OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS,
-        SELECTION_HOTKEYS,
+        ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, Hotkey, IMAGE_HOTKEYS,
+        INCOLORING_HOTKEYS, OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+        keyboard_shortcuts::shortcut_used,
     },
     pane::{
+        Pane, WindowPane,
         id::{PaneID, PaneSelection},
         tasks::{ChildTask, FollowState, SelectOrFollow},
-        Pane, WindowPane,
     },
 };
 
@@ -343,16 +343,16 @@ where
             return;
         };
 
-        if ctx.input(|i| i.pointer.is_decidedly_dragging()) {
-            if let Some(origin) = ctx.input(|i| i.pointer.press_origin()) {
-                let delta = ctx.input(|i| i.pointer.delta());
-                if self.parent().frame_contains_pixel(origin) {
-                    let offset = self.parent.grid().map_vec2((delta).into());
-                    self.parent.pan(-offset);
-                } else if self.child().frame_contains_pixel(origin) {
-                    let offset = self.child.grid().map_vec2((delta).into());
-                    self.child.pan(-offset);
-                }
+        if ctx.input(|i| i.pointer.is_decidedly_dragging())
+            && let Some(origin) = ctx.input(|i| i.pointer.press_origin())
+        {
+            let delta = ctx.input(|i| i.pointer.delta());
+            if self.parent().frame_contains_pixel(origin) {
+                let offset = self.parent.grid().map_vec2((delta).into());
+                self.parent.pan(-offset);
+            } else if self.child().frame_contains_pixel(origin) {
+                let offset = self.child.grid().map_vec2((delta).into());
+                self.child.pan(-offset);
             }
         }
 
@@ -720,12 +720,12 @@ where
             .chain(OUTCOLORING_HOTKEYS.iter())
             .chain(PALETTE_HOTKEYS.iter())
         {
-            if let Some(s) = shortcut.as_ref() {
-                if shortcut_used!(ctx, s) {
-                    self.process_action(action);
-                    if let Some(bonus_action) = bonus_action {
-                        self.process_action(bonus_action);
-                    }
+            if let Some(s) = shortcut.as_ref()
+                && shortcut_used!(ctx, s)
+            {
+                self.process_action(action);
+                if let Some(bonus_action) = bonus_action {
+                    self.process_action(bonus_action);
                 }
             }
         }
