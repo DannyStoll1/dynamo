@@ -28,4 +28,10 @@ where
             point_grid,
         }
     }
+
+    #[must_use]
+    pub fn fill(&mut self, value: PointInfo<D>)
+    {
+        self.iter_counts.fill(value);
+    }
 }

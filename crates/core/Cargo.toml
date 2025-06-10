@@ -11,14 +11,16 @@ description = "A tool for studying discrete time dynamical systems - Core Files"
 dynamo_common = { version = "*", path = "../common" }
 dynamo_color = { version = "*", path = "../coloring" }
 
-rayon = { workspace = true }
+crossbeam.workspace = true
+rayon.workspace = true
 thread_local = "1.1"
 num_cpus = "1.17"
-ndarray = { workspace = true }
+ndarray = { workspace = true, features = ["rayon"] }
 
 num-traits = { workspace = true }
 derive_more = { workspace = true }
 serde = { workspace = true, features = ["derive"], optional = true }
+log.workspace = true
 
 [features]
 serde = ["dep:serde", "dynamo_common/serde"]

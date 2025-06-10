@@ -10,6 +10,7 @@ description = "A tool for studying discrete time dynamical systems - Native UI"
 [dependencies]
 eframe = { workspace = true }
 dynamo_app = { version = "*", path = "../app" }
+pretty_env_logger.workspace = true
 
 [features]
 serde = ["dynamo_app/serde"]

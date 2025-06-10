@@ -3,7 +3,7 @@ use crate::{dynamics::EscapeEncoding, prelude::DynamicalFamily};
 use dynamo_common::prelude::*;
 use num_traits::One;
 
-pub struct CycleDetected<'a, P: DynamicalFamily>
+pub struct CycleDetected<'a, P: DynamicalFamily + ?Sized>
 {
     family: &'a P,
     periodicity_tolerance: Real,
@@ -16,7 +16,7 @@ pub struct CycleDetected<'a, P: DynamicalFamily>
     running: bool,
 }
 
-impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
+impl<'a, P: DynamicalFamily + ?Sized> CycleDetected<'a, P>
 {
     pub fn new(family: &'a P) -> Self
     {
@@ -114,7 +114,7 @@ impl<'a, P: DynamicalFamily> CycleDetected<'a, P>
     }
 }
 
-impl<P: EscapeEncoding> Orbit for CycleDetected<'_, P>
+impl<P: EscapeEncoding + ?Sized> Orbit for CycleDetected<'_, P>
 {
     type Outcome = PointInfo<P::Deriv>;
 

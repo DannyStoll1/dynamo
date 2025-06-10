@@ -1,6 +1,6 @@
 use crate::types::{Cplx, Real};
 use ndarray::Array2;
-use rayon::iter::{IterBridge, ParallelBridge};
+use rayon::iter::{IntoParallelIterator, IterBridge, ParallelBridge};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
@@ -287,6 +287,20 @@ impl PointGrid
     pub const fn shape(&self) -> (usize, usize)
     {
         (self.res_x, self.res_y)
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn len(&self) -> usize
+    {
+        self.res_x * self.res_y
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn is_empty(&self) -> bool
+    {
+        self.res_x == 0 || self.res_y == 0
     }
 
     #[must_use]

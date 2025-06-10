@@ -6,6 +6,10 @@ pub mod error;
 pub mod macros;
 pub mod orbit;
 pub mod prelude;
+pub mod compute_state;
+
+#[macro_use]
+extern crate log;
 
 #[cfg(test)]
 mod tests

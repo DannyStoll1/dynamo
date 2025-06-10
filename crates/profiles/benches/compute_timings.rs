@@ -79,6 +79,16 @@ fn mandelbrot(b: &mut Bencher)
 }
 
 #[bench]
+fn mandelbrot_async(b: &mut Bencher)
+{
+    b.iter(|| {
+        let plane = Mandelbrot::default().with_res_y(768).with_max_iter(2048);
+        let job = plane.compute_spawn().unwrap();
+        job.into_iter().count()
+    });
+}
+
+#[bench]
 fn quadratic_julia(b: &mut Bencher)
 {
     b.iter(|| {

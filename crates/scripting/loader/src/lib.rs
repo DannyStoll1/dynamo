@@ -4,6 +4,9 @@ pub mod parser;
 pub mod transpiler;
 pub use loader::Loader;
 
+#[macro_use]
+extern crate log;
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests

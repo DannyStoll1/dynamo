@@ -2,7 +2,7 @@ use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams, LevelCurveParams};
 use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
 use dynamo_common::math_utils::{
-    arithmetic::{divisors, gcd, moebius, Integer},
+    arithmetic::{Integer, divisors, gcd, moebius},
     newton::{find_root_newton, find_target_newton_err_d},
 };
 use dynamo_common::prelude::*;
@@ -11,7 +11,9 @@ use num_traits::{One, Zero};
 
 use ndarray::{Array2, Axis};
 use num_cpus;
-use rayon::iter::{ParallelBridge, ParallelIterator};
+// use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
+use ndarray::parallel::prelude::*;
+use std::sync::Arc;
 use std::{cell::RefCell, f64::consts::TAU};
 use thread_local::ThreadLocal;
 
@@ -19,6 +21,7 @@ pub mod covering_maps;
 pub mod julia;
 pub mod newton;
 
+use crate::compute_state::Job;
 use crate::error::{FindPointError, FindPointResult};
 use crate::orbit::{self, EscapeResult, Orbit, Potential};
 use julia::JuliaSet;
@@ -60,22 +63,9 @@ impl ComputeMode
             Self::SmoothPotential => *self = Self::DistanceEstimation,
         }
     }
-
-    pub fn create_orbit<'a, P: EscapeEncoding>(
-        &self,
-        family: &'a P,
-    ) -> RefCell<Box<dyn Orbit<Outcome = PointInfo<P::Deriv>> + 'a>>
-    {
-        match self {
-            Self::SmoothPotential => RefCell::new(Box::new(orbit::CycleDetected::new(family))),
-            Self::DistanceEstimation => {
-                RefCell::new(Box::new(orbit::DistanceEstimation::new(family)))
-            }
-        }
-    }
 }
 
-pub trait DynamicalFamily: Sync + Send
+pub trait DynamicalFamily: Sync + Send + 'static
 {
     type Var: Variable;
     type Param: Parameter;
@@ -1105,6 +1095,16 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
             phase: None,
         }
     }
+
+    fn create_orbit(&self) -> RefCell<Box<dyn Orbit<Outcome = PointInfo<Self::Deriv>> + '_>>
+    {
+        match self.compute_mode() {
+            ComputeMode::SmoothPotential => RefCell::new(Box::new(orbit::CycleDetected::new(self))),
+            ComputeMode::DistanceEstimation => {
+                RefCell::new(Box::new(orbit::DistanceEstimation::new(self)))
+            }
+        }
+    }
 }
 
 pub trait Computable: DynamicalFamily
@@ -1115,6 +1115,10 @@ pub trait Computable: DynamicalFamily
         self.compute_into(&mut iter_plane);
         iter_plane
     }
+
+    fn compute_spawn(self) -> Job<Self::Deriv>
+    where
+        Self: Sized;
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
 
@@ -1177,14 +1181,12 @@ where
         iter_plane
             .iter_counts
             .axis_chunks_iter_mut(Axis(1), chunk_size)
+            .into_par_iter()
             .enumerate()
-            .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
                 chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
                     let y = chunk_idx * chunk_size + local_y;
-                    let mut orbit = orbits
-                        .get_or(|| self.compute_mode().create_orbit(self))
-                        .borrow_mut();
+                    let mut orbit = orbits.get_or(|| self.create_orbit()).borrow_mut();
 
                     let point = self.point_grid().map_pixel(x, y);
                     orbit.reset(point);
@@ -1192,13 +1194,37 @@ where
                 });
             });
     }
+
+    fn compute_spawn(self) -> Job<Self::Deriv>
+    where
+        Self: Sized,
+    {
+        if self.point_grid().is_nan() {
+            return None;
+        }
+
+        let grid = self.point_grid().clone();
+        let (tx, rx) = crossbeam::channel::bounded(grid.len());
+
+        std::thread::spawn(move || {
+            let orbits = ThreadLocal::new();
+            grid.par_iter().try_for_each(|(idx, point)| {
+                let mut orbit = orbits.get_or(|| self.create_orbit()).borrow_mut();
+
+                orbit.reset(point);
+                let final_state = orbit.run_until_complete();
+                tx.send((idx, final_state))
+            })
+        });
+        Some(rx)
+    }
 }
 
 pub trait Displayable:
-    DynamicalFamily + FamilyDefaults + ExternalRays + Equipotential + Computable + MarkedPoints
+    DynamicalFamily + FamilyDefaults + ExternalRays + Equipotential + Computable + MarkedPoints + Clone
 {
 }
 impl<P> Displayable for P where
-    P: DynamicalFamily + FamilyDefaults + ExternalRays + Equipotential + Computable + MarkedPoints
+    P: DynamicalFamily + FamilyDefaults + ExternalRays + Equipotential + Computable + MarkedPoints + Clone
 {
 }

@@ -21,6 +21,8 @@ libloading = { version = "0.8.8", optional = true }
 image = { workspace = true }
 imageproc = "0.25"
 itertools = { workspace = true }
+crossbeam.workspace = true
+log.workspace = true
 
 [features]
 serde = [

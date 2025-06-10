@@ -325,7 +325,7 @@ where
     fn process_child_task(&mut self)
     {
         if self.parent.pop_child_task() == ChildTask::UpdateParam {
-            let parent_selection = self.parent.get_selection();
+            let parent_selection = self.parent.selection();
             let new_child_param = self.parent.plane.param_map(parent_selection);
             self.set_child_param(new_child_param);
         }
@@ -830,7 +830,7 @@ where
     fn show(&mut self, ui: &mut Ui)
     {
         TableBuilder::new(ui)
-            .column(Column::exact(self.parent.get_image_frame().width() as f32))
+            .column(Column::exact(self.parent.image_frame().width() as f32))
             .column(Column::remainder())
             .vscroll(false)
             .stick_to_bottom(true)
@@ -843,14 +843,14 @@ where
                 });
             })
             .body(|mut body| {
-                body.row(self.parent.get_image_frame().height() as f32, |mut row| {
+                body.row(self.parent.image_frame().height() as f32, |mut row| {
                     row.col(|ui| {
-                        self.parent.get_image_frame_mut().put(ui);
+                        self.parent.image_frame_mut().put(ui);
                         self.parent.put_marked_curves(ui);
                         self.parent.put_marked_points(ui);
                     });
                     row.col(|ui| {
-                        self.child.get_image_frame_mut().put(ui);
+                        self.child.image_frame_mut().put(ui);
                         self.child.put_marked_curves(ui);
                         self.child.put_marked_points(ui);
                     });
@@ -994,12 +994,12 @@ where
             }
             Action::Zoom(scale) => {
                 if let Some(p) = self.get_active_pane_mut() {
-                    p.zoom(*scale, p.get_selection());
+                    p.zoom(*scale, p.selection());
                 }
             }
             Action::CenterOnSelection => {
                 if let Some(pane) = self.get_active_pane_mut() {
-                    let selection = pane.get_selection();
+                    let selection = pane.selection();
                     pane.grid_mut().recenter(selection);
                     pane.schedule_recompute();
                 }
@@ -1050,7 +1050,7 @@ where
             }
             Action::ToggleEscapePhaseColoring => {
                 if let Some(p) = self.get_active_pane_mut() {
-                    p.get_coloring_mut().toggle_escape_phase_coloring();
+                    p.coloring_mut().toggle_escape_phase_coloring();
                     p.schedule_redraw();
                 }
             }
@@ -1079,6 +1079,7 @@ where
 {
     fn update(&mut self, ctx: &Context)
     {
+        debug!("Updating interface");
         self.handle_input(ctx);
         self.show_dialog(ctx);
         self.update_panes();

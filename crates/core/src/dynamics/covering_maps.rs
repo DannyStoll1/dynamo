@@ -375,7 +375,7 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Sized
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
         let bounds = self.point_grid().bounds.clone();
 
-        println!("Marked cycle has not been implemented; falling back to base curve!");
+        warn!("Marked cycle has not been implemented; falling back to base curve!");
         CoveringMap::new(self, param_map_d).with_orig_bounds(bounds)
     }
     fn dynatomic_curve(self, _period: Period) -> CoveringMap<Self>
@@ -383,7 +383,7 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Sized
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
         let bounds = self.point_grid().bounds.clone();
 
-        println!("Dynatomic curve has not been implemented; falling back to base curve!");
+        warn!("Dynatomic curve has not been implemented; falling back to base curve!");
         CoveringMap::new(self, param_map_d).with_orig_bounds(bounds)
     }
     fn misiurewicz_curve(self, _preperiod: Period, _period: Period) -> CoveringMap<Self>
@@ -391,7 +391,7 @@ pub trait HasDynamicalCovers: super::DynamicalFamily + Sized
         let param_map_d = |_| (Self::Param::default(), Self::Deriv::one());
         let bounds = self.point_grid().bounds.clone();
 
-        println!("Misiurewicz curve has not been implemented; falling back to base curve!");
+        warn!("Misiurewicz curve has not been implemented; falling back to base curve!");
         CoveringMap::new(self, param_map_d).with_orig_bounds(bounds)
     }
 }

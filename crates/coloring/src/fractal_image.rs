@@ -57,9 +57,9 @@ where
             *pixel = coloring.map::<_, Rgb<u8>>(iter_count);
         }
         match image.save(filename.clone()) { Err(e) => {
-            println!("Error saving file: {e:?}");
+            error!("Error saving file: {e:?}");
         } _ => {
-            println!("Image saved to {filename}");
+            info!("Image saved to {filename}");
         }}
     }
     fn write_image(&self, coloring: &Coloring) -> Self::Image

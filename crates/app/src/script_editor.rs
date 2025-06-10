@@ -118,7 +118,7 @@ impl ScriptEditor
     {
         match self.save_script() {
             Ok(script_path) => {
-                println!("Script saved to {}.", script_path.display());
+                info!("Script saved to {}.", script_path.display());
                 if run {
                     self.state = State::ReadyToRun(script_path);
                 } else {
@@ -126,7 +126,7 @@ impl ScriptEditor
                 }
             }
             Err(e) => {
-                println!("Error saving script: {e:?}");
+                error!("Error saving script: {e:?}");
             }
         }
     }

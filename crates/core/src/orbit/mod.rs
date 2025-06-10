@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicU8, Ordering};
+
 use crate::dynamics::DynamicalFamily;
 use dynamo_common::prelude::*;
 use num_traits::One;
@@ -127,7 +129,7 @@ where
             Bounded => "Bounded (no cycle detected or period too high)".to_owned(),
             Wandering => "Wandering (appears to escape very slowly)".to_owned(),
             Unknown => {
-                "Unknown result, likely due to insufficient floting-point precision".to_owned()
+                "Unknown result, possibly due to insufficient floting-point precision".to_owned()
             }
         };
         format!(
@@ -142,7 +144,7 @@ pub trait Orbit: Send
 {
     type Outcome;
 
-    /// Re-initialize aan orbit.
+    /// Re-initialize an orbit.
     fn reset(&mut self, selection: Cplx);
 
     fn run_until_complete(&mut self) -> Self::Outcome;

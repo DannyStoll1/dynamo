@@ -15,6 +15,9 @@ use types::{FromColor, Hsv};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[macro_use]
+extern crate log;
+
 use self::palette::DiscretePalette;
 
 #[derive(Clone, Debug, Default, PartialEq)]

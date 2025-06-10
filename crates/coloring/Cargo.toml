@@ -13,6 +13,7 @@ egui = { workspace = true }
 rand = "0.9.1"
 rand_distr = "0.5.1"
 toml = { workspace = true, optional = true }
+log.workspace = true
 
 [features]
 serde = ["dep:serde", "dep:toml", "egui/serde", "dynamo_common/serde"]

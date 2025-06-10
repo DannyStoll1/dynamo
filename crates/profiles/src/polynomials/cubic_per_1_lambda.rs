@@ -1057,12 +1057,7 @@ impl MarkedPoints for CubicPer1_0
                     c * horner!(c2, 24.),
                     ONE,
                 ];
-                for (i, x) in coeffs.iter().enumerate() {
-                    println!("{}: {}", i, x.re);
-                }
-                let res = solve_polynomial(coeffs);
-                dbg!(&res);
-                res
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }

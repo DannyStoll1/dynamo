@@ -25,11 +25,11 @@ pub trait Pane
     fn frame(&self) -> &ImageFrame;
     fn frame_mut(&mut self) -> &mut ImageFrame;
 
-    fn get_coloring(&self) -> &Coloring;
-    fn get_coloring_mut(&mut self) -> &mut Coloring;
+    fn coloring(&self) -> &Coloring;
+    fn coloring_mut(&mut self) -> &mut Coloring;
 
     fn select_point(&mut self, point: Cplx);
-    fn get_selection(&self) -> Cplx;
+    fn selection(&self) -> Cplx;
     fn reset_selection(&mut self);
     fn reset(&mut self);
     fn select_nearby_point(&mut self, orbit_schema: OrbitSchema) -> FindPointResult<Cplx>;
@@ -41,8 +41,8 @@ pub trait Pane
     fn draw_contour(&mut self, contour_type: ContourType);
     fn draw_aux_contours(&mut self);
 
-    fn get_image_frame(&self) -> &ImageFrame;
-    fn get_image_frame_mut(&mut self) -> &mut ImageFrame;
+    fn image_frame(&self) -> &ImageFrame;
+    fn image_frame_mut(&mut self) -> &mut ImageFrame;
 
     fn clear_marked_points(&mut self);
     fn clear_marked_orbit(&mut self);
@@ -98,27 +98,27 @@ pub trait Pane
 
     fn change_palette(&mut self, palette: Palette)
     {
-        self.get_coloring_mut().set_palette(palette);
+        self.coloring_mut().set_palette(palette);
         self.marking_mut().sched_recolor_all();
         self.schedule_redraw();
     }
 
     fn scale_palette(&mut self, scale_factor: f64)
     {
-        self.get_coloring_mut().scale_period(scale_factor);
+        self.coloring_mut().scale_period(scale_factor);
         self.schedule_redraw();
     }
 
     fn set_coloring_algorithm(&mut self, coloring_algorithm: IncoloringAlgorithm)
     {
-        self.get_coloring_mut()
+        self.coloring_mut()
             .set_interior_algorithm(coloring_algorithm);
         self.schedule_redraw();
     }
 
     fn shift_palette(&mut self, shift: f64)
     {
-        self.get_coloring_mut().adjust_phase(shift);
+        self.coloring_mut().adjust_phase(shift);
         self.schedule_redraw();
     }
 
@@ -224,13 +224,14 @@ where
     selection: Cplx,
     #[cfg_attr(feature = "serde", serde(skip))]
     orbit_info: Option<orbit::Info<P::Param, P::Var, P::Deriv>>,
+    job: dynamo_core::compute_state::Job<P::Deriv>,
     pub marking: Marking,
     pub zoom_factor: Real,
     pub child_task: ChildTask,
 }
 impl<P> WindowPane<P>
 where
-    P: Displayable + 'static,
+    P: Displayable,
 {
     /// Change the meta-parameter for the plane. Returns true if the new value is distinct from the
     /// old one.
@@ -296,6 +297,7 @@ where
             iter_plane,
             image_frame: frame,
             tasks: PaneTasks::init_tasks(),
+            job: None,
             selection,
             orbit_info: None,
             marking,
@@ -377,7 +379,7 @@ where
 
     fn draw(&mut self)
     {
-        let image = self.iter_plane.render(self.get_coloring());
+        let image = self.iter_plane.render(self.coloring());
         let image_frame = self.frame_mut();
         image_frame.image = image;
         image_frame.update_texture();
@@ -394,13 +396,21 @@ where
     #[inline]
     fn compute(&mut self)
     {
-        self.iter_plane = self.plane.compute();
+        self.job = self.plane.clone().compute_spawn()
+        // self.iter_plane = self.plane.compute();
     }
 
     #[inline]
     fn recompute(&mut self)
     {
-        self.plane.compute_into(&mut self.iter_plane);
+        self.job = self.plane.clone().compute_spawn()
+        // self.plane.compute_into(&mut self.iter_plane);
+    }
+
+    #[inline]
+    fn abort_computation(&mut self)
+    {
+        self.job = None;
     }
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
@@ -426,7 +436,7 @@ where
 
 impl<P> From<P> for WindowPane<P>
 where
-    P: Displayable + 'static,
+    P: Displayable,
 {
     fn from(plane: P) -> Self
     {
@@ -440,7 +450,7 @@ where
 /// handling tasks, zooming, panning, and managing selections and markings.
 impl<P> Pane for WindowPane<P>
 where
-    P: Displayable + 'static,
+    P: Displayable,
 {
     #[inline]
     fn tasks(&self) -> &PaneTasks
@@ -473,27 +483,27 @@ where
         &mut self.image_frame
     }
     #[inline]
-    fn get_coloring(&self) -> &Coloring
+    fn coloring(&self) -> &Coloring
     {
         &self.coloring
     }
     #[inline]
-    fn get_coloring_mut(&mut self) -> &mut Coloring
+    fn coloring_mut(&mut self) -> &mut Coloring
     {
         &mut self.coloring
     }
     #[inline]
-    fn get_image_frame(&self) -> &ImageFrame
+    fn image_frame(&self) -> &ImageFrame
     {
         &self.image_frame
     }
     #[inline]
-    fn get_image_frame_mut(&mut self) -> &mut ImageFrame
+    fn image_frame_mut(&mut self) -> &mut ImageFrame
     {
         &mut self.image_frame
     }
     #[inline]
-    fn get_selection(&self) -> Cplx
+    fn selection(&self) -> Cplx
     {
         self.selection
     }
@@ -544,13 +554,13 @@ where
     #[inline]
     fn draw_contour(&mut self, contour_type: ContourType)
     {
-        let selection = self.get_selection();
+        let selection = self.selection();
 
         self.marking_mut().toggle_contour(contour_type, selection);
     }
     fn draw_aux_contours(&mut self)
     {
-        let selection = self.get_selection();
+        let selection = self.selection();
         // let Some((mu, dmu)) = self.plane().auxiliary_value(selection) else {
         //     return;
         // };
@@ -689,8 +699,28 @@ where
                 self.compute();
             }
         }
+
+        if let Some(rx) = &mut self.job {
+            loop {
+                use crossbeam::channel::TryRecvError;
+                match rx.try_recv() {
+                    Ok((point, info)) => {
+                        self.iter_plane.iter_counts[point] = info;
+                        self.tasks.draw.schedule_rerun();
+                    }
+                    Err(TryRecvError::Empty) => break,
+                    Err(TryRecvError::Disconnected) => {
+                        self.job = None;
+                        info!("Disconnected job");
+                        break;
+                    }
+                }
+            }
+        }
+
         match self.tasks_mut().draw.pop() {
             RepeatableTask::Rerun => {
+                debug!("Redrawing");
                 self.redraw();
             }
             RepeatableTask::DoNothing => {}
@@ -720,36 +750,43 @@ where
 
     fn save_image(&mut self, img_width: usize, filename: &Path)
     {
-        let old_res_x = self.plane.point_grid().res_x;
-        self.plane.point_grid_mut().resize_x(img_width);
-        let iter_plane = self.plane.compute();
-        // iter_plane.save(self.get_coloring(), filename.to_owned());
+        let mut plane = self.plane.clone();
+        let marking = self.marking.clone();
+        let grid = self.grid().clone();
+        let coloring = self.coloring.clone();
+        let filename = filename.to_owned();
 
-        let mut image = iter_plane.write_image(self.get_coloring());
-        self.marking.mark_image(self.grid(), &mut image);
+        std::thread::spawn(move || {
+            plane.point_grid_mut().resize_x(img_width);
+            let iter_plane = plane.compute();
 
-        match image.save(filename) { Err(e) => {
-            println!("Error saving file: {e:?}");
-        } _ => {
-            println!("Image saved to {}", filename.to_string_lossy());
-        }}
+            let mut image = iter_plane.write_image(&coloring);
+            marking.mark_image(&grid, &mut image);
 
-        self.plane.point_grid_mut().resize_x(old_res_x);
+            match image.save(&filename) {
+                Err(e) => {
+                    error!("Error saving file: {e:?}");
+                }
+                _ => {
+                    info!("Image saved to {}", filename.to_string_lossy());
+                }
+            }
+        });
     }
 
     fn save_palette(&mut self, filename: &Path)
     {
         if let Err(e) = self.coloring.save_to_file(filename) {
-            println!("Error saving palette: {e:?}");
+            error!("Error saving palette: {e:?}");
         } else {
-            println!("Palette saved to {}", filename.to_string_lossy());
+            info!("Palette saved to {}", filename.to_string_lossy());
         }
     }
 
     fn load_palette(&mut self, filename: &Path)
     {
         if let Err(e) = self.coloring.load_palette(filename) {
-            println!("Error loading palette: {e:?}");
+            error!("Error loading palette: {e:?}");
         }
         self.schedule_redraw();
     }

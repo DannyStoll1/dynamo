@@ -290,10 +290,10 @@ impl ExternalRays for UserPlane {{}}
             out_path.join(format!("{}.rs", self.parsed_input.metadata.short_name));
         let mod_rs_path = out_path.join("mod.rs");
 
-        println!("    Writing imports to\n        {}", mod_rs_path.display());
+        info!("    Writing imports to\n        {}", mod_rs_path.display());
         std::fs::write(mod_rs_path, mod_rs).map_err(ScriptError::ErrorWritingFile)?;
 
-        println!(
+        info!(
             "    Writing transpiled script to\n        {}",
             profile_rs_path.display()
         );

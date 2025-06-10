@@ -133,7 +133,7 @@ impl<'a> Loader<'a>
             return Err(ScriptError::CompilationFailed);
         }
 
-        println!(
+        info!(
             "    Moving compiled library:\n        \
                 {}\n    \
             --> {}",
@@ -157,25 +157,28 @@ impl<'a> Loader<'a>
     /// If these flags do not match, the ABIs will likely be incompatible, leading to undefined
     /// behavior.
     unsafe fn load<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
-    { unsafe {
-        type Constructor = unsafe fn() -> *mut dyn Interface;
+    {
+        unsafe {
+            type Constructor = unsafe fn() -> *mut dyn Interface;
 
-        // Load the dynamic library
-        let lib = Library::new(self.dest_lib_path()).map_err(ScriptError::ErrorLoadingLibrary)?;
+            // Load the dynamic library
+            let lib =
+                Library::new(self.dest_lib_path()).map_err(ScriptError::ErrorLoadingLibrary)?;
 
-        // Get the constructor function from the dynamic library
-        let constructor: Symbol<Constructor> = lib
-            .get(b"create_interface")
-            .map_err(ScriptError::ErrorLoadingLibrary)?;
+            // Get the constructor function from the dynamic library
+            let constructor: Symbol<Constructor> = lib
+                .get(b"create_interface")
+                .map_err(ScriptError::ErrorLoadingLibrary)?;
 
-        let mut interface = Box::from_raw(constructor());
-        interface.change_height(self.image_height);
+            let mut interface = Box::from_raw(constructor());
+            interface.change_height(self.image_height);
 
-        let holder = InterfaceHolder::new(interface, lib);
+            let holder = InterfaceHolder::new(interface, lib);
 
-        // Convert the raw pointer to a Box
-        Ok(holder)
-    }}
+            // Convert the raw pointer to a Box
+            Ok(holder)
+        }
+    }
 
     /// Transpile the user script into Rust, compile it to a library, and load the library together
     /// with the interface defined by the script.
@@ -192,16 +195,18 @@ impl<'a> Loader<'a>
     /// dynamically written and loaded at runtime. To prevent this, we append a hash to the library
     /// filename based on the content of the user's script.
     pub unsafe fn run<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
-    { unsafe {
-        println!("\nTranspiling script...");
-        self.transpile_toml()?;
+    {
+        unsafe {
+            info!("\nTranspiling script...");
+            self.transpile_toml()?;
 
-        println!("\nBuilding script...");
-        self.build()?;
+            info!("\nBuilding script...");
+            self.build()?;
 
-        println!("\nLoading script...");
-        self.load()
-    }}
+            info!("\nLoading script...");
+            self.load()
+        }
+    }
 
     /// Same as `run`, but avoid recompiling if the script's hash matches an existing library file.
     ///
@@ -215,18 +220,20 @@ impl<'a> Loader<'a>
     ///
     /// FIXME: Add a build script to clear old script libraries from `scripting/compiled` whenever `dynamo` is recompiled.
     pub unsafe fn run_lazy<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
-    { unsafe {
-        if self.dest_lib_path().exists() {
-            println!("Library found, skipping compilation.");
-        } else {
-            println!("Transpiling script...");
-            self.transpile_toml()?;
+    {
+        unsafe {
+            if self.dest_lib_path().exists() {
+                info!("Library found, skipping compilation.");
+            } else {
+                info!("Transpiling script...");
+                self.transpile_toml()?;
 
-            println!("Building script...");
-            self.build()?;
+                info!("Building script...");
+                self.build()?;
+            }
+
+            info!("Loading script...");
+            self.load()
         }
-
-        println!("Loading script...");
-        self.load()
-    }}
+    }
 }

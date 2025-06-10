@@ -3,7 +3,7 @@ use crate::dynamics::EscapeEncoding;
 use dynamo_common::prelude::*;
 use num_traits::One;
 
-pub struct DistanceEstimation<'a, P: EscapeEncoding>
+pub struct DistanceEstimation<'a, P: EscapeEncoding + ?Sized>
 {
     family: &'a P,
     param: P::Param,
@@ -18,7 +18,7 @@ pub struct DistanceEstimation<'a, P: EscapeEncoding>
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
 }
 
-impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
+impl<'a, P: EscapeEncoding + ?Sized> DistanceEstimation<'a, P>
 {
     pub fn new(family: &'a P) -> Self
     {
@@ -124,7 +124,7 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
         None
     }
 }
-impl<P: EscapeEncoding> Orbit for DistanceEstimation<'_, P>
+impl<P: EscapeEncoding + ?Sized> Orbit for DistanceEstimation<'_, P>
 {
     type Outcome = PointInfo<P::Deriv>;
 

@@ -18,3 +18,4 @@ dynamo_gui = { version = "*", path = "../../gui", features = ["scripting"] }
 dynamo_core = { version = "*", path = "../../core" }
 dynamo_common = { version = "*", path = "../../common" }
 sha256 = "1.6.0"
+log.workspace = true

@@ -10,3 +10,6 @@ pub mod pane;
 
 #[cfg(feature = "scripting")]
 pub mod interface_holder;
+
+#[macro_use]
+extern crate log;

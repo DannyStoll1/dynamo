@@ -36,6 +36,7 @@ egui_file = "0.22"
 egui_dock = "0.16"
 image = "0.25"
 
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 itertools = "0.14"
 lazy_static = "1.5"
 ndarray = "0.16"
@@ -49,3 +50,6 @@ toml = "0.8"
 derive_more = { version = "2.0", features = ["full"] }
 serde = "1.0"
 serde_json = "1.0"
+
+log = "0.4"
+pretty_env_logger = "0.5"
