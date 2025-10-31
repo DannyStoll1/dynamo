@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Dynamo</title>
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico" />
     <script type="module">
@@ -9,16 +10,28 @@
 
       async function main() {
         await init();
-        const canvas_id = "dynamo_app";
+        const canvas = document.getElementById("dynamo_app");
         var web_handle = new WebHandle();
-        web_handle.start(canvas_id);
+        web_handle.start(canvas);
       }
       main();
     </script>
     <style>
-      body {
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
-        margin-right: 24px;
+        touch-action: none;
+      }
+      #dynamo_app {
+        display: block;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
       }
     </style>
   </head>

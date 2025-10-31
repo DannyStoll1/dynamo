@@ -1,5 +1,6 @@
-use lazy_static::lazy_static;
 use std::path::Path;
+
+use lazy_static::lazy_static;
 
 lazy_static! {
     pub static ref SCRIPT_PROJ_DIR: &'static Path = Path::new("user_scripts");

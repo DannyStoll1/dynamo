@@ -3,7 +3,7 @@ pub use mandelbrot::Mandelbrot;
 
 pub mod cubic_per_1_lambda;
 pub use cubic_per_1_lambda::{
-    CubicPer1Lambda, CubicPer1LambdaModuli, CubicPer1LambdaParam, CubicPer1_0, CubicPer1_1,
+    CubicPer1_0, CubicPer1_1, CubicPer1Lambda, CubicPer1LambdaModuli, CubicPer1LambdaParam,
 };
 
 pub mod cubic_per_2_lambda;
@@ -16,8 +16,7 @@ pub mod odd_cubic;
 pub use odd_cubic::OddCubic;
 
 pub mod real_cubic;
-pub use real_cubic::RealCubicImagCrit;
-pub use real_cubic::RealCubicRealCrit;
+pub use real_cubic::{RealCubicImagCrit, RealCubicRealCrit};
 
 pub mod cubic_marked_2_cycle;
 pub use cubic_marked_2_cycle::CubicMarked2Cycle;

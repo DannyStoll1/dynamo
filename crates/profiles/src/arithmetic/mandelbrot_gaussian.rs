@@ -1,6 +1,7 @@
-use crate::macros::{basic_plane_impl, degree_impl, profile_imports};
 use dynamo_color::prelude::*;
 use dynamo_common::cache::Cache;
+
+use crate::macros::{basic_plane_impl, degree_impl, profile_imports};
 profile_imports!();
 
 type GInt = GaussianInteger;
@@ -8,10 +9,10 @@ type GInt = GaussianInteger;
 #[derive(Clone, Debug)]
 pub struct GaussianMandel<const A: i64, const B: i64>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    cache: Cache<(GInt, GInt), PointInfo<GInt>>,
+    max_iter:     IterCount,
+    cache:        Cache<(GInt, GInt), PointInfo<GInt>>,
 }
 
 impl<const A: i64, const B: i64> GaussianMandel<A, B>
@@ -158,7 +159,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters - 1) as IterCountSmooth,
-                phase: None,
+                phase:     None,
             };
         }
 

@@ -10,10 +10,9 @@ pub mod types;
 
 pub use algorithms::IncoloringAlgorithm;
 pub use palette::Palette;
-use types::{FromColor, Hsv};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use types::{FromColor, Hsv};
 
 use self::palette::DiscretePalette;
 
@@ -21,10 +20,10 @@ use self::palette::DiscretePalette;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coloring
 {
-    algorithm: IncoloringAlgorithm,
-    palette: Palette,
-    esc_period: Period,
-    do_escape_phase_coloring: bool,
+    algorithm:       IncoloringAlgorithm,
+    palette:         Palette,
+    esc_period:      Period,
+    by_escape_phase: bool,
 }
 impl Coloring
 {
@@ -35,7 +34,7 @@ impl Coloring
             algorithm,
             palette,
             esc_period: 1,
-            do_escape_phase_coloring: false,
+            by_escape_phase: false,
         }
     }
 
@@ -53,7 +52,7 @@ impl Coloring
             Escaping {
                 potential,
                 phase: Some(phase),
-            } if self.do_escape_phase_coloring => {
+            } if self.by_escape_phase => {
                 self.palette
                     .map_phase(potential.ln(), *phase, self.esc_period)
             }
@@ -63,9 +62,10 @@ impl Coloring
                 self.algorithm.color_known_potential(&self.palette, data)
             }
             Bounded => T::from_color32(self.palette.in_color),
-            DistanceEstimate { distance, phase } if self.do_escape_phase_coloring => self
-                .palette
-                .map_phase(-distance.ln() / 2., *phase, self.esc_period),
+            DistanceEstimate { distance, phase } if self.by_escape_phase => {
+                self.palette
+                    .map_phase(-distance.ln() / 2., *phase, self.esc_period)
+            }
             DistanceEstimate { distance, .. } => self.palette.map(-distance.ln() / 2.),
             Wandering => T::from_color32(self.palette.wandering_color),
             Unknown => T::from_color32(self.palette.unknown_color),
@@ -85,7 +85,7 @@ impl Coloring
         }
     }
 
-    pub fn set_palette(&mut self, palette: Palette)
+    pub const fn set_palette(&mut self, palette: Palette)
     {
         self.palette = palette;
     }
@@ -96,7 +96,7 @@ impl Coloring
         &self.palette
     }
     #[must_use]
-    pub fn get_palette_mut(&mut self) -> &mut Palette
+    pub const fn get_palette_mut(&mut self) -> &mut Palette
     {
         &mut self.palette
     }
@@ -106,7 +106,7 @@ impl Coloring
         &self.palette.period_coloring
     }
     #[must_use]
-    pub fn get_period_coloring_mut(&mut self) -> &mut DiscretePalette
+    pub const fn get_period_coloring_mut(&mut self) -> &mut DiscretePalette
     {
         &mut self.palette.period_coloring
     }
@@ -115,11 +115,11 @@ impl Coloring
     {
         &self.algorithm
     }
-    pub fn get_algorithm_mut(&mut self) -> &mut IncoloringAlgorithm
+    pub const fn get_algorithm_mut(&mut self) -> &mut IncoloringAlgorithm
     {
         &mut self.algorithm
     }
-    pub fn set_interior_algorithm(&mut self, algorithm: IncoloringAlgorithm)
+    pub const fn set_interior_algorithm(&mut self, algorithm: IncoloringAlgorithm)
     {
         self.algorithm = algorithm;
     }
@@ -137,9 +137,9 @@ impl Coloring
         self
     }
 
-    pub fn toggle_escape_phase_coloring(&mut self)
+    pub const fn toggle_escape_phase_coloring(&mut self)
     {
-        self.do_escape_phase_coloring ^= true;
+        self.by_escape_phase ^= true;
     }
 
     #[cfg(feature = "serde")]
@@ -193,8 +193,9 @@ mod tests
     #[test]
     fn hsv()
     {
-        use crate::types::Hsv;
         use image::Rgb;
+
+        use crate::types::Hsv;
 
         let hsv = Hsv::new(0., 1., 0.4);
         let rgb = Rgb::from(hsv);

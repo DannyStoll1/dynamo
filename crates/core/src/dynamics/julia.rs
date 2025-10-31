@@ -1,6 +1,3 @@
-use super::{ComputeMode, DynamicalFamily, FamilyDefaults, HasJulia, MarkedPoints};
-use crate::macros::basic_plane_impl;
-use crate::orbit::EscapeResult;
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::math_utils::newton::find_target_newton_err_d;
@@ -8,7 +5,12 @@ use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use num_traits::{One, Zero};
 
-use super::{EscapeEncoding, ExternalRays, InfinityFirstReturnMap, PlaneType};
+use super::{
+    ComputeMode, DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasJulia,
+    InfinityFirstReturnMap, MarkedPoints, PlaneType,
+};
+use crate::macros::basic_plane_impl;
+use crate::orbit::EscapeResult;
 
 #[derive(Clone)]
 pub struct JuliaSet<T>

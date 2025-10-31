@@ -1,7 +1,6 @@
 use egui::containers::Frame;
 use egui::{Pos2, Rect, TextureOptions, Ui, Vec2};
 use epaint::{ColorImage, Stroke, TextureHandle};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct BorderMode
 {
     selected: bool,
-    live: bool,
+    live:     bool,
 }
 impl BorderMode
 {
@@ -39,20 +38,20 @@ impl BorderMode
 
 pub struct ImageFrame
 {
-    pub image: ColorImage,
+    pub image:  ColorImage,
     pub region: Rect,
     texture_id: Option<TextureHandle>,
-    border: BorderMode,
+    border:     BorderMode,
 }
 impl Default for ImageFrame
 {
     fn default() -> Self
     {
         Self {
-            image: ColorImage::default(),
-            region: Rect::NOTHING,
+            image:      ColorImage::default(),
+            region:     Rect::NOTHING,
             texture_id: None,
-            border: BorderMode::default(),
+            border:     BorderMode::default(),
         }
     }
 }
@@ -79,19 +78,19 @@ impl ImageFrame
             ui.image(&*texture_id);
         });
     }
-    pub fn select(&mut self)
+    pub const fn select(&mut self)
     {
         self.border.selected = true;
     }
-    pub fn deselect(&mut self)
+    pub const fn deselect(&mut self)
     {
         self.border.selected = false;
     }
-    pub fn set_live(&mut self)
+    pub const fn set_live(&mut self)
     {
         self.border.live = true;
     }
-    pub fn unset_live(&mut self)
+    pub const fn unset_live(&mut self)
     {
         self.border.live = false;
     }

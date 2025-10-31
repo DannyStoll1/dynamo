@@ -1,17 +1,18 @@
+use dynamo_common::math_utils::weierstrass_p;
+
 use crate::macros::{
     degree_impl, ext_ray_impl_nonmonic, ext_ray_impl_rk, has_child_impl, horner, horner_monic,
     profile_imports,
 };
-use dynamo_common::math_utils::weierstrass_p;
 profile_imports!();
 
 // Quadratic rational maps with a critical 3-cycle: -c => ∞ -> 1 -> -c
 #[derive(Clone, Debug)]
 pub struct QuadRatPer3
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer3
@@ -55,7 +56,7 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
     }
@@ -144,9 +145,13 @@ impl MarkedPoints for QuadRatPer3
             4 => {
                 let c2 = -b;
                 let coeffs = [
-                    horner_monic!(c, -1., -4., -7., -2., 13., 29., 29., 15., -3., -8., -6., 0., 0.),
+                    horner_monic!(
+                        c, -1., -4., -7., -2., 13., 29., 29., 15., -3., -8., -6., 0., 0.
+                    ),
                     horner_monic!(c, -1., -4., -7., -2., 12., 22., 14., -2., -9., -6., -2., 0.),
-                    horner!(c, 5., 14., 11., -34., -93., -115., -61., -3., 30., 14., 6., -6.),
+                    horner!(
+                        c, 5., 14., 11., -34., -93., -115., -61., -3., 30., 14., 6., -6.
+                    ),
                     horner!(c, 5., 14., 13., -20., -60., -60., -12., 28., 26., 6., -4.),
                     horner!(c, -7., -3., 37., 125., 157., 109., -1., -31., -27., 9.),
                     horner!(c, -8., -10., 16., 66., 72., 18., -30., -26., -2.),
@@ -221,7 +226,7 @@ impl HasDynamicalCovers for QuadRatPer3
                     let v = y / 4.;
                     let xx = -(t + 1.) * u + (t + 3.) * v + (t + 4.);
                     let yy = u - v - (t + 1.) / 4.;
-                    let zz = -x + 2. * v + (t + 3.) / 2.;
+                    let zz = -x + 2. * v + t.midpoint(3.);
 
                     let s0 = xx / zz;
                     let s1 = zz / yy;

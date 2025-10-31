@@ -1,21 +1,22 @@
 pub mod menu;
-use crate::macros::{interface, interface_dyn, interface_mc, interface_mis};
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_gui::interface::{Interface, MainInterface, PanePair};
 use dynamo_profiles::{
     BiquadraticMult, BiquadraticMultParam, BiquadraticMultSection, BurningShip, Chebyshev,
-    CoshNewton, Cosine, CosineAdd, CubicMarked2Cycle, CubicPer1Lambda, CubicPer1LambdaModuli,
-    CubicPer1LambdaParam, CubicPer1_0, CubicPer1_1, CubicPer2CritMarked, CubicPer2Lambda,
+    CoshNewton, Cosine, CosineAdd, CubicMarked2Cycle, CubicPer1_0, CubicPer1_1, CubicPer1Lambda,
+    CubicPer1LambdaModuli, CubicPer1LambdaParam, CubicPer2CritMarked, CubicPer2Lambda,
     CubicPer2LambdaParam, CubicPer3_0, EisensteinMandel, Exponential, GaussianMandel, Gudermannian,
-    Mandelbrot, McMullenFamily, MinsikHanPhi, NewtonCubic, OddCubic, QuadRatPer1Lambda,
-    QuadRatPer1LambdaParam, QuadRatPer1_1, QuadRatPer2, QuadRatPer2InfPuncture, QuadRatPer2Lambda,
-    QuadRatPer2LambdaParam, QuadRatPer3, QuadRatPer4, QuadRatPer5, QuadRatPreper21,
-    QuadRatPreper22, QuadRatSymmetryLocus, RealCubicImagCrit, RealCubicRealCrit, RiemannXi,
-    RiemannXiNewton, Rulkov, Sailboat, SineWander, Tricorne, Unicorn, Unicritical,
+    Mandelbrot, McMullenFamily, MinsikHanPhi, NewtonCubic, OddCubic, QuadRatPer1_1,
+    QuadRatPer1Lambda, QuadRatPer1LambdaParam, QuadRatPer2, QuadRatPer2InfPuncture,
+    QuadRatPer2Lambda, QuadRatPer2LambdaParam, QuadRatPer3, QuadRatPer4, QuadRatPer5,
+    QuadRatPreper21, QuadRatPreper22, QuadRatSymmetryLocus, RealCubicImagCrit, RealCubicRealCrit,
+    RiemannXi, RiemannXiNewton, Rulkov, Sailboat, SineWander, Tricorne, Unicorn, Unicritical,
 };
 use menu::{Menu, State};
 use seq_macro::seq;
+
+use crate::macros::{interface, interface_dyn, interface_mc, interface_mis};
 
 pub fn create_menu() -> Menu
 {

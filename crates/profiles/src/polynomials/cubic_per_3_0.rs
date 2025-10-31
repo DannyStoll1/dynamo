@@ -7,9 +7,9 @@ profile_imports!();
 #[derive(Clone, Debug, PartialEq)]
 pub struct CubicPer3_0
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl CubicPer3_0

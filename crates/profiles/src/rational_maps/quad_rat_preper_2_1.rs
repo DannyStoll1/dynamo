@@ -1,14 +1,15 @@
-use crate::macros::{degree_impl, horner, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
+
+use crate::macros::{degree_impl, horner, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPreper21
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPreper21
@@ -158,7 +159,7 @@ impl EscapeEncoding for QuadRatPreper21
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters - 1) as IterCountSmooth,
-                phase: None,
+                phase:     None,
             };
         }
 

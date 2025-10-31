@@ -33,7 +33,7 @@ pub fn run_app() -> Result<(), eframe::Error>
 struct TabViewer<'a>
 {
     added_nodes: &'a mut Vec<FractalTab>,
-    to_remove: &'a mut Vec<TabID>,
+    to_remove:   &'a mut Vec<TabID>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_>
@@ -75,7 +75,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
 pub struct FractalApp
 {
     dock_state: DockState<FractalTab>,
-    tab_count: usize,
+    tab_count:  usize,
 }
 
 impl Default for FractalApp
@@ -110,7 +110,7 @@ impl eframe::App for FractalApp
                 ctx,
                 &mut TabViewer {
                     added_nodes: &mut added_nodes,
-                    to_remove: &mut to_remove,
+                    to_remove:   &mut to_remove,
                 },
             );
         for tab in added_nodes {

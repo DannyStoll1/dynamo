@@ -21,9 +21,10 @@ pub use arithmetic::*;
 #[cfg(test)]
 mod tests
 {
-    use crate::*;
     use dynamo_common::prelude::*;
     use dynamo_core::prelude::*;
+
+    use crate::*;
 
     #[test]
     fn test_horner()
@@ -103,7 +104,7 @@ mod tests
         // Parameter plane
         {
             let o = OrbitSchema {
-                period: 2,
+                period:    2,
                 preperiod: 2,
             };
             let start = Cplx::new(0.2, 1.2);
@@ -122,7 +123,7 @@ mod tests
             let dynam_plane = JuliaSet::from(param_plane).with_param(c);
             let o = OrbitSchema {
                 preperiod: 0,
-                period: 3,
+                period:    3,
             };
             let start = Cplx::new(1.5, 0.1);
             let target = Cplx::new(1.301_937_735_804_84, 0.);
@@ -142,7 +143,7 @@ mod tests
         let param_plane = QuadRatPer4::default();
         {
             let o = OrbitSchema {
-                period: 3,
+                period:    3,
                 preperiod: 0,
             };
             let start = Cplx::new(0.2, 1.2);

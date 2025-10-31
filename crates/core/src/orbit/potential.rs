@@ -1,9 +1,10 @@
 use std::f64::consts::LN_2;
 
-use super::{EscapeResult, Orbit};
-use crate::dynamics::InfinityFirstReturnMap;
 use dynamo_common::prelude::*;
 use num_traits::One;
+
+use super::{EscapeResult, Orbit};
+use crate::dynamics::InfinityFirstReturnMap;
 
 /// An orbit that tracks the gradient of f in order to compute the Green's function and its
 /// derivative at a poin.
@@ -113,21 +114,20 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         }
 
         let error = self.z_fast.dist_sqr(self.z_slow);
-        if error < self.periodicity_tolerance {
-            if let Some((period, multiplier)) =
+        if error < self.periodicity_tolerance
+            && let Some((period, multiplier)) =
                 self.compute_period(self.periodicity_tolerance.powf(0.75), self.iter as usize)
-            {
-                let info = PointInfoPeriodic {
-                    preperiod: self.iter,
-                    period,
-                    multiplier,
-                    final_error: error,
-                };
-                self.state = Some(EscapeResult::Periodic {
-                    info,
-                    final_value: self.z_fast,
-                });
-            }
+        {
+            let info = PointInfoPeriodic {
+                preperiod: self.iter,
+                period,
+                multiplier,
+                final_error: error,
+            };
+            self.state = Some(EscapeResult::Periodic {
+                info,
+                final_value: self.z_fast,
+            });
         }
     }
 
@@ -147,6 +147,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
     }
 
     /// Logarithm of the Koenigs coordinate, together with its gradient
+    #[expect(clippy::while_float)]
     fn periodic_koenigs_d(&mut self, period: Period, mult_norm: Real) -> Option<(Real, Cplx)>
     {
         self.reset(self.selection);
@@ -176,6 +177,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
     }
 
     /// Brute force calculation of multiplier derivative
+    #[expect(clippy::while_float)]
     fn periodic_koenigs_d_param(
         &mut self,
         period: Period,
@@ -215,6 +217,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
 
     /// Logarithm of the Green's function, together with its gradient,
     /// for bounded orbits
+    #[expect(clippy::while_float)]
     fn periodic_bottcher_d(&mut self, period: Period) -> Option<(Real, Cplx)>
     {
         self.reset(self.selection);

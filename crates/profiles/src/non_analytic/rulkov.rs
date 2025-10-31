@@ -1,8 +1,7 @@
+use dynamo_common::types::Cplx;
+use dynamo_common::types::variables::{Matrix2x2, Point};
+
 use crate::macros::{degree_impl, profile_imports};
-use dynamo_common::types::{
-    variables::{Matrix2x2, Point},
-    Cplx,
-};
 
 profile_imports!();
 
@@ -42,9 +41,9 @@ fn f(z: Point, c: &Point) -> Point
 #[derive(Clone, Debug)]
 pub struct Rulkov
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 impl Rulkov
 {

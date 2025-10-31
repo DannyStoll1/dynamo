@@ -145,7 +145,7 @@ enum NavAction
 pub struct Menu
 {
     pub state: State,
-    above: Vec<State>,
+    above:     Vec<State>,
 }
 
 impl Menu

@@ -1,9 +1,11 @@
-use crate::types::{Cplx, Real};
+use std::ops::{Deref, DerefMut};
+
 use ndarray::Array2;
 use rayon::iter::{IterBridge, ParallelBridge};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use std::ops::{Deref, DerefMut};
+
+use crate::types::{Cplx, Real};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -48,14 +50,14 @@ impl Bounds
     #[must_use]
     pub const fn mid_x(&self) -> Real
     {
-        (self.max_x + self.min_x) / 2.
+        self.max_x.midpoint(self.min_x)
     }
 
     #[inline]
     #[must_use]
     pub const fn mid_y(&self) -> Real
     {
-        (self.max_y + self.min_y) / 2.
+        self.max_y.midpoint(self.min_y)
     }
 
     pub fn translate(&mut self, translation: Cplx)
@@ -145,8 +147,8 @@ impl Default for Bounds
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PointGrid
 {
-    pub res_x: usize,
-    pub res_y: usize,
+    pub res_x:  usize,
+    pub res_y:  usize,
     pub bounds: Bounds,
 }
 
@@ -331,21 +333,21 @@ impl PointGrid
         self.translate(new_center - old_center);
     }
 
-    pub fn change_bounds(&mut self, new_bounds: Bounds)
+    pub const fn change_bounds(&mut self, new_bounds: Bounds)
     {
         self.res_y = Self::infer_height(self.res_x, &new_bounds);
         self.bounds = new_bounds;
     }
 
     #[inline]
-    pub fn resize_x(&mut self, res_x: usize)
+    pub const fn resize_x(&mut self, res_x: usize)
     {
         self.res_x = res_x;
         self.res_y = Self::infer_height(res_x, &self.bounds);
     }
 
     #[inline]
-    pub fn resize_y(&mut self, res_y: usize)
+    pub const fn resize_y(&mut self, res_y: usize)
     {
         self.res_y = res_y;
         self.res_x = Self::infer_width(res_y, &self.bounds);
@@ -383,8 +385,8 @@ impl Default for PointGrid
     fn default() -> Self
     {
         Self {
-            res_x: 256,
-            res_y: 256,
+            res_x:  256,
+            res_y:  256,
             bounds: Bounds::default(),
         }
     }
@@ -423,12 +425,12 @@ pub struct PointGridIterator
 {
     step_x: Real,
     step_y: Real,
-    res_x: usize,
-    res_y: usize,
-    min_x: Real,
-    min_y: Real,
-    idx_x: usize,
-    idx_y: usize,
+    res_x:  usize,
+    res_y:  usize,
+    min_x:  Real,
+    min_y:  Real,
+    idx_x:  usize,
+    idx_y:  usize,
 }
 
 impl PointGridIterator

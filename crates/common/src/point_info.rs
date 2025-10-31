@@ -1,9 +1,10 @@
-use crate::globals::DISPLAY_PREC;
-use crate::types::{IterCount, IterCountSmooth, Period, Real};
 use std::fmt::Display;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::globals::DISPLAY_PREC;
+use crate::types::{IterCount, IterCountSmooth, Period, Real};
 
 #[derive(Clone, Debug, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -12,7 +13,7 @@ pub enum PointInfo<D>
     Escaping
     {
         potential: IterCountSmooth,
-        phase: Option<Period>,
+        phase:     Option<Period>,
     },
     Periodic(PointInfoPeriodic<D>),
     PeriodicKnownPotential(PointInfoKnownPotential<D>),
@@ -28,7 +29,7 @@ pub enum PointInfo<D>
     DistanceEstimate
     {
         distance: Real,
-        phase: Period,
+        phase:    Period,
     },
     Unknown,
 }
@@ -37,9 +38,9 @@ pub enum PointInfo<D>
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PointInfoPeriodic<D>
 {
-    pub preperiod: IterCount,
-    pub period: Period,
-    pub multiplier: D,
+    pub preperiod:   IterCount,
+    pub period:      Period,
+    pub multiplier:  D,
     pub final_error: Real,
 }
 impl<D> std::fmt::Display for PointInfoPeriodic<D>
@@ -64,9 +65,9 @@ where
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct PointInfoKnownPotential<D>
 {
-    pub period: Period,
+    pub period:     Period,
     pub multiplier: D,
-    pub potential: IterCountSmooth,
+    pub potential:  IterCountSmooth,
 }
 impl<D> std::fmt::Display for PointInfoKnownPotential<D>
 where

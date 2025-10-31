@@ -1,13 +1,12 @@
+use std::f64::consts::PI;
+
 pub use num::integer::binomial;
+use num_complex::ComplexFloat;
+pub use spfunc::gamma::{digamma, gamma, polygamma};
+pub use spfunc::zeta::zeta;
 
 use crate::consts::{LOG_PI, TAUI, ZERO};
 use crate::types::{Cplx, Real};
-use num_complex::ComplexFloat;
-pub use spfunc::{
-    gamma::{digamma, gamma, polygamma},
-    zeta::zeta,
-};
-use std::f64::consts::PI;
 
 // pub mod erf;
 pub mod arithmetic;

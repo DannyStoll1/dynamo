@@ -25,10 +25,11 @@ mod tests
 {
     use num_complex::Complex64;
 
-    use crate::{
-        newton::Newton, poly_traits::Eval, polynomial::Polynomial, solve::JenkinsTraubSolver,
-        solve_polynomial,
-    };
+    use crate::newton::Newton;
+    use crate::poly_traits::Eval;
+    use crate::polynomial::Polynomial;
+    use crate::solve::JenkinsTraubSolver;
+    use crate::solve_polynomial;
     #[test]
     fn poly_division()
     {

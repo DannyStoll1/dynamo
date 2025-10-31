@@ -1,20 +1,18 @@
+pub use num::Integer;
+pub use num::integer::gcd;
+
 use crate::types::{Period, SignedPeriod};
-pub use num::{integer::gcd, Integer};
 
 #[must_use]
 pub const fn div_rem(a: Period, b: Period) -> Option<(Period, Period)>
 {
-    if b == 0 {
-        None
-    } else {
-        Some((a / b, a % b))
-    }
+    if b == 0 { None } else { Some((a / b, a % b)) }
 }
 
 pub fn divisors(n: Period) -> impl Iterator<Item = Period>
 {
     (1..).take_while(move |&x| x * x <= n).flat_map(move |x| {
-        if n % x == 0 {
+        if n.is_multiple_of(x) {
             if x * x == n {
                 vec![x].into_iter()
             } else {
@@ -42,10 +40,10 @@ pub const fn moebius(n: Period) -> SignedPeriod
     let mut n = n;
     let mut i = 2;
     while i * i <= n {
-        if n % i == 0 {
+        if n.is_multiple_of(i) {
             result = -result;
             n /= i;
-            if n % i == 0 {
+            if n.is_multiple_of(i) {
                 return 0;
             }
         }

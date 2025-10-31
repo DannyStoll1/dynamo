@@ -3,15 +3,15 @@ pub(crate) use dynamo_core::macros::*;
 
 macro_rules! profile_imports {
     () => {
+        use std::any::type_name;
+
         use dynamo_common::math_utils::polynomial_roots::*;
         use dynamo_common::prelude::*;
         use dynamo_core::prelude::*;
         use num_traits::ops::mul_add::MulAdd;
-        use std::any::type_name;
-        use $crate::macros::parameter_plane_impl;
-
         #[cfg(feature = "serde")]
         use serde::{Deserialize, Serialize};
+        use $crate::macros::parameter_plane_impl;
     };
 }
 
@@ -25,7 +25,7 @@ macro_rules! parameter_plane_impl {
         dynamo_core::macros::basic_plane_impl!();
         dynamo_core::macros::param_map!();
     };
-    ($var: ty, $param: ty, $deriv: ty, $meta_param: ty) => {
+    ($var:ty, $param:ty, $deriv:ty, $meta_param:ty) => {
         type Var = $var;
         type Param = $param;
         type MetaParam = $meta_param;
@@ -36,10 +36,10 @@ macro_rules! parameter_plane_impl {
 }
 
 macro_rules! has_child_impl {
-    ($struct: ty) => {
+    ($struct:ty) => {
         impl HasJulia for $struct {}
     };
-    ($struct: ty, $radius: literal) => {
+    ($struct:ty, $radius:literal) => {
         impl HasJulia for $struct
         {
             fn default_bounds_child(&self, _point: Cplx, _param: &Self::Param) -> Bounds
@@ -117,7 +117,7 @@ macro_rules! degree_impl {
 }
 
 macro_rules! degree_impl_transcendental {
-    ($plane: ty) => {
+    ($plane:ty) => {
         impl InfinityFirstReturnMap for $plane
         {
             degree_impl_transcendental!();
@@ -159,13 +159,13 @@ macro_rules! degree_impl_transcendental {
                 if z.is_nan() {
                     return PointInfo::Escaping {
                         potential: (iters as f64) - 1.,
-                        phase: None,
+                        phase:     None,
                     };
                 }
                 if z.is_infinite() {
                     return PointInfo::Escaping {
                         potential: (iters as f64) + 1.,
-                        phase: None,
+                        phase:     None,
                     };
                 }
                 let u = slog(self.escape_radius());
@@ -210,9 +210,8 @@ macro_rules! ext_ray_impl_nonmonic_conj {
     () => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
         {
-            use dynamo_common::math_utils::newton::{
-                error::Error::NanEncountered, find_target_newton_err_d,
-            };
+            use dynamo_common::math_utils::newton::error::Error::NanEncountered;
+            use dynamo_common::math_utils::newton::find_target_newton_err_d;
 
             const R: Real = 16.0;
             let escape_radius_log2 = R.log2() * self.degree_real().abs();
@@ -322,7 +321,7 @@ macro_rules! ext_ray_impl_nonmonic_conj {
             Some(t_list)
         }
     };
-    ($plane: ty) => {
+    ($plane:ty) => {
         impl ExternalRays for $plane
         {
             ext_ray_impl_nonmonic!();
@@ -332,7 +331,7 @@ macro_rules! ext_ray_impl_nonmonic_conj {
 
 #[allow(unused_macros)]
 macro_rules! ext_ray_impl_rk {
-    ($step: literal, $esc: expr_2021) => {
+    ($step:literal, $esc:expr_2021) => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
         {
             use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams};
@@ -349,14 +348,10 @@ macro_rules! ext_ray_impl_rk {
                 })
                 .compute();
 
-            if ray.len() > 0 {
-                Some(ray)
-            } else {
-                None
-            }
+            if ray.len() > 0 { Some(ray) } else { None }
         }
     };
-    ($step: literal) => {
+    ($step:literal) => {
         ext_ray_impl_rk!($step, 5e2);
     };
     () => {
@@ -368,9 +363,8 @@ macro_rules! ext_ray_impl_nonmonic {
     () => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
         {
-            use dynamo_common::math_utils::newton::{
-                error::Error::NanEncountered, find_target_newton_err_d,
-            };
+            use dynamo_common::math_utils::newton::error::Error::NanEncountered;
+            use dynamo_common::math_utils::newton::find_target_newton_err_d;
             const R: Real = 256.0;
             let escape_radius_log = R.ln() * self.degree_real().abs();
 

@@ -1,6 +1,6 @@
-#! /bin/sh
+#! /bin/bash
 
-set -eou pipefail
+set -e
 
 here="$(dirname "$0")"
 # export RUSTFLAGS='--cfg getrandom_backend="wasm_js"'

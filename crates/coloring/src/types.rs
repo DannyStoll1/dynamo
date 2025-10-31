@@ -2,7 +2,6 @@ use std::f32::consts::TAU;
 
 use egui::Color32;
 use image::{Pixel, Rgb};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -13,16 +12,16 @@ const TAU_3: f32 = std::f32::consts::TAU / 3.;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Hsv
 {
-    pub hue: f32,
+    pub hue:        f32,
     pub saturation: f32,
-    pub intensity: f32,
+    pub intensity:  f32,
 }
 impl Hsv
 {
     const WHITE: Self = Self {
-        hue: 0.,
+        hue:        0.,
         saturation: 0.,
-        intensity: 1.,
+        intensity:  1.,
     };
 
     #[must_use]
@@ -100,7 +99,7 @@ impl Hsv
         let g = f32::from(rgb.1) / f32::from(u8::MAX - 1);
         let b = f32::from(rgb.2) / f32::from(u8::MAX - 1);
 
-        let alpha = r - (g + b) / 2.;
+        let alpha = r - g.midpoint(b);
         let beta = SIN_60 * (g - b);
 
         let hue = beta.atan2(alpha) / TAU;
@@ -123,9 +122,9 @@ impl Hsv
 
         if range == 0 {
             return Self {
-                hue: 0.,
+                hue:        0.,
                 saturation: 0.,
-                intensity: 0.,
+                intensity:  0.,
             };
         }
 

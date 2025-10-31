@@ -10,9 +10,9 @@ profile_imports!();
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CosineAdd
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl CosineAdd
@@ -69,7 +69,7 @@ impl DynamicalFamily for CosineAdd
     {
         if z.im.abs() > 350. {
             Some(EscapeResult::Escaped {
-                iters: iter,
+                iters:       iter,
                 final_value: z,
             })
         } else if z.re.abs() > 1e15 {
@@ -97,9 +97,9 @@ impl HasJulia for CosineAdd
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Cosine
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl Cosine
@@ -135,7 +135,7 @@ impl DynamicalFamily for Cosine
 
     #[inline]
     fn gradient(&self, z: Self::Var, lambda: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let cos = z.cos();
         (cos * lambda, -z.sin() * lambda, cos)
@@ -157,7 +157,7 @@ impl DynamicalFamily for Cosine
     {
         if z.im.abs() > 350. {
             Some(EscapeResult::Escaped {
-                iters: iter,
+                iters:       iter,
                 final_value: z,
             })
         } else if z.re.abs() > 1e15 {
@@ -175,9 +175,9 @@ has_child_impl!(Cosine, 5.5);
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SineWander
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl SineWander
@@ -234,7 +234,7 @@ impl DynamicalFamily for SineWander
     {
         if z.im.abs() > 350. {
             Some(EscapeResult::Escaped {
-                iters: iter,
+                iters:       iter,
                 final_value: z,
             })
         } else if z.re.abs() > 1e15 {
@@ -324,9 +324,9 @@ impl MarkedPoints for SineWander
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CoshNewton
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl CoshNewton

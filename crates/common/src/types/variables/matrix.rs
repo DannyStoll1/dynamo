@@ -1,8 +1,9 @@
+use derive_more::{Add, AddAssign, Display, From, Sub};
+use num_traits::{One, Zero};
+
 use crate::prelude::Conj;
 use crate::traits::{Arg, FloatLike, MaybeNan, Named, Norm};
 use crate::types::{Cplx, Real};
-use derive_more::{Add, AddAssign, Display, From, Sub};
-use num_traits::{One, Zero};
 
 #[derive(Default, Clone, Copy, Debug, Add, Sub, AddAssign, Display, From, PartialEq)]
 #[display("({x}, {y})")]

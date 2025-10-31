@@ -1,5 +1,6 @@
-use crate::macros::{horner, horner_monic, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
+
+use crate::macros::{horner, horner_monic, profile_imports};
 profile_imports!();
 
 const G2: Cplx = Cplx::new(2.75, 0.);
@@ -24,12 +25,23 @@ fn top_coeff(a: Cplx, b: Cplx) -> Cplx
     let c0 = (x2 * y).powi(2) * (a + y) * (y + a * x);
 
     let d0 = a2 * x2 * horner!(x, 6., 4., -145., 200., 423., -782., -181., 450., 145.);
-    let d1 =
-        (x2 + x2) * horner!(x, -30., 10., 575., -1073., -991., 3069., -236., -2262., 494., 452.);
-    let d2 =
-        2. * x * horner!(x, -3., 96., 206., -1496., -233., 4850., -1085., -4841., 1371., 1239.);
-    let d3 = 2. * x * horner!(x, 21., -39., -847., 162., 4979., -1887., -6105., 2292., 1960.);
-    let d4 = horner!(x, 1., -52., -624., 336., 7378., -3342., -10034., 5234., 3935.);
+    let d1 = (x2 + x2)
+        * horner!(
+            x, -30., 10., 575., -1073., -991., 3069., -236., -2262., 494., 452.
+        );
+    let d2 = 2.
+        * x
+        * horner!(
+            x, -3., 96., 206., -1496., -233., 4850., -1085., -4841., 1371., 1239.
+        );
+    let d3 = 2.
+        * x
+        * horner!(
+            x, 21., -39., -847., 162., 4979., -1887., -6105., 2292., 1960.
+        );
+    let d4 = horner!(
+        x, 1., -52., -624., 336., 7378., -3342., -10034., 5234., 3935.
+    );
     let d5 = horner!(x, -2., -144., 288., 3928., -1398., -5412., 4368., 2580.);
     let d6 = horner!(x, -16., 144., 1430., 30., -1682., 2738., 1084.);
     let d7 = horner!(x, 26., 322., 286., -78., 1272., 268.);
@@ -47,9 +59,9 @@ fn top_coeff(a: Cplx, b: Cplx) -> Cplx
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer5
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 impl QuadRatPer5
 {

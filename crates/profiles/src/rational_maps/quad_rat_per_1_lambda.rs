@@ -10,8 +10,8 @@ profile_imports!();
 pub struct QuadRatPer1Lambda
 {
     general_plane: QuadRatGeneral,
-    multiplier: Cplx,
-    tolerance: Real,
+    multiplier:    Cplx,
+    tolerance:     Real,
 }
 
 impl Default for QuadRatPer1Lambda
@@ -269,9 +269,9 @@ impl MarkedPoints for QuadRatPer1Lambda
 #[derive(Clone, Debug)]
 pub struct QuadRatPer1LambdaParam
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer1LambdaParam
@@ -333,7 +333,7 @@ impl DynamicalFamily for QuadRatPer1LambdaParam
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ONE, ZERO, ZERO)
     }

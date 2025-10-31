@@ -1,10 +1,10 @@
-use crate::symbolic_dynamics::AngleWithDegree;
-use crate::types::{AngleNum, Rational};
 use derive_more::{From, Into};
 use num_traits::sign::Signed;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::symbolic_dynamics::AngleWithDegree;
+use crate::types::{AngleNum, Rational};
 
 #[cfg(feature = "serde")]
 #[derive(Serialize, Deserialize)]
@@ -116,7 +116,7 @@ impl std::ops::Neg for RationalAngle
 }
 
 macro_rules! mul_div_int_impl {
-    ($other: ty) => {
+    ($other:ty) => {
         impl std::ops::Mul<$other> for RationalAngle
         {
             type Output = Self;

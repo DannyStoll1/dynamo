@@ -1,11 +1,13 @@
-use dynamo_common::{types::Period, macros::regex};
+use std::collections::HashMap;
+use std::str::FromStr;
+
+use dynamo_common::macros::regex;
+use dynamo_common::types::Period;
 use num_complex::Complex64;
 use pyo3::types::PyAnyMethods;
 use pyo3::{IntoPyObject, Python};
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
-use std::str::FromStr;
 
 mod defaults;
 
@@ -14,21 +16,21 @@ use crate::error::ScriptError;
 #[derive(Debug, Deserialize)]
 pub struct Metadata
 {
-    pub name: String,
+    pub name:       String,
     pub short_name: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Names
 {
-    pub variable: String,
+    pub variable:  String,
     pub selection: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Functions
 {
-    pub map: JsonValue,
+    pub map:   JsonValue,
     pub start: JsonValue,
 }
 
@@ -58,32 +60,32 @@ impl Default for EscapingReturnMapParams
 #[derive(Debug, Deserialize)]
 pub struct UnparsedUserInput
 {
-    pub metadata: Metadata,
-    pub constants: HashMap<String, JsonValue>,
+    pub metadata:   Metadata,
+    pub constants:  HashMap<String, JsonValue>,
     pub parameters: HashMap<String, String>,
-    pub dynamics: Functions,
-    pub names: Names,
-    pub optional: Option<EscapingReturnMapParams>,
+    pub dynamics:   Functions,
+    pub names:      Names,
+    pub optional:   Option<EscapingReturnMapParams>,
 }
 
 #[derive(Clone, Debug)]
 pub struct PyParams
 {
     pub param_map: String,
-    pub map: String,
-    pub map_d: String,
-    pub start: String,
-    pub start_d: String,
+    pub map:       String,
+    pub map_d:     String,
+    pub start:     String,
+    pub start_d:   String,
 }
 
 pub struct ParsedUserInput
 {
-    pub metadata: Metadata,
-    pub constants: HashMap<String, Complex64>,
+    pub metadata:    Metadata,
+    pub constants:   HashMap<String, Complex64>,
     pub param_names: Vec<String>,
-    pub names: Names,
-    pub optional: EscapingReturnMapParams,
-    pub py_params: PyParams,
+    pub names:       Names,
+    pub optional:    EscapingReturnMapParams,
+    pub py_params:   PyParams,
 }
 impl TryFrom<UnparsedUserInput> for ParsedUserInput
 {
@@ -169,7 +171,7 @@ impl UnparsedUserInput
             .filter_map(Result::ok)
             .collect::<HashMap<String, Complex64>>();
 
-        let py_params = Python::with_gil(|py| {
+        let py_params = Python::attach(|py| {
             let sys = py.import("sys")?;
             sys.getattr("path")?.call_method1("append", ("python",))?;
             sys.getattr("path")?

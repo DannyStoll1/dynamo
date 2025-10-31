@@ -1,7 +1,8 @@
-use super::{EscapeResult, Orbit};
-use crate::dynamics::EscapeEncoding;
 use dynamo_common::prelude::*;
 use num_traits::One;
+
+use super::{EscapeResult, Orbit};
+use crate::dynamics::EscapeEncoding;
 
 pub struct DistanceEstimation<'a, P: EscapeEncoding>
 {
@@ -91,21 +92,20 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
         }
 
         let error = self.z_fast.dist_sqr(self.z_slow);
-        if error < self.periodicity_tolerance {
-            if let Some((period, multiplier)) =
+        if error < self.periodicity_tolerance
+            && let Some((period, multiplier)) =
                 self.compute_period(self.periodicity_tolerance.powf(0.75), self.iter as usize)
-            {
-                let info = PointInfoPeriodic {
-                    preperiod: self.iter,
-                    period,
-                    multiplier,
-                    final_error: error,
-                };
-                self.state = Some(EscapeResult::Periodic {
-                    info,
-                    final_value: self.z_fast,
-                });
-            }
+        {
+            let info = PointInfoPeriodic {
+                preperiod: self.iter,
+                period,
+                multiplier,
+                final_error: error,
+            };
+            self.state = Some(EscapeResult::Periodic {
+                info,
+                final_value: self.z_fast,
+            });
         }
     }
 

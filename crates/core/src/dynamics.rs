@@ -1,30 +1,30 @@
+use std::cell::RefCell;
+use std::f64::consts::TAU;
+
 use dynamo_color::{Coloring, IncoloringAlgorithm};
+use dynamo_common::math_utils::arithmetic::{Integer, divisors, gcd, moebius};
 use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams, LevelCurveParams};
-use dynamo_common::math_utils::newton::error::{Error::NanEncountered, NewtonResult};
-use dynamo_common::math_utils::{
-    arithmetic::{divisors, gcd, moebius, Integer},
-    newton::{find_root_newton, find_target_newton_err_d},
-};
+use dynamo_common::math_utils::newton::error::Error::NanEncountered;
+use dynamo_common::math_utils::newton::error::NewtonResult;
+use dynamo_common::math_utils::newton::{find_root_newton, find_target_newton_err_d};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
-use num_traits::{One, Zero};
-
 use ndarray::{Array2, Axis};
 use num_cpus;
+use num_traits::{One, Zero};
 use rayon::iter::{ParallelBridge, ParallelIterator};
-use std::{cell::RefCell, f64::consts::TAU};
 use thread_local::ThreadLocal;
 
 pub mod covering_maps;
 pub mod julia;
 pub mod newton;
 
-use crate::error::{FindPointError, FindPointResult};
-use crate::orbit::{self, EscapeResult, Orbit, Potential};
 use julia::JuliaSet;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::error::{FindPointError, FindPointResult};
+use crate::orbit::{self, EscapeResult, Orbit, Potential};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -53,7 +53,7 @@ pub enum ComputeMode
 }
 impl ComputeMode
 {
-    pub fn cycle(&mut self)
+    pub const fn cycle(&mut self)
     {
         match self {
             Self::DistanceEstimation => *self = Self::SmoothPotential,
@@ -208,7 +208,7 @@ pub trait DynamicalFamily: Sync + Send
         let r = z.norm_sqr();
         if r > self.escape_radius() || z.is_nan() {
             Some(EscapeResult::Escaped {
-                iters: iter,
+                iters:       iter,
                 final_value: z,
             })
         } else {
@@ -419,13 +419,12 @@ pub trait DynamicalFamily: Sync + Send
             derivs[term_count] = (dw_dt - dz_dt).into();
 
             // Iteratively apply product rule to compute derivative
-            let out = values
+            values
                 .iter()
                 .zip(derivs.iter())
                 .fold((early_cycle, early_cycle_dt), |(u, du), (v, dv)| {
                     (u * v, u * dv + v * du)
-                });
-            out
+                })
         };
 
         find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
@@ -932,6 +931,7 @@ pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
     /// and to maintain precision.
     ///
     /// Currently only stable for quadratic polynomials.
+    #[expect(clippy::while_float)]
     fn external_ray(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         // Remove off the end if distance is increasing,
@@ -1095,7 +1095,7 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as IterCountSmooth).exp(),
-                phase: None,
+                phase:     None,
             };
         }
 
@@ -1126,10 +1126,10 @@ pub trait Computable: DynamicalFamily
     fn orbit_summary_conf(&self) -> orbit::OrbitSummaryConf
     {
         orbit::OrbitSummaryConf {
-            show_parameter: true,
-            show_selection: true,
+            show_parameter:   true,
+            show_selection:   true,
             show_start_point: !self.plane_type().is_dynamical(),
-            float_prec: DISPLAY_PREC,
+            float_prec:       DISPLAY_PREC,
         }
     }
 }
@@ -1156,7 +1156,7 @@ where
         let result = self.encode_escape_result(final_state.unwrap_or_default(), start, &param);
         orbit::OrbitAndInfo {
             orbit: trajectory,
-            info: orbit::Info {
+            info:  orbit::Info {
                 param,
                 start,
                 result,

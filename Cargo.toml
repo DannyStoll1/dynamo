@@ -15,6 +15,18 @@ members = [
   "crates/scripting/output",
 ]
 
+default-members = [
+  "crates/app",
+  "crates/bin",
+  "crates/common",
+  "crates/coloring",
+  "crates/core",
+  "crates/gui",
+  "crates/wasm",
+  "crates/profiles",
+  "crates/poly_solve",
+]
+
 
 [profile.dev]
 opt-level = 2
@@ -28,24 +40,27 @@ panic = "abort"
 
 
 [workspace.dependencies]
-egui = "0.31"
-eframe = "0.31"
-epaint = "0.31"
-egui_extras = "0.31"
-egui_file = "0.22"
-egui_dock = "0.16"
+egui = "0.33"
+eframe = "0.33"
+epaint = "0.33"
+egui_extras = "0.33"
+egui_file = "0.24"
+# egui_dock = "0.17"
+egui_dock = { git = "https://github.com/Adanos020/egui_dock.git", branch = "release-0.18" }
 image = "0.25"
 
 itertools = "0.14"
 lazy_static = "1.5"
 ndarray = "0.16"
-rayon = "1.10"
+rayon = "1.11"
 
 num-complex = "0.4"
 num-rational = "0.4"
 num-traits = "0.2"
 
-toml = "0.8"
+toml = "0.9"
 derive_more = { version = "2.0", features = ["full"] }
 serde = "1.0"
 serde_json = "1.0"
+log = "0.4"
+pretty_env_logger = "0.5"

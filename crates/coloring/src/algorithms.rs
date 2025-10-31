@@ -1,18 +1,18 @@
-use crate::{
-    palette::Palette,
-    types::{FromColor, Hsv},
-};
 use dynamo_common::prelude::*;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::palette::Palette;
+use crate::types::{FromColor, Hsv};
 
 const PERIOD_LUMA_MODIFIER: f32 = 1.0;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Default)]
 pub enum IncoloringAlgorithm
 {
+    #[default]
     PeriodMultiplier,
     Period,
     Solid,
@@ -123,9 +123,9 @@ impl IncoloringAlgorithm
                     .map(point_info.period as f32, luminosity_modifier as f32)
             }
             Self::Multiplier => Hsv {
-                hue: (point_info.multiplier.arg() / TAU) as f32 + 0.5,
+                hue:        (point_info.multiplier.arg() / TAU) as f32 + 0.5,
                 saturation: 1.,
-                intensity: point_info.multiplier.norm() as f32,
+                intensity:  point_info.multiplier.norm() as f32,
             }
             // Self::Multiplier => Lchuv {
             //     h: (point_info.multiplier.arg() / TAU) as f32 + 0.5,
@@ -218,19 +218,11 @@ impl IncoloringAlgorithm
                 palette.period_coloring.map(n as f32, luma)
             }
             Self::Multiplier => Hsv {
-                hue: (info.multiplier.arg() / TAU) as f32 + 0.5,
+                hue:        (info.multiplier.arg() / TAU) as f32 + 0.5,
                 saturation: 1.,
-                intensity: info.multiplier.norm() as f32,
+                intensity:  info.multiplier.norm() as f32,
             }
             .into(),
         }
-    }
-}
-
-impl Default for IncoloringAlgorithm
-{
-    fn default() -> Self
-    {
-        Self::PeriodMultiplier
     }
 }

@@ -1,5 +1,6 @@
-use crate::macros::{ext_ray_impl_rk, profile_imports};
 use std::f64::consts::SQRT_2;
+
+use crate::macros::{ext_ray_impl_rk, profile_imports};
 profile_imports!();
 use std::iter::once;
 
@@ -30,7 +31,7 @@ impl ChebyshevCoeffTable
         let n = self.coeffs.len();
         let coeff0 = self.coeffs[n - 2].iter().chain(once(&0));
 
-        let new_coeff: Vec<i32> = if n % 2 == 0 {
+        let new_coeff: Vec<i32> = if n.is_multiple_of(2) {
             let coeff1 = once(&0).chain(self.coeffs[n - 1].iter());
             coeff0.zip(coeff1).map(|(&a, &b)| 2 * b - a).collect()
         } else {
@@ -67,11 +68,11 @@ impl ChebyshevCoeffTable
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Chebyshev<const D: Period>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    coeffs: Vec<Real>,
-    coeffs_d: Vec<Real>,
+    max_iter:     IterCount,
+    coeffs:       Vec<Real>,
+    coeffs_d:     Vec<Real>,
 }
 
 impl<const D: Period> Default for Chebyshev<D>
@@ -249,7 +250,7 @@ impl<const D: Period> InfinityFirstReturnMap for Chebyshev<D>
 
     fn escape_coeff_d(&self, param: &Self::Param) -> (Cplx, Cplx)
     {
-        if D % 2 == 0 {
+        if D.is_multiple_of(2) {
             (0.5 * param, Cplx::new(0.5, 0.))
         } else {
             (-0.5 * param, Cplx::new(-0.5, 0.))

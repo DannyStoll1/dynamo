@@ -1,13 +1,14 @@
+use dynamo_color::{Coloring, IncoloringAlgorithm};
+use dynamo_common::prelude::*;
+use dynamo_common::symbolic_dynamics::OrbitSchema;
+use num_traits::One;
+
 use super::julia::JuliaSet;
 use super::{
     DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasChild, HasJulia,
     InfinityFirstReturnMap, MarkedPoints,
 };
 use crate::orbit::EscapeResult;
-use dynamo_color::{Coloring, IncoloringAlgorithm};
-use dynamo_common::prelude::*;
-use dynamo_common::symbolic_dynamics::OrbitSchema;
-use num_traits::One;
 
 #[derive(Clone)]
 pub struct CoveringMap<C>
@@ -15,7 +16,7 @@ where
     C: DynamicalFamily,
 {
     base_curve: C,
-    covering_map_d: fn(Cplx) -> (C::Param, C::Deriv),
+    map_d: fn(Cplx) -> (C::Param, C::Deriv),
     point_grid: PointGrid,
     orig_bounds: Bounds,
     multiplier_map: fn(Cplx) -> (Cplx, Cplx),
@@ -27,13 +28,13 @@ where
     C: DynamicalFamily,
 {
     #[must_use]
-    pub fn new(base_curve: C, covering_map_d: fn(Cplx) -> (C::Param, C::Deriv)) -> Self
+    pub fn new(base_curve: C, map_d: fn(Cplx) -> (C::Param, C::Deriv)) -> Self
     {
         let point_grid = base_curve.point_grid().clone();
         let orig_bounds = point_grid.bounds.clone();
         Self {
             base_curve,
-            covering_map_d,
+            map_d,
             point_grid,
             orig_bounds,
             multiplier_map: |t| (t, ONE),
@@ -67,8 +68,8 @@ where
 {
     fn from(base_curve: C) -> Self
     {
-        let covering_map_d = |t: Cplx| (t.into(), C::Deriv::one());
-        Self::new(base_curve, covering_map_d)
+        let map_d = |t: Cplx| (t.into(), C::Deriv::one());
+        Self::new(base_curve, map_d)
     }
 }
 
@@ -149,12 +150,12 @@ where
 
     fn param_map(&self, t: Cplx) -> C::Param
     {
-        (self.covering_map_d)(t).0
+        (self.map_d)(t).0
     }
 
     fn param_map_d(&self, t: Cplx) -> (C::Param, C::Deriv)
     {
-        (self.covering_map_d)(t)
+        (self.map_d)(t)
     }
 
     #[inline]

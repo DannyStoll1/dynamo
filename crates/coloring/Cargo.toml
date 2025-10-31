@@ -1,6 +1,6 @@
 [package]
 name = "dynamo_color"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,7 +10,7 @@ dynamo_common = { version = "*", path = "../common" }
 serde = { workspace = true, features = ["derive"], optional = true }
 image = { workspace = true }
 egui = { workspace = true }
-rand = "0.9.1"
+rand = "0.9.2"
 rand_distr = "0.5.1"
 toml = { workspace = true, optional = true }
 

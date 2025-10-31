@@ -1,16 +1,17 @@
-use crate::macros::{degree_impl_transcendental, profile_imports};
 use dynamo_color::{Coloring, IncoloringAlgorithm};
 use dynamo_common::math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2};
 use dynamo_core::dynamics::PlaneType;
+
+use crate::macros::{degree_impl_transcendental, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RiemannXi
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 impl RiemannXi
 {
@@ -101,10 +102,10 @@ impl HasChild<RiemannXiNewton> for RiemannXi
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RiemannXiNewton
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    param: Cplx,
+    max_iter:     IterCount,
+    param:        Cplx,
 }
 impl RiemannXiNewton
 {
@@ -119,10 +120,10 @@ impl From<RiemannXi> for RiemannXiNewton
     fn from(plane: RiemannXi) -> Self
     {
         Self {
-            point_grid: plane.point_grid.clone(),
+            point_grid:   plane.point_grid.clone(),
             compute_mode: ComputeMode::default(),
-            max_iter: plane.max_iter,
-            param: plane.default_selection(),
+            max_iter:     plane.max_iter,
+            param:        plane.default_selection(),
         }
     }
 }

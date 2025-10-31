@@ -1,15 +1,15 @@
-use crate::macros::horner;
-use crate::macros::{horner_monic, profile_imports};
 use dynamo_common::types::CplxPair;
+
+use crate::macros::{horner, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatGeneral
 {
-    pub point_grid: PointGrid,
+    pub point_grid:   PointGrid,
     pub compute_mode: ComputeMode,
-    pub max_iter: IterCount,
+    pub max_iter:     IterCount,
 }
 
 impl Default for QuadRatGeneral

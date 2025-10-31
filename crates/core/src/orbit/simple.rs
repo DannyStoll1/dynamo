@@ -1,6 +1,7 @@
-use super::EscapeResult;
 use dynamo_common::prelude::*;
 use num_traits::One;
+
+use super::EscapeResult;
 
 pub struct Simple<V, P, F>
 where
@@ -51,7 +52,7 @@ where
         if r > self.escape_radius || self.z.is_nan() {
             self.state = Some(EscapeResult::Escaped {
                 // Subtract 1 to undo the offset from iteration start
-                iters: self.iter - 1,
+                iters:       self.iter - 1,
                 final_value: self.z,
             });
         }

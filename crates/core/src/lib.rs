@@ -20,8 +20,8 @@ mod tests
         assert_eq!(
             period_schema,
             OrbitSchema {
-                period: 4,
-                preperiod: 0
+                period:    4,
+                preperiod: 0,
             }
         );
 
@@ -30,8 +30,8 @@ mod tests
         assert_eq!(
             period_schema,
             OrbitSchema {
-                period: 4,
-                preperiod: 1
+                period:    4,
+                preperiod: 1,
             }
         );
 
@@ -40,8 +40,8 @@ mod tests
         assert_eq!(
             period_schema,
             OrbitSchema {
-                period: 6,
-                preperiod: 3
+                period:    6,
+                preperiod: 3,
             }
         );
     }

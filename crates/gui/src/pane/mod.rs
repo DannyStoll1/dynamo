@@ -1,18 +1,18 @@
-use egui::{Color32, Pos2, Ui};
 use std::path::Path;
 
-use crate::actions::ChangeBoolean;
-use crate::marked_points::ContourType;
-
-use super::image_frame::ImageFrame;
-use super::marked_points::Marking;
 use dynamo_color::prelude::*;
 use dynamo_common::prelude::*;
 use dynamo_core::error::FindPointResult;
 use dynamo_core::prelude::*;
-
+use egui::{Color32, Pos2, Ui};
+use log::debug;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use super::image_frame::ImageFrame;
+use super::marked_points::Marking;
+use crate::actions::ChangeBoolean;
+use crate::marked_points::ContourType;
 
 pub mod id;
 pub mod tasks;
@@ -310,7 +310,7 @@ where
         &self.plane
     }
     #[inline]
-    fn plane_mut(&mut self) -> &mut P
+    const fn plane_mut(&mut self) -> &mut P
     {
         &mut self.plane
     }
@@ -321,7 +321,7 @@ where
         self.orbit_info.as_ref()
     }
     #[inline]
-    fn get_orbit_info_mut(&mut self) -> Option<&mut orbit::Info<P::Param, P::Var, P::Deriv>>
+    const fn get_orbit_info_mut(&mut self) -> Option<&mut orbit::Info<P::Param, P::Var, P::Deriv>>
     {
         self.orbit_info.as_mut()
     }
@@ -643,6 +643,7 @@ where
     #[inline]
     fn zoom(&mut self, scale: Real, base_point: Cplx)
     {
+        debug!("zoom() called: scale={scale}, base_point={base_point:?}");
         self.zoom_factor *= scale;
         self.grid_mut().zoom(scale, base_point);
         self.schedule_recompute_keep_old_annotations();
@@ -728,11 +729,14 @@ where
         let mut image = iter_plane.write_image(self.get_coloring());
         self.marking.mark_image(self.grid(), &mut image);
 
-        match image.save(filename) { Err(e) => {
-            println!("Error saving file: {e:?}");
-        } _ => {
-            println!("Image saved to {}", filename.to_string_lossy());
-        }}
+        match image.save(filename) {
+            Err(e) => {
+                println!("Error saving file: {e:?}");
+            }
+            _ => {
+                println!("Image saved to {}", filename.to_string_lossy());
+            }
+        }
 
         self.plane.point_grid_mut().resize_x(old_res_x);
     }

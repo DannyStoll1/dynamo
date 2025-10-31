@@ -1,12 +1,10 @@
 #![feature(test)]
 
 extern crate test;
-use test::black_box;
-use test::Bencher;
-
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_profiles::*;
+use test::{Bencher, black_box};
 
 #[bench]
 fn biquadratic(b: &mut Bencher)

@@ -1,9 +1,8 @@
-use super::Cplx;
-use crate::{
-    prelude::DescriptionConf,
-    traits::{Describe, Summarize},
-};
 use derive_more::Display;
+
+use super::Cplx;
+use crate::prelude::DescriptionConf;
+use crate::traits::{Describe, Summarize};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Display)]
 #[display("")]

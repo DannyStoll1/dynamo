@@ -1,5 +1,6 @@
-use directories::{ProjectDirs, UserDirs};
 use std::path::PathBuf;
+
+use directories::{ProjectDirs, UserDirs};
 
 pub fn images_dir() -> Option<PathBuf>
 {

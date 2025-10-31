@@ -1,8 +1,10 @@
+use num_complex::{Complex, Complex64};
+use rand::Rng;
+use rand::rngs::ThreadRng;
+
 use crate::newton::Newton;
 use crate::poly_traits::{Differentiable, DivideByAffine, Eval, MulConst, Normalize};
 use crate::polynomial::Polynomial;
-use num_complex::{Complex, Complex64};
-use rand::{rngs::ThreadRng, Rng};
 
 fn compute_cauchy_poly(poly: &Polynomial<Complex64>) -> Polynomial<f64>
 {

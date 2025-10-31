@@ -1,12 +1,10 @@
 use std::collections::VecDeque;
+use std::fmt::Write;
 
 use dynamo_common::rational_angle::RationalAngle;
 use dynamo_common::symbolic_dynamics::{AngleInfo, OrbitSchemaWithDegree};
-use egui::{self, Key, RichText, WidgetText};
-use egui::{vec2, Window};
+use egui::{self, Key, RichText, WidgetText, Window, vec2};
 use egui_file::FileDialog;
-use std::fmt::Write;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -29,9 +27,9 @@ pub enum ToggleKey
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Toggle
 {
-    pub key: ToggleKey,
-    pub text: String,
-    pub enabled: bool,
+    pub key:         ToggleKey,
+    pub text:        String,
+    pub enabled:     bool,
     pub conditional: bool,
 }
 
@@ -100,10 +98,10 @@ pub enum SaveFileType
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RayParams
 {
-    pub do_parent: bool,
-    pub do_child: bool,
-    pub angle_info: AngleInfo,
-    pub follow_task: SelectOrFollow,
+    pub do_parent:     bool,
+    pub do_child:      bool,
+    pub angle_info:    AngleInfo,
+    pub follow_task:   SelectOrFollow,
     pub include_orbit: bool,
 }
 
@@ -111,10 +109,10 @@ pub struct RayParams
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AllActiveRayParams
 {
-    pub do_parent: bool,
-    pub do_child: bool,
-    pub orbit_schema: OrbitSchemaWithDegree,
-    pub active_angles: VecDeque<RationalAngle>,
+    pub do_parent:        bool,
+    pub do_child:         bool,
+    pub orbit_schema:     OrbitSchemaWithDegree,
+    pub active_angles:    VecDeque<RationalAngle>,
     pub include_suffixes: bool,
 }
 
@@ -123,13 +121,13 @@ pub enum Dialog
     Save
     {
         pane_selection: PaneSelection,
-        file_dialog: FileDialog,
-        file_type: SaveFileType,
+        file_dialog:    FileDialog,
+        file_type:      SaveFileType,
     },
     Load
     {
         pane_selection: PaneSelection,
-        file_dialog: FileDialog,
+        file_dialog:    FileDialog,
     },
     Text(StructuredTextDialog),
     ConfirmRay(ConfirmationDialog<RayParams>),
@@ -183,32 +181,32 @@ pub enum Response<D>
 pub struct TextDialogBuilder
 {
     input_type: TextInputType,
-    title: String,
-    prompt: WidgetText,
-    toggles: ToggleMap,
+    title:      String,
+    prompt:     WidgetText,
+    toggles:    ToggleMap,
 }
 
 pub struct StructuredTextDialog
 {
-    pub dialog: TextDialog,
+    pub dialog:     TextDialog,
     pub input_type: TextInputType,
 }
 
 pub struct TextDialog
 {
-    pub title: String,
-    pub prompt: WidgetText,
+    pub title:      String,
+    pub prompt:     WidgetText,
     pub user_input: String,
     pub toggle_map: ToggleMap,
-    pub state: State,
+    pub state:      State,
 }
 
 pub struct ConfirmationDialog<D>
 {
-    pub title: String,
+    pub title:  String,
     pub prompt: WidgetText,
-    pub state: State,
-    data: D,
+    pub state:  State,
+    data:       D,
 }
 
 impl State
@@ -357,7 +355,7 @@ impl TextDialog
                 .collapsible(false)
                 .fixed_size(vec2(440.0, 250.0))
                 .pivot(egui::Align2::CENTER_CENTER)
-                .default_pos(ctx.screen_rect().center())
+                .default_pos(ctx.content_rect().center())
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(self.prompt.clone());
@@ -395,7 +393,7 @@ impl TextDialog
     }
 
     #[inline]
-    pub fn enable(&mut self)
+    pub const fn enable(&mut self)
     {
         self.state = State::InProgress;
     }
@@ -463,7 +461,7 @@ impl<T> ConfirmationDialog<T>
                 .collapsible(false)
                 .fixed_size(vec2(320.0, 150.0))
                 .pivot(egui::Align2::CENTER_CENTER)
-                .default_pos(ctx.screen_rect().center())
+                .default_pos(ctx.content_rect().center())
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(self.prompt.clone());
@@ -487,13 +485,13 @@ impl<T> ConfirmationDialog<T>
     }
 
     #[inline]
-    pub fn enable(&mut self)
+    pub const fn enable(&mut self)
     {
         self.state = State::InProgress;
     }
 
     #[inline]
-    pub fn disable(&mut self)
+    pub const fn disable(&mut self)
     {
         self.state = State::Closed;
     }

@@ -10,9 +10,9 @@ profile_imports!();
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Gudermannian
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl Gudermannian
@@ -48,7 +48,7 @@ impl DynamicalFamily for Gudermannian
 
     #[inline]
     fn gradient(&self, z: Self::Var, lambda: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let gd = z.sinh().atan();
         (gd + lambda, z.cosh().inv(), ONE)
@@ -71,7 +71,7 @@ impl DynamicalFamily for Gudermannian
     {
         if z.im.abs() > 350. {
             Some(EscapeResult::Escaped {
-                iters: iter,
+                iters:       iter,
                 final_value: z,
             })
         } else if z.re.abs() > 1e15 {

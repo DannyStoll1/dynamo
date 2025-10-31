@@ -1,7 +1,5 @@
-use crate::{
-    normed::Semimetric,
-    poly_traits::{Differentiable, Eval, HasVar},
-};
+use crate::normed::Semimetric;
+use crate::poly_traits::{Differentiable, Eval, HasVar};
 
 pub trait Newton: Eval + Differentiable + HasVar
 where

@@ -1,15 +1,17 @@
+use dynamo_common::math_utils::weierstrass_p;
+use dynamo_common::types::variables::PlaneID;
+
 use crate::macros::{horner, horner_monic, profile_imports};
-use dynamo_common::{math_utils::weierstrass_p, types::variables::PlaneID};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer2Lambda
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
-    multiplier: Cplx,
+    point_grid:    PointGrid,
+    compute_mode:  ComputeMode,
+    max_iter:      IterCount,
+    multiplier:    Cplx,
     starting_crit: PlaneID,
 }
 
@@ -187,9 +189,9 @@ impl ExternalRays for CubicPer2LambdaParam {}
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer2LambdaParam
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
+    point_grid:    PointGrid,
+    compute_mode:  ComputeMode,
+    max_iter:      IterCount,
     starting_crit: PlaneID,
 }
 
@@ -258,7 +260,7 @@ impl DynamicalFamily for CubicPer2LambdaParam
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, l: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let a = (1.0 - l) * 0.25;
         let disc = (a * (4. - l)).sqrt();
@@ -339,9 +341,9 @@ impl From<CubicPer2LambdaParam> for CubicPer2Lambda
 #[derive(Clone, Debug)]
 pub struct CubicPer2CritMarked
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl CubicPer2CritMarked

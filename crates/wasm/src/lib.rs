@@ -11,16 +11,19 @@ use {
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone)]
 #[wasm_bindgen]
-pub struct WebHandle {
+pub struct WebHandle
+{
     runner: WebRunner,
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]
-impl WebHandle {
+impl WebHandle
+{
     /// Installs a panic hook, then returns.
     #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
+    pub fn new() -> Self
+    {
         // Redirect [`log`] message to `console.log` and friends:
         WebLogger::init(log::LevelFilter::Debug).ok();
 
@@ -31,7 +34,8 @@ impl WebHandle {
 
     /// Call this once from JavaScript to start the app.
     #[wasm_bindgen]
-    pub async fn start(&self, canvas_id: HtmlCanvasElement) -> Result<(), wasm_bindgen::JsValue> {
+    pub async fn start(&self, canvas_id: HtmlCanvasElement) -> Result<(), wasm_bindgen::JsValue>
+    {
         let opts = WebOptions::default();
         self.runner
             .start(
@@ -44,8 +48,10 @@ impl WebHandle {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl Default for WebHandle {
-    fn default() -> Self {
+impl Default for WebHandle
+{
+    fn default() -> Self
+    {
         Self::new()
     }
 }

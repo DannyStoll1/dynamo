@@ -1,14 +1,16 @@
+use dynamo_common::horner;
+use dynamo_common::math_utils::roots_of_unity;
+
 use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
-use dynamo_common::{horner, math_utils::roots_of_unity};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Unicritical<const D: i32>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl<const D: i32> Unicritical<D>

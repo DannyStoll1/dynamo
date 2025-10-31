@@ -1,14 +1,15 @@
-use crate::macros::{cplx_arr, degree_impl, has_child_impl, horner, horner_monic, profile_imports};
 use seq_macro::seq;
+
+use crate::macros::{cplx_arr, degree_impl, has_child_impl, horner, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer2
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer2
@@ -84,7 +85,7 @@ impl DynamicalFamily for QuadRatPer2
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
     }
@@ -156,9 +157,13 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
             let coeffs = [
                 horner_monic!(c, 1., -9., 33., -64., 76., -66., 50., -31., 15., -5.),
                 horner_monic!(c, 1., -7., 20., -26., 8., 18., -23., 15., -5.),
-                horner!(c, -14., 115., -378., 652., -700., 567., -386., 204., -74., 15.),
+                horner!(
+                    c, -14., 115., -378., 652., -700., 567., -386., 204., -74., 15.
+                ),
                 -horner_monic!(c, 13., -81., 202., -208., -7., 205., -188., 84., -19.),
-                horner!(c, 85., -636., 1862., -2837., 2738., -2019., 1185., -478., 103.),
+                horner!(
+                    c, 85., -636., 1862., -2837., 2738., -2019., 1185., -478., 103.
+                ),
                 -horner!(c, -72., 398., -855., 633., 357., -879., 550., -158., 14.),
                 horner_monic!(c, -291., 1979., -5108., 6786., -5793., 3741., -1712., 408.),
                 -horner!(c, 219., -1071., 1936., -786., -1457., 1771., -696., 88.),
@@ -617,8 +622,12 @@ fn cycles(c: Cplx, period: Period) -> Vec<Cplx>
                 -horner!(
                     c, -74908., 389_012., -825_772., 977_428., -608_156., 124_924., 17588., 140.
                 ),
-                horner!(c, 79287., -425_021., 757_246., -468_595., 10509., 99000., 5635., 10.),
-                -horner!(c, 66679., -309_305., 471_531., -276_799., 10364., 35028., 964.),
+                horner!(
+                    c, 79287., -425_021., 757_246., -468_595., 10509., 99000., 5635., 10.
+                ),
+                -horner!(
+                    c, 66679., -309_305., 471_531., -276_799., 10364., 35028., 964.
+                ),
                 horner!(c, -1205., 27224., -32900., -66694., 54594., 17432., 130.),
                 -horner!(c, -14150., 52290., -20798., -49522., 28956., 3536., 4.),
                 horner!(c, -19285., 54161., -32830., -2459., 23599., 854., 1.),
@@ -781,10 +790,12 @@ impl HasDynamicalCovers for QuadRatPer2
                     let t = (t * ANGLE + SHIFT).inv() + POLE;
                     let numer = horner!(t, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12);
                     let denom = horner!(t, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12);
-                    let numer_d =
-                        horner!(t, A1, DA2, DA3, DA4, DA5, DA6, DA7, DA8, DA9, DA10, DA11, DA12);
-                    let denom_d =
-                        horner!(t, B1, DB2, DB3, DB4, DB5, DB6, DB7, DB8, DB9, DB10, DB11, DB12);
+                    let numer_d = horner!(
+                        t, A1, DA2, DA3, DA4, DA5, DA6, DA7, DA8, DA9, DA10, DA11, DA12
+                    );
+                    let denom_d = horner!(
+                        t, B1, DB2, DB3, DB4, DB5, DB6, DB7, DB8, DB9, DB10, DB11, DB12
+                    );
                     (
                         (-numer / denom).into(),
                         (numer * denom_d - numer_d * denom) / denom.powi(2),
@@ -999,9 +1010,9 @@ impl HasDynamicalCovers for QuadRatPer2
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer2Cover
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer2Cover
@@ -1068,7 +1079,7 @@ impl DynamicalFamily for QuadRatPer2Cover
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
     }
@@ -1183,9 +1194,9 @@ mod param
 #[derive(Clone, Debug)]
 pub struct QuadRatPer2InfPuncture
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer2InfPuncture
@@ -1260,7 +1271,7 @@ impl DynamicalFamily for QuadRatPer2InfPuncture
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, _c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (ZERO, ZERO, ZERO)
     }

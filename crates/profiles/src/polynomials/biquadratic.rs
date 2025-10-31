@@ -1,15 +1,16 @@
-use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 use dynamo_common::types::variables::{Bicomplex, PlaneID};
+
+use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Biquadratic
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    multiplier: Cplx,
+    max_iter:     IterCount,
+    multiplier:   Cplx,
 }
 
 impl Biquadratic
@@ -94,7 +95,7 @@ impl EscapeEncoding for Biquadratic
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 
@@ -113,10 +114,10 @@ impl EscapeEncoding for Biquadratic
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMult
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
-    multiplier: Cplx,
+    point_grid:     PointGrid,
+    compute_mode:   ComputeMode,
+    max_iter:       IterCount,
+    multiplier:     Cplx,
     starting_plane: PlaneID,
 }
 
@@ -386,7 +387,7 @@ impl EscapeEncoding for BiquadraticMult
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 
@@ -405,9 +406,9 @@ impl EscapeEncoding for BiquadraticMult
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMultParam
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
+    point_grid:     PointGrid,
+    compute_mode:   ComputeMode,
+    max_iter:       IterCount,
     starting_plane: PlaneID,
 }
 
@@ -533,7 +534,7 @@ impl EscapeEncoding for BiquadraticMultParam
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 
@@ -570,10 +571,10 @@ impl From<BiquadraticMultParam> for BiquadraticMult
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMultSecondIterate
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    multiplier: Cplx,
+    max_iter:     IterCount,
+    multiplier:   Cplx,
 }
 
 impl BiquadraticMultSecondIterate
@@ -683,7 +684,7 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 
@@ -702,9 +703,9 @@ impl EscapeEncoding for BiquadraticMultSecondIterate
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BiquadraticMultSection
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
+    point_grid:     PointGrid,
+    compute_mode:   ComputeMode,
+    max_iter:       IterCount,
     starting_plane: PlaneID,
 }
 
@@ -896,7 +897,7 @@ impl EscapeEncoding for BiquadraticMultSection
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 

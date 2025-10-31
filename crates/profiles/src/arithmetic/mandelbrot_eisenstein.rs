@@ -1,6 +1,7 @@
-use crate::macros::{basic_plane_impl, degree_impl, profile_imports};
 use dynamo_color::prelude::*;
 use dynamo_common::cache::Cache;
+
+use crate::macros::{basic_plane_impl, degree_impl, profile_imports};
 profile_imports!();
 
 type EInt = EisensteinInteger;
@@ -8,10 +9,10 @@ type EInt = EisensteinInteger;
 #[derive(Clone, Debug)]
 pub struct EisensteinMandel<const A: i64, const B: i64>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    cache: Cache<(EInt, EInt), PointInfo<EInt>>,
+    max_iter:     IterCount,
+    cache:        Cache<(EInt, EInt), PointInfo<EInt>>,
 }
 
 impl<const A: i64, const B: i64> EisensteinMandel<A, B>
@@ -159,7 +160,7 @@ impl<const A: i64, const B: i64> EscapeEncoding for EisensteinMandel<A, B>
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters - 1) as IterCountSmooth,
-                phase: None,
+                phase:     None,
             };
         }
 

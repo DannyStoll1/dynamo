@@ -1,8 +1,7 @@
-use crate::{
-    error::ScriptError,
-    parser::{ParsedUserInput, UnparsedUserInput},
-};
 use std::path::Path;
+
+use crate::error::ScriptError;
+use crate::parser::{ParsedUserInput, UnparsedUserInput};
 
 pub struct Transpiler
 {
@@ -239,7 +238,7 @@ impl ExternalRays for UserPlane {{}}
 
     fn constructor() -> String
     {
-        "#[no_mangle]\n\
+        "#[unsafe(no_mangle)]\n\
         pub unsafe fn create_interface() -> *mut dyn Interface {\n\
             let parent = UserPlane::default();\n\
             let child = JuliaSet::from(parent.clone());\n\

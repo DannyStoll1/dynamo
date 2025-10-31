@@ -1,5 +1,6 @@
-use num_traits::{MulAddAssign, Num, NumAssignOps};
 use std::ops::{AddAssign, Neg};
+
+use num_traits::{MulAddAssign, Num, NumAssignOps};
 
 pub trait VariableOps: Clone + Num + NumAssignOps + Neg<Output = Self> + MulAddAssign {}
 impl<T> VariableOps for T where T: Clone + Num + NumAssignOps + Neg<Output = Self> + MulAddAssign {}

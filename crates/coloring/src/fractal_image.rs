@@ -1,7 +1,8 @@
-use crate::Coloring;
 use dynamo_common::prelude::*;
-use egui::{Color32, ColorImage};
+use egui::ColorImage;
 use image::{ImageBuffer, Rgb};
+
+use crate::Coloring;
 
 pub trait FractalImage
 {
@@ -26,7 +27,7 @@ where
     {
         let width = self.point_grid().res_x;
         let height = self.point_grid().res_y;
-        let mut img = ColorImage::new([width, height], Color32::default());
+        let mut img = ColorImage::filled([width, height], egui::Color32::default());
 
         self.iter_counts
             .indexed_iter()
@@ -56,11 +57,14 @@ where
             let iter_count = &self.iter_counts[(x as usize, (res_y - y - 1) as usize)];
             *pixel = coloring.map::<_, Rgb<u8>>(iter_count);
         }
-        match image.save(filename.clone()) { Err(e) => {
-            println!("Error saving file: {e:?}");
-        } _ => {
-            println!("Image saved to {filename}");
-        }}
+        match image.save(filename.clone()) {
+            Err(e) => {
+                println!("Error saving file: {e:?}");
+            }
+            _ => {
+                println!("Image saved to {filename}");
+            }
+        }
     }
     fn write_image(&self, coloring: &Coloring) -> Self::Image
     {

@@ -1,11 +1,12 @@
-use crate::interface::{Interactive, Interface, UiMessage};
 use egui::{Context, Ui};
 use libloading::Library;
+
+use crate::interface::{Interactive, Interface, UiMessage};
 
 pub struct InterfaceHolder<'i>
 {
     pub interface: Box<dyn Interface + 'i>,
-    _library: Library,
+    _library:      Library,
 }
 impl InterfaceHolder<'_>
 {

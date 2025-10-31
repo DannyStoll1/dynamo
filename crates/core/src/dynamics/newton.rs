@@ -1,5 +1,6 @@
-use super::DynamicalFamily;
 use dynamo_common::types::Cplx;
+
+use super::DynamicalFamily;
 
 trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
 {
@@ -7,7 +8,7 @@ trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
 
     #[inline]
     fn map_dmap_d2map(&self, z: Self::Var, c: Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let (f, df) = self.map_and_multiplier(z, &c);
         let d2f = self.second_dynamical_derivative(z, c);

@@ -1,31 +1,27 @@
+use dynamo_color::{IncoloringAlgorithm, Palette};
+use dynamo_common::prelude::*;
+use dynamo_core::dynamics::Displayable;
+use dynamo_core::prelude::HasChild;
 use egui::{Context, CursorIcon, InputState, Ui};
 use egui_extras::{Column, TableBuilder};
 use egui_file::FileDialog;
-
-use dynamo_color::{IncoloringAlgorithm, Palette};
-use dynamo_common::prelude::*;
-use dynamo_core::{dynamics::Displayable, prelude::HasChild};
-
-use crate::{
-    actions::Action,
-    dialog::{
-        AllActiveRayParams, Dialog, RayParams, SaveFileType, TextDialogBuilder, TextInputType,
-        ToggleKey, ToggleMap,
-    },
-    hotkeys::{
-        ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, Hotkey, IMAGE_HOTKEYS,
-        INCOLORING_HOTKEYS, OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
-        keyboard_shortcuts::shortcut_used,
-    },
-    pane::{
-        Pane, WindowPane,
-        id::{PaneID, PaneSelection},
-        tasks::{ChildTask, FollowState, SelectOrFollow},
-    },
-};
-
+use log::debug;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::actions::Action;
+use crate::dialog::{
+    AllActiveRayParams, Dialog, RayParams, SaveFileType, TextDialogBuilder, TextInputType,
+    ToggleKey, ToggleMap,
+};
+use crate::hotkeys::keyboard_shortcuts::shortcut_used;
+use crate::hotkeys::{
+    ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, Hotkey, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
+    OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
+};
+use crate::pane::id::{PaneID, PaneSelection};
+use crate::pane::tasks::{ChildTask, FollowState, SelectOrFollow};
+use crate::pane::{Pane, WindowPane};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 /// Represents different types of messages that can be sent within the UI.
@@ -99,16 +95,16 @@ where
     P: Displayable + Clone + 'static,
     J: Displayable + Clone + 'static,
 {
-    parent: WindowPane<P>,
-    child: WindowPane<J>,
+    parent:       WindowPane<P>,
+    child:        WindowPane<J>,
     image_height: usize,
-    active_pane: Option<PaneID>,
-    live_mode: bool,
+    active_pane:  Option<PaneID>,
+    live_mode:    bool,
     #[cfg_attr(feature = "serde", serde(skip))]
-    dialog: Option<Dialog>,
+    dialog:       Option<Dialog>,
     // save_task: SaveTask,
-    click_used: bool,
-    pub message: UiMessage,
+    click_used:   bool,
+    pub message:  UiMessage,
 }
 
 impl<P, J> MainInterface<P, J>
@@ -188,14 +184,14 @@ where
         match file_type {
             Image => {
                 let image_width: usize = 4096; // You can make this dynamic as per your requirement
-                pane_ids
-                    .into_iter()
-                    .for_each(|pane_id| self.get_pane_mut(pane_id).save_image(image_width, path));
+                for pane_id in pane_ids {
+                    self.get_pane_mut(pane_id).save_image(image_width, path);
+                }
             }
             Palette => {
-                pane_ids
-                    .into_iter()
-                    .for_each(|pane_id| self.get_pane_mut(pane_id).save_palette(path));
+                for pane_id in pane_ids {
+                    self.get_pane_mut(pane_id).save_palette(path);
+                }
             }
         }
         self.set_active_pane(None);
@@ -332,10 +328,18 @@ where
     }
 
     /// Handles mouse input, updating the state of the panes accordingly.
+    #[expect(clippy::float_cmp)]
     fn handle_mouse(&mut self, ctx: &Context)
     {
         let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;
         let zoom_factor = ctx.input(InputState::zoom_delta);
+
+        if zoom_factor != 1. {
+            debug!("Mouse zoom: factor={zoom_factor}");
+        }
+        if clicked {
+            debug!("Mouse clicked");
+        }
 
         self.reset_click();
 
@@ -386,19 +390,19 @@ where
     }
 
     /// Schedules a message to close the current window.
-    fn schedule_close(&mut self)
+    const fn schedule_close(&mut self)
     {
         self.message = UiMessage::CloseWindow;
     }
 
     /// Schedules a message to quit the application.
-    fn schedule_quit(&mut self)
+    const fn schedule_quit(&mut self)
     {
         self.message = UiMessage::Quit;
     }
 
     /// Schedules a message to open a new tab.
-    fn schedule_new_tab(&mut self)
+    const fn schedule_new_tab(&mut self)
     {
         self.message = UiMessage::NewTab;
     }
@@ -723,6 +727,7 @@ where
             if let Some(s) = shortcut.as_ref()
                 && shortcut_used!(ctx, s)
             {
+                debug!("Keyboard shortcut triggered: {s:?}");
                 self.process_action(action);
                 if let Some(bonus_action) = bonus_action {
                     self.process_action(bonus_action);
@@ -870,6 +875,7 @@ where
     /// Processes an action and updates the state of the interface accordingly.
     fn process_action(&mut self, action: &Action)
     {
+        debug!("Processing action: {action:?}");
         match action {
             Action::Quit => self.schedule_quit(),
             Action::Close => self.schedule_close(),

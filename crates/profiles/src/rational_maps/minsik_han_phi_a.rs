@@ -9,9 +9,9 @@ profile_imports!();
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MinsikHanPhi<const D: i32>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl<const D: i32> MinsikHanPhi<D>
@@ -129,7 +129,7 @@ impl<const D: i32> MarkedPoints for MinsikHanPhi<D>
 
                 solve_polynomial(coeffs)
                     .iter()
-                    .map(|z| (z * Self::D_MINUS_1))
+                    .map(|z| z * Self::D_MINUS_1)
                     .flat_map(|z| nth_roots(z, D))
                     .collect()
             }

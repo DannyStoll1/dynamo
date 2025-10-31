@@ -1,16 +1,17 @@
 use std::f64::consts::PI;
 
-use crate::macros::{degree_impl_transcendental, has_child_impl, profile_imports};
 use dynamo_common::math_utils::slog;
+
+use crate::macros::{degree_impl_transcendental, has_child_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Exponential
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl Exponential
@@ -55,7 +56,7 @@ impl DynamicalFamily for Exponential
     {
         if z.re > 250. {
             Some(EscapeResult::Escaped {
-                iters: iter,
+                iters:       iter,
                 final_value: z,
             })
         } else if z.re < -50. {

@@ -8,10 +8,12 @@ pub use loader::Loader;
 #[allow(clippy::unwrap_used)]
 mod tests
 {
+    use std::fs;
+
+    use dynamo_gui::interface::Interactive;
+
     use crate::parser::*;
     use crate::transpiler::*;
-    use dynamo_gui::interface::Interactive;
-    use std::fs;
 
     #[test]
     fn test_parse_input()
@@ -40,8 +42,7 @@ mod tests
     fn parse_complex()
     {
         use num_complex::Complex64;
-        use serde_json::Number;
-        use serde_json::Value as JsonValue;
+        use serde_json::{Number, Value as JsonValue};
         let input0 = JsonValue::Number(Number::from(1));
         let input1 = JsonValue::String("3-2i".to_owned());
         let input2 = JsonValue::String("-6.283185307179586i".to_owned());
@@ -64,8 +65,9 @@ mod tests
     #[test]
     fn loader()
     {
-        use crate::loader::Loader;
         use std::path::PathBuf;
+
+        use crate::loader::Loader;
         let scripts_path = PathBuf::from("..").join("..").join("user_scripts");
         let toml_path = scripts_path.join(".default.toml");
         let output_path = PathBuf::from("..").join("output");

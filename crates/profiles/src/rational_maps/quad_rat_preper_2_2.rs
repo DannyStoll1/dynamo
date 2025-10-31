@@ -1,14 +1,13 @@
-use crate::macros::{degree_impl, has_child_impl, profile_imports};
-use crate::macros::{horner, horner_monic};
+use crate::macros::{degree_impl, has_child_impl, horner, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPreper22
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPreper22

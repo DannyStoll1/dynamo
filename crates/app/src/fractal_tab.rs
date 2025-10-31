@@ -1,21 +1,22 @@
-use crate::sidebar;
+#[cfg(feature = "scripting")]
+use std::path::Path;
+
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_gui::hotkeys::{
-    Hotkey, ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
+    ANNOTATION_HOTKEYS, CYCLES_HOTKEYS, FILE_HOTKEYS, Hotkey, IMAGE_HOTKEYS, INCOLORING_HOTKEYS,
     OUTCOLORING_HOTKEYS, PALETTE_HOTKEYS, SELECTION_HOTKEYS,
 };
 use dynamo_gui::interface::{Interface, MainInterface};
 use dynamo_profiles::Mandelbrot;
 use egui::Ui;
 use egui_dock::{NodeIndex, SurfaceIndex};
+#[cfg(feature = "scripting")]
+use script_loader::error::ScriptError;
 
 #[cfg(feature = "scripting")]
 use crate::script_editor::*;
-#[cfg(feature = "scripting")]
-use script_loader::error::ScriptError;
-#[cfg(feature = "scripting")]
-use std::path::Path;
+use crate::sidebar;
 
 #[derive(Clone, Copy, Default, Debug)]
 pub enum MenuState
@@ -26,11 +27,11 @@ pub enum MenuState
 }
 impl MenuState
 {
-    pub fn close(&mut self)
+    pub const fn close(&mut self)
     {
         *self = Self::Closed;
     }
-    pub fn open(&mut self)
+    pub const fn open(&mut self)
     {
         *self = Self::Open;
     }
@@ -50,7 +51,7 @@ impl MenuState
 pub struct TabID
 {
     pub surface: SurfaceIndex,
-    pub node: NodeIndex,
+    pub node:    NodeIndex,
 }
 impl Default for TabID
 {
@@ -58,7 +59,7 @@ impl Default for TabID
     {
         Self {
             surface: SurfaceIndex::main(),
-            node: NodeIndex(0),
+            node:    NodeIndex(0),
         }
     }
 }
@@ -117,7 +118,7 @@ impl FractalTab
     fn show_menu(&mut self, ui: &mut Ui)
     {
         self.menu_state.close();
-        egui::menu::bar(ui, |ui| {
+        egui::MenuBar::new().ui(ui, |ui| {
             self.file_menu(ui);
             self.image_menu(ui);
             self.selection_menu(ui);
@@ -191,7 +192,7 @@ impl FractalTab
                     return;
                 }
                 self.interface.consume_click();
-                ui.close_menu();
+                ui.close();
             });
 
             for hotkey in &IMAGE_HOTKEYS {
@@ -231,15 +232,15 @@ impl FractalTab
         ui.menu_button("User Scripts", |ui| {
             if ui.button("New script").clicked() {
                 self.popup = Some(Popup::new_script());
-                ui.close_menu();
+                ui.close();
             }
             if ui.button("Edit script...").clicked() {
                 self.popup = Some(Popup::load_edit());
-                ui.close_menu();
+                ui.close();
             }
             if ui.button("Load script...").clicked() {
                 self.popup = Some(Popup::load());
-                ui.close_menu();
+                ui.close();
             }
         });
     }
@@ -281,7 +282,7 @@ impl FractalTab
 
     #[allow(clippy::unused_self)]
     #[allow(clippy::needless_pass_by_ref_mut)]
-    fn help_menu(&mut self, _ui: &mut Ui)
+    const fn help_menu(&mut self, _ui: &mut Ui)
     {
         // TODO: create help menu
         // ui.menu_button("Help", |ui| {
@@ -306,18 +307,17 @@ impl FractalTab
 
     fn hotkey_button(&mut self, ui: &mut Ui, hotkey: &Hotkey)
     {
-        if let Some(action) = hotkey.menu_action() {
-            if ui
+        if let Some(action) = hotkey.menu_action()
+            && ui
                 .add(
                     egui::Button::new(action.short_description())
                         .shortcut_text(hotkey.shortcut_text().unwrap_or_default()),
                 )
                 .clicked()
-            {
-                self.interface.process_action(action);
-                self.interface.consume_click();
-                ui.close_menu();
-            }
+        {
+            self.interface.process_action(action);
+            self.interface.consume_click();
+            ui.close();
         }
     }
 

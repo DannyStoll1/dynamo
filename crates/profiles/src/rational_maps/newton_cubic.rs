@@ -8,9 +8,9 @@ profile_imports!();
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NewtonCubic
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl NewtonCubic

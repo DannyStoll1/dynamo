@@ -1,12 +1,12 @@
+use derive_more::{Add, AddAssign, Display, From, Sub, SubAssign};
+
 use super::{Cplx, Real};
 use crate::consts::ZERO;
 use crate::prelude::{Conj, OMEGA};
 use crate::traits::{Arg, Describe, DescriptionConf, MaybeNan, Norm, Summarize};
-use derive_more::{Add, AddAssign, Display, From, Sub, SubAssign};
 
 pub mod matrix;
 pub use matrix::{Matrix2x2, Point};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 

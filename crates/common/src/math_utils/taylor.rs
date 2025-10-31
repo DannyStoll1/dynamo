@@ -1,5 +1,6 @@
-use num_traits::Zero;
 use std::ops::{Add, AddAssign, Mul, Sub};
+
+use num_traits::Zero;
 
 pub trait LinOps<Rhs = Self, Output = Self>:
     Add<Rhs, Output = Output>
@@ -28,7 +29,7 @@ impl<T, Rhs, Output> LinOps<Rhs, Output> for T where
 /// Data needed to compute a 1nd-order (linear) approximation
 pub struct Taylor1<T: LinOps, const N: usize>
 {
-    pub f: T,
+    pub f:    T,
     pub grad: [T; N],
 }
 impl<T: LinOps, const N: usize> Taylor1<T, N>
@@ -52,7 +53,7 @@ impl<T: LinOps, const N: usize> Taylor1<T, N>
 pub struct Taylor2<T: LinOps, const N: usize>
 {
     pub taylor1: Taylor1<T, N>,
-    pub hess: [[T; N]; N],
+    pub hess:    [[T; N]; N],
 }
 impl<T: LinOps, const N: usize> Taylor2<T, N>
 {

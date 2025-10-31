@@ -2,9 +2,8 @@ use dynamo_common::prelude::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::dialog::RayParams;
-
 use super::Pane;
+use crate::dialog::RayParams;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -17,11 +16,11 @@ pub enum RepeatableTask
 }
 impl RepeatableTask
 {
-    pub fn schedule_init_run(&mut self)
+    pub const fn schedule_init_run(&mut self)
     {
         *self = Self::InitRun;
     }
-    pub fn schedule_rerun(&mut self)
+    pub const fn schedule_rerun(&mut self)
     {
         if matches!(self, Self::DoNothing) {
             *self = Self::Rerun;
@@ -32,7 +31,7 @@ impl RepeatableTask
     {
         std::mem::take(self)
     }
-    pub fn clear(&mut self)
+    pub const fn clear(&mut self)
     {
         *self = Self::DoNothing;
     }
@@ -43,9 +42,9 @@ impl RepeatableTask
 pub struct PaneTasks
 {
     pub compute: RepeatableTask,
-    pub draw: RepeatableTask,
-    pub orbit: OrbitTask,
-    pub follow: FollowState,
+    pub draw:    RepeatableTask,
+    pub orbit:   OrbitTask,
+    pub follow:  FollowState,
 }
 
 impl PaneTasks
@@ -56,9 +55,9 @@ impl PaneTasks
         let task = RepeatableTask::InitRun;
         Self {
             compute: task,
-            draw: task,
-            orbit: OrbitTask::Disabled,
-            follow: FollowState::Idle,
+            draw:    task,
+            orbit:   OrbitTask::Disabled,
+            follow:  FollowState::Idle,
         }
     }
 }
@@ -94,14 +93,14 @@ pub enum FollowState
     SelectPeriodic
     {
         orbit_schema: OrbitSchema,
-        follow: bool,
+        follow:       bool,
     },
 }
 
 impl FollowState
 {
     #[must_use]
-    pub fn pop(&mut self) -> Self
+    pub const fn pop(&mut self) -> Self
     {
         match self {
             Self::SelectRay {
@@ -170,25 +169,25 @@ pub enum OrbitTask
 
 impl OrbitTask
 {
-    pub fn disable(&mut self)
+    pub const fn disable(&mut self)
     {
         *self = Self::Disabled;
     }
-    pub fn enable(&mut self)
+    pub const fn enable(&mut self)
     {
         *self = Self::Enabled;
     }
-    pub fn draw_once(&mut self)
+    pub const fn draw_once(&mut self)
     {
         *self = Self::DrawOnce;
     }
-    pub fn skip(&mut self)
+    pub const fn skip(&mut self)
     {
         if matches!(self, Self::Enabled) {
             *self = Self::SkipOnce;
         }
     }
-    pub fn pop(&mut self) -> bool
+    pub const fn pop(&mut self) -> bool
     {
         match self {
             Self::Disabled => false,
@@ -234,11 +233,11 @@ impl SelectOrFollow
         pane.schedule_redraw();
         match self {
             Self::Select => pane.set_follow_state(FollowState::SelectRay {
-                angle: angle_info.angle,
+                angle:  angle_info.angle,
                 follow: false,
             }),
             Self::Follow => pane.set_follow_state(FollowState::SelectRay {
-                angle: angle_info.angle,
+                angle:  angle_info.angle,
                 follow: true,
             }),
             Self::DoNothing => {}

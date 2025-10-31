@@ -1,8 +1,10 @@
-use super::config::SCRIPT_PROJ_DIR;
-use super::{Response, ScriptEditor};
+use std::path::Path;
+
 use dynamo_common::directories::script_dir;
 use egui_file::FileDialog;
-use std::path::Path;
+
+use super::config::SCRIPT_PROJ_DIR;
+use super::{Response, ScriptEditor};
 
 #[derive(Debug)]
 pub enum Popup
@@ -10,7 +12,7 @@ pub enum Popup
     Edit(ScriptEditor),
     Load
     {
-        dialog: FileDialog,
+        dialog:     FileDialog,
         edit_after: bool,
     },
 }
@@ -102,8 +104,8 @@ impl Popup
 #[derive(Clone, Debug)]
 pub struct ErrorReport
 {
-    title: String,
-    text: String,
+    title:       String,
+    text:        String,
     pub visible: bool,
 }
 
@@ -127,7 +129,7 @@ impl ErrorReport
                 .collapsible(false)
                 .auto_sized()
                 .pivot(egui::Align2::CENTER_CENTER)
-                .default_pos(ctx.screen_rect().center())
+                .default_pos(ctx.content_rect().center())
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.label(self.text.clone());

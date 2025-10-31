@@ -1,15 +1,12 @@
-use crate::{
-    globals::{NEWTON_MAX_ERR, NEWTON_MAX_ITERS, NEWTON_MIN_ERR},
-    traits::{Dist, MaybeNan, Norm},
-    types::Real,
-};
+use crate::globals::{NEWTON_MAX_ERR, NEWTON_MAX_ITERS, NEWTON_MIN_ERR};
+use crate::traits::{Dist, MaybeNan, Norm};
+use crate::types::Real;
 pub mod error;
-use error::{
-    Error::{FailedToConverge, NanEncountered},
-    NewtonResult,
-};
-use num_traits::One;
 use std::ops::{AddAssign, Div, Sub, SubAssign};
+
+use error::Error::{FailedToConverge, NanEncountered};
+use error::NewtonResult;
+use num_traits::One;
 
 pub fn newton_fixed_iter<T, F, G>(f_and_df: F, start: T, target: T, iters: usize) -> T
 where
@@ -28,6 +25,7 @@ where
 ///
 /// Apply Newton's method until we converge to within `tolerance`.
 /// Will loop forever if Newton's method fails to converge.
+#[expect(clippy::while_float)]
 pub fn newton_until_convergence<T, F>(f_and_df: F, start: T, target: T, tolerance: Real) -> T
 where
     F: Fn(T) -> (T, T),
@@ -52,6 +50,7 @@ where
 /// Apply Newton's method until we converge to within `tolerance`.
 /// Will loop forever if Newton's method fails to converge.
 /// Returns root together with value and derivative of function.
+#[expect(clippy::while_float)]
 pub fn newton_until_convergence_d<T, F>(
     f_and_df: F,
     start: T,

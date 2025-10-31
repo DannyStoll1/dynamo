@@ -1,13 +1,6 @@
 pub mod keyboard_shortcuts;
-use crate::{
-    actions::{Action, ChangeBoolean},
-    marked_points::ContourType,
-    pane::id::{
-        PaneID::{Child, Parent},
-        PaneSelection::{ActivePane, BothPanes, Id},
-    },
-};
 use dynamo_color::IncoloringAlgorithm;
+use egui::{KeyboardShortcut, ModifierNames, RichText};
 use keyboard_shortcuts::{
     CTRL_1, CTRL_2, CTRL_3, CTRL_4, CTRL_5, CTRL_6, CTRL_E, CTRL_F, CTRL_K, CTRL_L, CTRL_P, CTRL_Q,
     CTRL_S, CTRL_SHIFT_1, CTRL_SHIFT_2, CTRL_SHIFT_3, CTRL_SHIFT_4, CTRL_SHIFT_5, CTRL_SHIFT_6,
@@ -19,7 +12,10 @@ use keyboard_shortcuts::{
 };
 use seq_macro::seq;
 
-use egui::{KeyboardShortcut, ModifierNames, RichText};
+use crate::actions::{Action, ChangeBoolean};
+use crate::marked_points::ContourType;
+use crate::pane::id::PaneID::{Child, Parent};
+use crate::pane::id::PaneSelection::{ActivePane, BothPanes, Id};
 
 pub struct Hotkey
 {
@@ -142,26 +138,26 @@ pub const CYCLES_HOTKEYS: [Hotkey; 12] = [
 pub const ANNOTATION_HOTKEYS: [Hotkey; 17] = [
     // External ray
     Hotkey::new(DrawExternalRay {
-        include_orbit: false,
+        include_orbit:        false,
         select_landing_point: false,
     })
     .shortcut(KEY_E),
     // External ray to point
     Hotkey::new(DrawExternalRay {
-        include_orbit: false,
+        include_orbit:        false,
         select_landing_point: true,
     })
     .shortcut(KEY_Y),
     // External ray to point
     Hotkey::new(DrawExternalRay {
-        include_orbit: false,
+        include_orbit:        false,
         select_landing_point: true,
     })
     .shortcut(CTRL_X)
     .hide_in_menu(),
     // Ray orbit
     Hotkey::new(DrawExternalRay {
-        include_orbit: true,
+        include_orbit:        true,
         select_landing_point: false,
     })
     .shortcut(SHIFT_O),

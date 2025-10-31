@@ -1,14 +1,15 @@
-use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 use dynamo_common::math_utils::weierstrass_p;
+
+use crate::macros::{degree_impl, horner, horner_monic, profile_imports};
 profile_imports!();
 
 // Quadratic rational maps with a critical 4-cycle: 0 => ∞ -> 1 -> c -> 0
 #[derive(Clone, Debug)]
 pub struct QuadRatPer4
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer4

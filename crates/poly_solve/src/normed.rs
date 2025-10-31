@@ -37,7 +37,7 @@ impl<T: Clone + Num + PartialOrd> TopologicalNorm for Complex<T>
 }
 
 macro_rules! top_norm_abs_impl {
-    ($t: ty) => {
+    ($t:ty) => {
         impl TopologicalNorm for $t
         {
             type Norm = Self;

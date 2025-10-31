@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 
+use dynamo_color::palette::DiscretePalette;
+use dynamo_common::prelude::*;
+use dynamo_core::dynamics::Displayable;
 use egui::{Color32, Painter};
 use epaint::{CircleShape, PathShape, Pos2, Stroke};
 use image::{ImageBuffer, Rgb};
@@ -9,17 +12,11 @@ use imageproc::drawing::{
 };
 use imageproc::pixelops::interpolate;
 use itertools::Itertools;
-
-use dynamo_color::palette::DiscretePalette;
-use dynamo_common::prelude::*;
-use dynamo_core::dynamics::Displayable;
-
-use crate::image_frame::ImageFrame;
-
-use self::hashing::HashedReal;
-
 #[cfg(feature = "serde")]
 use serde::{self, Deserialize, Serialize};
+
+use self::hashing::HashedReal;
+use crate::image_frame::ImageFrame;
 
 const POINT_RADIUS: f32 = 3.5;
 const CURVE_THICKNESS: f32 = 1.4;
@@ -170,8 +167,8 @@ impl ObjectKey for CurveKey
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ColoredMaybeHidden<O>
 {
-    pub object: O,
-    pub color: Color32,
+    pub object:  O,
+    pub color:   Color32,
     pub visible: bool,
 }
 
@@ -179,7 +176,7 @@ pub struct ColoredMaybeHidden<O>
 pub struct Colored<O>
 {
     pub object: O,
-    pub color: Color32,
+    pub color:  Color32,
 }
 impl<O> From<ColoredMaybeHidden<O>> for Colored<O>
 {
@@ -187,7 +184,7 @@ impl<O> From<ColoredMaybeHidden<O>> for Colored<O>
     {
         Self {
             object: value.object,
-            color: value.color,
+            color:  value.color,
         }
     }
 }
@@ -207,9 +204,9 @@ pub enum MarkingTask<K>
 #[derive(Clone, Copy, Debug)]
 struct EnvironmentInfo<'plane, 'palette, P: Displayable>
 {
-    plane: &'plane P,
+    plane:     &'plane P,
     selection: Cplx,
-    palette: &'palette DiscretePalette,
+    palette:   &'palette DiscretePalette,
 }
 
 #[derive(Clone, Debug)]
@@ -220,8 +217,8 @@ where
 {
     pub objects: HashMap<K, ColoredMaybeHidden<O>>,
     #[cfg_attr(feature = "serde", serde(skip))]
-    tasks: VecDeque<MarkingTask<K>>,
-    pub degree: AngleNum,
+    tasks:       VecDeque<MarkingTask<K>>,
+    pub degree:  AngleNum,
 }
 impl<K, O> Default for MarkedObjectStore<K, O>
 where
@@ -231,8 +228,8 @@ where
     {
         Self {
             objects: HashMap::new(),
-            tasks: VecDeque::new(),
-            degree: 0,
+            tasks:   VecDeque::new(),
+            degree:  0,
         }
     }
 }
@@ -310,8 +307,8 @@ where
     fn enable<P: Displayable>(&mut self, key: K, e: &EnvironmentInfo<P>)
     {
         let col_obj = ColoredMaybeHidden {
-            object: key.compute(e.plane, e.selection),
-            color: key.color_with(e.palette, self.degree),
+            object:  key.compute(e.plane, e.selection),
+            color:   key.color_with(e.palette, self.degree),
             visible: true,
         };
         self.objects.insert(key, col_obj);
@@ -360,7 +357,7 @@ where
 pub struct Marking
 {
     point_sets: MarkedObjectStore<PointSetKey, Vec<Cplx>>,
-    curves: MarkedObjectStore<CurveKey, Curve>,
+    curves:     MarkedObjectStore<CurveKey, Curve>,
     #[cfg_attr(feature = "serde", serde(skip))]
     path_cache: RefCell<PathCache>,
 }
@@ -656,10 +653,9 @@ impl Marking
 
 mod hashing
 {
+    use dynamo_common::types::{Cplx, Real};
     #[cfg(feature = "serde")]
     use serde::{Deserialize, Serialize};
-
-    use dynamo_common::types::{Cplx, Real};
 
     #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -715,7 +711,7 @@ mod hashing
 #[derive(Clone)]
 pub struct PathCache
 {
-    paths: Vec<Colored<Vec<Pos2>>>,
+    paths:         Vec<Colored<Vec<Pos2>>>,
     needs_refresh: bool,
 }
 impl Default for PathCache
@@ -723,7 +719,7 @@ impl Default for PathCache
     fn default() -> Self
     {
         Self {
-            paths: Vec::new(),
+            paths:         Vec::new(),
             needs_refresh: true,
         }
     }
@@ -731,7 +727,7 @@ impl Default for PathCache
 
 impl PathCache
 {
-    pub fn set_fresh(&mut self)
+    pub const fn set_fresh(&mut self)
     {
         self.needs_refresh = false;
     }
@@ -740,7 +736,7 @@ impl PathCache
     {
         !self.needs_refresh
     }
-    pub fn set_stale(&mut self)
+    pub const fn set_stale(&mut self)
     {
         self.needs_refresh = true;
     }
@@ -753,10 +749,10 @@ impl PathCache
 
 struct CurveDrawJob<'a>
 {
-    curve: &'a Curve,
-    color: Rgb<u8>,
+    curve:     &'a Curve,
+    color:     Rgb<u8>,
     thickness: f32,
-    grid: &'a PointGrid,
+    grid:      &'a PointGrid,
 }
 impl CurveDrawJob<'_>
 {

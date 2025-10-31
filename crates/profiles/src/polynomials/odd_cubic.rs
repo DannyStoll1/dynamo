@@ -1,13 +1,15 @@
+use dynamo_common::math_utils::weierstrass_p;
+use dynamo_common::{horner, horner_monic};
+
 use crate::macros::{degree_impl, profile_imports};
-use dynamo_common::{horner, horner_monic, math_utils::weierstrass_p};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 pub struct OddCubic
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl OddCubic
@@ -44,7 +46,7 @@ impl DynamicalFamily for OddCubic
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let z0 = c.powf(0.5);
         (z0, ZERO, 0.5 / z0)

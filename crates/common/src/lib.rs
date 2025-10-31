@@ -16,10 +16,8 @@ pub mod types;
 
 pub mod cache
 {
-    use std::{
-        collections::HashMap,
-        sync::{Arc, Mutex},
-    };
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
 
     #[derive(Clone, Debug)]
     pub struct Cache<K, V>
@@ -79,10 +77,8 @@ pub mod cache
 #[cfg(test)]
 mod tests
 {
-    use crate::{
-        prelude::{OrbitSchema, RationalAngle},
-        types::Cplx,
-    };
+    use crate::prelude::{OrbitSchema, RationalAngle};
+    use crate::types::Cplx;
 
     #[test]
     fn quartic_roots()
@@ -213,8 +209,9 @@ mod tests
     #[test]
     fn xi()
     {
-        use crate::math_utils::riemann_xi_d;
         use std::f64::consts::FRAC_PI_6;
+
+        use crate::math_utils::riemann_xi_d;
         let s = Cplx::new(2., 0.);
         let [val, dval] = riemann_xi_d(s);
         let val_true = Cplx::from(FRAC_PI_6);
@@ -229,8 +226,9 @@ mod tests
     #[test]
     fn sort_circ()
     {
-        use crate::symbolic_dynamics::sort_circularly_ordered;
         use std::collections::VecDeque;
+
+        use crate::symbolic_dynamics::sort_circularly_ordered;
         let mut values = VecDeque::from([3, 4, 8, 8, 9, 0, 2]);
         sort_circularly_ordered(&mut values);
 
@@ -242,7 +240,7 @@ mod tests
     {
         let o = OrbitSchema {
             preperiod: 0,
-            period: 3,
+            period:    3,
         };
         let angles = o.with_degree(-2).child_angles();
         dbg!(angles);

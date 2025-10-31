@@ -1,6 +1,6 @@
 [package]
 name = "dynamo_gui"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2024"
 authors = ["Danny Stoll"]
 repository = "https://github.com/dannystoll1/dynamo"
@@ -17,10 +17,11 @@ seq-macro = "0.3.6"
 dynamo_core = { version = "*", path = "../core" }
 dynamo_color = { version = "*", path = "../coloring", features = ["serde"] }
 dynamo_common = { version = "*", path = "../common" }
-libloading = { version = "0.8.8", optional = true }
+libloading = { version = "0.8.9", optional = true }
 image = { workspace = true }
 imageproc = "0.25"
 itertools = { workspace = true }
+log = { workspace = true }
 
 [features]
 serde = [

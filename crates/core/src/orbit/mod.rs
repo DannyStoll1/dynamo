@@ -1,6 +1,7 @@
-use crate::dynamics::DynamicalFamily;
 use dynamo_common::prelude::*;
 use num_traits::One;
+
+use crate::dynamics::DynamicalFamily;
 
 pub mod distance_estimation;
 pub mod floyd;
@@ -10,10 +11,9 @@ pub mod simple;
 pub use distance_estimation::DistanceEstimation;
 pub use floyd::CycleDetected;
 pub use potential::Potential;
-pub use simple::Simple;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+pub use simple::Simple;
 
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -21,12 +21,12 @@ pub enum EscapeResult<V, D>
 {
     Escaped
     {
-        iters: IterCount,
+        iters:       IterCount,
         final_value: V,
     },
     Periodic
     {
-        info: PointInfoPeriodic<D>,
+        info:        PointInfoPeriodic<D>,
         final_value: V,
     },
     Bounded(V),
@@ -38,8 +38,8 @@ pub enum EscapeResult<V, D>
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Info<P, V, D>
 {
-    pub param: P,
-    pub start: V,
+    pub param:  P,
+    pub start:  V,
     pub result: PointInfo<D>,
 }
 
@@ -47,16 +47,16 @@ pub struct Info<P, V, D>
 pub struct OrbitAndInfo<P, V, D>
 {
     pub orbit: Vec<V>,
-    pub info: Info<P, V, D>,
+    pub info:  Info<P, V, D>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct OrbitSummaryConf
 {
-    pub show_selection: bool,
-    pub show_parameter: bool,
+    pub show_selection:   bool,
+    pub show_parameter:   bool,
     pub show_start_point: bool,
-    pub float_prec: usize,
+    pub float_prec:       usize,
 }
 impl OrbitSummaryConf
 {

@@ -1,12 +1,16 @@
-use lazy_static::lazy_static;
-use regex::Regex;
-use std::{cmp::Ordering, collections::VecDeque, error::Error, num::ParseIntError, str::FromStr};
+use std::cmp::Ordering;
+use std::collections::VecDeque;
+use std::error::Error;
+use std::num::ParseIntError;
+use std::str::FromStr;
+use std::sync::LazyLock;
 
+use regex::Regex;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::*;
 use crate::macros::regex;
+use crate::prelude::*;
 
 /// Information to display about a rational angle
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -38,7 +42,7 @@ impl AngleInfo
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OrbitSchema
 {
-    pub period: Period,
+    pub period:    Period,
     pub preperiod: Period,
 }
 
@@ -79,7 +83,7 @@ impl Default for OrbitSchema
     fn default() -> Self
     {
         Self {
-            period: 1,
+            period:    1,
             preperiod: 0,
         }
     }
@@ -146,8 +150,8 @@ impl std::fmt::Display for OrbitSchema
 pub struct OrbitSchemaWithDegree
 {
     pub preperiod: Period,
-    pub period: Period,
-    pub degree: AngleNum,
+    pub period:    Period,
+    pub degree:    AngleNum,
 }
 
 impl OrbitSchemaWithDegree
@@ -195,7 +199,7 @@ impl OrbitSchemaWithDegree
     {
         OrbitSchema {
             preperiod: self.preperiod,
-            period: self.period,
+            period:    self.period,
         }
     }
 }
@@ -244,11 +248,11 @@ pub struct Itinerary
 impl Itinerary
 {
     #[must_use]
-    pub fn orbit_schema(&self) -> OrbitSchema
+    pub const fn orbit_schema(&self) -> OrbitSchema
     {
         OrbitSchema {
             preperiod: self.preperiodic_part.len() as Period,
-            period: self.periodic_part.len() as Period,
+            period:    self.periodic_part.len() as Period,
         }
     }
 }
@@ -372,7 +376,7 @@ impl From<RationalAngle> for Real
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AngleWithDegree
 {
-    pub angle: RationalAngle,
+    pub angle:  RationalAngle,
     pub degree: AngleNum,
 }
 
@@ -574,9 +578,7 @@ pub fn parse_angle(text: &str) -> Result<RationalAngle, ParseAngleError>
 #[allow(clippy::unwrap_used)]
 fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
-    lazy_static! {
-        static ref FRACTION: Regex = Regex::new(r"^(-?\d+)/(\d+)$").unwrap();
-    }
+    static FRACTION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(-?\d+)/(\d+)$").unwrap());
 
     let captures = FRACTION.captures(text)?;
 
@@ -601,9 +603,7 @@ fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 #[allow(clippy::unwrap_used)]
 fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
-    lazy_static! {
-        static ref BIN_ANGLE: Regex = Regex::new(r"^(\d+)$").unwrap();
-    }
+    static BIN_ANGLE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d+)$").unwrap());
 
     let captures = BIN_ANGLE.captures(text)?;
     let bin_str = captures.get(1)?;
@@ -618,9 +618,7 @@ fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 #[allow(clippy::unwrap_used)]
 fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
-    lazy_static! {
-        static ref BIN_PREPER: Regex = Regex::new(r"^(\d*)p(\d+)$").unwrap();
-    }
+    static BIN_PREPER: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d*)p(\d+)$").unwrap());
 
     let captures = BIN_PREPER.captures(text)?;
     if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2)) {

@@ -1,5 +1,6 @@
-use crate::macros::{has_child_impl, horner, horner_monic, profile_imports};
 use dynamo_common::types::variables::PlaneID;
+
+use crate::macros::{has_child_impl, horner, horner_monic, profile_imports};
 profile_imports!();
 
 const I: Cplx = Cplx::new(0., 1.);
@@ -16,10 +17,10 @@ const I6: Cplx = Cplx::new(0., 6.);
 #[derive(Clone, Debug)]
 pub struct CubicPer1Lambda
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
-    multiplier: Cplx,
+    point_grid:    PointGrid,
+    compute_mode:  ComputeMode,
+    max_iter:      IterCount,
+    multiplier:    Cplx,
     starting_crit: PlaneID,
 }
 
@@ -324,9 +325,9 @@ impl InfinityFirstReturnMap for CubicPer1Lambda
 #[derive(Clone, Debug)]
 pub struct CubicPer1LambdaParam
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
+    point_grid:    PointGrid,
+    compute_mode:  ComputeMode,
+    max_iter:      IterCount,
     starting_crit: PlaneID,
 }
 
@@ -399,7 +400,7 @@ impl DynamicalFamily for CubicPer1LambdaParam
     }
 
     fn start_point_d(&self, _point: Cplx, c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         match self.starting_crit {
             PlaneID::ZPlane => (0.5 * c * Self::BASE_POINT, ZERO, 0.5 * Self::BASE_POINT),
@@ -492,9 +493,9 @@ impl From<CubicPer1LambdaParam> for CubicPer1Lambda
 #[derive(Clone, Debug)]
 pub struct CubicPer1_1
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl CubicPer1_1
@@ -553,7 +554,7 @@ impl DynamicalFamily for CubicPer1_1
     }
 
     fn start_point_d(&self, _point: Cplx, c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         let u = (c.powi(2) - 3.).sqrt();
         let s = c.re.signum();
@@ -656,7 +657,7 @@ impl EscapeEncoding for CubicPer1_1
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 
@@ -680,9 +681,9 @@ impl ExternalRays for CubicPer1LambdaModuli {}
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer1_0
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl CubicPer1_0
@@ -718,7 +719,7 @@ impl DynamicalFamily for CubicPer1_0
 
     #[inline]
     fn start_point_d(&self, _point: Cplx, c: &Self::Param)
-        -> (Self::Var, Self::Deriv, Self::Deriv)
+    -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (-TWO_THIRDS * c, ZERO, (-TWO_THIRDS).into())
     }
@@ -831,12 +832,16 @@ impl MarkedPoints for CubicPer1_0
                     c * horner!(c2, 3., 84., 144., 1512., 842., 1158., 390., 16., 13.),
                     c2 * horner!(c2, 36., 36., 1260., 1432., 1872., 1480., 131., 83., 5.),
                     c * horner!(c2, 9., 4., 720., 1892., 2194., 3690., 680., 345., 70.),
-                    horner!(c2, 1., 0., 270., 1858., 2001., 6408., 2410., 1048., 465., 10., 3.),
+                    horner!(
+                        c2, 1., 0., 270., 1858., 2001., 6408., 2410., 1048., 465., 10., 3.
+                    ),
                     c3 * horner!(c2, 60., 1321., 1581., 7980., 6082., 2501., 1941., 150., 39.),
                     c2 * horner!(
                         c2, 6., 660., 1195., 7200., 11232., 4966., 5680., 1060., 245., 18.
                     ),
-                    c3 * horner!(c2, 220., 847., 4680., 15432., 8536., 12315., 4680., 1030., 252.),
+                    c3 * horner!(
+                        c2, 220., 847., 4680., 15432., 8536., 12315., 4680., 1030., 252.
+                    ),
                     c2 * horner!(
                         c2, 44., 500., 2140., 15885., 12815., 20420., 14430., 3416., 1649., 45., 3.
                     ),
@@ -1042,7 +1047,9 @@ impl MarkedPoints for CubicPer1_0
                         10_816_624.,
                         1_961_256.
                     ),
-                    c3 * horner!(c2, 1750., 39704., 335_160., 4_775_232., 9_152_528., 2_496_144.),
+                    c3 * horner!(
+                        c2, 1750., 39704., 335_160., 4_775_232., 9_152_528., 2_496_144.
+                    ),
                     c2 * horner!(c2, 161., 10045., 74480., 2_089_164., 6_537_520., 2_704_156.),
                     c * horner!(c2, 7., 1960., 11760., 737_352., 3_922_512., 2_496_144.),
                     c2 * horner!(c2, 273., 1176., 204_820., 1_961_256., 1_961_256.),
@@ -1057,12 +1064,7 @@ impl MarkedPoints for CubicPer1_0
                     c * horner!(c2, 24.),
                     ONE,
                 ];
-                for (i, x) in coeffs.iter().enumerate() {
-                    println!("{}: {}", i, x.re);
-                }
-                let res = solve_polynomial(coeffs);
-                dbg!(&res);
-                res
+                solve_polynomial(coeffs)
             }
             _ => vec![],
         }
@@ -1296,10 +1298,10 @@ impl HasDynamicalCovers for CubicPer1_1
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CubicPer1LambdaModuli
 {
-    point_grid: PointGrid,
-    compute_mode: ComputeMode,
-    max_iter: IterCount,
-    multiplier: Cplx,
+    point_grid:    PointGrid,
+    compute_mode:  ComputeMode,
+    max_iter:      IterCount,
+    multiplier:    Cplx,
     starting_crit: PlaneID,
 }
 
@@ -1476,7 +1478,7 @@ impl EscapeEncoding for CubicPer1LambdaModuli
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as IterCountSmooth) - 1.,
-                phase: None,
+                phase:     None,
             };
         }
 

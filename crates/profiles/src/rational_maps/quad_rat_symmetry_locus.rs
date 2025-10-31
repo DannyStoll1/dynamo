@@ -5,9 +5,9 @@ profile_imports!();
 #[derive(Clone, Debug)]
 pub struct QuadRatSymmetryLocus
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatSymmetryLocus
@@ -139,7 +139,7 @@ impl EscapeEncoding for QuadRatSymmetryLocus
         if z.is_nan() {
             return PointInfo::Escaping {
                 potential: (iters as f64) - 2.,
-                phase: None,
+                phase:     None,
             };
         }
 

@@ -1,15 +1,14 @@
-use crate::types::{FromCartesian, FromPolar, Lchab, RgbLinear, Xyz};
-
-use super::Hsv;
 use dynamo_common::consts::TAU;
-use dynamo_common::types::IterCountSmooth;
-use dynamo_common::{symbolic_dynamics::OrbitSchema, types::Period};
+use dynamo_common::symbolic_dynamics::OrbitSchema;
+use dynamo_common::types::{IterCountSmooth, Period};
 use egui::Color32;
 use rand::rng;
 use rand_distr::{ChiSquared, Distribution, Uniform};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use super::Hsv;
+use crate::types::{FromCartesian, FromPolar, Lchab, RgbLinear, Xyz};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -24,12 +23,12 @@ pub enum CartesianColorSpace
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Sinusoid
 {
-    period: f64,
-    phase: f64,
+    period:    f64,
+    phase:     f64,
     amplitude: f64,
-    midline: f64,
+    midline:   f64,
     #[serde(default)]
-    degree: i32,
+    degree:    i32,
 }
 impl Sinusoid
 {
@@ -58,35 +57,35 @@ impl Sinusoid
         }
         self.amplitude.mul_add(val, self.midline)
     }
-    fn get_period_mut(&mut self) -> &mut f64
+    const fn get_period_mut(&mut self) -> &mut f64
     {
         &mut self.period
     }
-    fn get_amplitude_mut(&mut self) -> &mut f64
+    const fn get_amplitude_mut(&mut self) -> &mut f64
     {
         &mut self.amplitude
     }
-    fn get_midline_mut(&mut self) -> &mut f64
+    const fn get_midline_mut(&mut self) -> &mut f64
     {
         &mut self.midline
     }
-    fn get_phase_mut(&mut self) -> &mut f64
+    const fn get_phase_mut(&mut self) -> &mut f64
     {
         &mut self.phase
     }
-    fn set_period(&mut self, period: f64)
+    const fn set_period(&mut self, period: f64)
     {
         self.period = period;
     }
-    fn set_amplitude(&mut self, amplitude: f64)
+    const fn set_amplitude(&mut self, amplitude: f64)
     {
         self.amplitude = amplitude;
     }
-    fn set_midline(&mut self, midline: f64)
+    const fn set_midline(&mut self, midline: f64)
     {
         self.midline = midline;
     }
-    fn set_phase(&mut self, phase: f64)
+    const fn set_phase(&mut self, phase: f64)
     {
         self.phase = phase;
     }
@@ -96,11 +95,11 @@ impl Default for Sinusoid
     fn default() -> Self
     {
         Self {
-            period: 8.,
+            period:    8.,
             amplitude: 0.5,
-            midline: 0.5,
-            phase: 0.,
-            degree: 1,
+            midline:   0.5,
+            phase:     0.,
+            degree:    1,
         }
     }
 }
@@ -133,19 +132,19 @@ mod defaults
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Palette
 {
-    pub color_map_r: Sinusoid,
-    pub color_map_g: Sinusoid,
-    pub color_map_b: Sinusoid,
+    pub color_map_r:     Sinusoid,
+    pub color_map_g:     Sinusoid,
+    pub color_map_b:     Sinusoid,
     #[cfg_attr(feature = "serde", serde(default = "DiscretePalette::default"))]
     pub period_coloring: DiscretePalette,
     #[cfg_attr(feature = "serde", serde(default = "defaults::black"))]
-    pub in_color: Color32,
+    pub in_color:        Color32,
     #[cfg_attr(feature = "serde", serde(default = "defaults::brown"))]
     pub wandering_color: Color32,
     #[cfg_attr(feature = "serde", serde(default = "defaults::gray"))]
-    pub unknown_color: Color32,
+    pub unknown_color:   Color32,
     #[cfg_attr(feature = "serde", serde(default = "CartesianColorSpace::default"))]
-    pub color_space: CartesianColorSpace,
+    pub color_space:     CartesianColorSpace,
 }
 
 impl Palette
@@ -154,14 +153,14 @@ impl Palette
     pub const fn new(period_r: f64, period_g: f64, period_b: f64) -> Self
     {
         Self {
-            color_map_r: Sinusoid::new(period_r),
-            color_map_g: Sinusoid::new(period_g),
-            color_map_b: Sinusoid::new(period_b),
+            color_map_r:     Sinusoid::new(period_r),
+            color_map_g:     Sinusoid::new(period_g),
+            color_map_b:     Sinusoid::new(period_b),
             period_coloring: DiscretePalette::standard(),
-            in_color: Color32::BLACK,
+            in_color:        Color32::BLACK,
             wandering_color: Color32::BROWN,
-            unknown_color: Color32::GRAY,
-            color_space: CartesianColorSpace::Rgb,
+            unknown_color:   Color32::GRAY,
+            color_space:     CartesianColorSpace::Rgb,
         }
     }
 
@@ -170,14 +169,14 @@ impl Palette
     {
         let color_map = Sinusoid::new(period);
         Self {
-            color_map_r: color_map,
-            color_map_g: color_map,
-            color_map_b: color_map,
+            color_map_r:     color_map,
+            color_map_g:     color_map,
+            color_map_b:     color_map,
             period_coloring: DiscretePalette::standard(),
-            in_color: Color32::BLACK,
+            in_color:        Color32::BLACK,
             wandering_color: Color32::BROWN,
-            unknown_color: Color32::GRAY,
-            color_space: CartesianColorSpace::Rgb,
+            unknown_color:   Color32::GRAY,
+            color_space:     CartesianColorSpace::Rgb,
         }
     }
 
@@ -192,14 +191,14 @@ impl Palette
             degree: 1,
         };
         Self {
-            color_map_r: color_map,
-            color_map_g: color_map,
-            color_map_b: color_map,
+            color_map_r:     color_map,
+            color_map_g:     color_map,
+            color_map_b:     color_map,
             period_coloring: DiscretePalette::standard(),
-            in_color: Color32::WHITE,
+            in_color:        Color32::WHITE,
             wandering_color: Color32::BROWN,
-            unknown_color: Color32::GRAY,
-            color_space: CartesianColorSpace::Rgb,
+            unknown_color:   Color32::GRAY,
+            color_space:     CartesianColorSpace::Rgb,
         }
     }
 
@@ -208,7 +207,7 @@ impl Palette
     {
         let mut rng = rng();
 
-        let distr = Uniform::new(0., 1.).unwrap();
+        let distr = Uniform::new(0., 1.).expect("Invalid distribution params!");
         let phase_r = distr.sample(&mut rng);
         let phase_g = distr.sample(&mut rng);
         let phase_b = distr.sample(&mut rng);
@@ -340,7 +339,7 @@ impl Default for Palette
 pub struct DiscretePalette
 {
     pub num_colors: f32,
-    pub base_hue: f32,
+    pub base_hue:   f32,
     pub saturation: f32,
     pub luminosity: f32,
 }
@@ -357,7 +356,7 @@ impl DiscretePalette
     {
         Self {
             num_colors: Self::DEFAULT_NUM_COLORS,
-            base_hue: Self::DEFAULT_BASE_HUE,
+            base_hue:   Self::DEFAULT_BASE_HUE,
             saturation: Self::DEFAULT_SATURATION,
             luminosity: Self::DEFAULT_LUMINOSITY,
         }
@@ -429,7 +428,7 @@ impl DiscretePalette
     {
         Self {
             num_colors: 1.,
-            base_hue: Self::DEFAULT_BASE_HUE,
+            base_hue:   Self::DEFAULT_BASE_HUE,
             saturation: 1.,
             luminosity: 0.,
         }
@@ -440,7 +439,7 @@ impl DiscretePalette
     {
         Self {
             num_colors: 1.,
-            base_hue: Self::DEFAULT_BASE_HUE,
+            base_hue:   Self::DEFAULT_BASE_HUE,
             saturation: 0.,
             luminosity: 1.,
         }

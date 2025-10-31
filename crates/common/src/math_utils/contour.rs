@@ -1,4 +1,4 @@
-use crate::prelude::{Cplx, Dist, Norm, Real, NAN};
+use crate::prelude::{Cplx, Dist, NAN, Norm, Real};
 
 const I: Cplx = Cplx::new(0., 1.);
 
@@ -209,6 +209,7 @@ where
         }
     }
 
+    #[expect(clippy::while_float)]
     fn close_loop(&mut self, t_list: &mut Vec<Cplx>)
     {
         let mut dist = Real::INFINITY;
@@ -359,8 +360,8 @@ pub struct IntegralCurve<D>
 where
     D: Fn(Cplx) -> Option<Cplx>,
 {
-    params: IntegralCurveParams,
-    point: Cplx,
+    params:    IntegralCurveParams,
+    point:     Cplx,
     direction: D,
 }
 
@@ -425,11 +426,7 @@ where
             }
         }
 
-        if t_list.len() > 1 {
-            t_list
-        } else {
-            Vec::new()
-        }
+        if t_list.len() > 1 { t_list } else { Vec::new() }
     }
 
     #[inline]

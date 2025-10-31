@@ -1,9 +1,10 @@
-use crate::{marked_points::ContourType, pane::id::PaneSelection};
 use dynamo_color::{IncoloringAlgorithm, Palette};
 use dynamo_common::types::{IterCountSmooth, Period};
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::marked_points::ContourType;
+use crate::pane::id::PaneSelection;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -30,7 +31,7 @@ pub enum Action
     ClearOrbit,
     DrawExternalRay
     {
-        include_orbit: bool,
+        include_orbit:        bool,
         select_landing_point: bool,
     },
     DrawRaysOfPeriod,
@@ -351,7 +352,7 @@ pub enum ChangeBoolean
 }
 impl ChangeBoolean
 {
-    pub fn switch(&self, target: &mut bool)
+    pub const fn switch(&self, target: &mut bool)
     {
         match self {
             Self::Enable => {

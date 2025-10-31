@@ -1,7 +1,8 @@
+use std::path::{Path, PathBuf};
+
 use dynamo_common::directories::script_dir;
 use script_loader::error::ScriptError;
 use script_loader::parser::UnparsedUserInput;
-use std::path::{Path, PathBuf};
 
 pub(super) mod config;
 use config::SCRIPT_PROJ_DIR;
@@ -43,7 +44,7 @@ impl State
 #[derive(Clone, Debug)]
 pub struct ScriptEditor
 {
-    pub text: String,
+    pub text:  String,
     pub state: State,
 }
 impl Default for ScriptEditor
@@ -51,7 +52,7 @@ impl Default for ScriptEditor
     fn default() -> Self
     {
         Self {
-            text: config::DEFAULT_TEXT.clone(),
+            text:  config::DEFAULT_TEXT.clone(),
             state: State::default(),
         }
     }

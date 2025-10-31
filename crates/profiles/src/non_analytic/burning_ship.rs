@@ -1,14 +1,15 @@
-use crate::macros::{degree_impl, profile_imports};
 use dynamo_common::types::variables::Matrix2x2;
+
+use crate::macros::{degree_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BurningShip<const N: Period>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl<const N: Period> BurningShip<N>
@@ -123,10 +124,10 @@ impl<const N: Period> MarkedPoints for BurningShip<N>
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Sailboat<const N: Period>
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
-    shift: Cplx,
+    max_iter:     IterCount,
+    shift:        Cplx,
 }
 
 impl<const N: Period> Sailboat<N>

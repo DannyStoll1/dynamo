@@ -7,9 +7,9 @@ profile_imports!();
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RealCubicRealCrit
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl RealCubicRealCrit
@@ -90,9 +90,9 @@ degree_impl!(RealCubicImagCrit, 3);
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RealCubicImagCrit
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl RealCubicImagCrit

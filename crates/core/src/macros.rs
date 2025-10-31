@@ -12,7 +12,7 @@ macro_rules! fractal_impl {
             }
         }
     };
-    ($param_name: ident, $param_value: expr_2021) => {
+    ($param_name:ident, $param_value:expr_2021) => {
         fn default() -> Self
         {
             let bounds = Self::DEFAULT_BOUNDS;
@@ -25,7 +25,7 @@ macro_rules! fractal_impl {
             }
         }
     };
-    ($param_name: ident, $param_value: expr_2021, $bounds_fn: ident) => {
+    ($param_name:ident, $param_value:expr_2021, $bounds_fn:ident) => {
         fn default() -> Self
         {
             let bounds = $bounds_fn($param_value);
@@ -156,7 +156,7 @@ macro_rules! default_bounds {
             Self::DEFAULT_BOUNDS
         }
     };
-    ($min_x: expr_2021, $max_x: expr_2021, $min_y: expr_2021, $max_y: expr_2021) => {
+    ($min_x:expr_2021, $max_x:expr_2021, $min_y:expr_2021, $max_y:expr_2021) => {
         #[inline]
         fn default_bounds(&self) -> Bounds
         {
@@ -168,7 +168,7 @@ macro_rules! default_bounds {
             };
         }
     };
-    ($bounds: expr_2021) => {
+    ($bounds:expr_2021) => {
         #[inline]
         fn default_bounds(&self) -> Bounds
         {
@@ -195,7 +195,7 @@ macro_rules! default_bounds_impl {
 
 #[macro_export]
 macro_rules! basic_escape_encoding {
-    ($degree: expr_2021) => {
+    ($degree:expr_2021) => {
         fn encode_escaping_point(
             &self,
             iters: IterCount,
@@ -206,7 +206,7 @@ macro_rules! basic_escape_encoding {
             if z.is_nan() {
                 return PointInfo::Escaping {
                     potential: iters as IterCountSmooth - 1.,
-                    phase: None,
+                    phase:     None,
                 };
             }
 
@@ -220,7 +220,7 @@ macro_rules! basic_escape_encoding {
             }
         }
     };
-    (None, $period: expr_2021) => {
+    (None, $period:expr_2021) => {
         fn encode_escaping_point(
             &self,
             iters: IterCount,
@@ -244,7 +244,7 @@ macro_rules! basic_escape_encoding {
             PointInfo::Escaping { potential, phase }
         }
     };
-    ($degree: expr_2021, $period: expr_2021) => {
+    ($degree:expr_2021, $period:expr_2021) => {
         fn encode_escaping_point(
             &self,
             iters: IterCount,
@@ -255,7 +255,7 @@ macro_rules! basic_escape_encoding {
             if z.is_nan() {
                 return PointInfo::Escaping {
                     potential: IterCountSmooth::from(iters - $period),
-                    phase: Some(iters % $period),
+                    phase:     Some(iters % $period),
                 };
             }
 

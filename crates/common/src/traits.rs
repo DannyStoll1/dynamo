@@ -60,7 +60,7 @@ pub trait Named
 pub struct DescriptionConf
 {
     pub is_enabled: bool,
-    pub precision: usize,
+    pub precision:  usize,
 }
 impl DescriptionConf
 {
@@ -69,7 +69,7 @@ impl DescriptionConf
     {
         Self {
             is_enabled: false,
-            precision: DISPLAY_PREC,
+            precision:  DISPLAY_PREC,
         }
     }
     #[must_use]
@@ -113,11 +113,7 @@ pub trait Summarize: std::fmt::Display
     fn summarize(&self) -> Option<String>
     {
         let s = self.to_string();
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
+        if s.is_empty() { None } else { Some(s) }
     }
 }
 
@@ -210,7 +206,7 @@ pub trait TryRound<T>
 }
 
 macro_rules! try_round_impl {
-    ($float: ty, $int: ty) => {
+    ($float:ty, $int:ty) => {
         impl TryRound<$int> for $float
         {
             #[allow(clippy::cast_lossless)]
@@ -232,9 +228,10 @@ try_round_impl!(f64, i32);
 try_round_impl!(f32, i64);
 try_round_impl!(f32, i32);
 
-use num_traits::{One, Zero};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub};
+
+use num_traits::{One, Zero};
 
 pub trait Variable:
     Norm<Real>
@@ -295,7 +292,7 @@ impl<D> Derivative for D where
 }
 
 macro_rules! impl_polar {
-    ($t: ty) => {
+    ($t:ty) => {
         impl Norm<Real> for $t
         {
             #[inline]

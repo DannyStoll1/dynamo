@@ -1,16 +1,17 @@
-use crate::poly_traits::{
-    Differentiable, DivideByAffine, Eval, HasVar, MulConst, Normalize, VariableOps,
-};
-use crate::{newton::Newton, normed::Semimetric, utils::Collapse};
+use std::cmp::Ordering;
+use std::collections::{VecDeque, vec_deque};
+use std::ops::{Add, AddAssign};
+
 use derive_more::From;
 use itertools::Itertools;
 use num_traits::{NumOps, Zero};
-use std::{
-    cmp::Ordering,
-    collections::{vec_deque, VecDeque},
-    ops::Add,
-    ops::AddAssign,
+
+use crate::newton::Newton;
+use crate::normed::Semimetric;
+use crate::poly_traits::{
+    Differentiable, DivideByAffine, Eval, HasVar, MulConst, Normalize, VariableOps,
 };
+use crate::utils::Collapse;
 
 #[derive(Clone, PartialEq, Eq, Debug, From)]
 pub struct Polynomial<T>

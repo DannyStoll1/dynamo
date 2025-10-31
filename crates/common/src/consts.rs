@@ -1,5 +1,6 @@
-use crate::types::{Cplx, Real};
 pub use std::f64::consts::{PI, TAU};
+
+use crate::types::{Cplx, Real};
 
 pub const ZERO: Cplx = Cplx::new(0., 0.);
 pub const ONE: Cplx = Cplx::new(1., 0.);

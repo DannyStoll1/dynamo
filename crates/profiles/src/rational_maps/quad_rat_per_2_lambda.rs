@@ -7,7 +7,7 @@ profile_imports!();
 pub struct QuadRatPer2Lambda
 {
     general_plane: QuadRatGeneral,
-    multiplier: Cplx,
+    multiplier:    Cplx,
 }
 
 impl Default for QuadRatPer2Lambda
@@ -157,9 +157,9 @@ impl MarkedPoints for QuadRatPer2Lambda
 #[derive(Clone, Debug)]
 pub struct QuadRatPer2LambdaParam
 {
-    point_grid: PointGrid,
+    point_grid:   PointGrid,
     compute_mode: ComputeMode,
-    max_iter: IterCount,
+    max_iter:     IterCount,
 }
 
 impl QuadRatPer2LambdaParam
