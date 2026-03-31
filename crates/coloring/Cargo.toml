@@ -16,3 +16,6 @@ toml = { workspace = true, optional = true }
 
 [features]
 serde = ["dep:serde", "dep:toml", "egui/serde", "dynamo_common/serde"]
+
+[lints]
+workspace = true

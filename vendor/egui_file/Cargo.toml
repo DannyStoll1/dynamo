@@ -15,8 +15,8 @@ rust-version = "1.85.0"
 name = "egui_file"
 version = "0.25.0"
 authors = [
-    "Barugon <barugon@dungeonbox.net>",
-    "Elias Kartashov <elias@lowenware.com>",
+  "Barugon <barugon@dungeonbox.net>",
+  "Elias Kartashov <elias@lowenware.com>",
 ]
 build = false
 autolib = false
@@ -26,10 +26,7 @@ autotests = false
 autobenches = false
 description = "File dialog for egui"
 readme = "README.md"
-keywords = [
-    "file-dialog",
-    "file-picker",
-]
+keywords = ["file-dialog", "file-picker"]
 license = "MIT"
 repository = "https://codeberg.org/Barugon/egui_file"
 
@@ -53,3 +50,6 @@ version = "0.34"
 
 [dev-dependencies.eframe]
 version = "0.34"
+
+[lints]
+workspace = true

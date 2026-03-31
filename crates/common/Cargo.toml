@@ -27,3 +27,6 @@ directories = "6.0.0"
 
 [features]
 serde = ["dep:serde", "num-complex/serde"]
+
+[lints]
+workspace = true

@@ -29,3 +29,6 @@ scripting = [
   "dep:lazy_static",
   "dep:toml",
 ]
+
+[lints]
+workspace = true

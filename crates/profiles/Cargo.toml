@@ -15,3 +15,6 @@ name = "dynamo_profiles"
 
 [features]
 serde = []
+
+[lints]
+workspace = true

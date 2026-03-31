@@ -11,3 +11,5 @@ dynamo_gui = { version = "*", path = "../../gui", features = ["scripting"] }
 dynamo_core = { version = "*", path = "../../core" }
 dynamo_common = { version = "*", path = "../../common" }
 
+[lints]
+workspace = true

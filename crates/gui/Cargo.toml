@@ -31,3 +31,6 @@ serde = [
   "dynamo_common/serde",
 ]
 scripting = ["dep:libloading"]
+
+[lints]
+workspace = true
