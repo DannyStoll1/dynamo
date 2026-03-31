@@ -8,15 +8,15 @@ profile_imports!();
 fn df_dz(z: Point, c: &Point) -> Matrix2x2
 {
     let v = z.x.mul_add(z.x, 1.);
-    let df_dx = Point {
+    let x_deriv = Point {
         x: -2. * c.x * z.x / (v * v),
         y: -c.y,
     };
-    let df_dy = Point { x: 1., y: 1. };
+    let y_deriv = Point { x: 1., y: 1. };
 
     Matrix2x2 {
-        v0: df_dx,
-        v1: df_dy,
+        v0: x_deriv,
+        v1: y_deriv,
     }
 
     // Point {

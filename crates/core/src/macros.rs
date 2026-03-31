@@ -272,7 +272,11 @@ macro_rules! basic_escape_encoding {
     };
 }
 
-pub use {
-    basic_escape_encoding, basic_plane_impl, default_bounds, default_bounds_impl, default_name,
-    fractal_impl, param_map, point_grid_getters,
-};
+pub use basic_escape_encoding;
+pub use basic_plane_impl;
+pub use default_bounds;
+pub use default_bounds_impl;
+pub use default_name;
+pub use fractal_impl;
+pub use param_map;
+pub use point_grid_getters;

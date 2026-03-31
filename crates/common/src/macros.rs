@@ -25,4 +25,6 @@ macro_rules! regex {
     }};
 }
 
-pub use {horner, horner_monic, regex};
+pub use horner;
+pub use horner_monic;
+pub use regex;

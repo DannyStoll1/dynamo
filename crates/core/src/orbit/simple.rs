@@ -3,6 +3,14 @@ use num_traits::One;
 
 use super::EscapeResult;
 
+pub struct Config<V, P>
+{
+    pub z: V,
+    pub param: P,
+    pub max_iter: IterCount,
+    pub escape_radius: Real,
+}
+
 pub struct Simple<V, P, F>
 where
     F: Fn(V, &P) -> V,
@@ -22,14 +30,14 @@ where
     F: Fn(V, &P) -> V,
     V: Norm<Real> + MaybeNan,
 {
-    pub const fn new(f: F, z: V, param: P, max_iter: IterCount, escape_radius: Real) -> Self
+    pub fn new(f: F, config: Config<V, P>) -> Self
     {
         Self {
             f,
-            z,
-            param,
-            max_iter,
-            escape_radius,
+            z: config.z,
+            param: config.param,
+            max_iter: config.max_iter,
+            escape_radius: config.escape_radius,
             iter: 0,
             state: None,
         }

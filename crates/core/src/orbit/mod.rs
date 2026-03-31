@@ -13,7 +13,7 @@ pub use floyd::CycleDetected;
 pub use potential::Potential;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-pub use simple::Simple;
+pub use simple::{Config as SimpleConfig, Simple};
 
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

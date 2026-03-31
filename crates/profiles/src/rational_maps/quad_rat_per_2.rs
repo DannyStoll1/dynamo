@@ -3,6 +3,74 @@ use seq_macro::seq;
 use crate::macros::{cplx_arr, degree_impl, has_child_impl, horner, horner_monic, profile_imports};
 profile_imports!();
 
+const DYNATOMIC_PERIOD_4_NUM: &[Cplx; 13] = &[
+    Cplx::new(-23.000_000_000_000_0, -14.000_000_000_000_0),
+    Cplx::new(-43.595_214_843_750_0, -198.812_988_281_250),
+    Cplx::new(393.670_501_828_194, -585.061_190_664_768),
+    Cplx::new(1_459.268_652_908_43, -251.041_057_291_222),
+    Cplx::new(1_689.736_576_344_38, 1_253.118_368_537_02),
+    Cplx::new(263.170_605_532_593, 2_124.306_895_469_28),
+    Cplx::new(-1_022.568_875_522_64, 1_244.036_197_283_33),
+    Cplx::new(-907.580_743_841_250, 62.581_224_836_000_1),
+    Cplx::new(-282.801_070_639_887, -262.556_139_911_993),
+    Cplx::new(-0.301_795_185_485_805, -120.425_962_376_276),
+    Cplx::new(19.170_516_581_915_0, -17.921_171_297_248_6),
+    Cplx::new(3.557_389_915_786_44, 0.247_670_436_437_753),
+    Cplx::new(0.142_742_524_186_783, 0.175_662_128_168_037),
+];
+
+const DYNATOMIC_PERIOD_4_DEN: &[Cplx; 13] = &[
+    Cplx::new(25.000_000_000_000_0, 50.000_000_000_000_0),
+    Cplx::new(-142.712_402_343_750, 397.741_699_218_750),
+    Cplx::new(-1_337.901_851_534_84, 594.505_678_117_275),
+    Cplx::new(-2_843.310_866_608_59, -1_168.741_481_766_12),
+    Cplx::new(-1_585.989_273_688_05, -4_058.841_884_451_90),
+    Cplx::new(1_856.770_783_331_92, -3_982.889_188_004_31),
+    Cplx::new(3_064.650_242_836_14, -1_032.413_040_116_42),
+    Cplx::new(1_547.932_712_252_78, 818.021_881_782_741),
+    Cplx::new(185.634_744_083_957, 667.196_208_176_713),
+    Cplx::new(-101.261_202_462_199, 167.059_013_936_565),
+    Cplx::new(-36.550_008_994_382_6, 7.621_875_249_517_90),
+    Cplx::new(-3.537_208_869_727_47, -2.524_537_531_377_27),
+    Cplx::new(-0.027_652_124_951_167_6, -0.231_588_268_174_843),
+];
+
+const DYNATOMIC_PERIOD_4_POLE: Cplx = Cplx::new(-0.938_566_017_637_020_7, 2.125_025_422_464_432_8);
+const DYNATOMIC_PERIOD_4_SHIFT: Cplx = Cplx::new(0.006_285_758_096_917_293, 0.695_462_186_936_383_7);
+const DYNATOMIC_PERIOD_4_ANGLE: Cplx = Cplx::new(0.301_693_891_970_828_24, 0.167_631_003_825_363_6);
+
+fn eval_polynomial(input: Cplx, coeffs: &[Cplx]) -> Cplx
+{
+    coeffs.iter().copied().reduce(|acc, coeff| acc * input + coeff).unwrap_or_default()
+}
+
+fn eval_derivative(input: Cplx, coeffs: &[Cplx]) -> Cplx
+{
+    coeffs
+        .iter()
+        .copied()
+        .enumerate()
+        .skip(1)
+        .map(|(index, coeff)| coeff * index as Real)
+        .reduce(|acc, coeff| acc * input + coeff)
+        .unwrap_or_default()
+}
+
+fn dynatomic_period_4_map(t: Cplx) -> (Prm, Cplx)
+{
+    let transformed = (t * DYNATOMIC_PERIOD_4_ANGLE + DYNATOMIC_PERIOD_4_SHIFT).inv()
+        + DYNATOMIC_PERIOD_4_POLE;
+    let numer = eval_polynomial(transformed, DYNATOMIC_PERIOD_4_NUM);
+    let denom = eval_polynomial(transformed, DYNATOMIC_PERIOD_4_DEN);
+    let numer_deriv = eval_derivative(transformed, DYNATOMIC_PERIOD_4_NUM);
+    let denom_deriv = eval_derivative(transformed, DYNATOMIC_PERIOD_4_DEN);
+
+    (
+        (-numer / denom).into(),
+        (numer * denom_deriv - numer_deriv * denom) / denom.powi(2),
+    )
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuadRatPer2
@@ -20,6 +88,175 @@ impl QuadRatPer2
         min_y: -2.8,
         max_y: 2.8,
     };
+
+    fn identity_cover(self) -> CoveringMap<Self>
+    {
+        let bounds = self.point_grid.bounds.clone();
+        CoveringMap::new(self, |t: Cplx| -> (Prm, Cplx) { (t.into(), ONE) })
+            .with_orig_bounds(bounds)
+    }
+
+    fn dynatomic_curve_period_1(self) -> CoveringMap<Self>
+    {
+        let param_map = |t: Cplx| {
+            (
+                (0.125 * (4. - t * (t + 2.)) * t).into(),
+                -0.125 * (3. * t - 2.) * (t + 2.),
+            )
+        };
+        let bounds = Bounds {
+            min_x: -5.0,
+            max_x: 3.0,
+            min_y: -3.0,
+            max_y: 3.0,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
+    }
+
+    fn dynatomic_curve_period_3(self) -> CoveringMap<Self>
+    {
+        const A0: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
+        const A1: Cplx = OMEGA_BAR;
+        const A2: Cplx = Cplx::new(-1.5, OMEGA.im);
+        const A3: Cplx = Cplx::new(-OMEGA.re, OMEGA.im);
+
+        let param_map = |t: Cplx| {
+            (
+                horner!(t, A0, A1, A2, A3).into(),
+                horner!(t, OMEGA_BAR, 2. * A2, 3. * A3),
+            )
+        };
+        let bounds = Bounds {
+            min_x: -1.8,
+            max_x: 1.8,
+            min_y: -2.3,
+            max_y: 1.2,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
+    }
+
+    fn dynatomic_curve_period_4(self) -> CoveringMap<Self>
+    {
+        let bounds = Bounds {
+            min_x: -4.3,
+            max_x: 3.4,
+            min_y: -4.,
+            max_y: 4.,
+        };
+        CoveringMap::new(self, dynatomic_period_4_map as fn(Cplx) -> (Prm, Cplx))
+            .with_orig_bounds(bounds)
+    }
+
+    fn marked_cycle_curve_period_1(self) -> CoveringMap<Self>
+    {
+        let param_map = |t: Cplx| {
+            let t2 = t.powi(2);
+            (((t2 - t - 1.) * t).into(), 3. * t2 - 2. * t - 1.)
+        };
+        let bounds = Bounds {
+            min_x: -1.5,
+            max_x: 2.5,
+            min_y: -1.7,
+            max_y: 1.7,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
+    }
+
+    fn marked_cycle_curve_period_4(self) -> CoveringMap<Self>
+    {
+        let param_map = |t: Cplx| {
+            let t2 = t.powi(2);
+            (
+                (t2 * t - 2. * t2 + 4. * t - 1.).into(),
+                3. * t2 - 4. * t - 4.,
+            )
+        };
+        let mult = |t: Cplx| {
+            let t2 = t.powi(2);
+            let a = horner_monic!(t2, 5., 7.);
+            let b = t * (-7. - 3. * t2);
+            let c = t2 - 2. * t + 4.;
+
+            let c2 = c.powi(2);
+            let da = horner_monic!(t2, 8., 15.);
+            let db = t * horner!(t2, -22., -8.);
+
+            (16. * (a + b) / c2, -16. * (da + db) / (c2 * c))
+        };
+        let marked_points = solve_quartic(
+            Cplx::new(8., 0.),
+            Cplx::new(-22., 0.),
+            Cplx::new(15., 0.),
+            Cplx::new(-8., 0.),
+        )
+        .to_vec();
+        let bounds = Bounds {
+            min_x: -1.,
+            max_x: 1.4,
+            min_y: -2.2,
+            max_y: 2.2,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx))
+            .with_orig_bounds(bounds)
+            .with_multiplier_map(mult)
+            .with_marked_points(marked_points)
+    }
+
+    fn marked_cycle_curve_period_5(self) -> CoveringMap<Self>
+    {
+        const A0: Cplx = Cplx::new(-5448., 6_051.300_686_629_28);
+        const A1: Cplx = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
+        const A2: Cplx = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
+        const A3: Cplx = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
+        const A4: Cplx = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
+        const A5: Cplx = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
+        const A6: Cplx = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
+
+        const B0: Cplx = Cplx::new(-6174., 0.);
+        const B1: Cplx = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
+        const B2: Cplx = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
+        const B3: Cplx = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
+        const B4: Cplx = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
+        const B5: Cplx = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
+        const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
+
+        const A2D: Cplx = Cplx::new(2. * A2.re, 2. * A2.im);
+        const A3D: Cplx = Cplx::new(3. * A3.re, 3. * A3.im);
+        const A4D: Cplx = Cplx::new(4. * A4.re, 4. * A4.im);
+        const A5D: Cplx = Cplx::new(5. * A5.re, 5. * A5.im);
+        const A6D: Cplx = Cplx::new(6. * A6.re, 6. * A6.im);
+
+        const B2D: Cplx = Cplx::new(2. * B2.re, 2. * B2.im);
+        const B3D: Cplx = Cplx::new(3. * B3.re, 3. * B3.im);
+        const B4D: Cplx = Cplx::new(4. * B4.re, 4. * B4.im);
+        const B5D: Cplx = Cplx::new(5. * B5.re, 5. * B5.im);
+        const B6D: Cplx = Cplx::new(6. * B6.re, 6. * B6.im);
+
+        let param_map = |t: Cplx| {
+            let pole = Cplx::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
+            let angle = Cplx::new(1., 0.);
+
+            let u = angle / t + pole;
+            let du = -angle / t.powi(2);
+
+            let numer = horner!(u, A0, A1, A2, A3, A4, A5, A6);
+            let d_numer = horner!(u, A1, A2D, A3D, A4D, A5D, A6D);
+            let denom = horner!(u, B0, B1, B2, B3, B4, B5, B6);
+            let d_denom = horner!(u, B1, B2D, B3D, B4D, B5D, B6D);
+
+            (
+                (-numer / denom).into(),
+                du * (numer * d_denom - denom * d_numer) / (denom * denom),
+            )
+        };
+        let bounds = Bounds {
+            min_x: -8.,
+            max_x: 5.5,
+            min_y: -1.5,
+            max_y: 8.,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
+    }
 }
 impl Default for QuadRatPer2
 {
@@ -706,226 +943,22 @@ impl MarkedPoints for QuadRatPer2
 
 impl HasDynamicalCovers for QuadRatPer2
 {
-    #[allow(clippy::suspicious_operation_groupings)]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> (Self::Param, Cplx);
-        let bounds: Bounds;
-
         match period {
-            1 => {
-                param_map = |t| {
-                    (
-                        (0.125 * (4. - t * (t + 2.)) * t).into(),
-                        -0.125 * (3. * t - 2.) * (t + 2.),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -5.0,
-                    max_x: 3.0,
-                    min_y: -3.0,
-                    max_y: 3.0,
-                };
-            }
-            3 => {
-                const A0: Cplx = Cplx::new(-OMEGA.re, -OMEGA.im);
-                const A1: Cplx = OMEGA_BAR;
-                const A2: Cplx = Cplx::new(-1.5, OMEGA.im);
-                const A3: Cplx = Cplx::new(-OMEGA.re, OMEGA.im);
-
-                // marked point z = t
-                param_map = |t| {
-                    (
-                        horner!(t, A0, A1, A2, A3).into(),
-                        horner!(t, OMEGA_BAR, 2. * A2, 3. * A3),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -1.8,
-                    max_x: 1.8,
-                    min_y: -2.3,
-                    max_y: 1.2,
-                };
-            }
-            4 => {
-                const A0: Cplx = Cplx::new(-23.000_000_000_000_0, -14.000_000_000_000_0);
-                const A1: Cplx = Cplx::new(-43.595_214_843_750_0, -198.812_988_281_250);
-                const A2: Cplx = Cplx::new(393.670_501_828_194, -585.061_190_664_768);
-                const A3: Cplx = Cplx::new(1_459.268_652_908_43, -251.041_057_291_222);
-                const A4: Cplx = Cplx::new(1_689.736_576_344_38, 1_253.118_368_537_02);
-                const A5: Cplx = Cplx::new(263.170_605_532_593, 2_124.306_895_469_28);
-                const A6: Cplx = Cplx::new(-1_022.568_875_522_64, 1_244.036_197_283_33);
-                const A7: Cplx = Cplx::new(-907.580_743_841_250, 62.581_224_836_000_1);
-                const A8: Cplx = Cplx::new(-282.801_070_639_887, -262.556_139_911_993);
-                const A9: Cplx = Cplx::new(-0.301_795_185_485_805, -120.425_962_376_276);
-                const A10: Cplx = Cplx::new(19.170_516_581_915_0, -17.921_171_297_248_6);
-                const A11: Cplx = Cplx::new(3.557_389_915_786_44, 0.247_670_436_437_753);
-                const A12: Cplx = Cplx::new(0.142_742_524_186_783, 0.175_662_128_168_037);
-
-                const B0: Cplx = Cplx::new(25.000_000_000_000_0, 50.000_000_000_000_0);
-                const B1: Cplx = Cplx::new(-142.712_402_343_750, 397.741_699_218_750);
-                const B2: Cplx = Cplx::new(-1_337.901_851_534_84, 594.505_678_117_275);
-                const B3: Cplx = Cplx::new(-2_843.310_866_608_59, -1_168.741_481_766_12);
-                const B4: Cplx = Cplx::new(-1_585.989_273_688_05, -4_058.841_884_451_90);
-                const B5: Cplx = Cplx::new(1_856.770_783_331_92, -3_982.889_188_004_31);
-                const B6: Cplx = Cplx::new(3_064.650_242_836_14, -1_032.413_040_116_42);
-                const B7: Cplx = Cplx::new(1_547.932_712_252_78, 818.021_881_782_741);
-                const B8: Cplx = Cplx::new(185.634_744_083_957, 667.196_208_176_713);
-                const B9: Cplx = Cplx::new(-101.261_202_462_199, 167.059_013_936_565);
-                const B10: Cplx = Cplx::new(-36.550_008_994_382_6, 7.621_875_249_517_90);
-                const B11: Cplx = Cplx::new(-3.537_208_869_727_47, -2.524_537_531_377_27);
-                const B12: Cplx = Cplx::new(-0.027_652_124_951_167_6, -0.231_588_268_174_843);
-
-                seq!(N in 2..=12 {
-                    const DA~N: Cplx = Cplx::new((N as f64) * A~N.re, (N as f64) * A~N.im);
-                    const DB~N: Cplx = Cplx::new((N as f64) * B~N.re, (N as f64) * B~N.im);
-                });
-
-                // Mobius transformation to frame the image
-                const POLE: Cplx = Cplx::new(-0.938_566_017_637_020_7, 2.125_025_422_464_432_8);
-                const SHIFT: Cplx = Cplx::new(0.006_285_758_096_917_293, 0.695_462_186_936_383_7);
-                const ANGLE: Cplx = Cplx::new(0.301_693_891_970_828_24, 0.167_631_003_825_363_6);
-
-                param_map = |t| {
-                    let t = (t * ANGLE + SHIFT).inv() + POLE;
-                    let numer = horner!(t, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12);
-                    let denom = horner!(t, B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12);
-                    let numer_d = horner!(
-                        t, A1, DA2, DA3, DA4, DA5, DA6, DA7, DA8, DA9, DA10, DA11, DA12
-                    );
-                    let denom_d = horner!(
-                        t, B1, DB2, DB3, DB4, DB5, DB6, DB7, DB8, DB9, DB10, DB11, DB12
-                    );
-                    (
-                        (-numer / denom).into(),
-                        (numer * denom_d - numer_d * denom) / denom.powi(2),
-                    )
-                };
-                bounds = Bounds {
-                    min_x: -4.3,
-                    max_x: 3.4,
-                    min_y: -4.,
-                    max_y: 4.,
-                }
-            }
-            _ => {
-                param_map = |t| (t.into(), ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
+            1 => self.dynatomic_curve_period_1(),
+            3 => self.dynatomic_curve_period_3(),
+            4 => self.dynatomic_curve_period_4(),
+            _ => self.identity_cover(),
         }
-        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
+
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        const A0: Cplx = Cplx::new(-5448., 6_051.300_686_629_28);
-        const A1: Cplx = Cplx::new(-29_961.795_134_443_0, 43_861.639_473_933_7);
-        const A2: Cplx = Cplx::new(-65_413.655_299_273_2, 128_711.643_030_672);
-        const A3: Cplx = Cplx::new(-70_918.940_786_376_0, 196_781.349_743_989);
-        const A4: Cplx = Cplx::new(-38_246.235_127_179_3, 165_912.340_564_512);
-        const A5: Cplx = Cplx::new(-8_271.848_132_127_45, 73_334.197_922_255_2);
-        const A6: Cplx = Cplx::new(-44.432_836_932_486_6, 13_302.145_857_037_4);
-
-        const B0: Cplx = Cplx::new(-6174., 0.);
-        const B1: Cplx = Cplx::new(-38_914.156_209_987_2, 1_067.791_134_284_38);
-        const B2: Cplx = Cplx::new(-102_108.377_281_498, 5_375.650_615_514_38);
-        const B3: Cplx = Cplx::new(-142_796.822_391_875, 10_800.604_008_295_7);
-        const B4: Cplx = Cplx::new(-112_272.282_050_380, 10_824.434_074_704_7);
-        const B5: Cplx = Cplx::new(-47_060.675_356_870_1, 5_410.564_894_838_89);
-        const B6: Cplx = Cplx::new(-8_216.992_738_080_66, 1_078.880_698_179_05);
-
-        const A2D: Cplx = Cplx::new(2. * A2.re, 2. * A2.im);
-        const A3D: Cplx = Cplx::new(3. * A3.re, 3. * A3.im);
-        const A4D: Cplx = Cplx::new(4. * A4.re, 4. * A4.im);
-        const A5D: Cplx = Cplx::new(5. * A5.re, 5. * A5.im);
-        const A6D: Cplx = Cplx::new(6. * A6.re, 6. * A6.im);
-
-        const B2D: Cplx = Cplx::new(2. * B2.re, 2. * B2.im);
-        const B3D: Cplx = Cplx::new(3. * B3.re, 3. * B3.im);
-        const B4D: Cplx = Cplx::new(4. * B4.re, 4. * B4.im);
-        const B5D: Cplx = Cplx::new(5. * B5.re, 5. * B5.im);
-        const B6D: Cplx = Cplx::new(6. * B6.re, 6. * B6.im);
-
         match period {
-            1 => {
-                let param_map = |t: Cplx| {
-                    let t2 = t.powi(2);
-                    (((t2 - t - 1.) * t).into(), 3. * t2 - 2. * t - 1.)
-                };
-                let bounds = Bounds {
-                    min_x: -1.5,
-                    max_x: 2.5,
-                    min_y: -1.7,
-                    max_y: 1.7,
-                };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-            }
-            4 => {
-                let param_map = |t: Cplx| {
-                    let t2 = t.powi(2);
-                    (
-                        (t2 * t - 2. * t2 + 4. * t - 1.).into(),
-                        3. * t2 - 4. * t - 4.,
-                    )
-                };
-                let mult = |t: Cplx| {
-                    let t2 = t.powi(2);
-                    let a = horner_monic!(t2, 5., 7.);
-                    let b = t * (-7. - 3. * t2);
-                    let c = t2 - 2. * t + 4.;
-
-                    let c2 = c.powi(2);
-                    let da = horner_monic!(t2, 8., 15.);
-                    let db = t * horner!(t2, -22., -8.);
-
-                    (16. * (a + b) / c2, -16. * (da + db) / (c2 * c))
-                };
-                // Critical points of the multiplier
-                let marked_points = solve_quartic(
-                    Cplx::new(8., 0.),
-                    Cplx::new(-22., 0.),
-                    Cplx::new(15., 0.),
-                    Cplx::new(-8., 0.),
-                )
-                .to_vec();
-                let bounds = Bounds {
-                    min_x: -1.,
-                    max_x: 1.4,
-                    min_y: -2.2,
-                    max_y: 2.2,
-                };
-                CoveringMap::new(self, param_map)
-                    .with_orig_bounds(bounds)
-                    .with_multiplier_map(mult)
-                    .with_marked_points(marked_points)
-            }
-            5 => {
-                let param_map = |t: Cplx| {
-                    // k = sqrt(-2235)
-                    // ((-2043332879690812551104*k + 322671215001188162496)*c^6 + (-7211787718815174272*k + 38457203855637713472)*c^5 + (-10445615819508480*k + 113836835145028800)*c^4 + (-7931553616080*k + 135137329840080)*c^3 + (-3321323160*k + 79799557200)*c^2 + (-724598*k + 23400162)*c + (-64*k + 2724))/((-165726073638468871360*k + 59671792608719217337728)*c^6 + (-532082528560799520*k + 218792941658814953376)*c^5 + (-681491680626360*k + 334169395252260120)*c^4 + (-435333784880*k + 272101938829200)*c^3 + (-138715290*k + 124564255830)*c^2 + (-17640*k + 30391956)*c + 3087)
-                    let pole = Cplx::new(-1.029_131_872_704_64, 0.051_564_155_271_414_3);
-                    let angle = Cplx::new(1., 0.);
-
-                    let u = angle / t + pole;
-                    let du = -angle / t.powi(2);
-
-                    let numer = horner!(u, A0, A1, A2, A3, A4, A5, A6);
-                    let d_numer = horner!(u, A1, A2D, A3D, A4D, A5D, A6D);
-                    let denom = horner!(u, B0, B1, B2, B3, B4, B5, B6);
-                    let d_denom = horner!(u, B1, B2D, B3D, B4D, B5D, B6D);
-
-                    (
-                        (-numer / denom).into(),
-                        du * (numer * d_denom - denom * d_numer) / (denom * denom),
-                    )
-                };
-                let bounds = Bounds {
-                    min_x: -8.,
-                    max_x: 5.5,
-                    min_y: -1.5,
-                    max_y: 8.,
-                };
-                CoveringMap::new(self, param_map).with_orig_bounds(bounds)
-            }
+            1 => self.marked_cycle_curve_period_1(),
+            4 => self.marked_cycle_curve_period_4(),
+            5 => self.marked_cycle_curve_period_5(),
             _ => CoveringMap::from(self),
         }
     }

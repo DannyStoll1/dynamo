@@ -449,10 +449,12 @@ pub trait DynamicalFamily: Sync + Send
         Box::new(
             orbit::simple::Simple::new(
                 |z, c| self.map(z, c),
-                start,
-                param,
-                self.max_iter(),
-                self.escape_radius(),
+                orbit::simple::Config {
+                    z: start,
+                    param,
+                    max_iter: self.max_iter(),
+                    escape_radius: self.escape_radius(),
+                },
             )
             .map(|(z, _s)| z),
         )
@@ -464,10 +466,12 @@ pub trait DynamicalFamily: Sync + Send
         let start = self.start_point(point, &param);
         let orbit = orbit::simple::Simple::new(
             |z, c| self.map(z, c),
-            start,
-            param,
-            self.max_iter(),
-            self.escape_radius(),
+            orbit::simple::Config {
+                z: start,
+                param,
+                max_iter: self.max_iter(),
+                escape_radius: self.escape_radius(),
+            },
         );
         orbit.map(|(z, _s)| z).collect()
     }

@@ -6,7 +6,10 @@ use crate::types::{Period, SignedPeriod};
 #[must_use]
 pub const fn div_rem(a: Period, b: Period) -> Option<(Period, Period)>
 {
-    if b == 0 { None } else { Some((a / b, a % b)) }
+    match a.checked_div(b) {
+        Some(quotient) => Some((quotient, a % b)),
+        None => None,
+    }
 }
 
 pub fn divisors(n: Period) -> impl Iterator<Item = Period>

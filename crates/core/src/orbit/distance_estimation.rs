@@ -19,6 +19,14 @@ pub struct DistanceEstimation<'a, P: EscapeEncoding>
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
 }
 
+struct StartState<V, Param, Deriv>
+{
+    param:       Param,
+    value:       V,
+    param_deriv: Deriv,
+    total_deriv: Deriv,
+}
+
 impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
 {
     pub fn new(family: &'a P) -> Self
@@ -39,20 +47,34 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
     }
 
     #[must_use]
-    #[allow(clippy::similar_names)]
     fn init(mut self, selection: Cplx) -> Self
     {
-        let (c, dc_dt) = self.family.param_map_d(selection);
-        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
-        dz_dt += dz_dc * dc_dt;
-
-        self.param = c;
-        self.z_init = z;
-        self.z_slow = z;
-        self.z_fast = z;
-        self.dc_dt = dc_dt;
-        self.dz_dt = dz_dt;
+        self.apply_start_state(self.start_state(selection));
         self
+    }
+
+    fn start_state(&self, selection: Cplx) -> StartState<P::Var, P::Param, P::Deriv>
+    {
+        let (param, param_deriv) = self.family.param_map_d(selection);
+        let (value, mut total_deriv, param_scale) = self.family.start_point_d(selection, &param);
+        total_deriv += param_scale * param_deriv;
+
+        StartState {
+            param,
+            value,
+            param_deriv,
+            total_deriv,
+        }
+    }
+
+    fn apply_start_state(&mut self, start: StartState<P::Var, P::Param, P::Deriv>)
+    {
+        self.param = start.param;
+        self.z_init = start.value;
+        self.z_slow = start.value;
+        self.z_fast = start.value;
+        self.dc_dt = start.param_deriv;
+        self.dz_dt = start.total_deriv;
     }
 
     #[inline]
@@ -64,11 +86,11 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
     #[inline]
     fn apply_map_and_update_multiplier(&mut self)
     {
-        let (f, df_dz, df_dc) = self.family.gradient(self.z_fast, &self.param);
+        let (next_value, z_scale, c_scale) = self.family.gradient(self.z_fast, &self.param);
 
-        self.multiplier *= df_dz;
-        self.dz_dt = df_dz * self.dz_dt + df_dc * self.dc_dt;
-        self.z_fast = f;
+        self.multiplier *= z_scale;
+        self.dz_dt = z_scale * self.dz_dt + c_scale * self.dc_dt;
+        self.z_fast = next_value;
     }
 
     #[inline]
@@ -130,18 +152,9 @@ impl<P: EscapeEncoding> Orbit for DistanceEstimation<'_, P>
 
     fn reset(&mut self, selection: Cplx)
     {
-        let (c, dc_dt) = self.family.param_map_d(selection);
-        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
-        dz_dt += dz_dc * dc_dt;
-
         self.state = None;
-        self.param = c;
-        self.z_init = z;
-        self.z_slow = z;
-        self.z_fast = z;
         self.multiplier = P::Deriv::one();
-        self.dc_dt = dc_dt;
-        self.dz_dt = dz_dt;
+        self.apply_start_state(self.start_state(selection));
         self.iter = 0;
     }
 

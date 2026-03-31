@@ -51,5 +51,8 @@ version = "0.34"
 [dev-dependencies.eframe]
 version = "0.34"
 
-[lints]
-workspace = true
+[lints.clippy]
+all = { level = "allow", priority = 0 }
+
+[lints.rust]
+"*" = { level = "allow", priority = 0 }

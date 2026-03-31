@@ -457,7 +457,11 @@ macro_rules! ext_ray_impl_nonmonic {
     };
 }
 
-pub(crate) use {
-    cplx_arr, degree_impl, degree_impl_transcendental, ext_ray_impl_nonmonic, ext_ray_impl_rk,
-    has_child_impl, parameter_plane_impl, profile_imports,
-};
+pub(crate) use cplx_arr;
+pub(crate) use degree_impl;
+pub(crate) use degree_impl_transcendental;
+pub(crate) use ext_ray_impl_nonmonic;
+pub(crate) use ext_ray_impl_rk;
+pub(crate) use has_child_impl;
+pub(crate) use parameter_plane_impl;
+pub(crate) use profile_imports;

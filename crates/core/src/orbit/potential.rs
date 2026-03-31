@@ -33,6 +33,14 @@ pub struct Potential<'a, P: InfinityFirstReturnMap + ?Sized>
     pub state: Option<EscapeResult<P::Var, P::Deriv>>,
 }
 
+struct StartState<V, Param, Deriv>
+{
+    param:       Param,
+    value:       V,
+    param_deriv: Deriv,
+    total_deriv: Deriv,
+}
+
 impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
 {
     pub fn new(family: &'a P) -> Self
@@ -63,22 +71,48 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         self
     }
 
+    fn start_state(&self, selection: Cplx) -> StartState<P::Var, P::Param, P::Deriv>
+    {
+        let (param, param_deriv) = self.family.param_map_d(selection);
+        let (value, mut total_deriv, param_scale) = self.family.start_point_d(selection, &param);
+        total_deriv += param_scale * param_deriv;
+
+        StartState {
+            param,
+            value,
+            param_deriv,
+            total_deriv,
+        }
+    }
+
+    fn apply_start_state(&mut self, selection: Cplx, start: StartState<P::Var, P::Param, P::Deriv>)
+    {
+        self.selection = selection;
+        self.param = start.param;
+        self.z_init = start.value;
+        self.z_slow = start.value;
+        self.z_fast = start.value;
+        self.dc_dt = start.param_deriv;
+        self.dz_dt_fast = start.total_deriv;
+        self.dz_dt_slow = start.total_deriv;
+    }
+
     #[inline]
     fn update_slow(&mut self)
     {
-        let (f, df_dz, df_dc) = self.family.gradient(self.z_slow, &self.param);
+        let (next_value, z_scale, c_scale) = self.family.gradient(self.z_slow, &self.param);
 
-        self.dz_dt_slow = df_dz * self.dz_dt_slow + df_dc * self.dc_dt;
-        self.z_slow = f;
+        self.dz_dt_slow = z_scale * self.dz_dt_slow + c_scale * self.dc_dt;
+        self.z_slow = next_value;
     }
 
     #[inline]
     fn update_fast(&mut self)
     {
-        let (f, df_dz, df_dc) = self.family.gradient(self.z_fast, &self.param);
+        let (next_value, z_scale, c_scale) = self.family.gradient(self.z_fast, &self.param);
 
-        self.dz_dt_fast = df_dz * self.dz_dt_fast + df_dc * self.dc_dt;
-        self.z_fast = f;
+        self.dz_dt_fast = z_scale * self.dz_dt_fast + c_scale * self.dc_dt;
+        self.z_fast = next_value;
     }
 
     #[inline]
@@ -270,19 +304,8 @@ impl<P: InfinityFirstReturnMap + ?Sized> Orbit for Potential<'_, P>
 
     fn reset(&mut self, selection: Cplx)
     {
-        let (c, dc_dt) = self.family.param_map_d(selection);
-        let (z, mut dz_dt, dz_dc) = self.family.start_point_d(selection, &c);
-        dz_dt += dz_dc * dc_dt;
-
         self.state = None;
-        self.selection = selection;
-        self.param = c;
-        self.z_init = z;
-        self.z_slow = z;
-        self.z_fast = z;
-        self.dc_dt = dc_dt;
-        self.dz_dt_fast = dz_dt;
-        self.dz_dt_slow = dz_dt;
+        self.apply_start_state(selection, self.start_state(selection));
         self.iter = 0;
     }
 

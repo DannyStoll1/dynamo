@@ -103,7 +103,7 @@ impl eframe::App for FractalApp
         DockArea::new(&mut self.dock_state)
             .show_add_buttons(true)
             .style({
-                let mut style = Style::from_egui(ctx.style().as_ref());
+                let mut style = Style::from_egui(ctx.global_style().as_ref());
                 style.tab_bar.fill_tab_bar = true;
                 style
             })

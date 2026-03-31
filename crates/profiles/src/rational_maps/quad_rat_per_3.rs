@@ -23,6 +23,82 @@ impl QuadRatPer3
         min_y: -2.5,
         max_y: 2.5,
     };
+
+    fn marked_cycle_curve_period_1(self) -> CoveringMap<Self>
+    {
+        const A: [Real; 4] = [
+            -0.076_619_106_012_884_5,
+            0.752_462_859_133_074,
+            -1.196_711_695_739_30,
+            0.939_323_118_340_078,
+        ];
+        const B: [Real; 2] = [0.241_446_353_046_259, -0.822_991_177_325_292];
+        const AD: [Real; 5] = [
+            0.118_622_564_877_287,
+            -0.424_645_137_142_348,
+            0.912_808_732_028_113,
+            -1.546_109_278_103_13,
+            0.939_323_118_340_078,
+        ];
+        const BD: [Real; 4] = [
+            0.058_296_341_399_338_9,
+            -0.397_416_436_708_878,
+            1.160_207_184_047_79,
+            -1.645_982_354_650_58,
+        ];
+
+        let param_map = |t: Cplx| {
+            let param = horner!(t, A[0], A[1], A[2], A[3]) / horner_monic!(t, B[0], B[1]);
+            let param_deriv = horner!(t, AD[0], AD[1], AD[2], AD[3], AD[4])
+                / horner_monic!(t, BD[0], BD[1], BD[2], BD[3]);
+            (param.into(), param_deriv)
+        };
+        let bounds = Bounds {
+            min_x: -5.75,
+            max_x: 5.08,
+            min_y: -5.32,
+            max_y: 5.32,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
+    }
+
+    fn marked_cycle_curve_period_4(self) -> CoveringMap<Self>
+    {
+        let param_map = |c: Cplx| {
+            let t = (13.0 as Real).sqrt();
+            let g2 = Cplx::new(-8.0 / 3.0, 0.);
+            let g3 = Cplx::new(1.0 / 27.0, 0.);
+
+            let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
+            let x = p - 1. / 3.;
+            let y = (dp + 1.) / x - t - 1.;
+
+            let u = x / 2.;
+            let v = y / 4.;
+            let xx = -(t + 1.) * u + (t + 3.) * v + (t + 4.);
+            let yy = u - v - (t + 1.) / 4.;
+            let zz = -x + 2. * v + t.midpoint(3.);
+
+            let s0 = xx / zz;
+            let s1 = zz / yy;
+
+            ((s0 * s1 + s1 + (t + 4.)).into(), ONE)
+        };
+        let bounds = Bounds {
+            min_x: -3.9,
+            max_x: 3.9,
+            min_y: -2.6,
+            max_y: 2.6,
+        };
+        CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
+    }
+
+    fn identity_cover(self) -> CoveringMap<Self>
+    {
+        let bounds = self.point_grid.bounds.clone();
+        CoveringMap::new(self, |t: Cplx| -> (Prm, Cplx) { (t.into(), ONE) })
+            .with_orig_bounds(bounds)
+    }
 }
 impl Default for QuadRatPer3
 {
@@ -91,9 +167,9 @@ impl DynamicalFamily for QuadRatPer3
         let v = c + 1.;
 
         let f = u * (v - z2 - c2 * c);
-        let df_dz = 2. * (1. - c) * v.powi(2) * z * u2;
-        let df_dc = v * u2 * (r - c * (r + 2. * (ONE - z2)));
-        (f, df_dz, df_dc)
+        let z_scale = 2. * (1. - c) * v.powi(2) * z * u2;
+        let c_scale = v * u2 * (r - c * (r + 2. * (ONE - z2)));
+        (f, z_scale, c_scale)
     }
 
     #[inline]
@@ -173,81 +249,11 @@ impl HasDynamicalCovers for QuadRatPer3
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
     {
-        let param_map: fn(Cplx) -> (Prm, Cplx);
-        let bounds: Bounds;
-
         match period {
-            1 => {
-                param_map = |t| {
-                    const A: [Real; 4] = [
-                        -0.076_619_106_012_884_5,
-                        0.752_462_859_133_074,
-                        -1.196_711_695_739_30,
-                        0.939_323_118_340_078,
-                    ];
-                    const B: [Real; 2] = [0.241_446_353_046_259, -0.822_991_177_325_292];
-                    const AD: [Real; 5] = [
-                        0.118_622_564_877_287,
-                        -0.424_645_137_142_348,
-                        0.912_808_732_028_113,
-                        -1.546_109_278_103_13,
-                        0.939_323_118_340_078,
-                    ];
-                    const BD: [Real; 4] = [
-                        0.058_296_341_399_338_9,
-                        -0.397_416_436_708_878,
-                        1.160_207_184_047_79,
-                        -1.645_982_354_650_58,
-                    ];
-
-                    let c = horner!(t, A[0], A[1], A[2], A[3]) / horner_monic!(t, B[0], B[1]);
-                    let dc_dt = horner!(t, AD[0], AD[1], AD[2], AD[3], AD[4])
-                        / horner_monic!(t, BD[0], BD[1], BD[2], BD[3]);
-                    (c.into(), dc_dt)
-                };
-                bounds = Bounds {
-                    min_x: -5.75,
-                    max_x: 5.08,
-                    min_y: -5.32,
-                    max_y: 5.32,
-                };
-            }
-            4 => {
-                param_map = |c| {
-                    let t = (13.0 as Real).sqrt();
-                    let g2 = Cplx::new(-8.0 / 3.0, 0.);
-                    let g3 = Cplx::new(1.0 / 27.0, 0.);
-
-                    let (p, dp) = weierstrass_p(g2, g3, c, 0.01);
-                    let x = p - 1. / 3.;
-                    let y = (dp + 1.) / x - t - 1.;
-
-                    let u = x / 2.;
-                    let v = y / 4.;
-                    let xx = -(t + 1.) * u + (t + 3.) * v + (t + 4.);
-                    let yy = u - v - (t + 1.) / 4.;
-                    let zz = -x + 2. * v + t.midpoint(3.);
-
-                    let s0 = xx / zz;
-                    let s1 = zz / yy;
-
-                    // TODO: derivative
-                    ((s0 * s1 + s1 + (t + 4.)).into(), ONE)
-                    // let l = s0^2*s1 + s0*s1 + (2*t)*s0 + (t - 1);
-                };
-                bounds = Bounds {
-                    min_x: -3.9,
-                    max_x: 3.9,
-                    min_y: -2.6,
-                    max_y: 2.6,
-                };
-            }
-            _ => {
-                param_map = |t| (t.into(), ONE);
-                bounds = self.point_grid.bounds.clone();
-            }
+            1 => self.marked_cycle_curve_period_1(),
+            4 => self.marked_cycle_curve_period_4(),
+            _ => self.identity_cover(),
         }
-        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 }
 

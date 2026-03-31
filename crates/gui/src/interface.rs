@@ -225,83 +225,95 @@ where
     )
     {
         use crate::dialog::TextInputType::{ActiveRays, Coordinates, ExternalRay, FindPeriodic};
-        use crate::dialog::ToggleKey::{
-            DoChild, DoParent, DrawOrbit, FollowPoint, PrefixAngles, SelectPoint,
-        };
         match input_type {
-            ExternalRay { .. } => {
-                if let Ok(angle) = text.parse::<RationalAngle>() {
-                    let angle_info = angle.with_degree(self.child.degree()).to_angle_info();
+            ExternalRay { .. } => self.process_external_ray_input(text, toggle_map),
+            ActiveRays { pane_id } => self.process_active_rays_input(text, toggle_map, pane_id),
+            Coordinates { pane_id } => self.process_coordinates_input(text, pane_id),
+            FindPeriodic { pane_id } => self.process_find_periodic_input(text, toggle_map, pane_id),
+        }
+    }
 
-                    let include_orbit = toggle_map.get(DrawOrbit);
+    fn process_external_ray_input(&mut self, text: &str, toggle_map: &ToggleMap)
+    {
+        use crate::dialog::ToggleKey::{DoChild, DoParent, DrawOrbit};
 
-                    let follow_task = if toggle_map.get(FollowPoint) {
-                        SelectOrFollow::Follow
-                    } else if toggle_map.get(SelectPoint) {
-                        SelectOrFollow::Select
-                    } else {
-                        SelectOrFollow::DoNothing
-                    };
+        let Ok(angle) = text.parse::<RationalAngle>() else {
+            return;
+        };
+        let ray_params = RayParams {
+            do_parent:     toggle_map.get(DoParent),
+            do_child:      toggle_map.get(DoChild),
+            angle_info:    angle.with_degree(self.child.degree()).to_angle_info(),
+            follow_task:   Self::follow_task(toggle_map),
+            include_orbit: toggle_map.get(DrawOrbit),
+        };
+        self.dialog = Some(Dialog::confirm_ray(ray_params));
+    }
 
-                    let ray_params = RayParams {
-                        do_parent: toggle_map.get(DoParent),
-                        do_child: toggle_map.get(DoChild),
-                        angle_info,
-                        follow_task,
-                        include_orbit,
-                    };
-                    let dialog = Dialog::confirm_ray(ray_params);
-                    self.dialog = Some(dialog);
-                }
-            }
-            ActiveRays { pane_id } => {
-                if let Ok(o) = text.parse::<OrbitSchema>() {
-                    let include_suffixes = toggle_map.get(PrefixAngles);
+    fn process_active_rays_input(&mut self, text: &str, toggle_map: &ToggleMap, pane_id: PaneID)
+    {
+        use crate::dialog::ToggleKey::{DoChild, DoParent, PrefixAngles};
 
-                    let degree = self.get_pane(pane_id).degree();
-                    let od = o.with_degree(degree);
-                    let active_angles = od.active_angles(include_suffixes);
+        let Ok(orbit_schema) = text.parse::<OrbitSchema>() else {
+            return;
+        };
+        let include_suffixes = toggle_map.get(PrefixAngles);
+        let orbit_schema = orbit_schema.with_degree(self.get_pane(pane_id).degree());
+        let params = AllActiveRayParams {
+            do_parent: toggle_map.get(DoParent),
+            do_child: toggle_map.get(DoChild),
+            active_angles: orbit_schema.active_angles(include_suffixes),
+            orbit_schema,
+            include_suffixes,
+        };
+        self.dialog = Some(Dialog::confirm_active_rays(params));
+    }
 
-                    let params = AllActiveRayParams {
-                        do_parent: toggle_map.get(DoParent),
-                        do_child: toggle_map.get(DoChild),
-                        orbit_schema: o.with_degree(degree),
-                        active_angles,
-                        include_suffixes,
-                    };
+    fn process_coordinates_input(&mut self, text: &str, pane_id: PaneID)
+    {
+        let Ok(point) = text.parse::<Cplx>() else {
+            return;
+        };
+        let pane = self.get_pane_mut(pane_id);
+        pane.select_point(point);
+        pane.stop_following();
+        self.process_child_task();
+    }
 
-                    let dialog = Dialog::confirm_active_rays(params);
-                    self.dialog = Some(dialog);
-                }
-            }
-            Coordinates { pane_id } => {
-                if let Ok(point) = text.parse::<Cplx>() {
-                    let pane = self.get_pane_mut(pane_id);
-                    pane.select_point(point);
-                    pane.stop_following();
+    fn process_find_periodic_input(&mut self, text: &str, toggle_map: &ToggleMap, pane_id: PaneID)
+    {
+        use crate::dialog::ToggleKey::FollowPoint;
+
+        let Ok(orbit_schema) = text.parse::<OrbitSchema>() else {
+            return;
+        };
+        let follow = toggle_map.get(FollowPoint);
+        match pane_id {
+            PaneID::Child => self
+                .child_mut()
+                .set_follow_state(FollowState::SelectPeriodic {
+                    orbit_schema,
+                    follow,
+                }),
+            PaneID::Parent => {
+                if self.parent_mut().select_nearby_point(orbit_schema).is_ok() {
                     self.process_child_task();
                 }
             }
-            FindPeriodic { pane_id } => {
-                if let Ok(orbit_schema) = text.parse::<OrbitSchema>() {
-                    let follow = toggle_map.get(FollowPoint);
-                    match pane_id {
-                        PaneID::Child => {
-                            self.child_mut()
-                                .set_follow_state(FollowState::SelectPeriodic {
-                                    orbit_schema,
-                                    follow,
-                                });
-                        }
-                        PaneID::Parent => {
-                            if self.parent_mut().select_nearby_point(orbit_schema).is_ok() {
-                                self.process_child_task();
-                            }
-                        }
-                    }
-                }
-            }
         }
+    }
+
+    fn follow_task(toggle_map: &ToggleMap) -> SelectOrFollow
+    {
+        use crate::dialog::ToggleKey::{FollowPoint, SelectPoint};
+
+        if toggle_map.get(FollowPoint) {
+            return SelectOrFollow::Follow;
+        }
+        if toggle_map.get(SelectPoint) {
+            return SelectOrFollow::Select;
+        }
+        SelectOrFollow::DoNothing
     }
 
     /// Draw a ray, and possibly select or follow it, according to the ray_params provided from a
@@ -424,6 +436,120 @@ where
     {
         self.dialog.as_ref().is_some_and(Dialog::visible)
     }
+
+    fn build_text_dialog(&self, input_type: TextInputType) -> crate::dialog::StructuredTextDialog
+    {
+        use TextInputType::{ActiveRays, Coordinates, ExternalRay, FindPeriodic};
+
+        match input_type {
+            ExternalRay {
+                pane_id,
+                include_orbit,
+                select_landing_point,
+            } => Self::build_external_ray_dialog(
+                input_type,
+                pane_id,
+                include_orbit,
+                select_landing_point,
+            ),
+            ActiveRays { pane_id } => Self::build_active_rays_dialog(input_type, pane_id),
+            FindPeriodic { pane_id } => self.build_find_periodic_dialog(input_type, pane_id),
+            Coordinates { pane_id } => self.build_coordinates_dialog(input_type, pane_id),
+        }
+    }
+
+    fn build_external_ray_dialog(
+        input_type: TextInputType,
+        pane_id: PaneID,
+        include_orbit: bool,
+        select_landing_point: bool,
+    ) -> crate::dialog::StructuredTextDialog
+    {
+        let prompt = concat!(
+            "Input an angle to draw a ray\n",
+            "Example formats: <15/56>, <110>, <p011>, <001p010>",
+        );
+        let builder = TextDialogBuilder::new(input_type)
+            .title("External ray angle input")
+            .prompt(prompt)
+            .pane_toggles("Draw on", pane_id)
+            .add_toggle_with_default(
+                ToggleKey::DrawOrbit,
+                "Include orbit".to_owned(),
+                include_orbit,
+            )
+            .add_toggle_with_default(
+                ToggleKey::SelectPoint,
+                "Select landing point".to_owned(),
+                select_landing_point,
+            );
+        if matches!(pane_id, PaneID::Child) {
+            return builder
+                .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point".to_owned())
+                .build();
+        }
+        builder.build()
+    }
+
+    fn build_active_rays_dialog(
+        input_type: TextInputType,
+        pane_id: PaneID,
+    ) -> crate::dialog::StructuredTextDialog
+    {
+        let prompt = concat!(
+            "Input the period to draw all active rays.\n",
+            "Format: <period> or <preperiod, period>"
+        );
+        TextDialogBuilder::new(input_type)
+            .title("Draw active rays")
+            .prompt(prompt)
+            .pane_toggles("Draw on", pane_id)
+            .add_toggle(
+                ToggleKey::PrefixAngles,
+                "Include rays of shorter preperiod".to_owned(),
+            )
+            .build()
+    }
+
+    fn build_find_periodic_dialog(
+        &self,
+        input_type: TextInputType,
+        pane_id: PaneID,
+    ) -> crate::dialog::StructuredTextDialog
+    {
+        let prompt = format!(
+            concat!(
+                "Input the period to find a nearby point on {pane_name}.\n",
+                "Format: <period> or <preperiod, period>"
+            ),
+            pane_name = self.get_pane(pane_id).name()
+        );
+        let builder = TextDialogBuilder::new(input_type)
+            .title("Find nearby point")
+            .prompt(prompt);
+        if matches!(pane_id, PaneID::Child) {
+            return builder
+                .add_toggle_with_default(ToggleKey::FollowPoint, "Follow point".to_owned(), true)
+                .build();
+        }
+        builder.build()
+    }
+
+    fn build_coordinates_dialog(
+        &self,
+        input_type: TextInputType,
+        pane_id: PaneID,
+    ) -> crate::dialog::StructuredTextDialog
+    {
+        let prompt = format!(
+            "Enter the coordinates of the point to select on {}",
+            self.get_pane(pane_id).name()
+        );
+        TextDialogBuilder::new(input_type)
+            .title("Input coordinates")
+            .prompt(prompt)
+            .build()
+    }
 }
 
 /// Implementation of `PanePair` for `MainInterface`, providing access to parent and child panes.
@@ -463,92 +589,7 @@ where
     /// Prompt for text input for a specified purpose.
     fn prompt_text(&mut self, input_type: TextInputType)
     {
-        use TextInputType::{ActiveRays, Coordinates, ExternalRay, FindPeriodic};
-        let text_dialog = match input_type {
-            ExternalRay {
-                pane_id,
-                include_orbit,
-                select_landing_point,
-            } => {
-                let prompt = concat!(
-                    "Input an angle to draw a ray\n",
-                    "Example formats: <15/56>, <110>, <p011>, <001p010>",
-                );
-                let builder = TextDialogBuilder::new(input_type)
-                    .title("External ray angle input")
-                    .prompt(prompt)
-                    .pane_toggles("Draw on", pane_id)
-                    .add_toggle_with_default(
-                        ToggleKey::DrawOrbit,
-                        "Include orbit".to_owned(),
-                        include_orbit,
-                    )
-                    .add_toggle_with_default(
-                        ToggleKey::SelectPoint,
-                        "Select landing point".to_owned(),
-                        select_landing_point,
-                    );
-                if matches!(pane_id, PaneID::Child) {
-                    builder
-                        .add_cond_toggle(ToggleKey::FollowPoint, "Follow landing point".to_owned())
-                        .build()
-                } else {
-                    builder.build()
-                }
-            }
-            ActiveRays { pane_id } => {
-                let prompt = concat!(
-                    "Input the period to draw all active rays.\n",
-                    "Format: <period> or <preperiod, period>"
-                );
-                TextDialogBuilder::new(input_type)
-                    .title("Draw active rays")
-                    .prompt(prompt)
-                    .pane_toggles("Draw on", pane_id)
-                    .add_toggle(
-                        ToggleKey::PrefixAngles,
-                        "Include rays of shorter preperiod".to_owned(),
-                    )
-                    .build()
-            }
-            FindPeriodic { pane_id, .. } => {
-                let pane = self.get_pane(pane_id);
-                let prompt = format!(
-                    concat!(
-                        "Input the period to find a nearby point on {pane_name}.\n",
-                        "Format: <period> or <preperiod, period>"
-                    ),
-                    pane_name = pane.name()
-                );
-                let builder = TextDialogBuilder::new(input_type)
-                    .title("Find nearby point")
-                    .prompt(prompt);
-                if matches!(pane_id, PaneID::Child) {
-                    builder
-                        .add_toggle_with_default(
-                            ToggleKey::FollowPoint,
-                            "Follow point".to_owned(),
-                            true,
-                        )
-                        .build()
-                } else {
-                    builder.build()
-                }
-            }
-            Coordinates { pane_id } => {
-                let pane = self.get_pane(pane_id);
-                let prompt = format!(
-                    "Enter the coordinates of the point to select on {pane_name}",
-                    pane_name = pane.name()
-                );
-                TextDialogBuilder::new(input_type)
-                    .title("Input coordinates")
-                    .prompt(prompt)
-                    .build()
-            }
-        };
-        let dialog = Dialog::Text(text_dialog);
-        self.dialog = Some(dialog);
+        self.dialog = Some(Dialog::Text(self.build_text_dialog(input_type)));
     }
 
     /// Open a dialog prompt to save an image.

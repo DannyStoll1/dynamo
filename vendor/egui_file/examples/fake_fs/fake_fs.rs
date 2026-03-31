@@ -5,8 +5,8 @@ use std::{
 };
 
 use egui_file::{
-  vfs::{Vfs, VfsFile},
   Filter,
+  vfs::{Vfs, VfsFile},
 };
 
 pub struct FakeFs {

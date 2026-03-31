@@ -197,14 +197,17 @@ impl HasDynamicalCovers for Mandelbrot
                     let t2 = t * t;
 
                     let v = t2 * (t2 - 3. * t + 6.) - 2. * t + 2.;
-                    let dv_dt = horner!(t, -2., 12., -9., 4.);
+                    let v_deriv = horner!(t, -2., 12., -9., 4.);
 
                     let w = (t2 - t).inv();
                     let dw_dt = (1. - 2. * t) * w * w;
 
-                    let u = v + w;
-                    let du_dt = dv_dt + dw_dt;
-                    (-0.25 * u * w, -0.25 * (du_dt * w + u * dw_dt))
+                    let numerator = v + w;
+                    let numerator_deriv = v_deriv + dw_dt;
+                    (
+                        -0.25 * numerator * w,
+                        -0.25 * (numerator_deriv * w + numerator * dw_dt),
+                    )
                 };
                 let mult = |t: Cplx| {
                     let t2 = t.powi(2);
@@ -217,9 +220,9 @@ impl HasDynamicalCovers for Mandelbrot
                     let u2 = u.powi(2);
 
                     let mu = a * b * c / (u * u2);
-                    let dmu =
+                    let multiplier_deriv =
                         -((t2 - t + 1.) / u2).powi(2) * horner!(t, 3., -8., 2., 6., 7., -10., 3.);
-                    (mu, dmu)
+                    (mu, multiplier_deriv)
                 };
                 let bounds = Bounds {
                     min_x: -2.5,
@@ -227,7 +230,7 @@ impl HasDynamicalCovers for Mandelbrot
                     min_y: -3.,
                     max_y: 3.,
                 };
-                CoveringMap::new(self, param_map)
+                CoveringMap::new(self, param_map as fn(Cplx) -> (Cplx, Cplx))
                     .with_orig_bounds(bounds)
                     .with_multiplier_map(mult)
             }

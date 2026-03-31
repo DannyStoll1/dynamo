@@ -210,16 +210,16 @@ impl<const N: Period> FamilyDefaults for Sailboat<N>
     fn default_bounds(&self) -> Bounds
     {
         let center = Self::DEFAULT_BOUNDS.center();
-        let rad_y_0 = self.shift.im.abs() + Self::DEFAULT_BOUNDS.range_y() / 2.0;
-        let rad_x_1 = self.shift.re.abs() + Self::DEFAULT_BOUNDS.range_x() / 2.0;
+        let required_vertical_radius = self.shift.im.abs() + Self::DEFAULT_BOUNDS.range_y() / 2.0;
+        let required_horizontal_radius = self.shift.re.abs() + Self::DEFAULT_BOUNDS.range_x() / 2.0;
 
-        let rad_y_1 = rad_x_1 * Self::ASPECT;
+        let fitted_vertical_radius = required_horizontal_radius * Self::ASPECT;
 
-        if rad_y_0 <= rad_y_1 {
-            Bounds::rect(rad_x_1, rad_y_1, center)
+        if required_vertical_radius <= fitted_vertical_radius {
+            Bounds::rect(required_horizontal_radius, fitted_vertical_radius, center)
         } else {
-            let rad_x = rad_y_0 / Self::ASPECT;
-            Bounds::rect(rad_x, rad_y_0, center)
+            let fitted_horizontal_radius = required_vertical_radius / Self::ASPECT;
+            Bounds::rect(fitted_horizontal_radius, required_vertical_radius, center)
         }
     }
 }

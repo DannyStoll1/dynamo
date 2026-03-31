@@ -243,8 +243,8 @@ impl DynamicalFamily for CubicPer2LambdaParam
         let z2 = z.powi(2);
         let f = a - z * (a + 1.) + a * z2 * (z - 1.);
         let df_dz = a * (3. * z2 - 2. * z - 1.) - 1.;
-        let df_dl = -0.25 * (z - 1.) * (z2 - 1.);
-        (f, df_dz, df_dl)
+        let dl_scale = -0.25 * (z - 1.) * (z2 - 1.);
+        (f, df_dz, dl_scale)
     }
 
     #[inline]

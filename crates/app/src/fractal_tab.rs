@@ -95,8 +95,8 @@ impl FractalTab
 
     pub fn update(&mut self, ui: &mut Ui)
     {
-        egui::SidePanel::left("Fractal")
-            .default_width(220.)
+        egui::Panel::left("Fractal")
+            .default_size(220.)
             .show_inside(ui, |ui| {
                 self.sidebar(ui);
             });

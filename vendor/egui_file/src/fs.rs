@@ -29,7 +29,7 @@ impl Vfs for Fs {
   ) -> Result<Vec<Box<dyn VfsFile>>, Error> {
     std::fs::read_dir(path).map(|entries| {
       let mut file_infos: Vec<Box<dyn VfsFile>> = entries
-        .filter_map(|result| result.ok())
+        .filter_map(Result::ok)
         .filter_map(|entry| {
           let info: Box<FileInfo> = Box::new(FileInfo::new(entry.path()));
           if !info.is_dir() {
