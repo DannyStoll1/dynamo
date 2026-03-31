@@ -554,7 +554,8 @@ where
     /// Open a dialog prompt to save an image.
     fn prompt_save_image(&mut self, pane_selection: PaneSelection)
     {
-        let mut file_dialog = FileDialog::save_file(images_dir())
+        let mut file_dialog = FileDialog::save_file()
+            .initial_path(images_dir().unwrap_or_default())
             .title("Save Image")
             .show_rename(false)
             .show_new_folder(true);
@@ -569,7 +570,8 @@ where
 
     fn prompt_save_palette(&mut self, panes: PaneSelection)
     {
-        let mut file_dialog = FileDialog::save_file(palettes_dir())
+        let mut file_dialog = FileDialog::save_file()
+            .initial_path(palettes_dir().unwrap_or_default())
             .title("Save Palette")
             .show_rename(false)
             .show_new_folder(true);
@@ -584,7 +586,8 @@ where
 
     fn prompt_load_palette(&mut self, pane_selection: PaneSelection)
     {
-        let mut file_dialog = FileDialog::open_file(palettes_dir())
+        let mut file_dialog = FileDialog::open_file()
+            .initial_path(palettes_dir().unwrap_or_default())
             .title("Load Palette")
             .show_rename(false)
             .show_new_folder(false);

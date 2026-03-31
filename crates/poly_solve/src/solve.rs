@@ -1,5 +1,5 @@
 use num_complex::{Complex, Complex64};
-use rand::Rng;
+use rand::RngExt;
 use rand::rngs::ThreadRng;
 
 use crate::newton::Newton;

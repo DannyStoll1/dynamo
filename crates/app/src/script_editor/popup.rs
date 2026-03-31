@@ -51,9 +51,11 @@ impl Popup
     #[must_use]
     pub fn load_edit() -> Self
     {
-        let path = Some(script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf()));
+        let path = script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf());
         let _ = std::fs::create_dir("user_scripts");
-        let mut dialog = FileDialog::open_file(path).title("Select a script to edit");
+        let mut dialog = FileDialog::open_file()
+            .initial_path(path)
+            .title("Select a script to edit");
         dialog.open();
 
         Self::Load {
@@ -65,9 +67,11 @@ impl Popup
     #[must_use]
     pub fn load() -> Self
     {
-        let path = Some(script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf()));
+        let path = script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf());
         let _ = std::fs::create_dir("user_scripts");
-        let mut dialog = FileDialog::open_file(path).title("Select a script to load");
+        let mut dialog = FileDialog::open_file()
+            .initial_path(path)
+            .title("Select a script to load");
         dialog.open();
 
         Self::Load {

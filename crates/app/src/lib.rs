@@ -95,8 +95,9 @@ impl Default for FractalApp
 
 impl eframe::App for FractalApp
 {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame)
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame)
     {
+        let ctx = ui.ctx();
         let mut added_nodes = Vec::new();
         let mut to_remove = Vec::new();
         DockArea::new(&mut self.dock_state)

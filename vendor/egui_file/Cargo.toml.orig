@@ -1,0 +1,22 @@
+[package]
+authors = [
+  "Barugon <barugon@dungeonbox.net>",
+  "Elias Kartashov <elias@lowenware.com>",
+]
+description = "File dialog for egui"
+edition = "2024"
+keywords = ["file-dialog", "file-picker"]
+license = "MIT"
+name = "egui_file"
+repository = "https://codeberg.org/Barugon/egui_file"
+rust-version = "1.85.0"
+version = "0.25.0"
+
+[dependencies.egui]
+version = "0.33"
+
+[dependencies.dyn-clone]
+version = "1.0.17"
+
+[dev-dependencies.eframe]
+version = "0.33"
