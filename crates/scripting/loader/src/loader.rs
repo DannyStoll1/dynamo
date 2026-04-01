@@ -137,13 +137,6 @@ impl<'a> Loader<'a>
             return Err(ScriptError::CompilationFailed);
         }
 
-        eprintln!(
-            "    Moving compiled library:\n        \
-                {}\n    \
-            --> {}",
-            self.orig_lib_path().display(),
-            self.dest_lib_path().display()
-        );
         std::fs::rename(self.orig_lib_path(), self.dest_lib_path())
             .map_err(ScriptError::ErrorMovingLibrary)
     }
@@ -201,13 +194,8 @@ impl<'a> Loader<'a>
     pub unsafe fn run<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
         unsafe {
-            eprintln!("\nTranspiling script...");
             self.transpile_toml()?;
-
-            eprintln!("\nBuilding script...");
             self.build()?;
-
-            eprintln!("\nLoading script...");
             self.load()
         }
     }
@@ -226,17 +214,10 @@ impl<'a> Loader<'a>
     pub unsafe fn run_lazy<'i>(mut self) -> Result<InterfaceHolder<'i>, ScriptError>
     {
         unsafe {
-            if self.dest_lib_path().exists() {
-                eprintln!("Library found, skipping compilation.");
-            } else {
-                eprintln!("Transpiling script...");
+            if !self.dest_lib_path().exists() {
                 self.transpile_toml()?;
-
-                eprintln!("Building script...");
                 self.build()?;
             }
-
-            eprintln!("Loading script...");
             self.load()
         }
     }

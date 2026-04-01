@@ -340,7 +340,7 @@ where
     }
 
     /// Handles mouse input, updating the state of the panes accordingly.
-    #[expect(clippy::float_cmp)]
+    #[expect(clippy::float_cmp, reason = "egui uses an exact neutral zoom factor of 1.0 for no zoom input")]
     fn handle_mouse(&mut self, ctx: &Context)
     {
         let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;

@@ -12,10 +12,18 @@ pub enum Popup
     Edit(ScriptEditor),
     Load
     {
-        dialog:     FileDialog,
-        edit_after: bool,
+        dialog: FileDialog,
+        mode:   LoadMode,
     },
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LoadMode
+{
+    Edit,
+    Run,
+}
+
 impl Popup
 {
     pub fn show(&mut self, ctx: &egui::Context)
@@ -51,33 +59,27 @@ impl Popup
     #[must_use]
     pub fn load_edit() -> Self
     {
-        let path = script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf());
-        let _ = std::fs::create_dir("user_scripts");
-        let mut dialog = FileDialog::open_file()
-            .initial_path(path)
-            .title("Select a script to edit");
-        dialog.open();
-
-        Self::Load {
-            dialog,
-            edit_after: true,
-        }
+        Self::load_mode(LoadMode::Edit)
     }
 
     #[must_use]
     pub fn load() -> Self
     {
+        Self::load_mode(LoadMode::Run)
+    }
+
+    fn load_mode(mode: LoadMode) -> Self
+    {
         let path = script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf());
-        let _ = std::fs::create_dir("user_scripts");
-        let mut dialog = FileDialog::open_file()
-            .initial_path(path)
-            .title("Select a script to load");
+        let _ = std::fs::create_dir_all(&path);
+        let title = match mode {
+            LoadMode::Edit => "Select a script to edit",
+            LoadMode::Run => "Select a script to load",
+        };
+        let mut dialog = FileDialog::open_file().initial_path(path).title(title);
         dialog.open();
 
-        Self::Load {
-            dialog,
-            edit_after: false,
-        }
+        Self::Load { dialog, mode }
     }
 
     pub fn pop_response(&mut self) -> Response
@@ -85,7 +87,7 @@ impl Popup
         match self {
             Self::Load {
                 dialog,
-                edit_after: true,
+                mode: LoadMode::Edit,
             } if dialog.selected() => {
                 if let Some(path) = dialog.path().map(|path| path.to_path_buf()) {
                     *self = Self::edit(path);
@@ -94,7 +96,7 @@ impl Popup
             }
             Self::Load {
                 dialog,
-                edit_after: false,
+                mode: LoadMode::Run,
             } if dialog.selected() => dialog
                 .path()
                 .map(|path| Response::Load(path.to_path_buf()))

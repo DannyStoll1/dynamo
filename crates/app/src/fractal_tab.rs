@@ -261,7 +261,7 @@ impl FractalTab
                 Err(e) => {
                     self.error_report = Some(ErrorReport::new(
                         "Error parsing script".to_owned(),
-                        format!("{e:?}"),
+                        e.to_string(),
                     ));
                 }
             },
@@ -280,8 +280,8 @@ impl FractalTab
         self.menu_state.is_closed()
     }
 
-    #[allow(clippy::unused_self)]
-    #[allow(clippy::needless_pass_by_ref_mut)]
+    #[allow(clippy::unused_self, reason = "Placeholder until the Help menu gains actions")]
+    #[allow(clippy::needless_pass_by_ref_mut, reason = "Menu callback shape matches the other menu builders")]
     const fn help_menu(&mut self, _ui: &mut Ui)
     {
         // TODO: create help menu

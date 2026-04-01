@@ -19,41 +19,50 @@ pub enum Response
     Load(PathBuf),
 }
 
-#[derive(Clone, Default, Debug)]
-pub enum State
+#[derive(Clone, Debug, Default)]
+pub struct ScriptDocument
+{
+    pub path: Option<PathBuf>,
+    pub text: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub enum ValidationState
 {
     #[default]
-    Closed,
-    Editing,
-    ReadyToRun(PathBuf),
+    Unknown,
+    Valid,
+    Invalid(String),
 }
-impl State
+
+#[derive(Clone, Debug, Default)]
+pub enum RunState
 {
-    pub fn pop_if_ready(&mut self) -> Option<PathBuf>
-    {
-        if let Self::ReadyToRun(p) = self {
-            let path = std::mem::take(p);
-            *self = Self::Closed;
-            Some(path)
-        } else {
-            None
-        }
-    }
+    #[default]
+    Idle,
+    Pending(PathBuf),
 }
 
 #[derive(Clone, Debug)]
 pub struct ScriptEditor
 {
-    pub text:  String,
-    pub state: State,
+    pub document:   ScriptDocument,
+    pub validation: ValidationState,
+    pub run_state:  RunState,
+    pub visible:    bool,
 }
 impl Default for ScriptEditor
 {
     fn default() -> Self
     {
         Self {
-            text:  config::DEFAULT_TEXT.clone(),
-            state: State::default(),
+            document: ScriptDocument {
+                path: None,
+                text: config::DEFAULT_TEXT.clone(),
+            },
+            validation: ValidationState::Unknown,
+            run_state: RunState::Idle,
+            visible: true,
         }
     }
 }
@@ -64,26 +73,31 @@ impl ScriptEditor
     where
         P: AsRef<Path>,
     {
-        let text = std::fs::read_to_string(script_file)?;
+        let path = script_file.as_ref().to_path_buf();
+        let text = std::fs::read_to_string(&path)?;
         Ok(Self {
-            text,
+            document: ScriptDocument {
+                path: Some(path),
+                text,
+            },
             ..Default::default()
         })
     }
 
     pub fn show(&mut self, ctx: &egui::Context)
     {
-        if matches!(self.state, State::Editing) {
+        if self.visible {
             egui::Window::new("Script Editor")
                 .vscroll(true)
                 .default_height(720.)
                 .default_width(600.)
                 .show(ctx, |ui| {
-                    egui::TextEdit::multiline(&mut self.text)
+                    egui::TextEdit::multiline(&mut self.document.text)
                         .code_editor()
                         .desired_rows(30)
                         .desired_width(std::f32::INFINITY)
                         .show(ui);
+                    self.show_validation(ui);
                     if ui.button("Save").clicked() {
                         self.try_save(false);
                     }
@@ -100,57 +114,74 @@ impl ScriptEditor
     #[inline]
     pub fn open(&mut self)
     {
-        self.state = State::Editing;
+        self.visible = true;
     }
 
     #[inline]
     pub fn enabled(&self) -> bool
     {
-        matches!(self.state, State::Editing)
+        self.visible
     }
 
     #[inline]
     pub fn hide(&mut self)
     {
-        self.state = State::Closed;
+        self.visible = false;
+    }
+
+    fn show_validation(&self, ui: &mut egui::Ui)
+    {
+        match &self.validation {
+            ValidationState::Unknown => {}
+            ValidationState::Valid => {
+                ui.colored_label(egui::Color32::LIGHT_GREEN, "Script validation succeeded.");
+            }
+            ValidationState::Invalid(message) => {
+                ui.colored_label(egui::Color32::LIGHT_RED, message);
+            }
+        }
     }
 
     fn try_save(&mut self, run: bool)
     {
         match self.save_script() {
             Ok(script_path) => {
-                println!("Script saved to {}.", script_path.display());
+                self.validation = ValidationState::Valid;
                 if run {
-                    self.state = State::ReadyToRun(script_path);
+                    self.run_state = RunState::Pending(script_path);
                 } else {
                     self.hide();
                 }
             }
             Err(e) => {
-                println!("Error saving script: {e:?}");
+                self.validation = ValidationState::Invalid(e.to_string());
             }
         }
     }
 
-    fn save_script(&self) -> Result<PathBuf, ScriptError>
+    fn save_script(&mut self) -> Result<PathBuf, ScriptError>
     {
         let script_data: UnparsedUserInput =
-            toml::from_str(&self.text).map_err(ScriptError::ErrorParsingToml)?;
+            toml::from_str(&self.document.text).map_err(ScriptError::ErrorParsingToml)?;
         let filename = format!("{}.toml", script_data.metadata.short_name);
         let save_path = script_dir()
             .unwrap_or(SCRIPT_PROJ_DIR.to_path_buf())
             .join(filename);
 
-        std::fs::write(&save_path, self.text.clone()).map_err(ScriptError::ErrorWritingFile)?;
+        std::fs::write(&save_path, &self.document.text).map_err(ScriptError::ErrorWritingFile)?;
+        self.document.path = Some(save_path.clone());
         Ok(save_path)
     }
 
     fn pop_response(&mut self) -> Response
     {
-        match self.state.pop_if_ready() {
-            Some(path) => Response::Load(path),
-            None if self.enabled() => Response::DoNothing,
-            None => Response::Close,
+        match std::mem::take(&mut self.run_state) {
+            RunState::Pending(path) => {
+                self.hide();
+                Response::Load(path)
+            }
+            RunState::Idle if self.enabled() => Response::DoNothing,
+            RunState::Idle => Response::Close,
         }
     }
 }

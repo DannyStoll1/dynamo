@@ -302,7 +302,7 @@ impl TextDialogBuilder
         )
     }
 
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn, reason = "Build consumes heap-allocated Strings and returns a non-const dialog")]
     #[must_use]
     pub fn build(self) -> StructuredTextDialog
     {
