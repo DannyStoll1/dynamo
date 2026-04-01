@@ -83,7 +83,7 @@ macro_rules! degree_impl {
             $deg
         }
         #[inline]
-        #[allow(clippy::cast_lossless)]
+        #[allow(clippy::cast_lossless, reason = "AngleNum to Real conversion is exact for the supported degree range")]
         fn degree_real(&self) -> Real
         {
             $deg as Real

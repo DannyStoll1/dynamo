@@ -5,7 +5,7 @@ pub mod transpiler;
 pub use loader::Loader;
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
+#[allow(clippy::unwrap_used, reason = "The tests assert happy-path fixtures and use unwrap for concise failure output")]
 mod tests
 {
     use std::fs;
@@ -35,7 +35,8 @@ mod tests
             toml::from_str(&content).expect("Failed to parse the TOML content");
 
         let transpiler = Transpiler::new(user_input).expect("Failed to process input");
-        println!("{}", transpiler.gen_rust_profile());
+        let generated_profile = transpiler.gen_rust_profile();
+        assert!(!generated_profile.is_empty());
     }
 
     #[test]

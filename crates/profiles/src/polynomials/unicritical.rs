@@ -1,6 +1,9 @@
 use dynamo_common::horner;
 use dynamo_common::math_utils::roots_of_unity;
 
+use crate::covering_helpers::{
+    degree_3_dynatomic_curve_period_2, degree_3_marked_cycle_curve_period_3,
+};
 use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
 profile_imports!();
 
@@ -153,64 +156,7 @@ impl Unicritical<3>
 {
     fn marked_cycle_curve_period_3(self) -> CoveringMap<Self>
     {
-        const DEN_A0: Cplx = Cplx::new(15.019_639_247_721_374, 48.282_356_214_136_12);
-        const DEN_A1: Cplx = Cplx::new(11.411_649_536_823_681, 8.425_252_873_580_56);
-        const DEN_B0: Cplx = Cplx::new(14.056_957_561_484_392, 50.196_352_118_588_65);
-        const DEN_B1: Cplx = Cplx::new(11.541_242_409_948_602, 8.708_125_782_110_49);
-
-        const NUM_0: Cplx = Cplx::new(-1_744.408_589_013_732_4, 1_473.740_602_292_486_8);
-        const NUM_1: Cplx = Cplx::new(-343.849_951_900_078, 1_273.100_690_510_641);
-        const NUM_2: Cplx = Cplx::new(96.708_321_954_359_62, 269.238_722_028_364_3);
-        const NUM_3: Cplx = Cplx::new(22.564_029_832_221_34, 15.916_865_188_953_581);
-        const NUM_COEF: Cplx = Cplx::new(-2.216_531_263_344_174, 0.388_928_257_728_017_26);
-
-        const DNUM_2: Cplx = Cplx::new(2. * NUM_2.re, 2. * NUM_2.im);
-        const DNUM_3: Cplx = Cplx::new(3. * NUM_3.re, 3. * NUM_3.im);
-
-        const POLE_0: Cplx = Cplx::new(-5.914_015_205_273_233, -3.709_866_341_074_397_5);
-        const POLE_1: Cplx = Cplx::new(-5.497_634_331_550_449, -4.715_386_532_506_162);
-        const ANGLE: Cplx = Cplx::new(0.5 * SQRT_3, -0.5);
-        const VECT: Cplx = Cplx::new(-0.142_163_681_421_990_37, -1.078_996_466_659_493_8);
-
-        let param_map = |t: Cplx| {
-            let u = t * ANGLE;
-            let v = u + 1.;
-            let w = (POLE_1 * u + POLE_0) / v;
-
-            let path_deriv = VECT / v.powi(2);
-
-            let numerator_base = horner_monic!(w, NUM_0, NUM_1, NUM_2, NUM_3);
-            let numerator_base_deriv = horner!(w, NUM_1, DNUM_2, DNUM_3, 4.);
-
-            let primary_denominator = horner_monic!(w, DEN_A0, DEN_A1);
-            let secondary_denominator = horner_monic!(w, DEN_B0, DEN_B1);
-            let primary_denominator_deriv = horner!(w, DEN_A1, 2.);
-            let secondary_denominator_deriv = horner!(w, DEN_B1, 2.);
-
-            let primary_denominator_sq = primary_denominator * primary_denominator;
-            let primary_denominator_cu = primary_denominator_sq * primary_denominator;
-
-            let numerator = NUM_COEF * numerator_base.powi(2);
-            let numerator_deriv = 2. * NUM_COEF * numerator_base * numerator_base_deriv;
-
-            let denominator = primary_denominator_cu * secondary_denominator;
-            let denominator_deriv =
-                3. * primary_denominator_sq * primary_denominator_deriv * secondary_denominator
-                    + primary_denominator_cu * secondary_denominator_deriv;
-
-            (
-                numerator / denominator,
-                path_deriv * (denominator * numerator_deriv - numerator * denominator_deriv)
-                    / denominator.powi(2),
-            )
-        };
-        let bounds = Bounds {
-            min_x: -2.,
-            max_x: 5.8,
-            min_y: -2.,
-            max_y: 3.5,
-        };
-        CoveringMap::new(self, param_map).with_orig_bounds(bounds)
+        degree_3_marked_cycle_curve_period_3(self)
     }
 }
 
@@ -259,42 +205,14 @@ impl HasDynamicalCovers for Unicritical<3>
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
-    #[allow(clippy::suspicious_operation_groupings)]
-    #[allow(clippy::single_match_else)]
+    #[allow(clippy::single_match_else, reason = "The period dispatcher stays flatter as a match while more periods remain unsupported")]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);
         let bounds: Bounds;
 
         match period {
-            2 => {
-                param_map = |t| {
-                    let t2 = t.powi(2);
-                    let num0 = t - 0.5;
-                    let num1 = t2 + t + 1.25;
-                    let den0 = t2 + 0.75;
-                    let numerator_product = num0 * num1;
-
-                    let denominator_deriv = 2. * t;
-                    let numerator_product_deriv = num0 * (denominator_deriv + 1.) + num1;
-
-                    let den0_2 = den0 * den0;
-
-                    let num = -3. * numerator_product * numerator_product;
-                    let den = den0 * den0_2;
-
-                    let d_num = -3. * numerator_product * numerator_product_deriv;
-                    let d_den = 3. * den0_2 * denominator_deriv;
-
-                    (num / den, (den * d_num - num * d_den) / (den * den))
-                };
-                bounds = Bounds {
-                    min_x: -3.5,
-                    max_x: 5.5,
-                    min_y: -4.5,
-                    max_y: 4.5,
-                };
-            }
+            2 => return degree_3_dynatomic_curve_period_2(self),
             _ => {
                 param_map = |t| (t, ONE);
                 bounds = self.point_grid.bounds.clone();

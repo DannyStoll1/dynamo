@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 #![allow(clippy::many_single_char_names)]
 
+pub(crate) mod covering_helpers;
 pub mod macros;
 
 pub mod polynomials;

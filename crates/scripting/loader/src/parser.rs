@@ -168,8 +168,7 @@ impl UnparsedUserInput
             .constants
             .iter()
             .map(|(key, value)| json_to_complex(value).map(|complex| (key.clone(), complex)))
-            .filter_map(Result::ok)
-            .collect::<HashMap<String, Complex64>>();
+            .collect::<Result<HashMap<String, Complex64>, ScriptError>>()?;
 
         let py_params = Python::attach(|py| {
             let sys = py.import("sys")?;

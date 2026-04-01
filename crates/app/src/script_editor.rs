@@ -31,8 +31,14 @@ pub enum ValidationState
 {
     #[default]
     Unknown,
-    Valid,
+    Valid(ScriptValidation),
     Invalid(String),
+}
+
+#[derive(Clone, Debug)]
+pub struct ScriptValidation
+{
+    pub save_path: PathBuf,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -133,8 +139,11 @@ impl ScriptEditor
     {
         match &self.validation {
             ValidationState::Unknown => {}
-            ValidationState::Valid => {
-                ui.colored_label(egui::Color32::LIGHT_GREEN, "Script validation succeeded.");
+            ValidationState::Valid(validation) => {
+                ui.colored_label(
+                    egui::Color32::LIGHT_GREEN,
+                    format!("Script validation succeeded. Save path: {}", validation.save_path.display()),
+                );
             }
             ValidationState::Invalid(message) => {
                 ui.colored_label(egui::Color32::LIGHT_RED, message);
@@ -144,13 +153,19 @@ impl ScriptEditor
 
     fn try_save(&mut self, run: bool)
     {
-        match self.save_script() {
-            Ok(script_path) => {
-                self.validation = ValidationState::Valid;
-                if run {
-                    self.run_state = RunState::Pending(script_path);
-                } else {
-                    self.hide();
+        match self.validate_script() {
+            Ok(validation) => {
+                self.validation = ValidationState::Valid(validation.clone());
+                match self.write_script(&validation.save_path) {
+                    Ok(()) if run => {
+                        self.run_state = RunState::Pending(validation.save_path);
+                    }
+                    Ok(()) => {
+                        self.hide();
+                    }
+                    Err(error) => {
+                        self.validation = ValidationState::Invalid(error.to_string());
+                    }
                 }
             }
             Err(e) => {
@@ -159,7 +174,7 @@ impl ScriptEditor
         }
     }
 
-    fn save_script(&mut self) -> Result<PathBuf, ScriptError>
+    fn validate_script(&mut self) -> Result<ScriptValidation, ScriptError>
     {
         let script_data: UnparsedUserInput =
             toml::from_str(&self.document.text).map_err(ScriptError::ErrorParsingToml)?;
@@ -168,9 +183,14 @@ impl ScriptEditor
             .unwrap_or(SCRIPT_PROJ_DIR.to_path_buf())
             .join(filename);
 
-        std::fs::write(&save_path, &self.document.text).map_err(ScriptError::ErrorWritingFile)?;
+        let _parsed = script_data.parse()?;
         self.document.path = Some(save_path.clone());
-        Ok(save_path)
+        Ok(ScriptValidation { save_path })
+    }
+
+    fn write_script(&self, save_path: &Path) -> Result<(), ScriptError>
+    {
+        std::fs::write(save_path, &self.document.text).map_err(ScriptError::ErrorWritingFile)
     }
 
     fn pop_response(&mut self) -> Response
