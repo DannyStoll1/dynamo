@@ -74,7 +74,6 @@ impl Default for ScriptEditor
 }
 impl ScriptEditor
 {
-    #[must_use]
     pub fn load<P>(script_file: P) -> std::io::Result<Self>
     where
         P: AsRef<Path>,
@@ -101,7 +100,7 @@ impl ScriptEditor
                     egui::TextEdit::multiline(&mut self.document.text)
                         .code_editor()
                         .desired_rows(30)
-                        .desired_width(std::f32::INFINITY)
+                        .desired_width(f32::INFINITY)
                         .show(ui);
                     self.show_validation(ui);
                     if ui.button("Save").clicked() {
@@ -118,19 +117,20 @@ impl ScriptEditor
     }
 
     #[inline]
-    pub fn open(&mut self)
+    pub const fn open(&mut self)
     {
         self.visible = true;
     }
 
     #[inline]
-    pub fn enabled(&self) -> bool
+    #[must_use]
+    pub const fn enabled(&self) -> bool
     {
         self.visible
     }
 
     #[inline]
-    pub fn hide(&mut self)
+    pub const fn hide(&mut self)
     {
         self.visible = false;
     }
@@ -180,7 +180,7 @@ impl ScriptEditor
             toml::from_str(&self.document.text).map_err(ScriptError::ErrorParsingToml)?;
         let filename = format!("{}.toml", script_data.metadata.short_name);
         let save_path = script_dir()
-            .unwrap_or(SCRIPT_PROJ_DIR.to_path_buf())
+            .unwrap_or_else(|| SCRIPT_PROJ_DIR.to_path_buf())
             .join(filename);
 
         let _parsed = script_data.parse()?;

@@ -15,9 +15,9 @@ fn main()
                 .split_whitespace()
                 .filter_map(|flag| flag.strip_prefix("-L"))
             {
-                println!("cargo:rustc-link-search=native={}", path);
+                println!("cargo:rustc-link-search=native={path}");
                 // Add rpath so the binary can find the library at runtime
-                println!("cargo:rustc-link-arg=-Wl,-rpath,{}", path);
+                println!("cargo:rustc-link-arg=-Wl,-rpath,{path}");
             }
         }
     }

@@ -269,7 +269,7 @@ impl FractalTab
     }
 
     #[cfg(feature = "scripting")]
-    fn should_update_interface(&self) -> bool
+    const fn should_update_interface(&self) -> bool
     {
         self.popup.is_none() && self.menu_state.is_closed()
     }
@@ -322,7 +322,7 @@ impl FractalTab
     }
 
     #[cfg(feature = "scripting")]
-    fn show_popup(&mut self, ui: &mut Ui)
+    fn show_popup(&mut self, ui: &Ui)
     {
         if let Some(popup) = self.popup.as_mut() {
             popup.show(ui.ctx());

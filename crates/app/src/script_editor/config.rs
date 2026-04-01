@@ -1,9 +1,6 @@
 use std::path::Path;
+use std::sync::LazyLock;
 
-use lazy_static::lazy_static;
-
-lazy_static! {
-    pub static ref SCRIPT_PROJ_DIR: &'static Path = Path::new("user_scripts");
-    pub static ref DEFAULT_TEXT: String =
-        std::fs::read_to_string(SCRIPT_PROJ_DIR.join(".default.toml")).unwrap_or_default();
-}
+pub static SCRIPT_PROJ_DIR: LazyLock<&'static Path> = LazyLock::new(|| Path::new("user_scripts"));
+pub static DEFAULT_TEXT: LazyLock<String> =
+    LazyLock::new(|| std::fs::read_to_string(SCRIPT_PROJ_DIR.join(".default.toml")).unwrap_or_default());

@@ -10,11 +10,14 @@ use super::{Response, ScriptEditor};
 pub enum Popup
 {
     Edit(ScriptEditor),
-    Load
-    {
-        dialog: FileDialog,
-        mode:   LoadMode,
-    },
+    Load(Box<LoadPopup>),
+}
+
+#[derive(Debug)]
+pub struct LoadPopup
+{
+    dialog: FileDialog,
+    mode:   LoadMode,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -32,8 +35,8 @@ impl Popup
             Self::Edit(d) => {
                 d.show(ctx);
             }
-            Self::Load { dialog, .. } => {
-                dialog.show(ctx);
+            Self::Load(load_popup) => {
+                load_popup.dialog.show(ctx);
             }
         }
     }
@@ -51,7 +54,7 @@ impl Popup
     where
         P: AsRef<Path>,
     {
-        let mut editor = ScriptEditor::load(path).unwrap_or_default();
+        let mut editor = ScriptEditor::load(path).unwrap_or_else(|_| ScriptEditor::default());
         editor.open();
         Self::Edit(editor)
     }
@@ -70,7 +73,7 @@ impl Popup
 
     fn load_mode(mode: LoadMode) -> Self
     {
-        let path = script_dir().unwrap_or(SCRIPT_PROJ_DIR.to_path_buf());
+        let path = script_dir().unwrap_or_else(|| SCRIPT_PROJ_DIR.to_path_buf());
         let _ = std::fs::create_dir_all(&path);
         let title = match mode {
             LoadMode::Edit => "Select a script to edit",
@@ -79,30 +82,30 @@ impl Popup
         let mut dialog = FileDialog::open_file().initial_path(path).title(title);
         dialog.open();
 
-        Self::Load { dialog, mode }
+        Self::Load(Box::new(LoadPopup { dialog, mode }))
     }
 
     pub fn pop_response(&mut self) -> Response
     {
         match self {
-            Self::Load {
-                dialog,
-                mode: LoadMode::Edit,
-            } if dialog.selected() => {
-                if let Some(path) = dialog.path().map(|path| path.to_path_buf()) {
+            Self::Load(load_popup)
+                if load_popup.mode == LoadMode::Edit && load_popup.dialog.selected() =>
+            {
+                if let Some(path) = load_popup.dialog.path().map(Path::to_path_buf) {
                     *self = Self::edit(path);
                 }
                 Response::DoNothing
             }
-            Self::Load {
-                dialog,
-                mode: LoadMode::Run,
-            } if dialog.selected() => dialog
-                .path()
-                .map(|path| Response::Load(path.to_path_buf()))
-                .unwrap_or(Response::Close),
+            Self::Load(load_popup)
+                if load_popup.mode == LoadMode::Run && load_popup.dialog.selected() =>
+            {
+                load_popup
+                    .dialog
+                    .path()
+                    .map_or(Response::Close, |path| Response::Load(path.to_path_buf()))
+            }
             Self::Edit(editor) => editor.pop_response(),
-            _ => Response::DoNothing,
+            Self::Load(..) => Response::DoNothing,
         }
     }
 }
@@ -118,7 +121,7 @@ pub struct ErrorReport
 impl ErrorReport
 {
     #[must_use]
-    pub fn new(title: String, text: String) -> Self
+    pub const fn new(title: String, text: String) -> Self
     {
         Self {
             title,
@@ -150,13 +153,13 @@ impl ErrorReport
     }
 
     #[inline]
-    pub fn enable(&mut self)
+    pub const fn enable(&mut self)
     {
         self.visible = true;
     }
 
     #[inline]
-    pub fn disable(&mut self)
+    pub const fn disable(&mut self)
     {
         self.visible = false;
     }

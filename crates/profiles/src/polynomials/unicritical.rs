@@ -1,10 +1,10 @@
 use dynamo_common::horner;
 use dynamo_common::math_utils::roots_of_unity;
 
+use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
 use crate::covering_helpers::{
     degree_3_dynatomic_curve_period_2, degree_3_marked_cycle_curve_period_3,
 };
-use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
