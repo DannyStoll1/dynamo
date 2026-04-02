@@ -25,7 +25,7 @@ where
 ///
 /// Apply Newton's method until we converge to within `tolerance`.
 /// Will loop forever if Newton's method fails to converge.
-#[expect(clippy::while_float)]
+#[expect(clippy::while_float, reason = "Newton iteration terminates on a runtime floating-point tolerance")]
 pub fn newton_until_convergence<T, F>(f_and_df: F, start: T, target: T, tolerance: Real) -> T
 where
     F: Fn(T) -> (T, T),
@@ -50,7 +50,7 @@ where
 /// Apply Newton's method until we converge to within `tolerance`.
 /// Will loop forever if Newton's method fails to converge.
 /// Returns root together with value and derivative of function.
-#[expect(clippy::while_float)]
+#[expect(clippy::while_float, reason = "Newton iteration terminates on a runtime floating-point tolerance")]
 pub fn newton_until_convergence_d<T, F>(
     f_and_df: F,
     start: T,

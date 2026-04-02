@@ -301,13 +301,13 @@ impl PointGrid
     }
 
     #[must_use]
-    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_sign_loss, reason = "Coordinates are checked against bounds before conversion to pixel indices")]
     pub fn locate_point_safe(&self, z: Cplx) -> Option<(usize, usize)>
     {
         if z.re >= self.bounds.max_x
             || z.re < self.bounds.min_x
             || z.im >= self.bounds.max_y
-            || z.re < self.bounds.min_y
+            || z.im < self.bounds.min_y
         {
             return None;
         }

@@ -209,7 +209,6 @@ macro_rules! try_round_impl {
     ($float:ty, $int:ty) => {
         impl TryRound<$int> for $float
         {
-            #[allow(clippy::cast_lossless)]
             fn try_round(self) -> Result<$int, FloatToIntError>
             {
                 if self.is_finite() && self > <$int>::MIN as $float && self < <$int>::MAX as $float

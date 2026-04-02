@@ -121,9 +121,9 @@ macro_rules! mul_div_int_impl {
         {
             type Output = Self;
 
+            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn mul(self, rhs: $other) -> Self::Output
             {
-                #[allow(clippy::cast_lossless)]
                 Self(self.0 * (rhs as AngleNum)).mod_1()
             }
         }
@@ -131,7 +131,7 @@ macro_rules! mul_div_int_impl {
         {
             type Output = RationalAngle;
 
-            #[allow(clippy::cast_lossless)]
+            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn mul(self, rhs: RationalAngle) -> Self::Output
             {
                 rhs * (self as AngleNum)
@@ -139,7 +139,7 @@ macro_rules! mul_div_int_impl {
         }
         impl std::ops::MulAssign<$other> for RationalAngle
         {
-            #[allow(clippy::cast_lossless)]
+            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn mul_assign(&mut self, rhs: $other)
             {
                 self.0 *= rhs as AngleNum;
@@ -150,7 +150,7 @@ macro_rules! mul_div_int_impl {
         {
             type Output = Self;
 
-            #[allow(clippy::cast_lossless)]
+            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn div(self, rhs: $other) -> Self::Output
             {
                 Self(self.0 / (rhs as AngleNum)).mod_1()
@@ -158,7 +158,7 @@ macro_rules! mul_div_int_impl {
         }
         impl std::ops::DivAssign<$other> for RationalAngle
         {
-            #[allow(clippy::cast_lossless)]
+            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn div_assign(&mut self, rhs: $other)
             {
                 self.0 /= rhs as AngleNum;
@@ -211,7 +211,7 @@ impl std::ops::Div<AngleNum> for RationalAngle
 {
     type Output = Self;
 
-    #[allow(clippy::suspicious_arithmetic_impl)]
+    #[allow(clippy::suspicious_arithmetic_impl, reason = "Dividing an angle by an integer scales the denominator in the quotient group representation")]
     fn div(self, rhs: AngleNum) -> Self
     {
         Self::new(*self.0.numer(), *self.0.denom() * rhs)

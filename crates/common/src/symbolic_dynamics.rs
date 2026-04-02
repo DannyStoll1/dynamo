@@ -106,7 +106,6 @@ impl FromStr for OrbitSchema
 
     /// Parse text representing a period and preperiod into an OrbitSchema.
     /// Acceptable input formats: <period> or <period, preperiod>
-    #[allow(clippy::unwrap_used)]
     fn from_str(text: &str) -> Result<Self, Self::Err>
     {
         let preperiod = regex!(r"^\s*(\d+)\s*,\s*(\d+)\s*$");
@@ -575,10 +574,9 @@ pub fn parse_angle(text: &str) -> Result<RationalAngle, ParseAngleError>
         .unwrap_or(Err(ParseAngleError::UnrecognizedFormat))
 }
 
-#[allow(clippy::unwrap_used)]
 fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
-    static FRACTION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(-?\d+)/(\d+)$").unwrap());
+    static FRACTION: LazyLock<Regex> = LazyLock::new(|| compile_regex(r"^(-?\d+)/(\d+)$"));
 
     let captures = FRACTION.captures(text)?;
 
@@ -600,10 +598,9 @@ fn parse_fraction(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
     }
 }
 
-#[allow(clippy::unwrap_used)]
 fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
-    static BIN_ANGLE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d+)$").unwrap());
+    static BIN_ANGLE: LazyLock<Regex> = LazyLock::new(|| compile_regex(r"^(\d+)$"));
 
     let captures = BIN_ANGLE.captures(text)?;
     let bin_str = captures.get(1)?;
@@ -615,10 +612,9 @@ fn parse_dyadic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
     )
 }
 
-#[allow(clippy::unwrap_used)]
 fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError>>
 {
-    static BIN_PREPER: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d*)p(\d+)$").unwrap());
+    static BIN_PREPER: LazyLock<Regex> = LazyLock::new(|| compile_regex(r"^(\d*)p(\d+)$"));
 
     let captures = BIN_PREPER.captures(text)?;
     if let (Some(pre_match), Some(per_match)) = (captures.get(1), captures.get(2)) {
@@ -656,6 +652,14 @@ fn parse_preperiodic(text: &str) -> Option<Result<RationalAngle, ParseAngleError
         }
     }
     None
+}
+
+fn compile_regex(pattern: &str) -> Regex
+{
+    match Regex::new(pattern) {
+        Ok(regex) => regex,
+        Err(error) => panic!("invalid regex pattern {pattern:?}: {error}"),
+    }
 }
 
 impl FromStr for RationalAngle

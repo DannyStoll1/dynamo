@@ -209,7 +209,7 @@ where
         }
     }
 
-    #[expect(clippy::while_float)]
+    #[expect(clippy::while_float, reason = "Loop closure advances while the floating-point distance keeps decreasing")]
     fn close_loop(&mut self, t_list: &mut Vec<Cplx>)
     {
         let mut dist = Real::INFINITY;

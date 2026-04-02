@@ -32,8 +32,8 @@ pub fn solve_cubic(a: Cplx, b: Cplx, c: Cplx) -> [Cplx; 3]
 }
 
 // Roots of the polynomial a + bx + cx^2 + dx^3 + x^4
-#[allow(clippy::suspicious_operation_groupings)]
-#[allow(clippy::many_single_char_names)]
+#[allow(clippy::suspicious_operation_groupings, reason = "Ferrari's quartic formula relies on tightly grouped algebraic terms")]
+#[allow(clippy::many_single_char_names, reason = "The solver follows standard closed-form quartic notation")]
 #[must_use]
 pub fn solve_quartic(a: Cplx, b: Cplx, c: Cplx, d: Cplx) -> [Cplx; 4]
 {
