@@ -396,6 +396,58 @@ impl PointGrid
     {
         PointGridIterator::new(self.res_x, self.res_y, &self.bounds)
     }
+
+    /// Build a coarse-to-fine mip pyramid over identical bounds.
+    ///
+    /// Each level has exactly twice the resolution of the previous one along
+    /// both axes, with the finest level matching `self`'s resolution rounded up
+    /// to a power-of-two multiple of `coarsest_dim`. This exact doubling is what
+    /// lets a coarse level's sample points coincide with a subset of every finer
+    /// level's sample points, so already-computed orbits can be reused when
+    /// refining. The returned grids run from coarsest to finest.
+    #[must_use]
+    pub fn mip_pyramid(&self, coarsest_dim: usize) -> Vec<Self>
+    {
+        let level_count = self.mip_level_count(coarsest_dim);
+        let base_x = self.res_x.div_ceil(1 << (level_count - 1)).max(1);
+        let base_y = self.res_y.div_ceil(1 << (level_count - 1)).max(1);
+
+        (0..level_count)
+            .map(|level| {
+                let factor = 1 << level;
+                Self::new(base_x * factor, base_y * factor, self.bounds.clone())
+            })
+            .collect()
+    }
+
+    /// Number of mip levels for a pyramid whose coarsest level keeps both axes
+    /// at or below `coarsest_dim` while the finest matches `self`.
+    #[must_use]
+    fn mip_level_count(&self, coarsest_dim: usize) -> usize
+    {
+        let coarsest_dim = coarsest_dim.max(1);
+        let max_dim = self.res_x.max(self.res_y).max(1);
+        let mut levels = 1;
+        let mut dim = coarsest_dim;
+        while dim < max_dim {
+            dim *= 2;
+            levels += 1;
+        }
+        levels
+    }
+
+    /// Map a pixel index in a coarser grid to the coinciding pixel index in this
+    /// grid, given the resolution ratio `scale` between them (`self.res / coarse.res`).
+    ///
+    /// Returns `None` if the scaled index falls outside this grid.
+    #[must_use]
+    pub fn refine_pixel(&self, coarse_pixel: (usize, usize), scale: usize)
+    -> Option<(usize, usize)>
+    {
+        let x = coarse_pixel.0 * scale;
+        let y = coarse_pixel.1 * scale;
+        (x < self.res_x && y < self.res_y).then_some((x, y))
+    }
 }
 
 impl Default for PointGrid
@@ -503,5 +555,82 @@ impl IntoIterator for &PointGrid
     fn into_iter(self) -> Self::IntoIter
     {
         self.iter()
+    }
+}
+
+#[cfg(test)]
+mod tests
+{
+    use super::*;
+
+    fn unit_bounds() -> Bounds
+    {
+        Bounds {
+            min_x: 0.,
+            max_x: 1.,
+            min_y: 0.,
+            max_y: 1.,
+        }
+    }
+
+    #[test]
+    fn mip_pyramid_doubles_each_level()
+    {
+        let grid = PointGrid::new(512, 512, unit_bounds());
+        let pyramid = grid.mip_pyramid(64);
+
+        assert_eq!(pyramid.len(), 4);
+        let dims: Vec<_> = pyramid.iter().map(|g| (g.res_x, g.res_y)).collect();
+        assert_eq!(dims, vec![(64, 64), (128, 128), (256, 256), (512, 512)]);
+
+        for window in pyramid.windows(2) {
+            assert_eq!(window[1].res_x, window[0].res_x * 2);
+            assert_eq!(window[1].res_y, window[0].res_y * 2);
+        }
+    }
+
+    #[test]
+    fn mip_pyramid_finest_covers_target()
+    {
+        // 500 is not a power-of-two multiple of 64; the finest level rounds up.
+        let grid = PointGrid::new(500, 300, unit_bounds());
+        let pyramid = grid.mip_pyramid(64);
+        let finest = pyramid.last().unwrap();
+        assert!(finest.res_x >= grid.res_x);
+        assert!(finest.res_y >= grid.res_y);
+    }
+
+    #[test]
+    fn mip_pyramid_single_level_when_already_coarse()
+    {
+        let grid = PointGrid::new(40, 40, unit_bounds());
+        let pyramid = grid.mip_pyramid(64);
+        assert_eq!(pyramid.len(), 1);
+        assert_eq!((pyramid[0].res_x, pyramid[0].res_y), (40, 40));
+    }
+
+    #[test]
+    fn coarse_sample_points_coincide_with_fine()
+    {
+        let pyramid = PointGrid::new(256, 256, unit_bounds()).mip_pyramid(64);
+        let coarse = &pyramid[0];
+        let fine = pyramid.last().unwrap();
+        let scale = fine.res_x / coarse.res_x;
+
+        // Every coarse sample maps to a fine pixel sampling the exact same point.
+        for ((cx, cy), z_coarse) in coarse {
+            let (fx, fy) = fine.refine_pixel((cx, cy), scale).unwrap();
+            let z_fine = fine.map_pixel(fx, fy);
+            assert!((z_coarse.re - z_fine.re).abs() < 1e-12);
+            assert!((z_coarse.im - z_fine.im).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn refine_pixel_rejects_out_of_range()
+    {
+        let fine = PointGrid::new(128, 128, unit_bounds());
+        assert_eq!(fine.refine_pixel((63, 0), 2), Some((126, 0)));
+        assert_eq!(fine.refine_pixel((64, 0), 2), None);
     }
 }
