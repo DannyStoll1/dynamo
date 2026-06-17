@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Pre-commit hook: reject commits whose changes leave the workspace
+# with clippy warnings or format drift. Bypass with `git commit
+# --no-verify` if needed (rare; usually the right move is to fix
+# the lint).
+
+set -euo pipefail
+
+# Skip during merge / rebase / cherry-pick where the working tree
+# may be transiently inconsistent.
+if [[ -e .git/MERGE_HEAD || -e .git/REBASE_HEAD || -e .git/CHERRY_PICK_HEAD ]]; then
+    echo "pre-commit: skipping (merge/rebase/cherry-pick in progress)"
+    exit 0
+fi
+
+# Prose / doc-comment check: reject double-space sentence breaks in
+# *.rs / *.md / *.txt additions. Runs first because it's cheap and
+# fails fast on the most common rookie agent mistake.
+hook_dir="$(dirname "$0")"
+if [[ -x "$hook_dir/check-double-space" ]]; then
+    "$hook_dir/check-double-space"
+fi
+
+# Only run the Rust pipeline for changes that touch Rust sources or
+# Cargo manifests. Otherwise a docs-only commit pays no startup cost.
+if ! git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.rs$|/Cargo\.toml$|^Cargo\.toml$|^Cargo\.lock$'; then
+    exit 0
+fi
+
+echo "pre-commit: cargo +nightly fmt --check"
+if ! cargo +nightly fmt --all -- --check; then
+    echo
+    echo "pre-commit: fmt drift detected. Run \`cargo fmt --all\` and re-stage."
+    exit 1
+fi
+
+echo "pre-commit: cargo +nightly clippy --workspace --all-targets"
+if ! cargo +nightly clippy --workspace --all-targets --quiet -- -D warnings; then
+    echo
+    echo "pre-commit: clippy warnings detected. Fix them or rerun with --no-verify."
+    exit 1
+fi
+
+exit 0

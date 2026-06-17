@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Reject commits whose added lines introduce double-space sentence
+# breaks. Applies to *.rs, *.md, *.txt. Existing double-spaces in
+# untouched parts of files are left alone -- we only care about new
+# contamination.
+#
+# A "double-space sentence break" matches the regex:
+#     [letterdigit][.!?]"  "[A-Z]
+# i.e. a word-ending character, a sentence-terminator (period /
+# exclamation / question mark), two spaces, then a capital letter.
+# `:` is intentionally excluded -- in code it overwhelmingly marks
+# struct fields / type annotations whose rustfmt-aligned columns
+# look like `field:      Value`, not sentence breaks.
+
+set -euo pipefail
+
+# Collect staged *.rs / *.md / *.txt paths.
+files=$(git diff --cached --name-only --diff-filter=ACMR \
+        | grep -E '\.(rs|md|txt)$' || true)
+if [[ -z "$files" ]]; then
+    exit 0
+fi
+
+# Pull just the added lines from the staged diff. We ask for zero
+# context so unchanged lines never appear. The leading "+" is
+# preserved (we strip it before scanning so the diff marker can't
+# masquerade as content).
+violations=$(
+    git diff --cached --no-ext-diff -U0 -- $files \
+        | awk '
+            /^diff --git / {
+                # `diff --git a/<path> b/<path>`; capture the b-side.
+                if (match($0, / b\/[^[:space:]]+$/)) {
+                    file_path = substr($0, RSTART + 3)
+                } else {
+                    file_path = "?"
+                }
+                next
+            }
+            /^\+\+\+ / { next }
+            /^---/     { next }
+            /^@@/      { next }
+            /^\+/ {
+                line = substr($0, 2)
+                if (match(line, /[[:alnum:]][.!?]  +[A-Z]/)) {
+                    printf "%s: %s\n", file_path, line
+                }
+            }
+        '
+)
+
+if [[ -n "$violations" ]]; then
+    echo "pre-commit: double-space sentence breaks in added content:"
+    echo "$violations" | sed 's/^/  /'
+    echo
+    echo "Use single spaces after sentence-terminating punctuation."
+    echo "Bypass with --no-verify only if you mean it."
+    exit 1
+fi
+
+exit 0

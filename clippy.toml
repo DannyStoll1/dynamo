@@ -1,2 +1,5 @@
+allow-expect-in-tests = true
+allow-unwrap-in-tests = true
 too-many-arguments-threshold = 4
 too-many-lines-threshold = 65
+check-private-items = true
