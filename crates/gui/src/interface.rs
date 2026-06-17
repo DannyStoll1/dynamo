@@ -340,7 +340,10 @@ where
     }
 
     /// Handles mouse input, updating the state of the panes accordingly.
-    #[expect(clippy::float_cmp, reason = "egui uses an exact neutral zoom factor of 1.0 for no zoom input")]
+    #[expect(
+        clippy::float_cmp,
+        reason = "egui uses an exact neutral zoom factor of 1.0 for no zoom input"
+    )]
     fn handle_mouse(&mut self, ctx: &Context)
     {
         let clicked = ctx.input(|i| i.pointer.any_click()) && !self.click_used;
@@ -549,6 +552,230 @@ where
             .title("Input coordinates")
             .prompt(prompt)
             .build()
+    }
+
+    fn process_window_action(&mut self, action: &Action) -> bool
+    {
+        match action {
+            Action::Quit => self.schedule_quit(),
+            Action::Close => self.schedule_close(),
+            Action::NewTab => self.schedule_new_tab(),
+            Action::SaveImage(panes) => self.prompt_save_image(*panes),
+            Action::SavePalette(panes) => self.prompt_save_palette(*panes),
+            Action::LoadPalette(panes) => self.prompt_load_palette(*panes),
+            _ => return false,
+        }
+        true
+    }
+
+    fn process_annotation_action(&mut self, action: &Action) -> bool
+    {
+        match action {
+            Action::ToggleSelectionMarker => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.marking_mut().toggle_selection();
+                    pane.schedule_redraw();
+                }
+            }
+            Action::ToggleCritical => {
+                let pane = self.child_mut();
+                pane.marking_mut().toggle_critical();
+                pane.schedule_redraw();
+            }
+            Action::ToggleMarked(selection) => {
+                self.get_selected_pane_ids(*selection)
+                    .into_iter()
+                    .for_each(|pane_id| {
+                        let pane = self.get_pane_mut(pane_id);
+                        pane.marking_mut().toggle_misc_marked();
+                        pane.schedule_redraw();
+                    });
+            }
+            Action::ToggleCycles(selection, period) => {
+                self.get_selected_pane_ids(*selection)
+                    .into_iter()
+                    .for_each(|pane_id| {
+                        let pane = self.get_pane_mut(pane_id);
+                        pane.marking_mut().toggle_cycles_of_period(*period);
+                        pane.schedule_redraw();
+                    });
+            }
+            _ => return false,
+        }
+        true
+    }
+
+    fn process_dynamics_action(&mut self, action: &Action) -> bool
+    {
+        match action {
+            Action::FindPeriodicPoint => {
+                self.prompt_for_active_pane(|pane_id| TextInputType::FindPeriodic { pane_id });
+            }
+            Action::EnterCoordinates => {
+                self.prompt_for_active_pane(|pane_id| TextInputType::Coordinates { pane_id });
+            }
+            Action::MapSelection => {
+                let plane = self.child_mut();
+                plane.map_selection();
+                plane.marking_mut().enable_selection();
+            }
+            Action::DrawOrbit => self.child_mut().tasks_mut().orbit.enable(),
+            Action::StopFollowing => self.child_mut().stop_following(),
+            Action::ClearOrbit => self.child_mut().clear_marked_orbit(),
+            Action::DrawExternalRay {
+                include_orbit,
+                select_landing_point,
+            } => {
+                self.prompt_for_active_pane(|pane_id| TextInputType::ExternalRay {
+                    pane_id,
+                    include_orbit: *include_orbit,
+                    select_landing_point: *select_landing_point,
+                });
+            }
+            Action::DrawRaysOfPeriod => {
+                self.prompt_for_active_pane(|pane_id| TextInputType::ActiveRays { pane_id });
+            }
+            Action::DrawContour(contour_type) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.draw_contour(*contour_type);
+                }
+            }
+            Action::DrawAuxContours => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.draw_aux_contours();
+                }
+            }
+            Action::ClearRays => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.clear_marked_rays();
+                }
+            }
+            Action::ClearEquipotentials => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.clear_equipotentials();
+                }
+            }
+            Action::ClearCurves => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.clear_curves();
+                }
+            }
+            Action::ResetSelection => self.reset_active_selection(),
+            Action::ResetView => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.reset();
+                }
+            }
+            _ => return false,
+        }
+        true
+    }
+
+    fn process_view_action(&mut self, action: &Action) -> bool
+    {
+        match action {
+            Action::ToggleLiveMode => self.toggle_live_mode(),
+            Action::CycleActivePlane => {
+                self.parent_mut().cycle_active_plane();
+                self.child_mut().cycle_active_plane();
+            }
+            Action::PromptImageHeight => {}
+            Action::Pan(x, y) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.pan_relative(*x, *y);
+                }
+            }
+            Action::Zoom(scale) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.zoom(*scale, pane.get_selection());
+                }
+            }
+            Action::CenterOnSelection => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    let selection = pane.get_selection();
+                    pane.grid_mut().recenter(selection);
+                    pane.schedule_recompute();
+                }
+            }
+            Action::ScaleMaxIter(factor) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.scale_max_iter(*factor);
+                }
+            }
+            _ => return false,
+        }
+        true
+    }
+
+    fn process_coloring_action(&mut self, action: &Action) -> bool
+    {
+        match action {
+            Action::RandomizePalette => self.randomize_palette(),
+            Action::SetPalette(palette) => self.set_palette(*palette),
+            Action::SetPaletteWhite => self.set_palette(Palette::white(16.)),
+            Action::SetPaletteBlack => self.set_palette(Palette::black(16.)),
+            Action::SetColoring(algorithm) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.set_coloring_algorithm(algorithm.clone());
+                }
+            }
+            Action::SetColoringInternalPotential => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.select_preperiod_smooth_coloring();
+                }
+            }
+            Action::SetColoringPreperiodPeriod => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.select_preperiod_coloring();
+                }
+            }
+            Action::SetColoringPotentialPeriod => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.select_preperiod_period_smooth_coloring();
+                }
+            }
+            Action::ScalePalettePeriod(factor) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.scale_palette(*factor);
+                }
+            }
+            Action::ShiftPalettePhase(phase) => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.shift_palette(*phase);
+                }
+            }
+            Action::ToggleEscapePhaseColoring => {
+                if let Some(pane) = self.get_active_pane_mut() {
+                    pane.get_coloring_mut().toggle_escape_phase_coloring();
+                    pane.schedule_redraw();
+                }
+            }
+            Action::CycleComputeMode(selection, change) => {
+                self.get_selected_pane_ids(*selection)
+                    .into_iter()
+                    .for_each(|pane_id| self.get_pane_mut(pane_id).change_compute_mode(*change));
+            }
+            _ => return false,
+        }
+        true
+    }
+
+    fn prompt_for_active_pane<F>(&mut self, make_input_type: F)
+    where
+        F: FnOnce(PaneID) -> TextInputType,
+    {
+        if let Some(pane_id) = self.active_pane {
+            self.prompt_text(make_input_type(pane_id));
+        }
+    }
+
+    fn reset_active_selection(&mut self)
+    {
+        match self.active_pane {
+            Some(PaneID::Parent) => self.parent.reset_selection(),
+            Some(PaneID::Child) => self.child.reset_selection(),
+            None => {}
+        }
     }
 }
 
@@ -915,204 +1142,20 @@ where
             });
     }
 
-    #[allow(clippy::too_many_lines)]
     /// Processes an action and updates the state of the interface accordingly.
     fn process_action(&mut self, action: &Action)
     {
         debug!("Processing action: {action:?}");
-        match action {
-            Action::Quit => self.schedule_quit(),
-            Action::Close => self.schedule_close(),
-            Action::NewTab => self.schedule_new_tab(),
-            Action::SaveImage(panes) => self.prompt_save_image(*panes),
-            Action::SavePalette(panes) => self.prompt_save_palette(*panes),
-            Action::LoadPalette(panes) => self.prompt_load_palette(*panes),
-            Action::ToggleSelectionMarker => {
-                if let Some(pane) = self.get_active_pane_mut() {
-                    pane.marking_mut().toggle_selection();
-                    pane.schedule_redraw();
-                }
-            }
-            Action::ToggleCritical => {
-                let pane = self.child_mut();
-                pane.marking_mut().toggle_critical();
-                pane.schedule_redraw();
-            }
-            Action::ToggleMarked(selection) => {
-                self.get_selected_pane_ids(*selection)
-                    .into_iter()
-                    .for_each(|pane_id| {
-                        let pane = self.get_pane_mut(pane_id);
-                        pane.marking_mut().toggle_misc_marked();
-                        pane.schedule_redraw();
-                    });
-            }
-            Action::ToggleCycles(selection, period) => {
-                self.get_selected_pane_ids(*selection)
-                    .into_iter()
-                    .for_each(|pane_id| {
-                        let pane = self.get_pane_mut(pane_id);
-                        pane.marking_mut().toggle_cycles_of_period(*period);
-                        pane.schedule_redraw();
-                    });
-            }
-            Action::FindPeriodicPoint => {
-                if let Some(pane_id) = self.active_pane {
-                    let input_type = TextInputType::FindPeriodic { pane_id };
-                    self.prompt_text(input_type);
-                }
-            }
-            Action::EnterCoordinates => {
-                if let Some(pane_id) = self.active_pane {
-                    let input_type = TextInputType::Coordinates { pane_id };
-                    self.prompt_text(input_type);
-                }
-            }
-            Action::MapSelection => {
-                let plane = self.child_mut();
-                plane.map_selection();
-                plane.marking_mut().enable_selection();
-            }
-            Action::DrawOrbit => {
-                let plane = self.child_mut();
-                plane.tasks_mut().orbit.enable();
-            }
-            Action::StopFollowing => {
-                self.child_mut().stop_following();
-            }
-            Action::ClearOrbit => {
-                self.child_mut().clear_marked_orbit();
-            }
-            Action::DrawExternalRay {
-                include_orbit,
-                select_landing_point,
-            } => {
-                if let Some(pane_id) = self.active_pane {
-                    let input_type = TextInputType::ExternalRay {
-                        pane_id,
-                        include_orbit: *include_orbit,
-                        select_landing_point: *select_landing_point,
-                    };
-                    self.prompt_text(input_type);
-                }
-            }
-            Action::DrawRaysOfPeriod => {
-                if let Some(pane_id) = self.active_pane {
-                    let input_type = TextInputType::ActiveRays { pane_id };
-                    self.prompt_text(input_type);
-                }
-            }
-            Action::DrawContour(contour_type) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.draw_contour(*contour_type);
-                }
-            }
-            Action::DrawAuxContours => {
-                self.get_active_pane_mut().map(Pane::draw_aux_contours);
-            }
-            Action::ClearRays => {
-                self.get_active_pane_mut().map(Pane::clear_marked_rays);
-            }
-            Action::ClearEquipotentials => {
-                self.get_active_pane_mut().map(Pane::clear_equipotentials);
-            }
-            Action::ClearCurves => {
-                self.get_active_pane_mut().map(Pane::clear_curves);
-            }
-            Action::ResetSelection => match self.active_pane {
-                Some(PaneID::Parent) => self.parent.reset_selection(),
-                Some(PaneID::Child) => {
-                    self.child.reset_selection();
-                }
-                None => {}
-            },
-            Action::ResetView => {
-                self.get_active_pane_mut().map(Pane::reset);
-            }
-            Action::ToggleLiveMode => self.toggle_live_mode(),
-            Action::CycleActivePlane => {
-                self.parent_mut().cycle_active_plane();
-                self.child_mut().cycle_active_plane();
-            }
-            Action::PromptImageHeight => {
-                // TODO: Fill in with actual handling
-            }
-            Action::Pan(x, y) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.pan_relative(*x, *y);
-                }
-            }
-            Action::Zoom(scale) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.zoom(*scale, p.get_selection());
-                }
-            }
-            Action::CenterOnSelection => {
-                if let Some(pane) = self.get_active_pane_mut() {
-                    let selection = pane.get_selection();
-                    pane.grid_mut().recenter(selection);
-                    pane.schedule_recompute();
-                }
-            }
-            Action::ScaleMaxIter(factor) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.scale_max_iter(*factor);
-                }
-            }
-            Action::RandomizePalette => self.randomize_palette(),
-            Action::SetPalette(palette) => {
-                self.set_palette(*palette);
-            }
-            Action::SetPaletteWhite => {
-                let white_palette = Palette::white(16.);
-                self.set_palette(white_palette);
-            }
-            Action::SetPaletteBlack => {
-                let black_palette = Palette::black(16.);
-                self.set_palette(black_palette);
-            }
-            Action::SetColoring(algorithm) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.set_coloring_algorithm(algorithm.clone());
-                }
-            }
-            Action::SetColoringInternalPotential => {
-                self.get_active_pane_mut()
-                    .map(Pane::select_preperiod_smooth_coloring);
-            }
-            Action::SetColoringPreperiodPeriod => {
-                self.get_active_pane_mut()
-                    .map(Pane::select_preperiod_coloring);
-            }
-            Action::SetColoringPotentialPeriod => {
-                self.get_active_pane_mut()
-                    .map(Pane::select_preperiod_period_smooth_coloring);
-            }
-            Action::ScalePalettePeriod(factor) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.scale_palette(*factor);
-                }
-            }
-            Action::ShiftPalettePhase(phase) => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.shift_palette(*phase);
-                }
-            }
-            Action::ToggleEscapePhaseColoring => {
-                if let Some(p) = self.get_active_pane_mut() {
-                    p.get_coloring_mut().toggle_escape_phase_coloring();
-                    p.schedule_redraw();
-                }
-            }
-            Action::CycleComputeMode(selection, change) => {
-                self.get_selected_pane_ids(*selection)
-                    .into_iter()
-                    .for_each(|pane_id| {
-                        let pane = self.get_pane_mut(pane_id);
-                        pane.change_compute_mode(*change);
-                    });
-            }
+        if self.process_window_action(action)
+            || self.process_annotation_action(action)
+            || self.process_dynamics_action(action)
+            || self.process_view_action(action)
+            || self.process_coloring_action(action)
+        {
+            return;
         }
+
+        unreachable!("unhandled action: {action:?}");
     }
 }
 

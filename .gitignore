@@ -31,3 +31,5 @@ crates/profiles/**/*_experiments.rs
 
 # Backups
 **/*.bak
+
+PLANS.md

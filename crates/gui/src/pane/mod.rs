@@ -621,7 +621,7 @@ where
         self.schedule_recompute();
     }
 
-    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_sign_loss, reason = "Iteration counts are scaled from positive factors and remain non-negative")]
     fn scale_max_iter(&mut self, factor: f64)
     {
         assert!(
