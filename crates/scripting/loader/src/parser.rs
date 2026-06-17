@@ -1,11 +1,11 @@
 use std::collections::HashMap;
-use std::str::FromStr;
+use std::str::FromStr as _;
 
 use dynamo_common::macros::regex;
 use dynamo_common::types::Period;
 use num_complex::Complex64;
-use pyo3::types::PyAnyMethods;
-use pyo3::{IntoPyObject, Python};
+use pyo3::types::PyAnyMethods as _;
+use pyo3::{IntoPyObject as _, Python};
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
 
@@ -170,7 +170,27 @@ impl UnparsedUserInput
             .map(|(key, value)| json_to_complex(value).map(|complex| (key.clone(), complex)))
             .collect::<Result<HashMap<String, Complex64>, ScriptError>>()?;
 
-        let py_params = Python::attach(|py| {
+        let py_params = self.transpile_py_params(&const_names, &param_names)?;
+
+        Ok(ParsedUserInput {
+            metadata: self.metadata,
+            constants,
+            param_names,
+            names: self.names,
+            optional: self.optional.unwrap_or_default(),
+            py_params,
+        })
+    }
+
+    /// Transpile the user's symbolic map, start point, and parameter map into
+    /// Rust source fragments via the bundled SymPy helpers.
+    fn transpile_py_params(
+        &self,
+        const_names: &[String],
+        param_names: &[String],
+    ) -> Result<PyParams, ScriptError>
+    {
+        Python::attach(|py| {
             let sys = py.import("sys")?;
             sys.getattr("path")?.call_method1("append", ("python",))?;
             sys.getattr("path")?
@@ -186,8 +206,8 @@ impl UnparsedUserInput
             let z_str = self.names.variable.clone().into_pyobject(py)?;
             let t_str = self.names.selection.clone().into_pyobject(py)?;
 
-            let param_names_py = param_names.clone().into_pyobject(py)?;
-            let const_names_py = const_names.into_pyobject(py)?;
+            let param_names_py = param_names.to_vec().into_pyobject(py)?;
+            let const_names_py = const_names.to_vec().into_pyobject(py)?;
 
             // Imports
             let sympy = py.import("sympy")?;
@@ -230,24 +250,13 @@ impl UnparsedUserInput
 
             let param_map = oxidize_pmap.call1((params_dict_py,))?.to_string();
 
-            let py_params = PyParams {
+            Ok(PyParams {
                 param_map,
                 map,
                 map_d,
                 start,
                 start_d,
-            };
-
-            Ok::<_, ScriptError>(py_params)
-        })?;
-
-        Ok(ParsedUserInput {
-            metadata: self.metadata,
-            constants,
-            param_names,
-            names: self.names,
-            optional: self.optional.unwrap_or_default(),
-            py_params,
+            })
         })
     }
 }

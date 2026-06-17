@@ -1,10 +1,7 @@
-use dynamo_common::horner;
-use dynamo_common::math_utils::roots_of_unity;
-
-use crate::macros::{degree_impl, ext_ray_impl_nonmonic, horner_monic, profile_imports};
 use crate::covering_helpers::{
     degree_3_dynatomic_curve_period_2, degree_3_marked_cycle_curve_period_3,
 };
+use crate::macros::{ext_ray_impl_nonmonic, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -29,7 +26,6 @@ impl<const D: i32> Default for Unicorn<D>
     fractal_impl!();
 }
 
-#[allow(clippy::suspicious_operation_groupings)]
 impl<const D: i32> DynamicalFamily for Unicorn<D>
 {
     parameter_plane_impl!();
@@ -195,7 +191,10 @@ impl HasDynamicalCovers for Unicorn<3>
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
 
-    #[allow(clippy::single_match_else, reason = "The period dispatcher stays flatter as a match while more periods remain unsupported")]
+    #[expect(
+        clippy::single_match_else,
+        reason = "The period dispatcher stays flatter as a match while more periods remain unsupported"
+    )]
     fn dynatomic_curve(self, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);

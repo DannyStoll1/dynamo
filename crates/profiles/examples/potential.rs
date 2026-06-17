@@ -1,5 +1,11 @@
-#![allow(dead_code)]
-#![allow(clippy::unwrap_used)]
+#![expect(
+    dead_code,
+    reason = "this example keeps several self-contained demo routines that `main` selects from one at a time"
+)]
+#![expect(
+    clippy::unwrap_used,
+    reason = "example code favours terse unwraps over production-grade error handling"
+)]
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use dynamo_profiles::Mandelbrot;
@@ -8,7 +14,7 @@ fn escape()
 {
     let c = Cplx::new(-0.75, 1e-7);
 
-    let mandelbrot = Mandelbrot::default().with_max_iter(4_294_967_296);
+    let mandelbrot = Mandelbrot::default().with_max_iter(0x0001_0000_0000);
     let mut orbit = orbit::Potential::new(&mandelbrot).init(c);
     let (green, d_green) = orbit.run_until_complete().unwrap();
 
@@ -25,7 +31,7 @@ fn bottcher()
     let c = Cplx::new(-1.0, -0.0);
     let z = Cplx::new(0.3, 0.1);
 
-    let mandelbrot = Mandelbrot::default().with_max_iter(65536);
+    let mandelbrot = Mandelbrot::default().with_max_iter(0x0001_0000);
     let julia = JuliaSet::from(mandelbrot).with_param(c);
     let mut orbit = orbit::Potential::new(&julia).init(z);
     let (green, d_green) = orbit.run_until_complete().unwrap();
@@ -50,7 +56,7 @@ fn koenigs()
     let c = Cplx::new(-0.4, -0.3);
     let z = Cplx::new(0.2, 0.1);
 
-    let mandelbrot = Mandelbrot::default().with_max_iter(65536);
+    let mandelbrot = Mandelbrot::default().with_max_iter(0x0001_0000);
     let julia = JuliaSet::from(mandelbrot).with_param(c);
     let mut orbit = orbit::Potential::new(&julia).init(z);
     let (phi, d_phi) = orbit.run_until_complete().unwrap();
@@ -76,7 +82,7 @@ fn hyp_component_interior()
     const EPS: Real = 1e-8;
     let c = Cplx::new(-0.5, 0.2);
 
-    let mandelbrot = Mandelbrot::default().with_max_iter(4_294_967_296);
+    let mandelbrot = Mandelbrot::default().with_max_iter(0x0001_0000_0000);
     let mut orbit = orbit::Potential::new(&mandelbrot).init(c);
     let (mult, d_mult) = orbit.run_until_complete().unwrap();
 

@@ -44,7 +44,13 @@ fn period_3_marked_cycle_map(t: Cplx) -> (Cplx, Cplx)
 
     let path_deriv = PERIOD_3_VECT / v.powi(2);
 
-    let numerator_base = horner_monic!(w, PERIOD_3_NUM_0, PERIOD_3_NUM_1, PERIOD_3_NUM_2, PERIOD_3_NUM_3);
+    let numerator_base = horner_monic!(
+        w,
+        PERIOD_3_NUM_0,
+        PERIOD_3_NUM_1,
+        PERIOD_3_NUM_2,
+        PERIOD_3_NUM_3
+    );
     let numerator_base_deriv = horner!(w, PERIOD_3_NUM_1, PERIOD_3_DNUM_2, PERIOD_3_DNUM_3, 4.);
 
     let primary_denominator = horner_monic!(w, PERIOD_3_DEN_A0, PERIOD_3_DEN_A1);

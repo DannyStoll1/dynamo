@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 
 pub use num::integer::binomial;
-use num_complex::ComplexFloat;
+use num_complex::ComplexFloat as _;
 pub use spfunc::gamma::{digamma, gamma, polygamma};
 pub use spfunc::zeta::zeta;
 

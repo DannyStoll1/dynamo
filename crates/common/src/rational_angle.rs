@@ -1,5 +1,5 @@
 use derive_more::{From, Into};
-use num_traits::sign::Signed;
+use num_traits::sign::Signed as _;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +26,7 @@ impl From<RatioDef> for Rational
     }
 }
 
-/// Wrapper class for num_rational::Rational that performs arithmetic mod 1
+/// Wrapper class for num_rational::Rational that performs arithmetic mod 1.
 #[derive(Clone, Copy, Debug, Hash, From, Into, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RationalAngle(#[cfg_attr(feature = "serde", serde(with = "RatioDef"))] Rational);
@@ -43,7 +43,7 @@ impl RationalAngle
         Self(rational)
     }
 
-    /// Creates a RationalAngle without checking for zero division, reducing, or projecting mod 1
+    /// Creates a RationalAngle without checking for zero division, reducing, or projecting mod 1.
     #[must_use]
     pub const fn new_raw(numer: AngleNum, denom: AngleNum) -> Self
     {
@@ -115,34 +115,58 @@ impl std::ops::Neg for RationalAngle
     }
 }
 
+/// Conversion of small integer types into [`AngleNum`] for angle arithmetic.
+trait IntoAngleNum
+{
+    fn into_angle_num(self) -> AngleNum;
+}
+impl IntoAngleNum for u32
+{
+    fn into_angle_num(self) -> AngleNum
+    {
+        AngleNum::from(self)
+    }
+}
+impl IntoAngleNum for i32
+{
+    fn into_angle_num(self) -> AngleNum
+    {
+        AngleNum::from(self)
+    }
+}
+impl IntoAngleNum for u64
+{
+    fn into_angle_num(self) -> AngleNum
+    {
+        self as AngleNum
+    }
+}
+
 macro_rules! mul_div_int_impl {
     ($other:ty) => {
         impl std::ops::Mul<$other> for RationalAngle
         {
             type Output = Self;
 
-            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn mul(self, rhs: $other) -> Self::Output
             {
-                Self(self.0 * (rhs as AngleNum)).mod_1()
+                Self(self.0 * rhs.into_angle_num()).mod_1()
             }
         }
         impl std::ops::Mul<RationalAngle> for $other
         {
             type Output = RationalAngle;
 
-            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn mul(self, rhs: RationalAngle) -> Self::Output
             {
-                rhs * (self as AngleNum)
+                rhs * self.into_angle_num()
             }
         }
         impl std::ops::MulAssign<$other> for RationalAngle
         {
-            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn mul_assign(&mut self, rhs: $other)
             {
-                self.0 *= rhs as AngleNum;
+                self.0 *= rhs.into_angle_num();
                 self.reduce_mod_1();
             }
         }
@@ -150,18 +174,16 @@ macro_rules! mul_div_int_impl {
         {
             type Output = Self;
 
-            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn div(self, rhs: $other) -> Self::Output
             {
-                Self(self.0 / (rhs as AngleNum)).mod_1()
+                Self(self.0 / rhs.into_angle_num()).mod_1()
             }
         }
         impl std::ops::DivAssign<$other> for RationalAngle
         {
-            #[allow(clippy::cast_lossless, reason = "u64 cannot use From into i64, and smaller integer inputs convert exactly to AngleNum")]
             fn div_assign(&mut self, rhs: $other)
             {
-                self.0 /= rhs as AngleNum;
+                self.0 /= rhs.into_angle_num();
                 self.reduce_mod_1();
             }
         }
@@ -211,7 +233,10 @@ impl std::ops::Div<AngleNum> for RationalAngle
 {
     type Output = Self;
 
-    #[allow(clippy::suspicious_arithmetic_impl, reason = "Dividing an angle by an integer scales the denominator in the quotient group representation")]
+    #[expect(
+        clippy::suspicious_arithmetic_impl,
+        reason = "Dividing an angle by an integer scales the denominator in the quotient group representation"
+    )]
     fn div(self, rhs: AngleNum) -> Self
     {
         Self::new(*self.0.numer(), *self.0.denom() * rhs)

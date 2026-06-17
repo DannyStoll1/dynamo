@@ -107,6 +107,10 @@ impl DynamicalFamily for QuadRatPer5
         -2. * b / a
     }
 
+    #[expect(
+        clippy::many_single_char_names,
+        reason = "closed-form Weierstrass-p param map mirrors the elliptic-curve notation"
+    )]
     fn param_map(&self, t: Cplx) -> Self::Param
     {
         let (mut x, mut y) = weierstrass_p(G2, G3, t, 0.01);

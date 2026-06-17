@@ -280,8 +280,14 @@ impl FractalTab
         self.menu_state.is_closed()
     }
 
-    #[allow(clippy::unused_self, reason = "Placeholder until the Help menu gains actions")]
-    #[allow(clippy::needless_pass_by_ref_mut, reason = "Menu callback shape matches the other menu builders")]
+    #[expect(
+        clippy::unused_self,
+        reason = "Placeholder until the Help menu gains actions"
+    )]
+    #[expect(
+        clippy::needless_pass_by_ref_mut,
+        reason = "Menu callback shape matches the other menu builders"
+    )]
     const fn help_menu(&mut self, _ui: &mut Ui)
     {
         // TODO: create help menu

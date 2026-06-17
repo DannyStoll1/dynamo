@@ -26,7 +26,6 @@ impl Default for RealCubicRealCrit
     fractal_impl!();
 }
 
-#[allow(clippy::suboptimal_flops)]
 impl DynamicalFamily for RealCubicRealCrit
 {
     type Param = RealPair;
@@ -109,7 +108,6 @@ impl Default for RealCubicImagCrit
     fractal_impl!();
 }
 
-#[allow(clippy::suboptimal_flops)]
 impl DynamicalFamily for RealCubicImagCrit
 {
     type Param = RealPair;

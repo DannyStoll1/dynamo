@@ -1,5 +1,4 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(dead_code)]
 use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
 
 pub mod fractal_tab;
@@ -134,13 +133,13 @@ impl eframe::App for FractalApp
 #[cfg(test)]
 mod tests
 {
-    use dynamo_core::dynamics::DynamicalFamily;
+    use dynamo_core::dynamics::DynamicalFamily as _;
 
     #[test]
     fn gui_speedtest()
     {
         use dynamo_core::dynamics::julia::JuliaSet;
-        use dynamo_gui::interface::{MainInterface, PanePair};
+        use dynamo_gui::interface::{MainInterface, PanePair as _};
 
         let height = 1024;
         let parameter_plane = dynamo_profiles::QuadRatPer2::default()

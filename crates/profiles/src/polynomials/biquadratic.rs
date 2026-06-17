@@ -745,7 +745,7 @@ impl DynamicalFamily for BiquadraticMultSection
     #[inline]
     fn name(&self) -> String
     {
-        "Biquadratic Section".to_string()
+        "Biquadratic Section".to_owned()
     }
 
     #[inline]

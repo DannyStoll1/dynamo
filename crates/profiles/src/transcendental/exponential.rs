@@ -1,8 +1,4 @@
-use std::f64::consts::PI;
-
-use dynamo_common::math_utils::slog;
-
-use crate::macros::{degree_impl_transcendental, has_child_impl, profile_imports};
+use crate::macros::{degree_impl_transcendental, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]

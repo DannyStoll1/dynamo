@@ -1,5 +1,6 @@
-use pyo3::PyErr;
 use std::fmt::{Display, Formatter};
+
+use pyo3::PyErr;
 
 #[derive(Debug)]
 pub enum ScriptError
@@ -49,9 +50,15 @@ impl Display for ScriptError
             Self::ErrorWritingFile(err) => write!(f, "Failed to write script file: {err}"),
             Self::ErrorReadingToml(err) => write!(f, "Failed to read script file: {err}"),
             Self::ErrorParsingToml(err) => write!(f, "Failed to parse script TOML: {err}"),
-            Self::ErrorMovingLibrary(err) => write!(f, "Failed to move compiled script library: {err}"),
-            Self::ErrorLoadingLibrary(err) => write!(f, "Failed to load compiled script library: {err}"),
-            Self::CargoCommandFailed(err) => write!(f, "Failed to execute cargo while building script: {err}"),
+            Self::ErrorMovingLibrary(err) => {
+                write!(f, "Failed to move compiled script library: {err}")
+            }
+            Self::ErrorLoadingLibrary(err) => {
+                write!(f, "Failed to load compiled script library: {err}")
+            }
+            Self::CargoCommandFailed(err) => {
+                write!(f, "Failed to execute cargo while building script: {err}")
+            }
         }
     }
 }

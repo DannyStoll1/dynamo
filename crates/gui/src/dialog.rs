@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::fmt::Write;
+use std::fmt::Write as _;
 
 use dynamo_common::rational_angle::RationalAngle;
 use dynamo_common::symbolic_dynamics::{AngleInfo, OrbitSchemaWithDegree};
@@ -302,7 +302,6 @@ impl TextDialogBuilder
         )
     }
 
-    #[allow(clippy::missing_const_for_fn, reason = "Build consumes heap-allocated Strings and returns a non-const dialog")]
     #[must_use]
     pub fn build(self) -> StructuredTextDialog
     {

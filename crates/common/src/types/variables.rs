@@ -318,7 +318,7 @@ impl std::ops::Div for EisensteinInteger
 
     fn div(self, rhs: Self) -> Self::Output
     {
-        use num_traits::Zero;
+        use num_traits::Zero as _;
         assert!(
             !rhs.is_zero(),
             "Attempt to divide Eisenstein integer by zero"
@@ -549,7 +549,7 @@ impl std::ops::Div for GaussianInteger
 
     fn div(self, rhs: Self) -> Self::Output
     {
-        use num_traits::Zero;
+        use num_traits::Zero as _;
         assert!(!rhs.is_zero(), "Attempt to divide Gaussian integer by zero");
 
         let quot_approx = Cplx::from(self) / Cplx::from(rhs);

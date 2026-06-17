@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use dynamo_common::prelude::*;
 
 pub mod algorithms;
@@ -147,7 +145,7 @@ impl Coloring
     where
         P: AsRef<std::path::Path>,
     {
-        use std::io::Write;
+        use std::io::Write as _;
 
         let toml_string =
             toml::to_string(self.get_palette()).expect("Failed to serialize palette.");
@@ -201,8 +199,6 @@ mod tests
         let rgb = Rgb::from(hsv);
         let hsv1 = Hsv::from(rgb);
 
-        dbg!(hsv, rgb, hsv1);
-
         assert!(hsv.hue - hsv1.hue < 1e-2);
         assert!(hsv.saturation - hsv1.saturation < 1e-2);
         assert!(hsv.intensity - hsv1.intensity < 1e-2);
@@ -219,8 +215,10 @@ mod tests
             h: 0.625,
         };
         let luv = Luv::from(lch);
-        dbg!(luv);
         let xyz = Xyz::from(luv);
-        dbg!(xyz);
+
+        assert!(xyz.x.is_finite());
+        assert!(xyz.y.is_finite());
+        assert!(xyz.z.is_finite());
     }
 }

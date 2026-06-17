@@ -1,4 +1,4 @@
-use crate::prelude::{Cplx, Dist, NAN, Norm, Real};
+use crate::prelude::{Cplx, Dist as _, NAN, Norm, Real};
 
 const I: Cplx = Cplx::new(0., 1.);
 
@@ -209,7 +209,10 @@ where
         }
     }
 
-    #[expect(clippy::while_float, reason = "Loop closure advances while the floating-point distance keeps decreasing")]
+    #[expect(
+        clippy::while_float,
+        reason = "Loop closure advances while the floating-point distance keeps decreasing"
+    )]
     fn close_loop(&mut self, t_list: &mut Vec<Cplx>)
     {
         let mut dist = Real::INFINITY;

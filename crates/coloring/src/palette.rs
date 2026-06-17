@@ -3,7 +3,7 @@ use dynamo_common::symbolic_dynamics::OrbitSchema;
 use dynamo_common::types::{IterCountSmooth, Period};
 use egui::Color32;
 use rand::rng;
-use rand_distr::{ChiSquared, Distribution, Uniform};
+use rand_distr::{ChiSquared, Distribution as _, Uniform};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -27,7 +27,7 @@ pub struct Sinusoid
     phase:     f64,
     amplitude: f64,
     midline:   f64,
-    #[serde(default)]
+    #[cfg_attr(feature = "serde", serde(default))]
     degree:    i32,
 }
 impl Sinusoid
@@ -61,33 +61,9 @@ impl Sinusoid
     {
         &mut self.period
     }
-    const fn get_amplitude_mut(&mut self) -> &mut f64
-    {
-        &mut self.amplitude
-    }
-    const fn get_midline_mut(&mut self) -> &mut f64
-    {
-        &mut self.midline
-    }
     const fn get_phase_mut(&mut self) -> &mut f64
     {
         &mut self.phase
-    }
-    const fn set_period(&mut self, period: f64)
-    {
-        self.period = period;
-    }
-    const fn set_amplitude(&mut self, amplitude: f64)
-    {
-        self.amplitude = amplitude;
-    }
-    const fn set_midline(&mut self, midline: f64)
-    {
-        self.midline = midline;
-    }
-    const fn set_phase(&mut self, phase: f64)
-    {
-        self.phase = phase;
     }
 }
 impl Default for Sinusoid
@@ -104,14 +80,10 @@ impl Default for Sinusoid
     }
 }
 
+#[cfg(feature = "serde")]
 mod defaults
 {
     use egui::Color32;
-    pub(super) const fn white() -> Color32
-    {
-        Color32::WHITE
-    }
-
     pub(super) const fn black() -> Color32
     {
         Color32::BLACK
@@ -397,15 +369,6 @@ impl DiscretePalette
     fn map_preperiodic_hsv(&self, o: OrbitSchema) -> Hsv
     {
         self.map_hsv(
-            o.period as f32,
-            0.5f32.mul_add((o.preperiod as f32).tanh(), 1.),
-        )
-    }
-
-    #[must_use]
-    fn map_preperiodic_lch(&self, o: OrbitSchema) -> Lchab
-    {
-        self.map_lch(
             o.period as f32,
             0.5f32.mul_add((o.preperiod as f32).tanh(), 1.),
         )

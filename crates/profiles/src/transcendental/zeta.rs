@@ -1,4 +1,4 @@
-use dynamo_color::{Coloring, IncoloringAlgorithm};
+use dynamo_color::Coloring;
 use dynamo_common::math_utils::{riemann_xi, riemann_xi_d, riemann_xi_d2};
 use dynamo_core::dynamics::PlaneType;
 

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::macros::regex;
 use crate::prelude::*;
 
-/// Information to display about a rational angle
+/// Information to display about a rational angle.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AngleInfo
@@ -105,7 +105,7 @@ impl FromStr for OrbitSchema
     type Err = ParseOrbitSchemaError;
 
     /// Parse text representing a period and preperiod into an OrbitSchema.
-    /// Acceptable input formats: <period> or <period, preperiod>
+    /// Acceptable input formats: <period> or <period, preperiod>.
     fn from_str(text: &str) -> Result<Self, Self::Err>
     {
         let preperiod = regex!(r"^\s*(\d+)\s*,\s*(\d+)\s*$");
@@ -172,7 +172,7 @@ impl OrbitSchemaWithDegree
         }
     }
 
-    /// All angles of the same period and preperiod
+    /// All angles of the same period and preperiod.
     #[must_use]
     pub fn exact_angles(&self) -> VecDeque<RationalAngle>
     {
@@ -183,7 +183,7 @@ impl OrbitSchemaWithDegree
             .collect()
     }
 
-    /// All angles of the same period and the same or smaller preperiod
+    /// All angles of the same period and the same or smaller preperiod.
     #[must_use]
     pub fn child_angles(&self) -> VecDeque<RationalAngle>
     {
@@ -297,7 +297,7 @@ impl CirclePartition
         Self { angles }
     }
 
-    /// Assumes angles are sorted
+    /// Assumes angles are sorted.
     #[must_use]
     pub const fn new_raw(angles: VecDeque<RationalAngle>) -> Self
     {
@@ -472,7 +472,7 @@ impl AngleWithDegree
         self.itinerary_given_orbit_schema(orbit_schema, partition)
     }
 
-    /// Canonical itinerary of self relative to `rel_angle`
+    /// Canonical itinerary of self relative to `rel_angle`.
     #[must_use]
     pub fn canonical_itinerary(&self, rel_angle: RationalAngle) -> Itinerary
     {
@@ -480,7 +480,7 @@ impl AngleWithDegree
         self.canonical_itinerary_given_orbit_schema(orbit_schema, rel_angle)
     }
 
-    /// Canonical itinerary of self relative to `rel_angle`
+    /// Canonical itinerary of self relative to `rel_angle`.
     #[must_use]
     pub fn canonical_itinerary_given_orbit_schema(
         &self,
@@ -670,7 +670,7 @@ impl FromStr for RationalAngle
     /// Supports fraction strings, e.g. "17/168",
     /// binary strings for dyadic angles, e.g. "011" -> 3/8,
     /// and binary representations of (pre)periodic angles,
-    /// e.g. "011p10" -> 3/2^3 + 2/(2^3*(2^2-1)) = 11/24
+    /// e.g. "011p10" -> 3/2^3 + 2/(2^3*(2^2-1)) = 11/24.
     fn from_str(text: &str) -> Result<Self, Self::Err>
     {
         if let Some(result) = parse_fraction(text)

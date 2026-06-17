@@ -1,7 +1,7 @@
 pub mod menu;
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
-use dynamo_gui::interface::{Interface, MainInterface, PanePair};
+use dynamo_gui::interface::{Interface, MainInterface, PanePair as _};
 use dynamo_profiles::{
     BiquadraticMult, BiquadraticMultParam, BiquadraticMultSection, BurningShip, Chebyshev,
     CoshNewton, Cosine, CosineAdd, CubicMarked2Cycle, CubicPer1_0, CubicPer1_1, CubicPer1Lambda,
@@ -40,7 +40,10 @@ fn polynomials_menu() -> State
         .with_submenu("Quadratic Family", quadratic_family_menu)
         .with_submenu("Cubic Family", cubic_family_menu)
         .with_submenu("Unicritical Maps\nz -> c*(1+z/d)^d", unicritical_menu)
-        .with_submenu("Chebyshev family\nz -> (-1)^k * c * T_2k(z/2)", chebyshev_menu)
+        .with_submenu(
+            "Chebyshev family\nz -> (-1)^k * c * T_2k(z/2)",
+            chebyshev_menu,
+        )
         .with_submenu("Biquadratic Maps", biquadratic_menu)
 }
 
@@ -63,12 +66,18 @@ fn rational_maps_menu() -> State
 
 fn buttons_menu(entries: &[MenuEntry]) -> State
 {
-    entries.iter().fold(State::submenu(), |state, (name, create)| {
-        state.with_fractal_button(name, *create)
-    })
+    entries
+        .iter()
+        .fold(State::submenu(), |state, (name, create)| {
+            state.with_fractal_button(name, *create)
+        })
 }
 
-fn with_button_submenu<const N: usize>(state: State, title: &'static str, entries: [MenuEntry; N]) -> State
+fn with_button_submenu<const N: usize>(
+    state: State,
+    title: &'static str,
+    entries: [MenuEntry; N],
+) -> State
 {
     if entries.is_empty() {
         state
@@ -126,12 +135,12 @@ fn quadratic_family_menu() -> State
         "Base Curve",
         interface!(Mandelbrot),
         MarkedPointSections {
-            cycles: [
+            cycles:      [
                 ("Period 1", interface_mc!(Mandelbrot, 1)),
                 ("Period 3", interface_mc!(Mandelbrot, 3)),
                 ("Period 4", interface_mc!(Mandelbrot, 4)),
             ],
-            periodic: [
+            periodic:    [
                 ("Period 1", interface_mc!(Mandelbrot, 1)),
                 ("Period 2", interface_dyn!(Mandelbrot, 2)),
                 ("Period 3", interface_dyn!(Mandelbrot, 3)),
@@ -176,11 +185,11 @@ fn with_cubic_base_menus(state: State) -> State
             "Base curve",
             interface!(OddCubic),
             MarkedPointSections {
-                cycles: [
+                cycles:      [
                     ("Period 1", interface_mc!(OddCubic, 1)),
                     ("Period 2", interface_mc!(OddCubic, 2)),
                 ],
-                periodic: [
+                periodic:    [
                     ("Period 1", interface_dyn!(OddCubic, 1)),
                     ("Period 2", interface_dyn!(OddCubic, 2)),
                 ],
@@ -202,11 +211,11 @@ fn with_cubic_per_menus(state: State) -> State
             "Base Curve",
             interface!(CubicPer1_0),
             MarkedPointSections {
-                cycles: [
+                cycles:      [
                     ("Period 1", interface_mc!(CubicPer1_0, 1)),
                     ("Period 2", interface_mc!(CubicPer1_0, 2)),
                 ],
-                periodic: [
+                periodic:    [
                     ("Period 1", interface_dyn!(CubicPer1_0, 1)),
                     ("Period 2", interface_dyn!(CubicPer1_0, 2)),
                 ],
@@ -221,11 +230,11 @@ fn with_cubic_per_menus(state: State) -> State
             "Base curve",
             interface!(CubicPer2CritMarked),
             MarkedPointSections {
-                cycles: [
+                cycles:      [
                     ("Period 1", interface_mc!(CubicPer2CritMarked, 1)),
                     ("Period 2", interface_mc!(CubicPer2CritMarked, 2)),
                 ],
-                periodic: [],
+                periodic:    [],
                 preperiodic: [],
             },
         ),
@@ -237,8 +246,8 @@ fn with_cubic_per_menus(state: State) -> State
             "Base Curve",
             interface!(CubicPer1_1),
             MarkedPointSections {
-                cycles: [("Period 2", interface_mc!(CubicPer1_1, 2))],
-                periodic: [("Period 2", interface_dyn!(CubicPer1_1, 2))],
+                cycles:      [("Period 2", interface_mc!(CubicPer1_1, 2))],
+                periodic:    [("Period 2", interface_dyn!(CubicPer1_1, 2))],
                 preperiodic: [("Preperiod 1, Period 1", interface_mis!(CubicPer1_1, 1, 1))],
             },
         ),
@@ -249,7 +258,10 @@ fn cubic_per_1_lambda_menu() -> State
 {
     buttons_menu(&[
         ("λ-plane", interface!(CubicPer1LambdaParam, CubicPer1Lambda)),
-        ("λ=0.3", interface!(CubicPer1Lambda, with_param, Cplx::from(0.3))),
+        (
+            "λ=0.3",
+            interface!(CubicPer1Lambda, with_param, Cplx::from(0.3)),
+        ),
         (
             "λ=0.3 moduli",
             interface!(CubicPer1LambdaModuli, with_param, Cplx::from(0.3)),
@@ -262,7 +274,10 @@ fn cubic_per_1_lambda_menu() -> State
             "λ=0.99 moduli",
             interface!(CubicPer1LambdaModuli, with_param, Cplx::from(0.99)),
         ),
-        ("λ=0.99i", interface!(CubicPer1Lambda, with_param, Cplx::new(0., 0.99))),
+        (
+            "λ=0.99i",
+            interface!(CubicPer1Lambda, with_param, Cplx::new(0., 0.99)),
+        ),
     ])
 }
 
@@ -270,8 +285,14 @@ fn cubic_per_2_lambda_menu() -> State
 {
     buttons_menu(&[
         ("λ-plane", interface!(CubicPer2LambdaParam, CubicPer2Lambda)),
-        ("λ=0.3", interface!(CubicPer2Lambda, with_param, Cplx::from(0.3))),
-        ("λ=0.99i", interface!(CubicPer2Lambda, with_param, Cplx::new(0., 0.99))),
+        (
+            "λ=0.3",
+            interface!(CubicPer2Lambda, with_param, Cplx::from(0.3)),
+        ),
+        (
+            "λ=0.99i",
+            interface!(CubicPer2Lambda, with_param, Cplx::new(0., 0.99)),
+        ),
     ])
 }
 
@@ -281,11 +302,17 @@ fn cubic_marked_2_cycle_menu() -> State
         "Base curve",
         interface!(CubicMarked2Cycle),
         MarkedPointSections {
-            cycles: [("Period 1", interface_mc!(CubicMarked2Cycle, 1))],
-            periodic: [("Period 2", interface_dyn!(CubicMarked2Cycle, 2))],
+            cycles:      [("Period 1", interface_mc!(CubicMarked2Cycle, 1))],
+            periodic:    [("Period 2", interface_dyn!(CubicMarked2Cycle, 2))],
             preperiodic: [
-                ("Preperiod 1, Period 1", interface_mis!(CubicMarked2Cycle, 1, 1)),
-                ("Preperiod 1, Period 2", interface_mis!(CubicMarked2Cycle, 1, 2)),
+                (
+                    "Preperiod 1, Period 1",
+                    interface_mis!(CubicMarked2Cycle, 1, 1),
+                ),
+                (
+                    "Preperiod 1, Period 2",
+                    interface_mis!(CubicMarked2Cycle, 1, 2),
+                ),
             ],
         },
     )
@@ -299,12 +326,12 @@ fn unicritical_menu() -> State
             "Base curve",
             interface!(Unicritical<3>),
             MarkedPointSections {
-                cycles: [
+                cycles:      [
                     ("Period 1", interface_mc!(Unicritical<3>, 1)),
                     ("Period 2", interface_mc!(Unicritical<3>, 2)),
                     ("Period 3", interface_mc!(Unicritical<3>, 3)),
                 ],
-                periodic: [
+                periodic:    [
                     ("Period 1", interface_mc!(Unicritical<3>, 1)),
                     ("Period 2", interface_dyn!(Unicritical<3>, 2)),
                 ],
@@ -330,11 +357,17 @@ fn chebyshev_menu() -> State
 fn quad_rat_per_1_lambda_menu() -> State
 {
     buttons_menu(&[
-        ("λ-plane", interface!(QuadRatPer1LambdaParam, QuadRatPer1Lambda)),
+        (
+            "λ-plane",
+            interface!(QuadRatPer1LambdaParam, QuadRatPer1Lambda),
+        ),
         ("λ=1", interface!(QuadRatPer1_1)),
         ("λ=-1", interface!(QuadRatPer1Lambda, with_param, -ONE)),
         ("λ=ω", interface!(QuadRatPer1Lambda, with_param, OMEGA)),
-        ("λ=i", interface!(QuadRatPer1Lambda, with_param, Cplx::new(0., 1.))),
+        (
+            "λ=i",
+            interface!(QuadRatPer1Lambda, with_param, Cplx::new(0., 1.)),
+        ),
         (
             "λ=exp(φτi)",
             interface!(
@@ -349,11 +382,23 @@ fn quad_rat_per_1_lambda_menu() -> State
 fn quad_rat_per_2_lambda_menu() -> State
 {
     buttons_menu(&[
-        ("λ-plane", interface!(QuadRatPer2LambdaParam, QuadRatPer2Lambda)),
+        (
+            "λ-plane",
+            interface!(QuadRatPer2LambdaParam, QuadRatPer2Lambda),
+        ),
         ("λ=1", interface!(QuadRatPer2Lambda, with_param, ONE)),
-        ("λ=i", interface!(QuadRatPer2Lambda, with_param, Cplx::new(0., 1.))),
-        ("λ=-3", interface!(QuadRatPer2Lambda, with_param, Cplx::from(-3.))),
-        ("λ=-27", interface!(QuadRatPer2Lambda, with_param, Cplx::from(-27.))),
+        (
+            "λ=i",
+            interface!(QuadRatPer2Lambda, with_param, Cplx::new(0., 1.)),
+        ),
+        (
+            "λ=-3",
+            interface!(QuadRatPer2Lambda, with_param, Cplx::from(-3.)),
+        ),
+        (
+            "λ=-27",
+            interface!(QuadRatPer2Lambda, with_param, Cplx::from(-27.)),
+        ),
     ])
 }
 
@@ -382,9 +427,18 @@ fn biquadratic_menu() -> State
 {
     buttons_menu(&[
         ("λ-plane", interface!(BiquadraticMultParam, BiquadraticMult)),
-        ("λ=0.3", interface!(BiquadraticMult, with_param, Cplx::from(0.3))),
-        ("λ=0.2+0.7j", interface!(BiquadraticMult, with_param, Cplx::new(0.2, 0.7))),
-        ("λ=0.99i", interface!(BiquadraticMult, with_param, Cplx::new(0., 0.99))),
+        (
+            "λ=0.3",
+            interface!(BiquadraticMult, with_param, Cplx::from(0.3)),
+        ),
+        (
+            "λ=0.2+0.7j",
+            interface!(BiquadraticMult, with_param, Cplx::new(0.2, 0.7)),
+        ),
+        (
+            "λ=0.99i",
+            interface!(BiquadraticMult, with_param, Cplx::new(0., 0.99)),
+        ),
         ("Section (b=1): λ-plane", interface!(BiquadraticMultSection)),
     ])
 }

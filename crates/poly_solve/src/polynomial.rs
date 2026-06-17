@@ -3,7 +3,7 @@ use std::collections::{VecDeque, vec_deque};
 use std::ops::{Add, AddAssign};
 
 use derive_more::From;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use num_traits::{NumOps, Zero};
 
 use crate::newton::Newton;
@@ -11,12 +11,12 @@ use crate::normed::Semimetric;
 use crate::poly_traits::{
     Differentiable, DivideByAffine, Eval, HasVar, MulConst, Normalize, VariableOps,
 };
-use crate::utils::Collapse;
+use crate::utils::Collapse as _;
 
 #[derive(Clone, PartialEq, Eq, Debug, From)]
 pub struct Polynomial<T>
 {
-    /// Coefficients of the polynomial, starting with constant term first
+    /// Coefficients of the polynomial, starting with constant term first.
     pub coeffs: VecDeque<T>,
 }
 
@@ -26,21 +26,21 @@ impl<T> Polynomial<T>
         coeffs: VecDeque::new(),
     };
 
-    /// Degree of the polynomial
+    /// Degree of the polynomial.
     #[must_use]
     pub fn degree(&self) -> i32
     {
         (self.coeffs.len() - 1) as i32
     }
 
-    /// 1 + degree of the polynomial
+    /// 1 + degree of the polynomial.
     #[must_use]
     pub fn size(&self) -> usize
     {
         self.coeffs.len()
     }
 
-    /// Other must have lower degree for this to be correct
+    /// Other must have lower degree for this to be correct.
     fn add_assign_lower_degree_poly(&mut self, other: &Self)
     where
         T: Clone + AddAssign,
@@ -88,14 +88,11 @@ impl<T> Polynomial<T>
             Ordering::Greater => {}
         }
 
-        let a_s = self.iter_mut();
-        let mut b_s = rhs.iter().cloned();
-        for a in a_s {
-            #[allow(clippy::unwrap_used)]
-            let b = b_s.next().unwrap(); // Guaranteed to be Some since rhs has higher degree
-            *a += b;
-        }
-        self.coeffs.extend(b_s);
+        let self_len = self.size();
+        self.iter_mut()
+            .zip(rhs.iter().cloned())
+            .for_each(|(a, b)| *a += b);
+        self.coeffs.extend(rhs.iter().skip(self_len).cloned());
     }
 }
 
@@ -244,7 +241,7 @@ impl<T: VariableOps> DivideByAffine for Polynomial<T>
         self.coeffs.pop_front();
     }
 
-    /// Synthetic division by (x - a0)
+    /// Synthetic division by (x - a0).
     fn divide_by_affine(&self, a0: Self::Var) -> Self
     {
         let mut quotient = self.clone();
@@ -252,7 +249,7 @@ impl<T: VariableOps> DivideByAffine for Polynomial<T>
         quotient
     }
 
-    /// Synthetic division inplace by (x - a0)
+    /// Synthetic division inplace by (x - a0).
     fn divide_by_affine_inplace(&mut self, a0: Self::Var)
     {
         let mut u = Self::Var::zero();

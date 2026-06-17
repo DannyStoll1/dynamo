@@ -1,12 +1,9 @@
 use std::f32::consts::TAU;
 
 use egui::Color32;
-use image::{Pixel, Rgb};
+use image::Rgb;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-const SIN_60: f32 = 0.866_025_4;
-const TAU_3: f32 = std::f32::consts::TAU / 3.;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -18,12 +15,6 @@ pub struct Hsv
 }
 impl Hsv
 {
-    const WHITE: Self = Self {
-        hue:        0.,
-        saturation: 0.,
-        intensity:  1.,
-    };
-
     #[must_use]
     pub const fn new(hue: f32, saturation: f32, intensity: f32) -> Self
     {
@@ -55,22 +46,11 @@ impl Hsv
         self
     }
 
-    #[allow(clippy::cast_sign_loss)]
-    fn as_rgb_tuple_round(&self) -> (u8, u8, u8)
-    {
-        let chr = self.saturation;
-        let hue = self.hue * TAU;
-        let itn = self.intensity;
-
-        let red = 127.5 * itn * chr.mul_add(hue.cos(), 1.);
-        let grn = 127.5 * itn * chr.mul_add((hue - TAU_3).cos(), 1.);
-        let blu = 127.5 * itn * chr.mul_add((hue + TAU_3).cos(), 1.);
-
-        (red as u8, grn as u8, blu as u8)
-    }
-
-    #[allow(clippy::cast_sign_loss)]
-    #[allow(clippy::many_single_char_names)]
+    #[expect(
+        clippy::many_single_char_names,
+        reason = "r, g, b, c, x, m are standard names for RGB channels and HSV-conversion \
+                  intermediates; renaming would obscure the color-space math"
+    )]
     fn as_rgb_tuple(&self) -> (u8, u8, u8)
     {
         let c = self.intensity * self.saturation;
@@ -91,27 +71,6 @@ impl Hsv
         let g = (256. * (g_ + m)) as u8;
         let b = (256. * (b_ + m)) as u8;
         (r, g, b)
-    }
-
-    fn from_rgb_tuple_round(rgb: (u8, u8, u8)) -> Self
-    {
-        let r = f32::from(rgb.0) / f32::from(u8::MAX - 1);
-        let g = f32::from(rgb.1) / f32::from(u8::MAX - 1);
-        let b = f32::from(rgb.2) / f32::from(u8::MAX - 1);
-
-        let alpha = r - g.midpoint(b);
-        let beta = SIN_60 * (g - b);
-
-        let hue = beta.atan2(alpha) / TAU;
-        let chroma = alpha.hypot(beta);
-        // let intensity = (r.powi(2) + g.powi(2) + b.powi(2)).sqrt();
-        let intensity = Rgb([r, g, b]).to_luma().0[0];
-
-        Self {
-            hue,
-            saturation: chroma / intensity,
-            intensity,
-        }
     }
 
     fn from_rgb_tuple((r, g, b): (u8, u8, u8)) -> Self
@@ -295,12 +254,6 @@ impl Xyz
     const KAPPA: f32 = 903.3;
     const EPS: f32 = 0.008_856;
 
-    const FROM_RGB_MATRIX: [[f32; 3]; 3] = [
-        [0.49, 0.31, 0.2],
-        [0.17697, 0.81240, 0.01063],
-        [0.0, 0.01, 0.99],
-    ];
-
     const TO_RGB_MATRIX: [[f32; 3]; 3] = [
         [2.364_613_8, -0.896_540_6, -0.468_076_48],
         [-0.515_166_2, 1.426_408, 0.088_758_1],
@@ -319,9 +272,6 @@ pub struct RgbLinear
 
 impl RgbLinear
 {
-    const GAMMA: f32 = 1.;
-
-    #[allow(clippy::cast_sign_loss)]
     fn gamma_map(val: f32) -> u8
     {
         (val * 256.) as u8
@@ -362,7 +312,11 @@ impl From<Lchab> for Lab
 
 impl From<Luv> for Xyz
 {
-    #[allow(clippy::many_single_char_names)]
+    #[expect(
+        clippy::many_single_char_names,
+        reason = "l, u, v, x, y, z are the canonical CIELUV/XYZ coordinate names; \
+                  renaming would obscure the color-space math"
+    )]
     fn from(Luv { l, u, v }: Luv) -> Self
     {
         let Self { y: yr, .. } = Self::REF_WHITE;
@@ -388,7 +342,6 @@ impl From<Luv> for Xyz
 
 impl From<Lab> for Xyz
 {
-    #[allow(clippy::many_single_char_names)]
     fn from(Lab { l, a, b }: Lab) -> Self
     {
         let Self {
@@ -434,7 +387,6 @@ fn dot<const N: usize>(v: [f32; N], w: [f32; N]) -> f32
 
 impl From<Xyz> for RgbLinear
 {
-    #[allow(clippy::many_single_char_names)]
     fn from(Xyz { x, y, z }: Xyz) -> Self
     {
         Self {

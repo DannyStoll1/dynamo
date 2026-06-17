@@ -154,13 +154,6 @@ where
         }
     }
 
-    /// Closes the currently active dialog, if any.
-    #[inline]
-    fn close_dialog(&mut self)
-    {
-        self.dialog = None;
-    }
-
     fn handle_save_dialog(
         &mut self,
         selection: PaneSelection,

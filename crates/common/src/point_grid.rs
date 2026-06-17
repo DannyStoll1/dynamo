@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use ndarray::Array2;
-use rayon::iter::{IterBridge, ParallelBridge};
+use rayon::iter::{IterBridge, ParallelBridge as _};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -122,7 +122,10 @@ impl Bounds
         }
     }
 
-    #[allow(clippy::missing_const_for_fn, reason = "f64::is_nan is not const on the current toolchain")]
+    #[expect(
+        clippy::missing_const_for_fn,
+        reason = "f64::is_nan is not const on the current toolchain"
+    )]
     #[must_use]
     pub fn is_nan(&self) -> bool
     {
@@ -165,8 +168,14 @@ impl PointGrid
     }
 
     #[must_use]
-    #[allow(clippy::similar_names, reason = "Width and height calculations mirror each other and use conventional axis names")]
-    #[allow(clippy::cast_sign_loss, reason = "Grid sizes are derived from positive bounds and debug-asserted positive resolutions")]
+    #[expect(
+        clippy::similar_names,
+        reason = "Width and height calculations mirror each other and use conventional axis names"
+    )]
+    #[expect(
+        clippy::cast_sign_loss,
+        reason = "Grid sizes are derived from positive bounds and debug-asserted positive resolutions"
+    )]
     pub const fn infer_height(res_x: usize, bounds: &Bounds) -> usize
     {
         debug_assert!(res_x > 0);
@@ -178,8 +187,14 @@ impl PointGrid
     }
 
     #[must_use]
-    #[allow(clippy::similar_names, reason = "Width and height calculations mirror each other and use conventional axis names")]
-    #[allow(clippy::cast_sign_loss, reason = "Grid sizes are derived from positive bounds and debug-asserted positive resolutions")]
+    #[expect(
+        clippy::similar_names,
+        reason = "Width and height calculations mirror each other and use conventional axis names"
+    )]
+    #[expect(
+        clippy::cast_sign_loss,
+        reason = "Grid sizes are derived from positive bounds and debug-asserted positive resolutions"
+    )]
     pub const fn infer_width(res_y: usize, bounds: &Bounds) -> usize
     {
         debug_assert!(res_y > 0);
@@ -301,7 +316,10 @@ impl PointGrid
     }
 
     #[must_use]
-    #[allow(clippy::cast_sign_loss, reason = "Coordinates are checked against bounds before conversion to pixel indices")]
+    #[expect(
+        clippy::cast_sign_loss,
+        reason = "Coordinates are checked against bounds before conversion to pixel indices"
+    )]
     pub fn locate_point_safe(&self, z: Cplx) -> Option<(usize, usize)>
     {
         if z.re >= self.bounds.max_x

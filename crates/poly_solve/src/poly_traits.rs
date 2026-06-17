@@ -49,17 +49,17 @@ pub trait Differentiable: Sized
 
 pub trait DivideByAffine: HasVar
 {
-    /// Divide self by x - a0
+    /// Divide self by x - a0.
     #[must_use]
     fn divide_by_affine(&self, a0: Self::Var) -> Self;
 
-    /// Divide self by x - a0 inplace
+    /// Divide self by x - a0 inplace.
     fn divide_by_affine_inplace(&mut self, a0: Self::Var);
 
-    /// Divide self by x
+    /// Divide self by x.
     #[must_use]
     fn divide_by_var(&self) -> Self;
 
-    /// Divide self by x inplace
+    /// Divide self by x inplace.
     fn divide_by_var_inplace(&mut self);
 }

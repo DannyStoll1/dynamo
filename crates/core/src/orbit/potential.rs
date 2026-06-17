@@ -1,13 +1,13 @@
 use std::f64::consts::LN_2;
 
 use dynamo_common::prelude::*;
-use num_traits::One;
+use num_traits::One as _;
 
 use super::{EscapeResult, Orbit};
 use crate::dynamics::InfinityFirstReturnMap;
 
 /// An orbit that tracks the gradient of f in order to compute the Green's function and its
-/// derivative at a poin.
+/// derivative at a point.
 ///
 /// Example usage:
 ///
@@ -180,8 +180,11 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         None
     }
 
-    /// Logarithm of the Koenigs coordinate, together with its gradient
-    #[expect(clippy::while_float)]
+    /// Logarithm of the Koenigs coordinate, together with its gradient.
+    #[expect(
+        clippy::while_float,
+        reason = "iterates the orbit until the slow/fast pair agree within the float periodicity tolerance"
+    )]
     fn periodic_koenigs_d(&mut self, period: Period, mult_norm: Real) -> Option<(Real, Cplx)>
     {
         self.reset(self.selection);
@@ -210,8 +213,11 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
         Some((log_phi, 2.0 * (derr_dt / err).conj()))
     }
 
-    /// Brute force calculation of multiplier derivative
-    #[expect(clippy::while_float)]
+    /// Brute force calculation of multiplier derivative.
+    #[expect(
+        clippy::while_float,
+        reason = "iterates the orbit until the slow/fast pair agree within the float periodicity tolerance"
+    )]
     fn periodic_koenigs_d_param(
         &mut self,
         period: Period,
@@ -250,8 +256,11 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
     }
 
     /// Logarithm of the Green's function, together with its gradient,
-    /// for bounded orbits
-    #[expect(clippy::while_float)]
+    /// for bounded orbits.
+    #[expect(
+        clippy::while_float,
+        reason = "iterates the orbit until the slow/fast pair agree within the float periodicity tolerance"
+    )]
     fn periodic_bottcher_d(&mut self, period: Period) -> Option<(Real, Cplx)>
     {
         self.reset(self.selection);
@@ -279,7 +288,7 @@ impl<'a, P: InfinityFirstReturnMap + ?Sized> Potential<'a, P>
     }
 
     /// Logarithm of the Green's function, together with its gradient,
-    /// for unbounded orbits
+    /// for unbounded orbits.
     fn external_bottcher_d(&self, iters: IterCount) -> (Real, Cplx)
     {
         let log_dn = iters as Real * self.family.degree_real().ln();

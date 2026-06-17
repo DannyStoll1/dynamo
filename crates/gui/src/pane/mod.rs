@@ -203,8 +203,9 @@ pub trait Pane
     fn pop_child_task(&mut self) -> ChildTask;
 }
 
-/// `WindowPane` is a struct that represents a window pane in the GUI.
-/// It holds the plane being displayed, the coloring information, the image frame,
+/// A window pane in the GUI.
+///
+/// Holds the plane being displayed, the coloring information, the image frame,
 /// tasks for computation and drawing, and other state related to the dynamical system.
 ///
 /// # Type Parameters
@@ -310,30 +311,14 @@ where
         &self.plane
     }
     #[inline]
-    const fn plane_mut(&mut self) -> &mut P
-    {
-        &mut self.plane
-    }
-
-    #[inline]
     const fn get_orbit_info(&self) -> Option<&orbit::Info<P::Param, P::Var, P::Deriv>>
     {
         self.orbit_info.as_ref()
     }
     #[inline]
-    const fn get_orbit_info_mut(&mut self) -> Option<&mut orbit::Info<P::Param, P::Var, P::Deriv>>
-    {
-        self.orbit_info.as_mut()
-    }
-    #[inline]
     fn set_orbit_info(&mut self, info: orbit::Info<P::Param, P::Var, P::Deriv>)
     {
         self.orbit_info = Some(info);
-    }
-    #[inline]
-    fn del_orbit_info(&mut self)
-    {
-        self.orbit_info = None;
     }
 
     #[inline]
@@ -621,7 +606,10 @@ where
         self.schedule_recompute();
     }
 
-    #[allow(clippy::cast_sign_loss, reason = "Iteration counts are scaled from positive factors and remain non-negative")]
+    #[expect(
+        clippy::cast_sign_loss,
+        reason = "Iteration counts are scaled from positive factors and remain non-negative"
+    )]
     fn scale_max_iter(&mut self, factor: f64)
     {
         assert!(

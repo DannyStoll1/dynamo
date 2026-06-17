@@ -1,5 +1,5 @@
 use dynamo_common::prelude::*;
-use num_traits::One;
+use num_traits::One as _;
 
 use super::{EscapeResult, Orbit};
 use crate::dynamics::EscapeEncoding;
@@ -47,7 +47,7 @@ impl<'a, P: EscapeEncoding> DistanceEstimation<'a, P>
     }
 
     #[must_use]
-    fn init(mut self, selection: Cplx) -> Self
+    pub fn init(mut self, selection: Cplx) -> Self
     {
         self.apply_start_state(self.start_state(selection));
         self
@@ -164,7 +164,7 @@ impl<P: EscapeEncoding> Orbit for DistanceEstimation<'_, P>
             return res;
         }
 
-        while self.state.is_none() {
+        let state = loop {
             self.iter += 1;
             if self.iter % 2 == 1 {
                 self.apply_map_to_slow();
@@ -174,9 +174,12 @@ impl<P: EscapeEncoding> Orbit for DistanceEstimation<'_, P>
                 self.apply_map_and_update_multiplier();
                 self.check_periodicity();
             }
-        }
+            if let Some(state) = self.state.take() {
+                break state;
+            }
+        };
 
-        if let Some(EscapeResult::Escaped { iters, final_value }) = self.state {
+        if let EscapeResult::Escaped { iters, final_value } = state {
             let norm_z = final_value.into().norm();
             let distance = norm_z * norm_z.ln() / self.dz_dt.norm();
             return PointInfo::DistanceEstimate {
@@ -185,8 +188,7 @@ impl<P: EscapeEncoding> Orbit for DistanceEstimation<'_, P>
             };
         }
 
-        #[allow(clippy::unwrap_used)]
         self.family
-            .encode_escape_result(self.state.clone().unwrap(), self.z_init, &self.param)
+            .encode_escape_result(state, self.z_init, &self.param)
     }
 }

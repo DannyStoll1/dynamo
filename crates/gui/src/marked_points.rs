@@ -11,7 +11,7 @@ use imageproc::drawing::{
     draw_antialiased_line_segment_mut, draw_filled_circle_mut, draw_polygon_mut,
 };
 use imageproc::pixelops::interpolate;
-use itertools::Itertools;
+use itertools::Itertools as _;
 #[cfg(feature = "serde")]
 use serde::{self, Deserialize, Serialize};
 
@@ -603,7 +603,7 @@ impl Marking
                  object: path,
                  color,
              }| {
-                let stroke = Stroke::new(1.0, *color);
+                let stroke = Stroke::new(1.0_f32, *color);
                 let path = PathShape::line(path.clone(), stroke);
                 painter.add(path);
             },

@@ -1,8 +1,7 @@
 use dynamo_common::math_utils::weierstrass_p;
 
 use crate::macros::{
-    degree_impl, ext_ray_impl_nonmonic, ext_ray_impl_rk, has_child_impl, horner, horner_monic,
-    profile_imports,
+    degree_impl, ext_ray_impl_rk, has_child_impl, horner, horner_monic, profile_imports,
 };
 profile_imports!();
 
@@ -62,6 +61,10 @@ impl QuadRatPer3
         CoveringMap::new(self, param_map as fn(Cplx) -> (Prm, Cplx)).with_orig_bounds(bounds)
     }
 
+    #[expect(
+        clippy::many_single_char_names,
+        reason = "closed-form Weierstrass-p covering map mirrors the mathematical notation"
+    )]
     fn marked_cycle_curve_period_4(self) -> CoveringMap<Self>
     {
         let param_map = |c: Cplx| {
@@ -153,6 +156,10 @@ impl DynamicalFamily for QuadRatPer3
     }
 
     #[inline]
+    #[expect(
+        clippy::many_single_char_names,
+        reason = "closed-form gradient formula mirrors the mathematical notation"
+    )]
     fn gradient(
         &self,
         z: Self::Var,

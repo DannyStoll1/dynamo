@@ -5,18 +5,17 @@ pub mod transpiler;
 pub use loader::Loader;
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, reason = "The tests assert happy-path fixtures and use unwrap for concise failure output")]
 mod tests
 {
     use std::fs;
 
-    use dynamo_gui::interface::Interactive;
+    use dynamo_gui::interface::Interactive as _;
 
     use crate::parser::*;
     use crate::transpiler::*;
 
     #[test]
-    fn test_parse_input()
+    fn parse_input()
     {
         let content = fs::read_to_string("examples/sample_user_input.toml")
             .expect("Failed to read the TOML file");

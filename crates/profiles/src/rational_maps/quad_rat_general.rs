@@ -65,6 +65,151 @@ impl DynamicalFamily for QuadRatGeneral
 
 // default_bounds_impl!(QuadRatGeneral, Bounds::centered_square(3.));
 
+impl QuadRatGeneral
+{
+    #[expect(
+        clippy::too_many_lines,
+        reason = "the body is a single closed-form polynomial coefficient table; splitting it would obscure the formula"
+    )]
+    fn cycles_child_4(a: &Cplx, b: &Cplx) -> Vec<Cplx>
+    {
+        let b2 = b.powi(2);
+        let b3 = b * b2;
+        let b4 = b2.powi(2);
+        let b5 = b2 * b3;
+        let b6 = b3.powi(2);
+        let b7 = b3 * b4;
+        let b8 = b4.powi(2);
+        let b9 = b4 * b5;
+        let b11 = b5 * b6;
+        let b12 = b6.powi(2);
+        let u = 1. + 2. * b;
+        let coeffs = [
+            b12 + a
+                * a
+                * horner_monic!(
+                    a,
+                    b8 * (2. + 6. * b),
+                    b6 * (3. + 2. * b),
+                    b4 * (3. + 4. * b + 11. * b2),
+                    b2 * (3. + 4. * b + 7. * b2),
+                    1. + b2 * (5. + 6. * b),
+                    3. + 2. * b
+                ),
+            a * horner!(
+                a,
+                2. * b9,
+                b7 * (1. - 4. * b),
+                b5 * (2. + 3. * b + 2. * b2),
+                b3 * (1. - 2. * b - 9. * b2),
+                b2 * (5. * b2 - 1.),
+                -b * u,
+                u
+            ),
+            horner!(
+                a,
+                6. * b11,
+                b8 * (1. + 6. * b),
+                b6 * horner!(b, 5., 15., 30.),
+                b4 * horner!(b, 6., 22., 33.),
+                b2 * horner!(b, 12., 29., 36., 41.),
+                horner!(b, 6., 6., 27., 46.),
+                horner!(b, 18., 21., 11.),
+                7.
+            ),
+            horner_monic!(
+                a,
+                b9,
+                7. * b8,
+                b5 * horner!(b, 4., 16., -17.),
+                b3 * horner!(b, 4., 4., -18., 9.),
+                b2 * horner!(b, -2., -7., -12.),
+                b * horner!(b, -8., -13., 14.),
+                6. + 11. * b
+            ),
+            horner!(
+                a,
+                b9 * horner!(b, 3., 15.),
+                b6 * horner!(b, 4., 8., 24.),
+                b4 * horner!(b, 3., 24., 63., 63.),
+                b2 * horner!(b, 18., 52., 80., 90.),
+                horner!(b, 15., 24., 78., 119., 64.),
+                horner!(b, 48., 66., 66.),
+                horner!(b, 26., 7.)
+            ),
+            horner!(
+                a,
+                4. * b8,
+                b5 * horner!(b, 2., 8., 8.),
+                b3 * horner!(b, 6., 14., 22., -28.),
+                b2 * 2. - b4 * 54. + b5 * 16.,
+                b * horner!(b, -22., -44., 10.),
+                horner!(b, 14., 22., 14.),
+                6.
+            ),
+            horner_monic!(
+                a,
+                b6 + b8 * (12. + 20. * b),
+                b5 * horner!(b, 16., 34., 36.),
+                b2 * horner!(b, 12., 34., 55., 106., 72.),
+                horner!(b, 20., 36., 106., 160., 106.),
+                horner!(b, 72., 106., 127., 54.),
+                horner!(b, 54., 40.)
+            ),
+            horner!(
+                a,
+                b6 * horner!(b, 2., 6.),
+                b3 * horner!(b, 4., 8., 14., 2.),
+                8. * b2 + 22. * (b3 - b5),
+                b * horner!(b, -28., -54., -44., 14.),
+                horner!(b, 16., 10., 22.),
+                14. + 6. * b
+            ),
+            horner!(
+                a,
+                b5 * horner!(b, 4., 3., 18., 15.),
+                b2 * horner!(b, 3., 8., 24., 52., 24.),
+                horner!(b, 15., 24., 63., 80., 78., 48.),
+                horner!(b, 63., 90., 119., 66.),
+                horner!(b, 64., 66., 26.),
+                7.
+            ),
+            horner_monic!(
+                a,
+                b3 + 4. * (b5 + b6),
+                b2 * horner!(b, 7., 16., 4., -2.),
+                b * horner!(b, -17., -18., -7., -8.),
+                horner!(b, 9., -12., -13., 6.),
+                14. + 11. * b
+            ),
+            horner!(
+                a,
+                b3 * horner!(b, 1., 5., 6., 12., 6.),
+                horner!(b, 6., 6., 15., 22., 29., 6.),
+                horner!(b, 30., 33., 36., 27., 18.),
+                horner!(b, 41., 46., 21.),
+                horner!(b, 11., 7.)
+            ),
+            horner!(
+                a,
+                b2 * horner!(b, 2., 1., 2., 1.),
+                -b * horner_monic!(b, 4., -3., 2.),
+                2. - 9. * b - b3,
+                5. - 2. * b + b2,
+                2.
+            ),
+            horner_monic!(
+                a,
+                1. + b2 * horner_monic!(b, 2., 3., 3., 3.),
+                horner!(b, 6., 2., 4., 4.),
+                horner!(b, 11., 7., 5., 3.),
+                2. * b + 6.
+            ),
+        ];
+        solve_polynomial(coeffs)
+    }
+}
+
 impl MarkedPoints for QuadRatGeneral
 {
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
@@ -72,7 +217,6 @@ impl MarkedPoints for QuadRatGeneral
         vec![ZERO]
     }
 
-    #[allow(clippy::too_many_lines)]
     fn cycles_child(&self, CplxPair { a, b }: &Self::Param, period: Period) -> Vec<Self::Var>
     {
         match period {
@@ -104,142 +248,7 @@ impl MarkedPoints for QuadRatGeneral
                 ];
                 solve_polynomial(coeffs)
             }
-            4 => {
-                let b2 = b.powi(2);
-                let b3 = b * b2;
-                let b4 = b2.powi(2);
-                let b5 = b2 * b3;
-                let b6 = b3.powi(2);
-                let b7 = b3 * b4;
-                let b8 = b4.powi(2);
-                let b9 = b4 * b5;
-                let b11 = b5 * b6;
-                let b12 = b6.powi(2);
-                let u = 1. + 2. * b;
-                let coeffs = [
-                    b12 + a
-                        * a
-                        * horner_monic!(
-                            a,
-                            b8 * (2. + 6. * b),
-                            b6 * (3. + 2. * b),
-                            b4 * (3. + 4. * b + 11. * b2),
-                            b2 * (3. + 4. * b + 7. * b2),
-                            1. + b2 * (5. + 6. * b),
-                            3. + 2. * b
-                        ),
-                    a * horner!(
-                        a,
-                        2. * b9,
-                        b7 * (1. - 4. * b),
-                        b5 * (2. + 3. * b + 2. * b2),
-                        b3 * (1. - 2. * b - 9. * b2),
-                        b2 * (5. * b2 - 1.),
-                        -b * u,
-                        u
-                    ),
-                    horner!(
-                        a,
-                        6. * b11,
-                        b8 * (1. + 6. * b),
-                        b6 * horner!(b, 5., 15., 30.),
-                        b4 * horner!(b, 6., 22., 33.),
-                        b2 * horner!(b, 12., 29., 36., 41.),
-                        horner!(b, 6., 6., 27., 46.),
-                        horner!(b, 18., 21., 11.),
-                        7.
-                    ),
-                    horner_monic!(
-                        a,
-                        b9,
-                        7. * b8,
-                        b5 * horner!(b, 4., 16., -17.),
-                        b3 * horner!(b, 4., 4., -18., 9.),
-                        b2 * horner!(b, -2., -7., -12.),
-                        b * horner!(b, -8., -13., 14.),
-                        6. + 11. * b
-                    ),
-                    horner!(
-                        a,
-                        b9 * horner!(b, 3., 15.),
-                        b6 * horner!(b, 4., 8., 24.),
-                        b4 * horner!(b, 3., 24., 63., 63.),
-                        b2 * horner!(b, 18., 52., 80., 90.),
-                        horner!(b, 15., 24., 78., 119., 64.),
-                        horner!(b, 48., 66., 66.),
-                        horner!(b, 26., 7.)
-                    ),
-                    horner!(
-                        a,
-                        4. * b8,
-                        b5 * horner!(b, 2., 8., 8.),
-                        b3 * horner!(b, 6., 14., 22., -28.),
-                        b2 * 2. - b4 * 54. + b5 * 16.,
-                        b * horner!(b, -22., -44., 10.),
-                        horner!(b, 14., 22., 14.),
-                        6.
-                    ),
-                    horner_monic!(
-                        a,
-                        b6 + b8 * (12. + 20. * b),
-                        b5 * horner!(b, 16., 34., 36.),
-                        b2 * horner!(b, 12., 34., 55., 106., 72.),
-                        horner!(b, 20., 36., 106., 160., 106.),
-                        horner!(b, 72., 106., 127., 54.),
-                        horner!(b, 54., 40.)
-                    ),
-                    horner!(
-                        a,
-                        b6 * horner!(b, 2., 6.),
-                        b3 * horner!(b, 4., 8., 14., 2.),
-                        8. * b2 + 22. * (b3 - b5),
-                        b * horner!(b, -28., -54., -44., 14.),
-                        horner!(b, 16., 10., 22.),
-                        14. + 6. * b
-                    ),
-                    horner!(
-                        a,
-                        b5 * horner!(b, 4., 3., 18., 15.),
-                        b2 * horner!(b, 3., 8., 24., 52., 24.),
-                        horner!(b, 15., 24., 63., 80., 78., 48.),
-                        horner!(b, 63., 90., 119., 66.),
-                        horner!(b, 64., 66., 26.),
-                        7.
-                    ),
-                    horner_monic!(
-                        a,
-                        b3 + 4. * (b5 + b6),
-                        b2 * horner!(b, 7., 16., 4., -2.),
-                        b * horner!(b, -17., -18., -7., -8.),
-                        horner!(b, 9., -12., -13., 6.),
-                        14. + 11. * b
-                    ),
-                    horner!(
-                        a,
-                        b3 * horner!(b, 1., 5., 6., 12., 6.),
-                        horner!(b, 6., 6., 15., 22., 29., 6.),
-                        horner!(b, 30., 33., 36., 27., 18.),
-                        horner!(b, 41., 46., 21.),
-                        horner!(b, 11., 7.)
-                    ),
-                    horner!(
-                        a,
-                        b2 * horner!(b, 2., 1., 2., 1.),
-                        -b * horner_monic!(b, 4., -3., 2.),
-                        2. - 9. * b - b3,
-                        5. - 2. * b + b2,
-                        2.
-                    ),
-                    horner_monic!(
-                        a,
-                        1. + b2 * horner_monic!(b, 2., 3., 3., 3.),
-                        horner!(b, 6., 2., 4., 4.),
-                        horner!(b, 11., 7., 5., 3.),
-                        2. * b + 6.
-                    ),
-                ];
-                solve_polynomial(coeffs)
-            }
+            4 => Self::cycles_child_4(a, b),
             _ => vec![],
         }
     }

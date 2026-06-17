@@ -1,11 +1,10 @@
-use dynamo_color::{Coloring, IncoloringAlgorithm};
+use dynamo_color::Coloring;
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
-use num_traits::One;
+use num_traits::One as _;
 
-use super::julia::JuliaSet;
 use super::{
-    DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasChild, HasJulia,
+    DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasJulia,
     InfinityFirstReturnMap, MarkedPoints,
 };
 use crate::orbit::EscapeResult;

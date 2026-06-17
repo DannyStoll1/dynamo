@@ -163,10 +163,11 @@ impl<const A: i64, const B: i64> EscapeEncoding for GaussianMandel<A, B>
             };
         }
 
-        let u = self.escape_radius().log2();
-        let v = z.norm_sqr().log2();
-        let q = self.escape_coeff(c).norm().log2();
-        let residual = ((u + q) / (v + q)).log(self.degree_real()) as IterCountSmooth;
+        let escape_log = self.escape_radius().log2();
+        let z_log = z.norm_sqr().log2();
+        let coeff_log = self.escape_coeff(c).norm().log2();
+        let residual = ((escape_log + coeff_log) / (z_log + coeff_log)).log(self.degree_real())
+            as IterCountSmooth;
         let potential = residual.mul_add(
             IterCountSmooth::from(self.escaping_period()),
             iters as IterCountSmooth,

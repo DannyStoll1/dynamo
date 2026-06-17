@@ -26,7 +26,6 @@ impl Default for OddCubic
     fractal_impl!();
 }
 
-#[allow(clippy::suspicious_operation_groupings)]
 impl DynamicalFamily for OddCubic
 {
     parameter_plane_impl!();
@@ -152,7 +151,6 @@ impl InfinityFirstReturnMap for OddCubic
 impl EscapeEncoding for OddCubic {}
 impl ExternalRays for OddCubic {}
 
-#[allow(clippy::suspicious_operation_groupings)]
 impl HasDynamicalCovers for OddCubic
 {
     fn marked_cycle_curve(self, period: Period) -> CoveringMap<Self>
@@ -221,6 +219,10 @@ impl HasDynamicalCovers for OddCubic
         }
         CoveringMap::new(self, param_map).with_orig_bounds(bounds)
     }
+    #[expect(
+        clippy::suspicious_operation_groupings,
+        reason = "closed-form Weierstrass-p misiurewicz covering map mirrors the mathematical notation"
+    )]
     fn misiurewicz_curve(self, preperiod: Period, period: Period) -> CoveringMap<Self>
     {
         let param_map: fn(Cplx) -> (Cplx, Cplx);

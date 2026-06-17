@@ -3,7 +3,7 @@ use dynamo_common::math_utils::newton::error::Error::NanEncountered;
 use dynamo_common::math_utils::newton::find_target_newton_err_d;
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
-use num_traits::{One, Zero};
+use num_traits::Zero as _;
 
 use super::{
     ComputeMode, DynamicalFamily, EscapeEncoding, ExternalRays, FamilyDefaults, HasJulia,
@@ -50,13 +50,6 @@ where
             parent_selection,
             compute_mode: ComputeMode::SmoothPotential,
         }
-    }
-
-    #[must_use]
-    pub fn with_param(mut self, c: T::Param) -> Self
-    {
-        self.set_param(c);
-        self
     }
 
     pub fn map_and_multiplier_lazy(&self, z: T::Var) -> (T::Var, T::Deriv)
@@ -494,7 +487,7 @@ where
         self.parent.escaping_period()
     }
 
-    /// Always 0 for dynamical planes, since large parameter here means large starting value
+    /// Always 0 for dynamical planes, since large parameter here means large starting value.
     #[inline]
     fn escaping_phase(&self) -> Period
     {
@@ -526,8 +519,11 @@ impl<P> ExternalRays for JuliaSet<P>
 where
     P: HasJulia + InfinityFirstReturnMap,
 {
-    #[allow(clippy::similar_names)]
-    #[allow(clippy::many_single_char_names)]
+    #[expect(
+        clippy::similar_names,
+        clippy::many_single_char_names,
+        reason = "single-character and similar binding names mirror the mathematical notation for the external-ray Newton iteration (z, u, v, a, t_k, d_k, ...)"
+    )]
     fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         const R: Real = 16.0;
@@ -595,7 +591,6 @@ where
             for target in targets {
                 match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
                     Ok((sol, t_k, d_k)) => {
-                        // dbg!(target, sol);
                         t_curr = sol;
 
                         if t_curr.is_nan() {

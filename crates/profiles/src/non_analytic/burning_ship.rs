@@ -1,5 +1,3 @@
-use dynamo_common::types::variables::Matrix2x2;
-
 use crate::macros::{degree_impl, profile_imports};
 profile_imports!();
 

@@ -2,17 +2,15 @@ use std::cell::RefCell;
 use std::f64::consts::TAU;
 
 use dynamo_color::{Coloring, IncoloringAlgorithm};
-use dynamo_common::math_utils::arithmetic::{Integer, divisors, gcd, moebius};
+use dynamo_common::math_utils::arithmetic::{Integer as _, divisors, gcd, moebius};
 use dynamo_common::math_utils::contour::{Contour, IntegralCurveParams, LevelCurveParams};
 use dynamo_common::math_utils::newton::error::Error::NanEncountered;
-use dynamo_common::math_utils::newton::error::NewtonResult;
 use dynamo_common::math_utils::newton::{find_root_newton, find_target_newton_err_d};
 use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
-use ndarray::{Array2, Axis};
-use num_cpus;
-use num_traits::{One, Zero};
-use rayon::iter::{ParallelBridge, ParallelIterator};
+use ndarray::Axis;
+use num_traits::{One as _, Zero as _};
+use rayon::iter::{ParallelBridge as _, ParallelIterator as _};
 use thread_local::ThreadLocal;
 
 pub mod covering_maps;
@@ -97,7 +95,7 @@ pub trait DynamicalFamily: Sync + Send
         self.with_point_grid(point_grid)
     }
 
-    /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio
+    /// Modify and return self with a different image height, and with width scaled to preserve aspect ratio.
     #[must_use]
     fn with_res_y(mut self, res_y: usize) -> Self
     where
@@ -107,7 +105,7 @@ pub trait DynamicalFamily: Sync + Send
         self
     }
 
-    /// Modify and return self with a different image width, and with height scaled to preserve aspect ratio
+    /// Modify and return self with a different image width, and with height scaled to preserve aspect ratio.
     #[must_use]
     fn with_res_x(mut self, res_x: usize) -> Self
     where
@@ -206,14 +204,10 @@ pub trait DynamicalFamily: Sync + Send
     ) -> Option<EscapeResult<Self::Var, Self::Deriv>>
     {
         let r = z.norm_sqr();
-        if r > self.escape_radius() || z.is_nan() {
-            Some(EscapeResult::Escaped {
-                iters:       iter,
-                final_value: z,
-            })
-        } else {
-            None
-        }
+        (r > self.escape_radius() || z.is_nan()).then_some(EscapeResult::Escaped {
+            iters:       iter,
+            final_value: z,
+        })
     }
 
     #[inline]
@@ -267,7 +261,7 @@ pub trait DynamicalFamily: Sync + Send
     fn start_point(&self, _point: Cplx, c: &Self::Param) -> Self::Var;
 
     /// Start point, its partial derivative with respect to the point,
-    /// and its partial derivative with respect to the parameter
+    /// and its partial derivative with respect to the parameter.
     fn start_point_d(&self, point: Cplx, c: &Self::Param) -> (Self::Var, Self::Deriv, Self::Deriv)
     {
         (
@@ -282,7 +276,7 @@ pub trait DynamicalFamily: Sync + Send
     fn param_map(&self, point: Cplx) -> Self::Param;
 
     /// param_map together with its derivative.
-    /// TODO: implement this correctly
+    /// TODO: implement this correctly.
     #[inline]
     fn param_map_d(&self, point: Cplx) -> (Self::Param, Self::Deriv)
     {
@@ -317,117 +311,133 @@ pub trait DynamicalFamily: Sync + Send
         self
     }
 
-    /// Try to find a (pre)periodic point near a given base point
-    #[allow(clippy::suspicious_operation_groupings)]
+    /// Try to find a (pre)periodic point near a given base point.
     fn find_nearby_preperiodic_point(
         &self,
         start_point: Cplx,
-        OrbitSchema {
-            period: n,
-            preperiod: k,
-        }: OrbitSchema,
+        schema: OrbitSchema,
     ) -> FindPointResult<Cplx>
     {
+        let OrbitSchema { period: n, .. } = schema;
         if n == 0 {
             return Err(FindPointError::PeriodIsZero);
         }
 
+        let diff = |t| self.preperiodic_diff(t, schema);
+
+        find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
+    }
+
+    /// Evaluate the auxiliary function whose roots are the (pre)periodic points of
+    /// the given orbit `schema`, returning its value and derivative at `t`.
+    fn preperiodic_diff(
+        &self,
+        t: Cplx,
+        OrbitSchema {
+            period: n,
+            preperiod: k,
+        }: OrbitSchema,
+    ) -> (Cplx, Cplx)
+    {
         // Number of unitary divisors of n
         let num_factors = divisors(n).filter(|d| gcd(n / d, *d) == 1).count();
 
         // Values and derivatives of (f^{m+k}(z0) - f^k(z0))^(mu(n/m)) for m a unitary divisor of n
         let mut values = vec![ONE; num_factors];
         let mut derivs = vec![ZERO; num_factors];
+        // Initial coordinates
+        let (c, dc_dt) = self.param_map_d(t);
+        let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
 
-        let diff = |t| {
-            // Initial coordinates
-            let (c, dc_dt) = self.param_map_d(t);
-            let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, &c);
+        // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
+        dz_dt += dc_dt * dz_dc;
 
-            // Multivariable chain rule: dz/dt = ∂z/∂t + ∂z/∂c * dc/dt
-            dz_dt += dc_dt * dz_dc;
+        let mut df_dz: Self::Deriv;
+        let mut df_dc: Self::Deriv;
 
-            let mut df_dz: Self::Deriv;
-            let mut df_dc: Self::Deriv;
+        // f^(k-1)(z) and its derivative with respect to t
+        let (mut zk1, mut zk1_dt) = (ZERO, ZERO);
 
-            // f^(k-1)(z) and its derivative with respect to t
-            let (mut zk1, mut zk1_dt) = (ZERO, ZERO);
+        // If k > 0, these will become 1/(f^(k+n-1) - f^(k-1)(z)) and its derivative with respect to t
+        // We initialize them so as to have no effect if k = 0
+        let mut early_cycle = ONE;
+        let mut early_cycle_dt = ZERO;
 
-            // If k > 0, these will become 1/(f^(k+n-1) - f^(k-1)(z)) and its derivative with respect to t
-            // We initialize them so as to have no effect if k = 0
-            let mut early_cycle = ONE;
-            let mut early_cycle_dt = ZERO;
+        let mut term_count: usize = 0;
 
-            let mut term_count: usize = 0;
-
-            // Preperiodic part
-            if k > 0 {
-                for _ in 0..k - 1 {
-                    (z, df_dz, df_dc) = self.gradient(z, &c);
-                    dz_dt = dz_dt * df_dz + df_dc;
-                }
-
-                zk1 = z.into();
-                zk1_dt = dz_dt.into();
+        // Preperiodic part
+        if k > 0 {
+            for _ in 0..k - 1 {
                 (z, df_dz, df_dc) = self.gradient(z, &c);
                 dz_dt = dz_dt * df_dz + df_dc;
             }
 
-            let mut w = z;
-            let mut dw_dt = dz_dt;
+            zk1 = z.into();
+            zk1_dt = dz_dt.into();
+            (z, df_dz, df_dc) = self.gradient(z, &c);
+            dz_dt = dz_dt * df_dz + df_dc;
+        }
 
-            // Periodic part
+        let mut w = z;
+        let mut dw_dt = dz_dt;
 
-            for i in 1..n {
-                (w, df_dz, df_dc) = self.gradient(w, &c);
-                dw_dt = dw_dt * df_dz + df_dc;
+        // Periodic part
 
-                // Divide out lower order periods
-                let (q, r) = n.div_rem(&i);
-                if r == 0 {
-                    let mu = moebius(q);
-                    if mu == 1 {
-                        values[term_count] = (w - z).into();
-                        derivs[term_count] = (dw_dt - dz_dt).into();
-                        term_count += 1;
-                    } else if mu == -1 {
-                        let dg = (dz_dt - dw_dt).into();
-                        let val = (w - z).into().inv();
-                        values[term_count] = val;
-                        derivs[term_count] = dg * val * val;
-                        term_count += 1;
-                    }
-                }
-            }
-
-            // At this point we have done k+n-1 iterations
-            if k > 0 {
-                // f^(k+n-1)(z) and its derivative with respect to t
-                let zkn1 = w.into();
-                let zkn1_dt = dw_dt.into();
-
-                // 1/(f^(k+n-1)(z) - f^(k-1)(z)) and its derivative with respect to t
-                early_cycle = (zkn1 - zk1).inv();
-                early_cycle_dt = early_cycle * early_cycle * (zk1_dt - zkn1_dt);
-            }
-
-            // Perform final iteration manually
+        for i in 1..n {
             (w, df_dz, df_dc) = self.gradient(w, &c);
             dw_dt = dw_dt * df_dz + df_dc;
 
-            values[term_count] = (w - z).into();
-            derivs[term_count] = (dw_dt - dz_dt).into();
+            // Divide out lower order periods
+            let (q, r) = n.div_rem(&i);
+            if r == 0 {
+                let mu = moebius(q);
+                if mu == 1 {
+                    values[term_count] = (w - z).into();
+                    derivs[term_count] = (dw_dt - dz_dt).into();
+                    term_count += 1;
+                } else if mu == -1 {
+                    let dg = (dz_dt - dw_dt).into();
+                    let val = (w - z).into().inv();
+                    values[term_count] = val;
+                    derivs[term_count] = dg * val * val;
+                    term_count += 1;
+                }
+            }
+        }
 
-            // Iteratively apply product rule to compute derivative
-            values
-                .iter()
-                .zip(derivs.iter())
-                .fold((early_cycle, early_cycle_dt), |(u, du), (v, dv)| {
-                    (u * v, u * dv + v * du)
-                })
-        };
+        // At this point we have done k+n-1 iterations
+        if k > 0 {
+            // f^(k+n-1)(z) and its derivative with respect to t
+            let zkn1 = w.into();
+            let zkn1_dt = dw_dt.into();
 
-        find_root_newton(diff, start_point).map_err(FindPointError::NewtonError)
+            // 1/(f^(k+n-1)(z) - f^(k-1)(z)) and its derivative with respect to t
+            early_cycle = (zkn1 - zk1).inv();
+            // The derivative of 1/g is -g'/g^2; here g = zkn1 - zk1, so
+            // g' = zkn1_dt - zk1_dt and -g' = zk1_dt - zkn1_dt.
+            #[expect(
+                clippy::suspicious_operation_groupings,
+                reason = "this is the quotient rule d(1/g) = early_cycle^2 * (-g'), not a typo"
+            )]
+            {
+                early_cycle_dt = early_cycle * early_cycle * (zk1_dt - zkn1_dt);
+            }
+        }
+
+        // Perform final iteration manually
+        (w, df_dz, df_dc) = self.gradient(w, &c);
+        dw_dt = dw_dt * df_dz + df_dc;
+
+        values[term_count] = (w - z).into();
+        derivs[term_count] = (dw_dt - dz_dt).into();
+
+        // Iteratively apply product rule to compute derivative
+        values
+            .iter()
+            .zip(derivs.iter())
+            .fold((early_cycle, early_cycle_dt), |(u, du), (v, dv)| {
+                (u * v, u * dv + v * du)
+            })
     }
 
     fn run_point(&self, selection: Cplx) -> EscapeResult<Self::Var, Self::Deriv>
@@ -524,7 +534,7 @@ pub trait DynamicalFamily: Sync + Send
         }
     }
 
-    /// Optional map for superimposed contours
+    /// Optional map for superimposed contours.
     fn auxiliary_value(&self, _t: Cplx) -> Option<(Cplx, Cplx)>
     {
         None
@@ -544,7 +554,7 @@ impl std::fmt::Display for PlaneType
 
 pub trait FamilyDefaults: DynamicalFamily + InfinityFirstReturnMap
 {
-    /// Default bounds for this plane
+    /// Default bounds for this plane.
     fn default_bounds(&self) -> Bounds;
 
     /// Point to select when the plane is first created.
@@ -814,7 +824,7 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
         (ONE, ZERO)
     }
 
-    /// Evaluate Green's function given the escape time and final value
+    /// Evaluate Green's function given the escape time and final value.
     fn smooth_iter_count(&self, iters: IterCount, z: Self::Var, c: &Self::Param) -> Real
     {
         let u = self.escape_radius().ln();
@@ -827,7 +837,7 @@ pub trait InfinityFirstReturnMap: DynamicalFamily
         )
     }
 
-    /// External Green's function at a point
+    /// External Green's function at a point.
     fn external_potential_d(&self, t: Cplx) -> Option<(Real, Cplx)>
     {
         let mut orbit = Potential::new(self);
@@ -935,7 +945,10 @@ pub trait ExternalRays: DynamicalFamily + InfinityFirstReturnMap
     /// and to maintain precision.
     ///
     /// Currently only stable for quadratic polynomials.
-    #[expect(clippy::while_float)]
+    #[expect(
+        clippy::while_float,
+        reason = "the loop trims trailing points while consecutive l1 distances keep increasing, a numerical termination condition on floats"
+    )]
     fn external_ray(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
     {
         // Remove off the end if distance is increasing,
@@ -969,17 +982,17 @@ pub trait Equipotential: DynamicalFamily
     /// Compute a level curve for the auxiliary map.
     fn aux_contour<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 
-    /// Compute a ray from t0 away from the bifurcation locus
+    /// Compute a ray from t0 away from the bifurcation locus.
     fn extend_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 
-    /// Compute a ray from t0 towards from the bifurcation locus
+    /// Compute a ray from t0 towards from the bifurcation locus.
     fn inward_ray<'a>(&'a self, t0: Cplx) -> Box<dyn Contour<Target = Real> + 'a>;
 }
 impl<P> Equipotential for P
 where
     P: DynamicalFamily + InfinityFirstReturnMap,
 {
-    /// Equipotential through $t_0$
+    /// Equipotential through $t_0$.
     ///
     /// Compute an equipotential by solving the ODE gamma'(t) = i∇G(t),
     /// where G is the exterior Green's function.
@@ -1002,7 +1015,7 @@ where
         Box::new(contour)
     }
 
-    /// Outward external ray from $t_0$
+    /// Outward external ray from $t_0$.
     ///
     /// Compute an equipotential away from the bifurcation locus
     /// by solving the ODE gamma'(t) = -∇G(t),
@@ -1021,7 +1034,7 @@ where
         )
     }
 
-    /// Inward ray from $t_0$
+    /// Inward ray from $t_0$.
     ///
     /// Compute an equipotential towards the bifurcation locus
     /// by solving the ODE gamma'(t) = ∇G(t),

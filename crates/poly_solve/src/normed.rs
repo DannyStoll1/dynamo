@@ -8,7 +8,7 @@ pub trait TopologicalNorm
     fn topological_norm(&self) -> Self::Norm;
 }
 
-/// A symmetric, positive definite function
+/// A symmetric, positive definite function.
 pub trait Semimetric
 {
     type Dist: Clone + Num + PartialOrd;

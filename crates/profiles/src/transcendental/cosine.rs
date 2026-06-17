@@ -259,7 +259,6 @@ has_child_impl!(SineWander, 5.5);
 
 impl MarkedPoints for Cosine
 {
-    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
@@ -280,7 +279,6 @@ impl MarkedPoints for Cosine
 
 impl MarkedPoints for CosineAdd
 {
-    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {
@@ -301,7 +299,6 @@ impl MarkedPoints for CosineAdd
 
 impl MarkedPoints for SineWander
 {
-    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {

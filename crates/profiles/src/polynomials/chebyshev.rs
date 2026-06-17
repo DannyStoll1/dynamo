@@ -63,7 +63,7 @@ impl ChebyshevCoeffTable
     }
 }
 
-/// (-1)^D * c * T_{2D}(z/2)
+/// (-1)^D * c * T_{2D}(z/2).
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Chebyshev<const D: Period>

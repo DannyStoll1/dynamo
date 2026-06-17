@@ -83,10 +83,9 @@ macro_rules! degree_impl {
             $deg
         }
         #[inline]
-        #[allow(clippy::cast_lossless, reason = "AngleNum to Real conversion is exact for the supported degree range")]
         fn degree_real(&self) -> Real
         {
-            $deg as Real
+            self.degree() as Real
         }
     };
     ($deg: expr_2021, $period: expr_2021) => {
@@ -100,14 +99,14 @@ macro_rules! degree_impl {
     ($deg: expr_2021, $period: expr_2021, $coeff: expr_2021) => {
         degree_impl!($deg, $period);
 
-        #[allow(unused_variables)]
+        #[expect(unused_variables, reason = "the escape coefficient may be a constant that ignores the parameter")]
         #[inline]
         fn escape_coeff(&self, c: &Self::Param) -> Cplx
         {
             Cplx::from($coeff)
         }
 
-        #[allow(unused_variables)]
+        #[expect(unused_variables, reason = "the escape coefficient may be a constant that ignores the parameter")]
         #[inline]
         fn escape_coeff_d(&self, c: &Self::Param) -> (Cplx, Cplx)
         {
@@ -205,131 +204,6 @@ macro_rules! cplx_arr {
     };
 }
 
-#[allow(unused_macros)]
-macro_rules! ext_ray_impl_nonmonic_conj {
-    () => {
-        fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>
-        {
-            use dynamo_common::math_utils::newton::error::Error::NanEncountered;
-            use dynamo_common::math_utils::newton::find_target_newton_err_d;
-
-            const R: Real = 16.0;
-            let escape_radius_log2 = R.log2() * self.degree_real().abs();
-
-            let deg_real = self.degree_real().abs();
-            if deg_real.is_nan() || self.degree() <= 1 {
-                return None;
-            }
-            let deg_log2 = deg_real.log2();
-
-            let pixel_width = self.point_grid().pixel_width() * 0.03;
-            let error = self.point_grid().res_x as Real * 1e-8;
-
-            // let base_point = escape_radius * angle.to_circle();
-            // Arbitrary starting guess that is likely to escape
-            let base_point: Cplx = 65.0 * angle.to_circle();
-            let mut t_list = vec![];
-
-            // degree of each additional batch of iterations
-            let deg = self.degree();
-
-            // Target angle for the composite map at each step.
-            // Initialized to value after self.escaping_phase() iterations.
-            let mut target_angle = self.angle_map_large_param(angle);
-
-            for k in 0..RAY_DEPTH {
-                // Relative log2-norms of targets
-                // jth target norm = escape_radius^deg^(-j/S)
-                // u_j = log2(escape_radius) * deg^(-j/S)
-                let us = (0..RAY_SHARPNESS).map(|j| {
-                    escape_radius_log2
-                        * ((-Real::from(j) * deg_log2) / Real::from(RAY_SHARPNESS)).exp2()
-                });
-
-                let v = target_angle.to_circle();
-                let targets = us.map(|u| u.exp2() * v);
-
-                let mut t_curr = *t_list.last().unwrap_or(&base_point);
-                let mut dist: Real;
-
-                let num_iters = k * self.escaping_period() + self.escaping_phase();
-
-                let fk_and_dfk = |t: Cplx| {
-                    let (c, dc_dt) = self.param_map_d(t);
-                    let (mut z, mut dz_dt, dz_dc) = self.start_point_d(t, c);
-                    dz_dt += dz_dc * dc_dt;
-
-                    let (a, da_dc) = self.escape_coeff_d(c);
-                    let da_dt = da_dc * dc_dt;
-                    // let a_arg = a.ln();
-                    // let a_arg_d = a_d / a;
-                    let pow = 1. / (self.degree_real() - 1.);
-                    let conj = a.powf(pow);
-                    let conj_d = conj * da_dt / a * pow;
-
-                    for _i in 0..self.escaping_phase() {
-                        let (f, df_dz, df_dc) = self.gradient(z, c);
-                        dz_dt = dz_dt * df_dz + df_dc * dc_dt;
-                        z = f;
-                    }
-
-                    if num_iters > self.escaping_phase() {
-                        // Conjugate to make f monic
-                        z /= conj;
-                        dz_dt = (dz_dt - z * conj_d) / conj;
-                    }
-
-                    for _i in self.escaping_phase()..num_iters {
-                        let (f, df_dz, df_dc) = self.gradient(z, c);
-                        dz_dt = dz_dt * df_dz + df_dc * dc_dt;
-                        z = f;
-                    }
-
-                    if num_iters > self.escaping_phase() {
-                        z *= conj;
-                        dz_dt = dz_dt * conj + z * conj_d;
-                    }
-
-                    (z, dz_dt)
-                };
-
-                for target in targets {
-                    match find_target_newton_err_d(fk_and_dfk, t_curr, target, error) {
-                        Ok((sol, t_k, d_k)) => {
-                            t_curr = sol;
-
-                            if t_curr.is_nan() {
-                                return Some(t_list);
-                            }
-
-                            t_list.push(t_curr);
-
-                            dist = (2. * t_k.norm() * (t_k.norm()).log(deg_real)) / d_k.norm();
-                            if dist < pixel_width {
-                                return Some(t_list);
-                            }
-                        }
-                        Err(NanEncountered) => {
-                            return Some(t_list);
-                        }
-                        _ => {}
-                    }
-                }
-                target_angle *= deg;
-            }
-
-            Some(t_list)
-        }
-    };
-    ($plane:ty) => {
-        impl ExternalRays for $plane
-        {
-            ext_ray_impl_nonmonic!();
-        }
-    };
-}
-
-#[allow(unused_macros)]
 macro_rules! ext_ray_impl_rk {
     ($step:literal, $esc:expr_2021) => {
         fn external_ray_helper(&self, angle: RationalAngle) -> Option<Vec<Cplx>>

@@ -1,9 +1,11 @@
 use num_complex::{Complex, Complex64};
-use rand::RngExt;
+use rand::RngExt as _;
 use rand::rngs::ThreadRng;
 
-use crate::newton::Newton;
-use crate::poly_traits::{Differentiable, DivideByAffine, Eval, MulConst, Normalize};
+use crate::newton::Newton as _;
+use crate::poly_traits::{
+    Differentiable as _, DivideByAffine as _, Eval as _, MulConst as _, Normalize as _,
+};
 use crate::polynomial::Polynomial;
 
 fn compute_cauchy_poly(poly: &Polynomial<Complex64>) -> Polynomial<f64>
@@ -95,13 +97,6 @@ impl JenkinsTraubSolver
             .expect("reset_h_poly called before completion of stage 0")
             .coeffs
             .clone_into(&mut self.h_poly.coeffs);
-    }
-
-    /// Reset best root and distance
-    const fn reset(&mut self)
-    {
-        self.best_root = Self::NAN;
-        self.best_norm = f64::INFINITY;
     }
 
     fn stage_0(&mut self)

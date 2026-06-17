@@ -1,5 +1,5 @@
 use super::quad_rat_general::QuadRatGeneral;
-use crate::macros::{degree_impl, has_child_impl, horner_monic, profile_imports};
+use crate::macros::{degree_impl, has_child_impl, profile_imports};
 profile_imports!();
 
 #[derive(Clone, Debug)]
@@ -200,7 +200,6 @@ impl DynamicalFamily for QuadRatPer2LambdaParam
         1. + a / z.powi(2)
     }
 
-    #[allow(clippy::suspicious_operation_groupings)]
     #[inline]
     fn map_and_multiplier(&self, z: Self::Var, l: &Self::Param) -> (Self::Var, Self::Deriv)
     {

@@ -1,5 +1,3 @@
-use dynamo_color::{Coloring, IncoloringAlgorithm};
-
 use crate::macros::{
     default_bounds, default_bounds_impl, default_name, degree_impl_transcendental, fractal_impl,
     has_child_impl, profile_imports,
@@ -87,7 +85,6 @@ has_child_impl!(Gudermannian, 5.5);
 
 impl MarkedPoints for Gudermannian
 {
-    #[allow(clippy::cast_sign_loss)]
     fn critical_points_child(&self, _c: &Self::Param) -> Vec<Self::Var>
     {
         if self.point_grid().min_y > 0.0 || self.point_grid().max_y < 0.0 {

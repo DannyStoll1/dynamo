@@ -1,6 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-
 pub mod dynamics;
 pub mod error;
 pub mod macros;

@@ -98,7 +98,7 @@ impl Default for DescriptionConf
     }
 }
 
-/// Used to print the value of a variable in the GUI's format
+/// Used to print the value of a variable in the GUI's format.
 pub trait Describe: std::fmt::Display
 {
     fn describe(&self, desc_conf: &DescriptionConf) -> Option<String>
@@ -107,7 +107,7 @@ pub trait Describe: std::fmt::Display
     }
 }
 
-/// Used to print the name and value of a variable in the GUI's format
+/// Used to print the name and value of a variable in the GUI's format.
 pub trait Summarize: std::fmt::Display
 {
     fn summarize(&self) -> Option<String>

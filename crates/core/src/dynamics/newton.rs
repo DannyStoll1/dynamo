@@ -2,7 +2,7 @@ use dynamo_common::types::Cplx;
 
 use super::DynamicalFamily;
 
-trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
+pub trait NewtonPlane: DynamicalFamily<Var = Cplx, Deriv = Cplx>
 {
     fn second_dynamical_derivative(&self, z: Self::Var, c: Self::Param) -> Self::Deriv;
 

@@ -1,5 +1,4 @@
 use dynamo_common::prelude::*;
-use num_traits::One;
 
 use super::EscapeResult;
 

@@ -1,5 +1,5 @@
 use dynamo_common::prelude::*;
-use num_traits::One;
+use num_traits::One as _;
 
 use super::{EscapeResult, Orbit};
 use crate::dynamics::EscapeEncoding;
@@ -125,7 +125,7 @@ impl<P: EscapeEncoding> Orbit for CycleDetected<'_, P>
             return res;
         }
 
-        while self.state.is_none() {
+        let state = loop {
             self.iter += 1;
             if self.iter % 2 == 1 {
                 self.apply_map_to_slow();
@@ -135,10 +135,12 @@ impl<P: EscapeEncoding> Orbit for CycleDetected<'_, P>
                 self.apply_map_to_fast();
                 self.check_periodicity();
             }
-        }
-        #[allow(clippy::unwrap_used)]
+            if let Some(state) = self.state.take() {
+                break state;
+            }
+        };
         self.family
-            .encode_escape_result(self.state.clone().unwrap(), self.z_init, &self.param)
+            .encode_escape_result(state, self.z_init, &self.param)
     }
 
     fn reset(&mut self, selection: Cplx)

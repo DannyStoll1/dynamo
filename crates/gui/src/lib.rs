@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 pub mod actions;
 pub mod colors;
 pub mod dialog;

@@ -1,5 +1,7 @@
-#![allow(unused_imports)]
-#![allow(clippy::many_single_char_names)]
+#![expect(
+    unused_imports,
+    reason = "the profile_imports! macro injects a common prelude into every profile module, so some of its imports are unused in any given file"
+)]
 
 pub(crate) mod covering_helpers;
 pub mod macros;
@@ -28,7 +30,7 @@ mod tests
     use crate::*;
 
     #[test]
-    fn test_horner()
+    fn horner()
     {
         use crate::macros::horner;
         let x = 2;
@@ -37,7 +39,7 @@ mod tests
     }
 
     #[test]
-    fn test_horner_monic()
+    fn horner_monic()
     {
         use crate::macros::horner_monic;
         let x = 2;
@@ -59,11 +61,10 @@ mod tests
     #[test]
     fn chebyshev()
     {
-        let chebyshev: Chebyshev<3> = Default::default();
+        let chebyshev = Chebyshev::<3>::default();
         let c = Cplx::new(1.0, 0.0);
         let z = Cplx::new(10.0, 0.0);
         let (val, mul) = chebyshev.map_and_multiplier(z, &c);
-        dbg!(val, mul);
         assert!((val + 470_449.).norm() < 1e-2);
         assert!((mul + 288_090.).norm() < 1e-2);
     }
@@ -86,14 +87,13 @@ mod tests
     #[test]
     fn orbit()
     {
-        use orbit::Orbit;
-        let plane: Tricorne<4> = Default::default();
+        use orbit::Orbit as _;
+        let plane = Tricorne::<4>::default();
         let param = Cplx::new(0.3, 0.1);
 
         let mut orbit = orbit::CycleDetected::new(&plane).init(param);
 
         let result = orbit.run_until_complete();
-        dbg!(&result);
         assert!(matches!(result, PointInfo::Periodic { .. }));
     }
 
@@ -173,9 +173,9 @@ mod tests
     fn per10_debug()
     {
         let param_plane = CubicPer1_0::default().marked_cycle_curve(1);
-        dbg!(param_plane.point_grid());
+        assert!(param_plane.point_grid().res_x > 0);
         let julia = JuliaSet::from(param_plane);
-        dbg!(julia.point_grid());
+        assert!(julia.point_grid().res_x > 0);
     }
 
     #[test]
@@ -183,7 +183,7 @@ mod tests
     {
         // let param_plane = Mandelbrot::default();
         // let param_plane: Chebyshev<2> = Default::default();
-        let param_plane: QuadRatPer3 = Default::default();
+        let param_plane = QuadRatPer3::default();
         let angle = RationalAngle::new(1, 3);
         let _ray = param_plane.external_ray(angle);
         // dbg!(ray);

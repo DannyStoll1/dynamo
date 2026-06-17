@@ -62,13 +62,13 @@ impl Default for ScriptEditor
     fn default() -> Self
     {
         Self {
-            document: ScriptDocument {
+            document:   ScriptDocument {
                 path: None,
                 text: config::DEFAULT_TEXT.clone(),
             },
             validation: ValidationState::Unknown,
-            run_state: RunState::Idle,
-            visible: true,
+            run_state:  RunState::Idle,
+            visible:    true,
         }
     }
 }
@@ -142,7 +142,10 @@ impl ScriptEditor
             ValidationState::Valid(validation) => {
                 ui.colored_label(
                     egui::Color32::LIGHT_GREEN,
-                    format!("Script validation succeeded. Save path: {}", validation.save_path.display()),
+                    format!(
+                        "Script validation succeeded. Save path: {}",
+                        validation.save_path.display()
+                    ),
                 );
             }
             ValidationState::Invalid(message) => {
