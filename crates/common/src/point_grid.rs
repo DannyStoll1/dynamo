@@ -399,12 +399,14 @@ impl PointGrid
 
     /// Build a coarse-to-fine mip pyramid over identical bounds.
     ///
-    /// Each level has exactly twice the resolution of the previous one along
-    /// both axes, with the finest level matching `self`'s resolution rounded up
-    /// to a power-of-two multiple of `coarsest_dim`. This exact doubling is what
-    /// lets a coarse level's sample points coincide with a subset of every finer
-    /// level's sample points, so already-computed orbits can be reused when
-    /// refining. The returned grids run from coarsest to finest.
+    /// Each level has exactly twice the resolution of the previous one, so a
+    /// coarse level's sample points coincide with a subset of every finer
+    /// level's (`map_pixel` is linear, and exact 2x spacing keeps the samples
+    /// aligned). This is what lets already-computed orbits be reused when
+    /// refining. The finest level is `self`'s resolution rounded up to a
+    /// power-of-two multiple of the coarsest base, so it may slightly exceed the
+    /// requested resolution; callers display into a buffer of the requested size
+    /// and ignore the small margin. The returned grids run coarsest to finest.
     #[must_use]
     pub fn mip_pyramid(&self, coarsest_dim: usize) -> Vec<Self>
     {
@@ -421,7 +423,7 @@ impl PointGrid
     }
 
     /// Number of mip levels for a pyramid whose coarsest level keeps both axes
-    /// at or below `coarsest_dim` while the finest matches `self`.
+    /// at or below `coarsest_dim` while the finest covers `self`.
     #[must_use]
     fn mip_level_count(&self, coarsest_dim: usize) -> usize
     {
@@ -434,19 +436,6 @@ impl PointGrid
             levels += 1;
         }
         levels
-    }
-
-    /// Map a pixel index in a coarser grid to the coinciding pixel index in this
-    /// grid, given the resolution ratio `scale` between them (`self.res / coarse.res`).
-    ///
-    /// Returns `None` if the scaled index falls outside this grid.
-    #[must_use]
-    pub fn refine_pixel(&self, coarse_pixel: (usize, usize), scale: usize)
-    -> Option<(usize, usize)>
-    {
-        let x = coarse_pixel.0 * scale;
-        let y = coarse_pixel.1 * scale;
-        (x < self.res_x && y < self.res_y).then_some((x, y))
     }
 }
 
@@ -592,12 +581,17 @@ mod tests
     #[test]
     fn mip_pyramid_finest_covers_target()
     {
-        // 500 is not a power-of-two multiple of 64; the finest level rounds up.
+        // 500 is not a power-of-two multiple of 64; the finest level rounds up
+        // so that exact 2x embedding (and thus orbit reuse) is preserved.
         let grid = PointGrid::new(500, 300, unit_bounds());
         let pyramid = grid.mip_pyramid(64);
         let finest = pyramid.last().unwrap();
         assert!(finest.res_x >= grid.res_x);
         assert!(finest.res_y >= grid.res_y);
+        for window in pyramid.windows(2) {
+            assert_eq!(window[1].res_x, window[0].res_x * 2);
+            assert_eq!(window[1].res_y, window[0].res_y * 2);
+        }
     }
 
     #[test]
@@ -610,7 +604,7 @@ mod tests
     }
 
     #[test]
-    fn coarse_sample_points_coincide_with_fine()
+    fn coarse_sample_points_coincide_with_finer()
     {
         let pyramid = PointGrid::new(256, 256, unit_bounds()).mip_pyramid(64);
         let coarse = &pyramid[0];
@@ -619,18 +613,9 @@ mod tests
 
         // Every coarse sample maps to a fine pixel sampling the exact same point.
         for ((cx, cy), z_coarse) in coarse {
-            let (fx, fy) = fine.refine_pixel((cx, cy), scale).unwrap();
-            let z_fine = fine.map_pixel(fx, fy);
+            let z_fine = fine.map_pixel(cx * scale, cy * scale);
             assert!((z_coarse.re - z_fine.re).abs() < 1e-12);
             assert!((z_coarse.im - z_fine.im).abs() < 1e-12);
         }
-    }
-
-    #[test]
-    fn refine_pixel_rejects_out_of_range()
-    {
-        let fine = PointGrid::new(128, 128, unit_bounds());
-        assert_eq!(fine.refine_pixel((63, 0), 2), Some((126, 0)));
-        assert_eq!(fine.refine_pixel((64, 0), 2), None);
     }
 }

@@ -69,6 +69,10 @@ impl ImageFrame
     }
     fn show(&mut self, ui: &mut Ui)
     {
+        // Skip an empty image: egui cannot create a zero-dimension texture.
+        if self.image.width() == 0 || self.image.height() == 0 {
+            return;
+        }
         let texture_id = self.texture_id.get_or_insert_with(|| {
             ui.ctx()
                 .load_texture("fractal", self.image.clone(), TextureOptions::default())
@@ -132,9 +136,13 @@ impl ImageFrame
         self.region.min + local_pos
     }
     /// Ensure the backing image is exactly `[width, height]`, reallocating with
-    /// a neutral fill if the size changed.
+    /// a neutral fill if the size changed. A zero dimension is ignored, so a
+    /// degenerate (for example NaN-bounded) grid never blanks a valid buffer.
     pub fn resize(&mut self, width: usize, height: usize)
     {
+        if width == 0 || height == 0 {
+            return;
+        }
         if self.image.size != [width, height] {
             self.image = ColorImage::filled([width, height], egui::Color32::default());
         }
@@ -142,28 +150,38 @@ impl ImageFrame
 
     /// Blit a streamed compute tile into the backing image.
     ///
-    /// The tile holds colors at its mip level (array order, rows bottom to top
-    /// after the worker's flip is undone here). Each level pixel expands to a
-    /// `scale x scale` block at the finest resolution, and rows are flipped
+    /// The tile holds colors at its mip level (array order, rows bottom to top).
+    /// The display buffer is sized to the tile's target (finest) resolution, so
+    /// it stays constant across mip levels. Each level pixel expands to a
+    /// `scale x scale` block, clamped to the buffer, and rows are flipped
     /// vertically so image row 0 is the top while array row 0 is the bottom.
     pub fn blit_tile(&mut self, tile: &crate::compute::Tile)
     {
-        let (level_x, level_y) = tile.level_res;
-        let full_w = level_x * tile.scale;
-        let full_h = level_y * tile.scale;
+        let (full_w, full_h) = tile.target_res;
         self.resize(full_w, full_h);
+        if self.image.size != [full_w, full_h] {
+            return;
+        }
 
+        let (_level_x, level_y) = tile.level_res;
         let tile_w = tile.x_range.1 - tile.x_range.0;
         for (idx, color) in tile.pixels.iter().enumerate() {
             let lx = tile.x_range.0 + idx % tile_w;
             let ly = tile.y_range.0 + idx / tile_w;
-            // Flip vertically: array row `ly` maps to image row `level_y-1-ly`.
+            // Flip vertically: level row `ly` maps to level row `level_y-1-ly`,
+            // then scales into the target buffer.
             let flipped_y = level_y - 1 - ly;
             for dy in 0..tile.scale {
                 let py = flipped_y * tile.scale + dy;
+                if py >= full_h {
+                    break;
+                }
                 let row = py * full_w;
                 for dx in 0..tile.scale {
                     let px = lx * tile.scale + dx;
+                    if px >= full_w {
+                        break;
+                    }
                     self.image.pixels[row + px] = *color;
                 }
             }
@@ -172,6 +190,10 @@ impl ImageFrame
 
     pub fn update_texture(&mut self)
     {
+        // Never push a zero-dimension image: egui/wgpu reject it.
+        if self.image.width() == 0 || self.image.height() == 0 {
+            return;
+        }
         if let Some(handle) = self.texture_id.as_mut() {
             handle.set(self.image.clone(), TextureOptions::default());
         }

@@ -298,7 +298,11 @@ where
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
         let selection = plane.default_selection();
-        let frame = ImageFrame::default();
+        // Pre-size the display buffer so the first frame has a valid (non-zero)
+        // texture before any computed tiles arrive.
+        let grid = plane.point_grid();
+        let mut frame = ImageFrame::default();
+        frame.resize(grid.res_x.max(1), grid.res_y.max(1));
 
         let degree = plane.degree_real().try_round().unwrap_or(2);
         let mut marking = Marking::default().with_degree(degree);

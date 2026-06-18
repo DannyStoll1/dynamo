@@ -26,13 +26,17 @@ const TILE_CAPACITY: usize = 256;
 /// A rectangular block of freshly colored pixels at one mip level.
 ///
 /// `level_res` is the resolution of the level the tile belongs to, and `scale`
-/// is `target_res / level_res` (a power of two). The UI expands each tile pixel
-/// to a `scale x scale` block so coarse levels cover the whole canvas.
+/// is `target_res / level_res` (approximately a power of two). The UI sizes the
+/// display buffer to `target_res` and expands each tile pixel to a `scale x
+/// scale` block (clamped to the buffer) so coarse levels cover the whole canvas
+/// without changing the canvas size between levels.
 pub struct Tile
 {
     pub generation: u64,
     pub scale:      usize,
     pub level_res:  (usize, usize),
+    /// Resolution of the finest (target) level; the display buffer size.
+    pub target_res: (usize, usize),
     /// Pixel column range within the level (`x0..x1`).
     pub x_range:    (usize, usize),
     /// Pixel row range within the level (`y0..y1`), measured from the top.
@@ -79,7 +83,7 @@ struct Job<'a, D>
     coloring:   &'a Coloring,
     token:      &'a CancelToken,
     generation: u64,
-    finest_res: usize,
+    target:     (usize, usize),
     updates_tx: &'a Sender<Update<D>>,
 }
 
@@ -94,6 +98,9 @@ where
         P: Computable<Deriv = D> + Clone,
     {
         let pyramid = plane.point_grid().mip_pyramid(COARSEST_DIM);
+        let finest = pyramid
+            .last()
+            .map_or((1, 1), |grid| (grid.res_x, grid.res_y));
         let mut level_plane = plane.clone();
         let mut prev: Option<IterPlane<D>> = None;
 
@@ -110,7 +117,7 @@ where
 
             let level = LevelStream {
                 job:   self,
-                scale: self.finest_res / level_grid.res_x.max(level_grid.res_y).max(1),
+                scale: (finest.0 / level_grid.res_x.max(1)).max(1),
                 res:   (level_grid.res_x, level_grid.res_y),
             };
             level_plane.compute_into_streaming(
@@ -208,6 +215,7 @@ where
             generation: self.job.generation,
             scale: self.scale,
             level_res: self.res,
+            target_res: self.job.target,
             x_range: (0, res_x),
             y_range: (y_start, y_start + height),
             pixels,
@@ -275,12 +283,12 @@ where
         self.in_flight = true;
 
         job_pool().spawn(move || {
-            let finest_res = plane.point_grid().res_x.max(plane.point_grid().res_y);
+            let grid = plane.point_grid();
             let job = Job {
                 coloring: coloring.as_ref(),
                 token: &token,
                 generation,
-                finest_res,
+                target: (grid.res_x, grid.res_y),
                 updates_tx: &updates_tx,
             };
             job.run(plane.as_ref());
@@ -297,12 +305,11 @@ where
         self.in_flight = true;
 
         job_pool().spawn(move || {
-            let res = plane.point_grid.res_x.max(plane.point_grid.res_y);
             let job = Job {
                 coloring: coloring.as_ref(),
                 token: &token,
                 generation,
-                finest_res: res,
+                target: (plane.point_grid.res_x, plane.point_grid.res_y),
                 updates_tx: &updates_tx,
             };
             job.recolor(&plane);

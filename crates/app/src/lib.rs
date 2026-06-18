@@ -164,18 +164,17 @@ mod tests
         use dynamo_gui::compute::{ComputeService, Update};
 
         let plane = dynamo_profiles::Mandelbrot::default().with_res_y(128);
+        let (target_x, target_y) = (plane.point_grid().res_x, plane.point_grid().res_y);
         let coloring = plane.default_coloring();
 
         let mut service = ComputeService::new();
         service.submit(Arc::new(plane), Arc::new(coloring));
 
-        // The finest mip level rounds the target up to a power-of-two multiple
-        // of the coarsest base (required for exact orbit reuse), so assert full
-        // coverage against the finest level's own resolution, discovered from
-        // its tiles.
+        // The finest mip level (scale 1) rounds up to a power-of-two multiple,
+        // so it covers at least the requested target. Assert the requested area
+        // is fully covered and that tiles report the requested target_res.
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
-        let mut finest: Option<(usize, usize)> = None;
-        let mut covered: Vec<bool> = Vec::new();
+        let mut covered = vec![false; target_x * target_y];
         let mut all_covered = false;
         while !all_covered && std::time::Instant::now() < deadline {
             for update in service.drain() {
@@ -185,17 +184,14 @@ mod tests
                 if tile.scale != 1 {
                     continue;
                 }
-                let (res_x, res_y) = finest.get_or_insert(tile.level_res);
-                if covered.is_empty() {
-                    covered = vec![false; *res_x * *res_y];
-                }
-                for y in tile.y_range.0..tile.y_range.1 {
-                    for x in tile.x_range.0..tile.x_range.1 {
-                        covered[x + y * *res_x] = true;
+                assert_eq!(tile.target_res, (target_x, target_y));
+                for y in tile.y_range.0..tile.y_range.1.min(target_y) {
+                    for x in tile.x_range.0..tile.x_range.1.min(target_x) {
+                        covered[x + y * target_x] = true;
                     }
                 }
             }
-            all_covered = !covered.is_empty() && covered.iter().all(|c| *c);
+            all_covered = covered.iter().all(|c| *c);
             if !all_covered {
                 std::thread::sleep(std::time::Duration::from_millis(5));
             }

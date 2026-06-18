@@ -29,11 +29,11 @@ where
     }
 
     /// Integer resolution ratio between this plane and a coarser one, if the
-    /// coarse plane embeds exactly into this one along both axes.
-    ///
-    /// Returns `None` when the resolutions are not an exact common multiple, in
-    /// which case coarse samples do not coincide with this plane's samples and
-    /// copy-forward would be invalid.
+    /// The per-axis refinement ratio if `coarse` embeds into this plane, i.e.
+    /// each of this plane's dimensions is an exact integer multiple of the
+    /// coarse plane's by the same factor. Coarse pixel `i` then coincides with
+    /// this plane's pixel `scale * i`. Returns `None` otherwise, in which case
+    /// copy-forward is invalid.
     #[must_use]
     pub fn embedding_scale(&self, coarse: &Self) -> Option<usize>
     {
@@ -48,9 +48,9 @@ where
 
     /// Copy every cell of a coarser plane into the coinciding cell of this one.
     ///
-    /// The coarse plane must embed exactly into this plane (see
+    /// The coarse plane must embed into this plane (see
     /// [`embedding_scale`](Self::embedding_scale)); otherwise this is a no-op and
-    /// returns `None`. On success it returns the resolution ratio, which pairs
+    /// returns `None`. On success it returns the refinement ratio, which pairs
     /// with [`lifted_pixel`](Self::lifted_pixel) to skip recomputing the carried
     /// cells.
     pub fn lift_from_coarser(&mut self, coarse: &Self) -> Option<usize>
@@ -63,7 +63,7 @@ where
     }
 
     /// Whether the pixel `(x, y)` was carried in from a coarser plane at the
-    /// given resolution ratio, and so should not be recomputed.
+    /// given refinement ratio, and so should not be recomputed.
     #[must_use]
     pub const fn lifted_pixel(x: usize, y: usize, scale: usize) -> bool
     {
