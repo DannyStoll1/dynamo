@@ -2,6 +2,7 @@
     dead_code,
     reason = "common crate retains reusable math and type utilities that are not all exercised within the crate itself"
 )]
+pub mod cancel;
 pub mod consts;
 pub mod directories;
 pub mod globals;

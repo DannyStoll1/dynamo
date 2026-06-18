@@ -1135,6 +1135,21 @@ pub trait Computable: DynamicalFamily
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
 
+    /// Compute escape data into `iter_plane`, skipping pixels for which `skip`
+    /// returns true and bailing out early if `cancel` is triggered.
+    ///
+    /// The cancellation check happens once per row chunk, so abandoning stale
+    /// work is prompt but not instantaneous. The `skip` predicate lets a caller
+    /// avoid recomputing pixels already filled in from a coarser mip level.
+    /// When cancelled partway through, the contents of `iter_plane` are left in
+    /// a partially updated state and should be discarded by the caller.
+    fn compute_into_masked(
+        &self,
+        iter_plane: &mut IterPlane<Self::Deriv>,
+        cancel: &CancelToken,
+        skip: &(dyn Fn(usize, usize) -> bool + Sync),
+    );
+
     fn get_orbit_and_info(
         &self,
         point: Cplx,
@@ -1183,13 +1198,23 @@ where
 
     fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
     {
+        self.compute_into_masked(iter_plane, &CancelToken::never(), &|_, _| false);
+    }
+
+    fn compute_into_masked(
+        &self,
+        iter_plane: &mut IterPlane<Self::Deriv>,
+        cancel: &CancelToken,
+        skip: &(dyn Fn(usize, usize) -> bool + Sync),
+    )
+    {
         if self.point_grid().is_nan() {
             return;
         }
 
         let orbits = ThreadLocal::new();
 
-        let chunk_size = self.point_grid().res_y / num_cpus::get();
+        let chunk_size = (self.point_grid().res_y / num_cpus::get()).max(1);
 
         iter_plane
             .iter_counts
@@ -1197,8 +1222,14 @@ where
             .enumerate()
             .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
+                if cancel.is_cancelled() {
+                    return;
+                }
                 chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
                     let y = chunk_idx * chunk_size + local_y;
+                    if skip(x, y) {
+                        return;
+                    }
                     let mut orbit = orbits
                         .get_or(|| self.compute_mode().create_orbit(self))
                         .borrow_mut();

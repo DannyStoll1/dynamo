@@ -206,4 +206,52 @@ mod tests
         let q = plane.escape_coeff(&c);
         assert!((q - 0.119_960_462_401_084).norm_sqr() < 1e-12);
     }
+
+    #[test]
+    fn masked_compute_skips_predicate_pixels()
+    {
+        let plane = Mandelbrot::default().with_res_y(32);
+        let mut full = IterPlane::create(plane.point_grid().clone());
+        plane.compute_into(&mut full);
+
+        // Skip every pixel: the masked plane must stay at the default value.
+        let mut skipped = IterPlane::create(plane.point_grid().clone());
+        plane.compute_into_masked(&mut skipped, &CancelToken::never(), &|_, _| true);
+        assert!(
+            skipped
+                .iter_counts
+                .iter()
+                .all(|info| *info == PointInfo::Bounded)
+        );
+
+        // Skip only even columns: those stay default, odd columns match the full run.
+        let mut partial = IterPlane::create(plane.point_grid().clone());
+        plane.compute_into_masked(&mut partial, &CancelToken::never(), &|x, _| x % 2 == 0);
+        for ((x, y), info) in partial.iter_counts.indexed_iter() {
+            if x % 2 == 0 {
+                assert_eq!(*info, PointInfo::Bounded);
+            } else {
+                assert_eq!(*info, full.iter_counts[(x, y)]);
+            }
+        }
+    }
+
+    #[test]
+    fn masked_compute_bails_when_cancelled()
+    {
+        let plane = Mandelbrot::default().with_res_y(64);
+        let source = CancelSource::new();
+        let token = source.renew();
+        // Supersede the token before computing: no pixel should be evaluated.
+        let _superseding = source.renew();
+
+        let mut iter_plane = IterPlane::create(plane.point_grid().clone());
+        plane.compute_into_masked(&mut iter_plane, &token, &|_, _| false);
+        assert!(
+            iter_plane
+                .iter_counts
+                .iter()
+                .all(|info| *info == PointInfo::Bounded)
+        );
+    }
 }
