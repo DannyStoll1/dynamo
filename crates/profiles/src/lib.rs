@@ -254,4 +254,34 @@ mod tests
                 .all(|info| *info == PointInfo::Bounded)
         );
     }
+
+    #[test]
+    fn lift_then_refine_matches_full_compute()
+    {
+        // Refining a coarse plane by copy-forward and computing only the new
+        // pixels must reproduce a full compute exactly, since the carried
+        // pixels sample the same points.
+        let pyramid = Mandelbrot::default()
+            .with_res_y(64)
+            .point_grid()
+            .mip_pyramid(16);
+        let coarse_grid = pyramid[pyramid.len() - 2].clone();
+        let fine_grid = pyramid[pyramid.len() - 1].clone();
+
+        let coarse_plane = Mandelbrot::default().with_point_grid(coarse_grid);
+        let fine_plane = Mandelbrot::default().with_point_grid(fine_grid);
+
+        let coarse = coarse_plane.compute();
+
+        let mut refined = IterPlane::create(fine_plane.point_grid().clone());
+        let scale = refined
+            .lift_from_coarser(&coarse)
+            .expect("coarse must embed");
+        fine_plane.compute_into_masked(&mut refined, &CancelToken::never(), &|x, y| {
+            IterPlane::<<Mandelbrot as DynamicalFamily>::Deriv>::lifted_pixel(x, y, scale)
+        });
+
+        let full = fine_plane.compute();
+        assert_eq!(refined.iter_counts, full.iter_counts);
+    }
 }
