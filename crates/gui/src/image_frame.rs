@@ -131,6 +131,45 @@ impl ImageFrame
     {
         self.region.min + local_pos
     }
+    /// Ensure the backing image is exactly `[width, height]`, reallocating with
+    /// a neutral fill if the size changed.
+    pub fn resize(&mut self, width: usize, height: usize)
+    {
+        if self.image.size != [width, height] {
+            self.image = ColorImage::filled([width, height], egui::Color32::default());
+        }
+    }
+
+    /// Blit a streamed compute tile into the backing image.
+    ///
+    /// The tile holds colors at its mip level (array order, rows bottom to top
+    /// after the worker's flip is undone here). Each level pixel expands to a
+    /// `scale x scale` block at the finest resolution, and rows are flipped
+    /// vertically so image row 0 is the top while array row 0 is the bottom.
+    pub fn blit_tile(&mut self, tile: &crate::compute::Tile)
+    {
+        let (level_x, level_y) = tile.level_res;
+        let full_w = level_x * tile.scale;
+        let full_h = level_y * tile.scale;
+        self.resize(full_w, full_h);
+
+        let tile_w = tile.x_range.1 - tile.x_range.0;
+        for (idx, color) in tile.pixels.iter().enumerate() {
+            let lx = tile.x_range.0 + idx % tile_w;
+            let ly = tile.y_range.0 + idx / tile_w;
+            // Flip vertically: array row `ly` maps to image row `level_y-1-ly`.
+            let flipped_y = level_y - 1 - ly;
+            for dy in 0..tile.scale {
+                let py = flipped_y * tile.scale + dy;
+                let row = py * full_w;
+                for dx in 0..tile.scale {
+                    let px = lx * tile.scale + dx;
+                    self.image.pixels[row + px] = *color;
+                }
+            }
+        }
+    }
+
     pub fn update_texture(&mut self)
     {
         if let Some(handle) = self.texture_id.as_mut() {

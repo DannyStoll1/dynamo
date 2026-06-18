@@ -9,7 +9,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use crossbeam::channel::{Receiver, Sender, TrySendError};
+use crossbeam::channel::{Receiver, Sender};
 use dynamo_color::Coloring;
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
@@ -41,6 +41,21 @@ pub struct Tile
     pub pixels:     Vec<Color32>,
 }
 
+/// A streamed update from an in-flight compute job.
+pub enum Update<D>
+{
+    /// A freshly colored block ready to blit into the display buffer.
+    Tile(Tile),
+    /// The fully computed finest-level plane, emitted once when the job
+    /// finishes. The pane caches it so palette changes can recolor without
+    /// recomputing orbits.
+    Done
+    {
+        generation: u64,
+        plane:      Arc<IterPlane<D>>,
+    },
+}
+
 /// The shared pool that hosts compute jobs.
 ///
 /// One extra thread drives each job's mip walk; the data-parallel per-level
@@ -59,27 +74,28 @@ fn job_pool() -> &'static ThreadPool
 }
 
 /// Immutable context shared across a single job's mip walk.
-struct Job<'a>
+struct Job<'a, D>
 {
     coloring:   &'a Coloring,
     token:      &'a CancelToken,
     generation: u64,
     finest_res: usize,
-    tiles_tx:   &'a Sender<Tile>,
+    updates_tx: &'a Sender<Update<D>>,
 }
 
-impl Job<'_>
+impl<D> Job<'_, D>
+where
+    D: Polar<Real> + Clone + Send + Sync + 'static,
 {
     /// Walk the mip pyramid for `plane`, streaming colored tiles until done or
-    /// cancelled.
+    /// cancelled. On completion, emit the finest plane for later recoloring.
     fn run<P>(&self, plane: &P)
     where
-        P: Computable + Clone,
-        P::Deriv: Polar<Real>,
+        P: Computable<Deriv = D> + Clone,
     {
         let pyramid = plane.point_grid().mip_pyramid(COARSEST_DIM);
         let mut level_plane = plane.clone();
-        let mut prev: Option<IterPlane<P::Deriv>> = None;
+        let mut prev: Option<IterPlane<D>> = None;
 
         for level_grid in pyramid {
             if self.token.is_cancelled() {
@@ -101,9 +117,7 @@ impl Job<'_>
                 &mut iter_plane,
                 &ChunkSink::streaming(
                     self.token,
-                    &|x, y| {
-                        skip_scale.is_some_and(|s| IterPlane::<P::Deriv>::lifted_pixel(x, y, s))
-                    },
+                    &|x, y| skip_scale.is_some_and(|s| IterPlane::<D>::lifted_pixel(x, y, s)),
                     &|y_start, chunk| level.send_chunk(y_start, chunk),
                 ),
             );
@@ -113,18 +127,64 @@ impl Job<'_>
             }
             prev = Some(iter_plane);
         }
+
+        if let Some(finest) = prev {
+            self.send(Update::Done {
+                generation: self.generation,
+                plane:      Arc::new(finest),
+            });
+        }
+    }
+
+    /// Recolor an already-computed plane, streaming tiles in row-chunk bands so
+    /// the UI updates progressively, then re-emit the plane.
+    fn recolor(&self, plane: &Arc<IterPlane<D>>)
+    {
+        let (res_x, res_y) = plane.point_grid.shape();
+        let band = (res_y / num_cpus::get()).max(1);
+        let mut y = 0;
+        while y < res_y {
+            if self.token.is_cancelled() {
+                return;
+            }
+            let height = band.min(res_y - y);
+            let chunk = plane.iter_counts.slice(ndarray::s![.., y..y + height]);
+            let level = LevelStream {
+                job:   self,
+                scale: 1,
+                res:   (res_x, res_y),
+            };
+            level.send_chunk(y, chunk);
+            y += height;
+        }
+
+        self.send(Update::Done {
+            generation: self.generation,
+            plane:      Arc::clone(plane),
+        });
+    }
+
+    /// Send an update, ignoring a full or disconnected channel: a later level
+    /// supersedes dropped tiles, and a gone receiver means the job is moot.
+    fn send(&self, update: Update<D>)
+    {
+        // Ignore a full or disconnected channel: a later level supersedes
+        // dropped tiles, and a gone receiver means the job is moot.
+        let _ = self.updates_tx.try_send(update);
     }
 }
 
 /// Per-level streaming parameters, used to color and dispatch finished chunks.
-struct LevelStream<'a>
+struct LevelStream<'a, D>
 {
-    job:   &'a Job<'a>,
+    job:   &'a Job<'a, D>,
     scale: usize,
     res:   (usize, usize),
 }
 
-impl LevelStream<'_>
+impl<D> LevelStream<'_, D>
+where
+    D: Polar<Real> + Clone + Send + Sync + 'static,
 {
     /// Color a finished chunk and push it as a tile. The chunk view is shaped
     /// `(res_x, chunk_height)` and corresponds to rows
@@ -133,9 +193,7 @@ impl LevelStream<'_>
         clippy::needless_pass_by_value,
         reason = "ArrayView2 is a Copy borrow handle, so taking it by value is zero-cost and matches the streaming callback signature"
     )]
-    fn send_chunk<D>(&self, y_start: usize, chunk: ndarray::ArrayView2<PointInfo<D>>)
-    where
-        D: Polar<Real>,
+    fn send_chunk(&self, y_start: usize, chunk: ndarray::ArrayView2<PointInfo<D>>)
     {
         let (res_x, height) = (chunk.shape()[0], chunk.shape()[1]);
         let mut pixels = Vec::with_capacity(res_x * height);
@@ -146,47 +204,43 @@ impl LevelStream<'_>
             }
         }
 
-        let tile = Tile {
+        self.job.send(Update::Tile(Tile {
             generation: self.job.generation,
             scale: self.scale,
             level_res: self.res,
             x_range: (0, res_x),
             y_range: (y_start, y_start + height),
             pixels,
-        };
-
-        // Drop tiles rather than block the worker if the UI falls behind; a
-        // later level will supersede them anyway.
-        if let Err(TrySendError::Disconnected(_)) = self.job.tiles_tx.try_send(tile) {
-            // Receiver is gone; nothing more to do.
-        }
+        }));
     }
 }
 
-/// Per-pane handle for submitting progressive compute jobs and draining tiles.
-pub struct ComputeService
+/// Per-pane handle for submitting progressive compute jobs and draining updates.
+pub struct ComputeService<D>
 {
-    cancel:    CancelSource,
-    tiles_rx:  Receiver<Tile>,
-    tiles_tx:  Sender<Tile>,
-    in_flight: bool,
+    cancel:     CancelSource,
+    updates_rx: Receiver<Update<D>>,
+    updates_tx: Sender<Update<D>>,
+    in_flight:  bool,
 }
 
-impl Default for ComputeService
+impl<D> Default for ComputeService<D>
 {
     fn default() -> Self
     {
-        let (tiles_tx, tiles_rx) = crossbeam::channel::bounded(TILE_CAPACITY);
+        let (updates_tx, updates_rx) = crossbeam::channel::bounded(TILE_CAPACITY);
         Self {
             cancel: CancelSource::new(),
-            tiles_rx,
-            tiles_tx,
+            updates_rx,
+            updates_tx,
             in_flight: false,
         }
     }
 }
 
-impl ComputeService
+impl<D> ComputeService<D>
+where
+    D: Polar<Real> + Clone + Send + Sync + 'static,
 {
     #[must_use]
     pub fn new() -> Self
@@ -194,7 +248,7 @@ impl ComputeService
         Self::default()
     }
 
-    /// Whether a job is currently producing tiles.
+    /// Whether a job is currently producing updates.
     #[must_use]
     pub const fn is_busy(&self) -> bool
     {
@@ -209,16 +263,15 @@ impl ComputeService
     }
 
     /// Submit a progressive compute over `plane`'s grid, cancelling any prior
-    /// job. Tiles stream back coarsest level first; drain them with
-    /// [`drain_tiles`](Self::drain_tiles).
+    /// job. Updates stream back coarsest level first; drain them with
+    /// [`drain`](Self::drain).
     pub fn submit<P>(&mut self, plane: Arc<P>, coloring: Arc<Coloring>)
     where
-        P: Computable + Clone + Send + Sync + 'static,
-        P::Deriv: Polar<Real>,
+        P: Computable<Deriv = D> + Clone + Send + Sync + 'static,
     {
         let token = self.cancel.renew();
         let generation = token.generation();
-        let tiles_tx = self.tiles_tx.clone();
+        let updates_tx = self.updates_tx.clone();
         self.in_flight = true;
 
         job_pool().spawn(move || {
@@ -228,19 +281,53 @@ impl ComputeService
                 token: &token,
                 generation,
                 finest_res,
-                tiles_tx: &tiles_tx,
+                updates_tx: &updates_tx,
             };
             job.run(plane.as_ref());
         });
     }
 
-    /// Drain every tile produced since the last call, dropping any from a stale
-    /// generation. Returns tiles in arrival order.
-    pub fn drain_tiles(&self) -> impl Iterator<Item = Tile> + '_
+    /// Recolor an already-computed finest plane without recomputing orbits,
+    /// streaming fresh tiles for the new coloring. Used for palette changes.
+    pub fn recolor(&mut self, plane: Arc<IterPlane<D>>, coloring: Arc<Coloring>)
+    {
+        let token = self.cancel.renew();
+        let generation = token.generation();
+        let updates_tx = self.updates_tx.clone();
+        self.in_flight = true;
+
+        job_pool().spawn(move || {
+            let res = plane.point_grid.res_x.max(plane.point_grid.res_y);
+            let job = Job {
+                coloring: coloring.as_ref(),
+                token: &token,
+                generation,
+                finest_res: res,
+                updates_tx: &updates_tx,
+            };
+            job.recolor(&plane);
+        });
+    }
+
+    /// Drain every update produced since the last call, dropping any from a
+    /// stale generation and clearing the busy flag when the job completes.
+    pub fn drain(&mut self) -> Vec<Update<D>>
     {
         let current = self.cancel.generation();
-        self.tiles_rx
-            .try_iter()
-            .filter(move |tile| tile.generation == current)
+        let mut updates = Vec::new();
+        for update in self.updates_rx.try_iter() {
+            let (generation, done) = match &update {
+                Update::Tile(tile) => (tile.generation, false),
+                Update::Done { generation, .. } => (*generation, true),
+            };
+            if generation != current {
+                continue;
+            }
+            if done {
+                self.in_flight = false;
+            }
+            updates.push(update);
+        }
+        updates
     }
 }

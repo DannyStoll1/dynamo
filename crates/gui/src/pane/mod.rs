@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use dynamo_color::prelude::*;
 use dynamo_common::prelude::*;
@@ -17,6 +18,17 @@ use crate::marked_points::ContourType;
 pub mod id;
 pub mod tasks;
 use tasks::{ChildTask, FollowState, PaneTasks, RepeatableTask};
+
+/// Outcome of draining a pane's background compute for one frame.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ComputeProgress
+{
+    /// Whether the display texture changed and was uploaded this frame.
+    pub texture_changed: bool,
+    /// Whether a compute job is still in flight, so the caller should keep
+    /// requesting repaints to keep draining tiles.
+    pub busy: bool,
+}
 
 pub trait Pane
 {
@@ -157,7 +169,7 @@ pub trait Pane
         self.pan(translation_vector);
     }
 
-    fn process_tasks(&mut self);
+    fn process_tasks(&mut self) -> ComputeProgress;
 
     fn frame_contains_pixel(&self, pointer_pos: Pos2) -> bool
     {
@@ -218,7 +230,12 @@ where
 {
     pub plane: P,
     pub coloring: Coloring,
-    iter_plane: IterPlane<P::Deriv>,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    compute: crate::compute::ComputeService<P::Deriv>,
+    /// Cached finest-level escape data, kept for cheap recoloring on palette
+    /// changes. `None` until the first job completes.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    iter_plane: Option<std::sync::Arc<IterPlane<P::Deriv>>>,
     #[cfg_attr(feature = "serde", serde(skip))]
     pub image_frame: ImageFrame,
     tasks: PaneTasks,
@@ -231,7 +248,7 @@ where
 }
 impl<P> WindowPane<P>
 where
-    P: Displayable + 'static,
+    P: Displayable + Clone + 'static,
 {
     /// Change the meta-parameter for the plane. Returns true if the new value is distinct from the
     /// old one.
@@ -280,7 +297,6 @@ where
     #[must_use]
     pub fn new(plane: P, coloring: Coloring) -> Self
     {
-        let iter_plane = IterPlane::create(plane.point_grid().clone());
         let selection = plane.default_selection();
         let frame = ImageFrame::default();
 
@@ -294,7 +310,8 @@ where
         Self {
             plane,
             coloring,
-            iter_plane,
+            compute: crate::compute::ComputeService::new(),
+            iter_plane: None,
             image_frame: frame,
             tasks: PaneTasks::init_tasks(),
             selection,
@@ -360,32 +377,49 @@ where
             .process_all_tasks(&self.plane, self.selection, period_coloring);
     }
 
-    fn draw(&mut self)
+    /// Submit a fresh progressive compute for the current plane and coloring,
+    /// cancelling any job already in flight. Results stream in via
+    /// `process_tasks`.
+    fn submit_compute(&mut self)
     {
-        let image = self.iter_plane.render(self.get_coloring());
-        let image_frame = self.frame_mut();
-        image_frame.image = image;
-        image_frame.update_texture();
+        self.compute.submit(
+            Arc::new(self.plane.clone()),
+            Arc::new(self.coloring.clone()),
+        );
     }
 
-    fn redraw(&mut self)
+    /// Recolor the cached finest plane without recomputing orbits. Falls back to
+    /// a full compute if nothing has been computed yet.
+    fn submit_recolor(&mut self)
     {
-        let coloring = self.coloring.clone();
-        self.iter_plane
-            .render_into(&mut self.image_frame.image, &coloring);
-        self.image_frame.update_texture();
+        match &self.iter_plane {
+            Some(plane) => self
+                .compute
+                .recolor(Arc::clone(plane), Arc::new(self.coloring.clone())),
+            None => self.submit_compute(),
+        }
     }
 
-    #[inline]
-    fn compute(&mut self)
+    /// Drain pending compute updates into the display buffer, returning whether
+    /// the texture changed (so the caller can upload it) paired with whether a
+    /// job is still in flight (so the caller can keep requesting repaints).
+    fn drain_compute(&mut self) -> ComputeProgress
     {
-        self.iter_plane = self.plane.compute();
-    }
-
-    #[inline]
-    fn recompute(&mut self)
-    {
-        self.plane.compute_into(&mut self.iter_plane);
+        let updates = self.compute.drain();
+        let changed = !updates.is_empty();
+        for update in updates {
+            match update {
+                crate::compute::Update::Tile(tile) => self.image_frame.blit_tile(&tile),
+                crate::compute::Update::Done { plane, .. } => self.iter_plane = Some(plane),
+            }
+        }
+        if changed {
+            self.image_frame.update_texture();
+        }
+        ComputeProgress {
+            texture_changed: changed,
+            busy: self.compute.is_busy(),
+        }
     }
 
     fn mark_orbit_and_info(&mut self, pointer_value: Cplx)
@@ -411,7 +445,7 @@ where
 
 impl<P> From<P> for WindowPane<P>
 where
-    P: Displayable + 'static,
+    P: Displayable + Clone + 'static,
 {
     fn from(plane: P) -> Self
     {
@@ -425,7 +459,7 @@ where
 /// handling tasks, zooming, panning, and managing selections and markings.
 impl<P> Pane for WindowPane<P>
 where
-    P: Displayable + 'static,
+    P: Displayable + Clone + 'static,
 {
     #[inline]
     fn tasks(&self) -> &PaneTasks
@@ -637,7 +671,7 @@ where
         self.schedule_recompute_keep_old_annotations();
     }
 
-    fn process_tasks(&mut self)
+    fn process_tasks(&mut self) -> ComputeProgress
     {
         self.process_marking_tasks();
 
@@ -669,24 +703,20 @@ where
             self.orbit_info = None;
         }
 
+        // A compute supersedes a pending recolor; a recolor only restreams the
+        // existing plane. Both flow through the background service.
         match self.tasks_mut().compute.pop() {
-            RepeatableTask::Rerun => {
-                self.recompute();
+            RepeatableTask::Rerun | RepeatableTask::InitRun => {
+                self.tasks_mut().draw.clear();
+                self.submit_compute();
             }
-            RepeatableTask::DoNothing => {}
-            RepeatableTask::InitRun => {
-                self.compute();
-            }
+            RepeatableTask::DoNothing => match self.tasks_mut().draw.pop() {
+                RepeatableTask::Rerun | RepeatableTask::InitRun => self.submit_recolor(),
+                RepeatableTask::DoNothing => {}
+            },
         }
-        match self.tasks_mut().draw.pop() {
-            RepeatableTask::Rerun => {
-                self.redraw();
-            }
-            RepeatableTask::DoNothing => {}
-            RepeatableTask::InitRun => {
-                self.draw();
-            }
-        }
+
+        self.drain_compute()
     }
 
     fn select_preperiod_smooth_coloring(&mut self)

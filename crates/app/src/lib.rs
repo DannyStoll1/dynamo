@@ -161,7 +161,7 @@ mod tests
         use std::sync::Arc;
 
         use dynamo_core::dynamics::FamilyDefaults as _;
-        use dynamo_gui::compute::ComputeService;
+        use dynamo_gui::compute::{ComputeService, Update};
 
         let plane = dynamo_profiles::Mandelbrot::default().with_res_y(128);
         let coloring = plane.default_coloring();
@@ -178,7 +178,10 @@ mod tests
         let mut covered: Vec<bool> = Vec::new();
         let mut all_covered = false;
         while !all_covered && std::time::Instant::now() < deadline {
-            for tile in service.drain_tiles() {
+            for update in service.drain() {
+                let Update::Tile(tile) = update else {
+                    continue;
+                };
                 if tile.scale != 1 {
                     continue;
                 }

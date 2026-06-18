@@ -248,6 +248,9 @@ pub trait Parameter: Clone + Send + Sync + Default + PartialEq + Describe + Summ
 pub trait Derivative:
     Polar<Real>
     + Send
+    + Sync
+    + Clone
+    + 'static
     + Default
     + Zero
     + One
@@ -277,6 +280,9 @@ impl<P> Parameter for P where P: Clone + Send + Sync + Default + PartialEq + Des
 impl<D> Derivative for D where
     D: Polar<Real>
         + Send
+        + Sync
+        + Clone
+        + 'static
         + Default
         + Zero
         + One

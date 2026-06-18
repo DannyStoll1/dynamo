@@ -66,7 +66,7 @@ pub trait PanePair
     fn prompt_text(&mut self, input_type: TextInputType);
 
     /// Updates the state of both the parent and child panes.
-    fn update_panes(&mut self);
+    fn update_panes(&mut self, ctx: &Context);
 
     // fn descend(self) -> Box<dyn PanePair>;
 }
@@ -944,10 +944,14 @@ where
         }
     }
 
-    fn update_panes(&mut self)
+    fn update_panes(&mut self, ctx: &Context)
     {
-        self.parent.process_tasks();
-        self.child.process_tasks();
+        let parent_progress = self.parent.process_tasks();
+        let child_progress = self.child.process_tasks();
+        if parent_progress.busy || child_progress.busy {
+            // Keep the frame loop alive so streamed tiles keep draining.
+            ctx.request_repaint();
+        }
     }
 
     // fn descend(self) -> Box<dyn PanePair>
@@ -1167,6 +1171,6 @@ where
     {
         self.handle_input(ctx);
         self.show_dialog(ctx);
-        self.update_panes();
+        self.update_panes(ctx);
     }
 }

@@ -1,7 +1,7 @@
 pub mod menu;
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
-use dynamo_gui::interface::{Interface, MainInterface, PanePair as _};
+use dynamo_gui::interface::{Interface, MainInterface};
 use dynamo_profiles::{
     BiquadraticMult, BiquadraticMultParam, BiquadraticMultSection, BurningShip, Chebyshev,
     CoshNewton, Cosine, CosineAdd, CubicMarked2Cycle, CubicPer1_0, CubicPer1_1, CubicPer1Lambda,
@@ -588,7 +588,8 @@ where
     let parent_plane = create_parent().with_max_iter(max_iters).with_res_y(768);
     let child_plane = create_child(parent_plane.clone());
 
-    let mut interface = MainInterface::new(parent_plane, child_plane, 768);
-    interface.update_panes();
+    // The first `update(ctx)` frame processes pending tasks and kicks off the
+    // initial background compute; no warm-up pass is needed here.
+    let interface = MainInterface::new(parent_plane, child_plane, 768);
     Box::new(interface)
 }
