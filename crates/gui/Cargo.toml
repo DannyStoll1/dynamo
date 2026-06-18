@@ -22,6 +22,9 @@ image = { workspace = true }
 imageproc = "0.26"
 itertools = { workspace = true }
 log = { workspace = true }
+crossbeam = { workspace = true }
+rayon = { workspace = true }
+ndarray = { workspace = true }
 
 [features]
 serde = [

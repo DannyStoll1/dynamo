@@ -1124,6 +1124,53 @@ pub trait EscapeEncoding: DynamicalFamily + InfinityFirstReturnMap + MarkedPoint
     }
 }
 
+/// Streaming controls for a chunked compute.
+///
+/// Bundles the cancellation token, a per-pixel `skip` predicate (so a caller can
+/// avoid recomputing pixels already filled from a coarser mip level), and an
+/// `on_chunk` callback invoked with each finished row chunk as soon as it is
+/// ready. The callback receives the y index at which the chunk starts and a
+/// view of the freshly computed cells, and runs on the worker that produced the
+/// chunk (so the closures must be `Sync`). Cancellation is checked once per row
+/// chunk.
+pub struct ChunkSink<'a, D>
+{
+    cancel:   &'a CancelToken,
+    skip:     &'a (dyn Fn(usize, usize) -> bool + Sync),
+    on_chunk: &'a (dyn Fn(usize, ndarray::ArrayView2<PointInfo<D>>) + Sync),
+}
+
+impl<'a, D> ChunkSink<'a, D>
+{
+    /// A sink that computes every pixel and ignores finished chunks, stopping
+    /// only when `cancel` triggers.
+    #[must_use]
+    pub fn masked(cancel: &'a CancelToken, skip: &'a (dyn Fn(usize, usize) -> bool + Sync))
+    -> Self
+    {
+        Self {
+            cancel,
+            skip,
+            on_chunk: &|_, _| {},
+        }
+    }
+
+    /// A sink that streams finished chunks to `on_chunk`.
+    #[must_use]
+    pub fn streaming(
+        cancel: &'a CancelToken,
+        skip: &'a (dyn Fn(usize, usize) -> bool + Sync),
+        on_chunk: &'a (dyn Fn(usize, ndarray::ArrayView2<PointInfo<D>>) + Sync),
+    ) -> Self
+    {
+        Self {
+            cancel,
+            skip,
+            on_chunk,
+        }
+    }
+}
+
 pub trait Computable: DynamicalFamily
 {
     fn compute(&self) -> IterPlane<Self::Deriv>
@@ -1133,7 +1180,10 @@ pub trait Computable: DynamicalFamily
         iter_plane
     }
 
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>);
+    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
+    {
+        self.compute_into_masked(iter_plane, &CancelToken::never(), &|_, _| false);
+    }
 
     /// Compute escape data into `iter_plane`, skipping pixels for which `skip`
     /// returns true and bailing out early if `cancel` is triggered.
@@ -1148,6 +1198,17 @@ pub trait Computable: DynamicalFamily
         iter_plane: &mut IterPlane<Self::Deriv>,
         cancel: &CancelToken,
         skip: &(dyn Fn(usize, usize) -> bool + Sync),
+    )
+    {
+        self.compute_into_streaming(iter_plane, &ChunkSink::masked(cancel, skip));
+    }
+
+    /// Compute escape data into `iter_plane`, streaming finished row chunks to
+    /// `sink` as they complete (see [`ChunkSink`]).
+    fn compute_into_streaming(
+        &self,
+        iter_plane: &mut IterPlane<Self::Deriv>,
+        sink: &ChunkSink<'_, Self::Deriv>,
     );
 
     fn get_orbit_and_info(
@@ -1196,16 +1257,10 @@ where
         }
     }
 
-    fn compute_into(&self, iter_plane: &mut IterPlane<Self::Deriv>)
-    {
-        self.compute_into_masked(iter_plane, &CancelToken::never(), &|_, _| false);
-    }
-
-    fn compute_into_masked(
+    fn compute_into_streaming(
         &self,
         iter_plane: &mut IterPlane<Self::Deriv>,
-        cancel: &CancelToken,
-        skip: &(dyn Fn(usize, usize) -> bool + Sync),
+        sink: &ChunkSink<'_, Self::Deriv>,
     )
     {
         if self.point_grid().is_nan() {
@@ -1222,12 +1277,13 @@ where
             .enumerate()
             .par_bridge()
             .for_each(|(chunk_idx, mut chunk)| {
-                if cancel.is_cancelled() {
+                if sink.cancel.is_cancelled() {
                     return;
                 }
+                let y_start = chunk_idx * chunk_size;
                 chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
-                    let y = chunk_idx * chunk_size + local_y;
-                    if skip(x, y) {
+                    let y = y_start + local_y;
+                    if (sink.skip)(x, y) {
                         return;
                     }
                     let mut orbit = orbits
@@ -1238,6 +1294,9 @@ where
                     orbit.reset(point);
                     *count = orbit.run_until_complete();
                 });
+                if !sink.cancel.is_cancelled() {
+                    (sink.on_chunk)(y_start, chunk.view());
+                }
             });
     }
 }

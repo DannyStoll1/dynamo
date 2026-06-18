@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod colors;
+pub mod compute;
 pub mod dialog;
 pub mod hotkeys;
 pub mod image_frame;
