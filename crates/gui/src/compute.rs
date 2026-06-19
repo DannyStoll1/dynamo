@@ -7,13 +7,16 @@
 //! one via a generation token, and the worker stops promptly at chunk
 //! boundaries.
 
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::OnceLock;
 
 use crossbeam::channel::{Receiver, Sender};
 use dynamo_color::Coloring;
 use dynamo_common::prelude::*;
 use dynamo_core::prelude::*;
 use egui::Color32;
+#[cfg(not(target_arch = "wasm32"))]
 use rayon::{ThreadPool, ThreadPoolBuilder};
 
 /// Smallest mip level dimension, in pixels, along the shorter axis.
@@ -65,6 +68,7 @@ pub enum Update<D>
 /// One extra thread drives each job's mip walk; the data-parallel per-level
 /// work fans out across rayon's global pool, preserving full parallelism and
 /// SIMD within a level.
+#[cfg(not(target_arch = "wasm32"))]
 fn job_pool() -> &'static ThreadPool
 {
     static POOL: OnceLock<ThreadPool> = OnceLock::new();
@@ -75,6 +79,23 @@ fn job_pool() -> &'static ThreadPool
             .build()
             .expect("failed to build compute pool")
     })
+}
+
+/// Run a compute job's body.
+///
+/// On native targets the body is spawned onto the shared compute pool so the
+/// UI thread stays responsive while the mip walk progresses. On wasm there is
+/// no thread support, so the body runs synchronously on the caller; tiles are
+/// delivered via a non-blocking `try_send`, so this cannot deadlock, but the
+/// caller blocks until the job completes.
+fn dispatch<F>(body: F)
+where
+    F: FnOnce() + Send + 'static,
+{
+    #[cfg(not(target_arch = "wasm32"))]
+    job_pool().spawn(body);
+    #[cfg(target_arch = "wasm32")]
+    body();
 }
 
 /// Immutable context shared across a single job's mip walk.
@@ -282,7 +303,7 @@ where
         let updates_tx = self.updates_tx.clone();
         self.in_flight = true;
 
-        job_pool().spawn(move || {
+        dispatch(move || {
             let grid = plane.point_grid();
             let job = Job {
                 coloring: coloring.as_ref(),
@@ -304,7 +325,7 @@ where
         let updates_tx = self.updates_tx.clone();
         self.in_flight = true;
 
-        job_pool().spawn(move || {
+        dispatch(move || {
             let job = Job {
                 coloring: coloring.as_ref(),
                 token: &token,

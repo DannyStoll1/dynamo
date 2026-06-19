@@ -20,8 +20,24 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 
+# The numeric stack (spfunc -> cauchy -> rand 0.8 -> rand_core 0.6)
+# transitively requires getrandom 0.2, whose wasm32-unknown-unknown
+# support is gated behind its `js` feature. cauchy 0.4 (latest) still
+# pins rand 0.8, so this older line cannot be removed by version bumps;
+# enabling the feature here turns it on tree-wide via unification.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom_02 = { package = "getrandom", version = "0.2", features = ["js"] }
+
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+# wasm-pack's default wasm-opt invocation omits the wasm features the
+# Rust toolchain now emits (bulk-memory, nontrapping-float-to-int, ...),
+# failing validation. Override the flags so wasm-pack runs an aggressive
+# size pass with the modern feature set enabled. wasm-pack only honors
+# this metadata for the built-in `release` profile.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-Oz', '--all-features']
 
 [lints]
 workspace = true

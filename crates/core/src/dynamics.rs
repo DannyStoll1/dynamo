@@ -10,6 +10,7 @@ use dynamo_common::prelude::*;
 use dynamo_common::symbolic_dynamics::OrbitSchema;
 use ndarray::Axis;
 use num_traits::{One as _, Zero as _};
+#[cfg(not(target_arch = "wasm32"))]
 use rayon::iter::{ParallelBridge as _, ParallelIterator as _};
 use thread_local::ThreadLocal;
 
@@ -1271,33 +1272,41 @@ where
 
         let chunk_size = (self.point_grid().res_y / num_cpus::get()).max(1);
 
-        iter_plane
-            .iter_counts
-            .axis_chunks_iter_mut(Axis(1), chunk_size)
-            .enumerate()
-            .par_bridge()
-            .for_each(|(chunk_idx, mut chunk)| {
-                if sink.cancel.is_cancelled() {
+        let process_chunk = |(chunk_idx, mut chunk): (usize, ndarray::ArrayViewMut2<'_, _>)| {
+            if sink.cancel.is_cancelled() {
+                return;
+            }
+            let y_start = chunk_idx * chunk_size;
+            chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
+                let y = y_start + local_y;
+                if (sink.skip)(x, y) {
                     return;
                 }
-                let y_start = chunk_idx * chunk_size;
-                chunk.indexed_iter_mut().for_each(|((x, local_y), count)| {
-                    let y = y_start + local_y;
-                    if (sink.skip)(x, y) {
-                        return;
-                    }
-                    let mut orbit = orbits
-                        .get_or(|| self.compute_mode().create_orbit(self))
-                        .borrow_mut();
+                let mut orbit = orbits
+                    .get_or(|| self.compute_mode().create_orbit(self))
+                    .borrow_mut();
 
-                    let point = self.point_grid().map_pixel(x, y);
-                    orbit.reset(point);
-                    *count = orbit.run_until_complete();
-                });
-                if !sink.cancel.is_cancelled() {
-                    (sink.on_chunk)(y_start, chunk.view());
-                }
+                let point = self.point_grid().map_pixel(x, y);
+                orbit.reset(point);
+                *count = orbit.run_until_complete();
             });
+            if !sink.cancel.is_cancelled() {
+                (sink.on_chunk)(y_start, chunk.view());
+            }
+        };
+
+        let chunks = iter_plane
+            .iter_counts
+            .axis_chunks_iter_mut(Axis(1), chunk_size)
+            .enumerate();
+
+        // wasm32-unknown-unknown has no thread support, so rayon cannot build a
+        // pool; fall back to serial iteration there. Native targets keep the
+        // data-parallel fan-out.
+        #[cfg(not(target_arch = "wasm32"))]
+        chunks.par_bridge().for_each(process_chunk);
+        #[cfg(target_arch = "wasm32")]
+        chunks.for_each(process_chunk);
     }
 }
 
