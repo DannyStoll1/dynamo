@@ -394,8 +394,16 @@ where
 
     /// Recolor the cached finest plane without recomputing orbits. Falls back to
     /// a full compute if nothing has been computed yet.
+    ///
+    /// Does nothing while a compute job is in flight: the cached plane is stale
+    /// (it predates the running job), and recoloring it would both cancel that
+    /// job and revert the canvas to the pre-job image. The in-flight job streams
+    /// fresh, correctly colored tiles regardless.
     fn submit_recolor(&mut self)
     {
+        if self.compute.is_busy() {
+            return;
+        }
         match &self.iter_plane {
             Some(plane) => self
                 .compute
@@ -714,10 +722,16 @@ where
                 self.tasks_mut().draw.clear();
                 self.submit_compute();
             }
-            RepeatableTask::DoNothing => match self.tasks_mut().draw.pop() {
-                RepeatableTask::Rerun | RepeatableTask::InitRun => self.submit_recolor(),
-                RepeatableTask::DoNothing => {}
-            },
+            RepeatableTask::DoNothing => {
+                let wants_redraw = !matches!(self.tasks().draw, RepeatableTask::DoNothing);
+                // Defer a recolor while a compute is in flight: its cached plane
+                // is stale and recoloring would cancel the running job. Keep the
+                // draw task pending so it retries once the job finishes.
+                if wants_redraw && !self.compute.is_busy() {
+                    self.tasks_mut().draw.clear();
+                    self.submit_recolor();
+                }
+            }
         }
 
         self.drain_compute()
