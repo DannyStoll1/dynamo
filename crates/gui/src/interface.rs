@@ -104,6 +104,16 @@ where
     dialog:       Option<Dialog>,
     // save_task: SaveTask,
     click_used:   bool,
+    /// Target image height (device px) awaiting the resize debounce, set
+    /// when the available pane area implies a height differing from the
+    /// current one. Flushed by [`flush_pending_resize`] once stable.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pending_height: Option<usize>,
+    /// egui input-clock time (seconds) at which a stable [`pending_height`]
+    /// should be applied. Refreshed on every observed size change so a
+    /// recompute fires only after the drag settles.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    resize_deadline: Option<f64>,
     pub message:  UiMessage,
 }
 
@@ -123,7 +133,101 @@ where
             live_mode: false,
             dialog: None,
             click_used: false,
+            pending_height: None,
+            resize_deadline: None,
             message: UiMessage::default(),
+        }
+    }
+
+    /// Smallest auto-fit image height (device px); below this the panes
+    /// are too small to be useful and recompute is skipped.
+    const MIN_FIT_HEIGHT: usize = 200;
+    /// Largest auto-fit image height (device px). Caps compute cost so
+    /// maximizing on a high-DPI or very large display cannot trigger a
+    /// multi-megapixel fractal recompute; beyond this the pane letterboxes.
+    const MAX_FIT_HEIGHT: usize = 1440;
+    /// Seconds the observed size must stay stable before a recompute fires,
+    /// so dragging a window/splitter does not thrash the CPU.
+    const RESIZE_DEBOUNCE: f64 = 0.2;
+    /// Minimum height delta (device px) that counts as a real resize,
+    /// avoiding oscillation from sub-pixel layout jitter.
+    const RESIZE_HYSTERESIS: usize = 2;
+    /// Header row height in `show`'s table (points).
+    const HEADER_H: f32 = 20.0;
+    /// State-info row height in `show`'s table (points).
+    const STATE_ROW_H: f32 = 80.0;
+
+    /// Compute the shared image height that fits both planes' images
+    /// within `avail` (device px) given their bounds aspect ratios.
+    ///
+    /// The two planes share one height; each plane's width is its bounds
+    /// aspect times that height. Returns the largest height (clamped to
+    /// `[MIN_FIT_HEIGHT, MAX_FIT_HEIGHT]`) for which neither plane's image
+    /// overflows its column, so the images fill the area without clipping.
+    fn fit_height(&self, avail: egui::Vec2) -> usize
+    {
+        // The image row is the available height less the header and the
+        // state-info row baked into `show`'s table.
+        let row_h = (avail.y - Self::HEADER_H - Self::STATE_ROW_H).max(0.0);
+        // The two planes share the width roughly evenly (parent `exact`,
+        // child `remainder`); fit each into its half.
+        let col_w = (avail.x * 0.5).max(0.0);
+
+        let height_from = |aspect: f32| -> f32 {
+            // image width = aspect * height must fit col_w; height must fit
+            // row_h. Take the binding constraint.
+            if aspect <= 0.0 {
+                row_h
+            } else {
+                row_h.min(col_w / aspect)
+            }
+        };
+
+        let aspect_of = |g: &PointGrid| -> f32 {
+            (g.bounds.range_x() / g.bounds.range_y()) as f32
+        };
+        let parent_aspect = aspect_of(self.parent.grid());
+        let child_aspect = aspect_of(self.child.grid());
+        let fit = height_from(parent_aspect).min(height_from(child_aspect));
+
+        (fit as usize).clamp(Self::MIN_FIT_HEIGHT, Self::MAX_FIT_HEIGHT)
+    }
+
+    /// Observe the available area each frame and, when it implies a height
+    /// differing from the current one, arm a debounced recompute. Records
+    /// only the target here; [`flush_pending_resize`] applies it once the
+    /// size has been stable for [`RESIZE_DEBOUNCE`] seconds.
+    fn observe_available(&mut self, ctx: &Context, avail: egui::Vec2)
+    {
+        // Work in device pixels so HiDPI screens render sharp.
+        let avail_px = avail * ctx.pixels_per_point();
+        let target = self.fit_height(avail_px);
+
+        if target.abs_diff(self.image_height) < Self::RESIZE_HYSTERESIS {
+            return;
+        }
+        self.pending_height = Some(target);
+        let now = ctx.input(|i| i.time);
+        self.resize_deadline = Some(now + Self::RESIZE_DEBOUNCE);
+        // Wake the frame loop so the flush fires without further input.
+        ctx.request_repaint_after(std::time::Duration::from_secs_f64(Self::RESIZE_DEBOUNCE));
+    }
+
+    /// Apply a debounced resize once its deadline has passed, recomputing
+    /// both planes at the new height.
+    fn flush_pending_resize(&mut self, ctx: &Context)
+    {
+        let Some(deadline) = self.resize_deadline else {
+            return;
+        };
+        if ctx.input(|i| i.time) < deadline {
+            return;
+        }
+        self.resize_deadline = None;
+        if let Some(target) = self.pending_height.take()
+            && target.abs_diff(self.image_height) >= Self::RESIZE_HYSTERESIS
+        {
+            self.change_height(target);
         }
     }
 
@@ -946,6 +1050,7 @@ where
 
     fn update_panes(&mut self, ctx: &Context)
     {
+        self.flush_pending_resize(ctx);
         let parent_progress = self.parent.process_tasks();
         let child_progress = self.child.process_tasks();
         if parent_progress.busy || child_progress.busy {
@@ -1102,6 +1207,12 @@ where
     /// plane, plane names, and orbit descriptions. The menus are handled by the parent struct `app::FracalTab`.
     fn show(&mut self, ui: &mut Ui)
     {
+        // Observe the area available to the panes and arm a debounced
+        // recompute so the fractal fills the pane (and reflows when the
+        // window/iframe or profile aspect changes).
+        let avail = ui.available_size();
+        self.observe_available(ui.ctx(), avail);
+
         TableBuilder::new(ui)
             .column(Column::exact(self.parent.get_image_frame().width() as f32))
             .column(Column::remainder())
