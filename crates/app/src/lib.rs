@@ -1,12 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use egui_dock::{DockArea, DockState, NodeIndex, Style, SurfaceIndex};
+use egui_dock::{DockArea, DockState, NodePath, Style, TabIndex, TabPath};
 
 pub mod fractal_tab;
 pub mod macros;
 #[cfg(feature = "scripting")]
 pub mod script_editor;
 pub mod sidebar;
-use fractal_tab::{FractalTab, TabID};
+use fractal_tab::FractalTab;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run_app() -> Result<(), eframe::Error>
@@ -32,7 +32,7 @@ pub fn run_app() -> Result<(), eframe::Error>
 struct TabViewer<'a>
 {
     added_nodes: &'a mut Vec<FractalTab>,
-    to_remove:   &'a mut Vec<TabID>,
+    to_remove:   &'a mut Vec<NodePath>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_>
@@ -52,7 +52,7 @@ impl egui_dock::TabViewer for TabViewer<'_>
                 self.to_remove.push(tab.id);
             }
             NewTab => {
-                self.on_add(tab.id.surface, tab.id.node);
+                self.on_add(tab.id);
             }
             DoNothing => {}
         }
@@ -63,10 +63,9 @@ impl egui_dock::TabViewer for TabViewer<'_>
         format!("Tab {}", tab.interface.name()).into()
     }
 
-    fn on_add(&mut self, surface: SurfaceIndex, node: NodeIndex)
+    fn on_add(&mut self, path: NodePath)
     {
-        let tab_id = TabID { surface, node };
-        let tab = FractalTab::default().with_id(tab_id);
+        let tab = FractalTab::default().with_id(path);
         self.added_nodes.push(tab);
     }
 }
@@ -96,25 +95,25 @@ impl eframe::App for FractalApp
 {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame)
     {
-        let ctx = ui.ctx();
+        let style = {
+            let mut style = Style::from_egui(ui.ctx().global_style().as_ref());
+            style.tab_bar.fill_tab_bar = true;
+            style
+        };
         let mut added_nodes = Vec::new();
         let mut to_remove = Vec::new();
         DockArea::new(&mut self.dock_state)
             .show_add_buttons(true)
-            .style({
-                let mut style = Style::from_egui(ctx.global_style().as_ref());
-                style.tab_bar.fill_tab_bar = true;
-                style
-            })
-            .show(
-                ctx,
+            .style(style)
+            .show_inside(
+                ui,
                 &mut TabViewer {
                     added_nodes: &mut added_nodes,
                     to_remove:   &mut to_remove,
                 },
             );
         for tab in added_nodes {
-            self.dock_state.set_focused_node_and_surface(tab.id.into());
+            self.dock_state.set_focused_node_and_surface(tab.id);
             self.dock_state.push_to_focused_leaf(tab);
             self.tab_count += 1;
         }
@@ -123,9 +122,11 @@ impl eframe::App for FractalApp
             if self.tab_count == 0 {
                 std::process::exit(0);
             }
-            let (surface, node) = tab_id.into();
-            self.dock_state
-                .remove_tab((surface, node, self.tab_count.into()));
+            self.dock_state.remove_tab(TabPath::new(
+                tab_id.surface,
+                tab_id.node,
+                TabIndex(self.tab_count),
+            ));
         }
     }
 }

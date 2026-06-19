@@ -1,6 +1,5 @@
 [workspace]
 resolver = "2"
-exclude = ["vendor/*"]
 
 members = [
   "crates/app",
@@ -45,8 +44,8 @@ egui = "0.34"
 eframe = "0.34"
 epaint = "0.34"
 egui_extras = "0.34"
-egui_file = { path = "vendor/egui_file" }
-egui_dock = { path = "vendor/egui_dock" }
+egui_file = "0.26"
+egui_dock = "0.19"
 image = "0.25"
 
 itertools = "0.14"

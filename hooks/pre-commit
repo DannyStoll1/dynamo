@@ -34,30 +34,10 @@ if ! cargo +nightly fmt --all -- --check; then
     exit 1
 fi
 
-echo "pre-commit: cargo +nightly clippy (workspace members, excluding vendored crates)"
-# Lint only first-party workspace members. Vendored crates under vendor/
-# are path dependencies that get built but must not be linted: they track
-# upstream and carry their own (often nightly-incompatible) lint state.
-mapfile -t clippy_pkgs < <(
-    cargo metadata --format-version 1 2>/dev/null | python3 -c '
-import json, sys
-
-meta = json.load(sys.stdin)
-packages = {pkg["id"]: pkg for pkg in meta["packages"]}
-for member in meta["workspace_members"]:
-    pkg = packages[member]
-    if "/vendor/" in pkg["manifest_path"]:
-        continue
-    print(pkg["name"])
-'
-)
-
-clippy_args=()
-for pkg in "${clippy_pkgs[@]}"; do
-    clippy_args+=(-p "$pkg")
-done
-
-if ! cargo +nightly clippy "${clippy_args[@]}" --all-targets --no-deps --quiet -- -D warnings; then
+echo "pre-commit: cargo +nightly clippy --workspace --all-targets --no-deps"
+# Lint only first-party code. `--no-deps` keeps third-party dependencies
+# (which may carry their own lint state) out of the gate.
+if ! cargo +nightly clippy --workspace --all-targets --no-deps --quiet -- -D warnings; then
     echo
     echo "pre-commit: clippy warnings detected. Fix them or rerun with --no-verify."
     exit 1

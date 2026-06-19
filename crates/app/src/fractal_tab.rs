@@ -10,7 +10,7 @@ use dynamo_gui::hotkeys::{
 use dynamo_gui::interface::{Interface, MainInterface};
 use dynamo_profiles::Mandelbrot;
 use egui::Ui;
-use egui_dock::{NodeIndex, SurfaceIndex};
+use egui_dock::NodePath;
 #[cfg(feature = "scripting")]
 use script_loader::error::ScriptError;
 
@@ -47,35 +47,10 @@ impl MenuState
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct TabID
-{
-    pub surface: SurfaceIndex,
-    pub node:    NodeIndex,
-}
-impl Default for TabID
-{
-    fn default() -> Self
-    {
-        Self {
-            surface: SurfaceIndex::main(),
-            node:    NodeIndex(0),
-        }
-    }
-}
-
-impl From<TabID> for (SurfaceIndex, NodeIndex)
-{
-    fn from(value: TabID) -> Self
-    {
-        (value.surface, value.node)
-    }
-}
-
 pub struct FractalTab
 {
     pub interface: Box<dyn Interface>,
-    pub id: TabID,
+    pub id: NodePath,
     pub menu_state: MenuState,
     pub sidebar_menu: sidebar::menu::Menu,
     #[cfg(feature = "scripting")]
@@ -87,9 +62,9 @@ pub struct FractalTab
 impl FractalTab
 {
     #[must_use]
-    pub const fn with_id(mut self, tab_id: TabID) -> Self
+    pub const fn with_id(mut self, id: NodePath) -> Self
     {
-        self.id = tab_id;
+        self.id = id;
         self
     }
 
@@ -362,7 +337,7 @@ impl Default for FractalTab
             interface,
             sidebar_menu,
             menu_state: MenuState::default(),
-            id: TabID::default(),
+            id: NodePath::MAIN_ROOT,
             #[cfg(feature = "scripting")]
             popup: None,
             #[cfg(feature = "scripting")]
