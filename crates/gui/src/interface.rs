@@ -204,12 +204,22 @@ where
         let target = self.fit_height(avail_px);
 
         if target.abs_diff(self.image_height) < Self::RESIZE_HYSTERESIS {
+            // Already at the fitting size; drop any pending resize.
+            self.pending_height = None;
+            self.resize_deadline = None;
             return;
         }
-        self.pending_height = Some(target);
-        let now = ctx.input(|i| i.time);
-        self.resize_deadline = Some(now + Self::RESIZE_DEBOUNCE);
-        // Wake the frame loop so the flush fires without further input.
+        // Only (re)arm the debounce when the target itself changes. While
+        // dragging, the target shifts every frame and keeps pushing the
+        // deadline out (no compute mid-drag); once it settles, the
+        // deadline stops moving and is allowed to elapse so the flush can
+        // fire.
+        if self.pending_height != Some(target) {
+            self.pending_height = Some(target);
+            self.resize_deadline = Some(ctx.input(|i| i.time) + Self::RESIZE_DEBOUNCE);
+        }
+        // Keep the frame loop alive so the flush fires without further
+        // input once the deadline passes.
         ctx.request_repaint_after(std::time::Duration::from_secs_f64(Self::RESIZE_DEBOUNCE));
     }
 
