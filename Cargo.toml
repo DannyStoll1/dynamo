@@ -41,7 +41,19 @@ panic = "abort"
 
 [workspace.dependencies]
 egui = "0.34"
-eframe = "0.34"
+# eframe with the glow (OpenGL/WebGL2) backend instead of the default
+# wgpu one: wgpu's default limits (max_texture_dimension_2d = 8192)
+# exceed what some WebGL2 adapters allow (e.g. Firefox on Intel reports
+# 2048), so the wgpu web painter fails to create a device. glow uses
+# WebGL2 directly and works across those adapters.
+eframe = { version = "0.34", default-features = false, features = [
+    "accesskit",
+    "default_fonts",
+    "glow",
+    "wayland",
+    "web_screen_reader",
+    "x11",
+] }
 epaint = "0.34"
 egui_extras = "0.34"
 egui_file = "0.26"
