@@ -104,7 +104,7 @@ where
     dialog:       Option<Dialog>,
     // save_task: SaveTask,
     click_used:   bool,
-    /// Target image height (device px) awaiting the resize debounce, set
+    /// Target image height (logical px) awaiting the resize debounce, set
     /// when the available pane area implies a height differing from the
     /// current one. Flushed by [`flush_pending_resize`] once stable.
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -139,17 +139,17 @@ where
         }
     }
 
-    /// Smallest auto-fit image height (device px); below this the panes
+    /// Smallest auto-fit image height (logical px); below this the panes
     /// are too small to be useful and recompute is skipped.
     const MIN_FIT_HEIGHT: usize = 200;
-    /// Largest auto-fit image height (device px). Caps compute cost so
+    /// Largest auto-fit image height (logical px). Caps compute cost so
     /// maximizing on a high-DPI or very large display cannot trigger a
     /// multi-megapixel fractal recompute; beyond this the pane letterboxes.
     const MAX_FIT_HEIGHT: usize = 1440;
     /// Seconds the observed size must stay stable before a recompute fires,
     /// so dragging a window/splitter does not thrash the CPU.
     const RESIZE_DEBOUNCE: f64 = 0.2;
-    /// Minimum height delta (device px) that counts as a real resize,
+    /// Minimum height delta (logical px) that counts as a real resize,
     /// avoiding oscillation from sub-pixel layout jitter.
     const RESIZE_HYSTERESIS: usize = 2;
     /// Header row height in `show`'s table (points).
@@ -158,7 +158,7 @@ where
     const STATE_ROW_H: f32 = 80.0;
 
     /// Compute the shared image height that fits both planes' images
-    /// within `avail` (device px) given their bounds aspect ratios.
+    /// within `avail` (logical px) given their bounds aspect ratios.
     ///
     /// The two planes share one height; each plane's width is its bounds
     /// aspect times that height. Returns the largest height (clamped to
@@ -199,9 +199,11 @@ where
     /// size has been stable for [`RESIZE_DEBOUNCE`] seconds.
     fn observe_available(&mut self, ctx: &Context, avail: egui::Vec2)
     {
-        // Work in device pixels so HiDPI screens render sharp.
-        let avail_px = avail * ctx.pixels_per_point();
-        let target = self.fit_height(avail_px);
+        // Fit in logical points: egui draws the texture at its size in
+        // points and applies `pixels_per_point` itself, so the grid
+        // resolution must match the point size (multiplying by ppp here
+        // would render the image twice as large as the pane on HiDPI).
+        let target = self.fit_height(avail);
 
         if target.abs_diff(self.image_height) < Self::RESIZE_HYSTERESIS {
             // Already at the fitting size; drop any pending resize.
